@@ -1,0 +1,81 @@
+[project]
+name = "xhs-downloader"
+version = "3.0.0"
+description = "小红书作品信息解析与媒体下载工具"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "aiosqlite>=0.22.1",
+    "fastapi>=0.139.0",
+    "fastmcp>=3.4.4",
+    "httpx[http2,socks]>=0.28.1",
+    "lxml>=6.0.0",
+    "loguru>=0.7.3",
+    "pydantic>=2.12.0",
+    "pydantic-settings>=2.12.0",
+    "pyyaml>=6.0.0",
+    "typer>=0.21.0",
+    "uvicorn>=0.41.0",
+]
+
+[project.scripts]
+xhs-downloader = "src.interfaces.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.0",
+]
+
+[tool.uv.pip]
+index-url = "https://mirrors.ustc.edu.cn/pypi/simple"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "build",
+    "dist",
+]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "RUF", "D"]
+ignore = [
+    "D105",
+    "D107",
+    # pydocstyle 暂不识别中文句末标点。
+    "D415",
+    # 中文标点是用户文案与中文 docstring 的必要组成部分。
+    "RUF001",
+    "RUF002",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false

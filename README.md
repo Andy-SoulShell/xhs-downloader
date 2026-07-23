@@ -1,0 +1,163 @@
+# xhs-downloader
+
+小红书（XiaoHongShu / RedNote）作品信息解析与媒体下载工具，提供 CLI、HTTP
+API、MCP 和 Python 客户端。
+
+## 设计特点
+
+- 领域、应用、基础设施和用户接口分层，CLI 不包含业务逻辑。
+- 配置由 Pydantic 验证，通过 `.env` 或 `XHS_` 环境变量统一管理。
+- 下载完成后记录内容指纹、文件大小和 SHA-256；只有三者一致才跳过下载。
+- 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
+- 应用、Uvicorn 与 FastMCP 日志统一接入 Loguru，并抑制敏感请求 URL。
+- 每个代码文件不超过 300 行，并由自动化测试检查公开接口 docstring。
+
+## 环境要求
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/)
+
+## 安装
+
+```shell
+uv sync
+```
+
+查看命令：
+
+```shell
+uv run xhs-downloader --help
+```
+
+也可以直接使用：
+
+```shell
+uv run python main.py --help
+```
+
+## 配置
+
+```shell
+cp .env.example .env
+```
+
+程序按以下优先级读取配置：
+
+1. CLI 显式参数
+2. `XHS_` 前缀环境变量
+3. `.env`
+4. 内置默认值
+
+常用变量：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `XHS_WORK_PATH` | `volume` | 数据根目录 |
+| `XHS_FOLDER_NAME` | `download` | 媒体目录名称 |
+| `XHS_COOKIE` | 空 | 小红书网页版 Cookie |
+| `XHS_PROXY` | 空 | HTTP/SOCKS 代理 |
+| `XHS_TIMEOUT` | `15` | 请求超时秒数 |
+| `XHS_MAX_RETRY` | `3` | 最大重试次数 |
+| `XHS_MAX_CONCURRENCY` | `4` | 最大并发下载数 |
+| `XHS_IMAGE_FORMAT` | `jpeg` | `auto/png/webp/jpeg/heic/avif` |
+| `XHS_DOWNLOAD_RECORD` | `true` | 启用指纹下载记录 |
+| `XHS_RECORD_DATA` | `false` | 保存结构化作品元数据 |
+| `XHS_SERVER_HOST` | `0.0.0.0` | API/MCP 监听地址 |
+| `XHS_SERVER_PORT` | `5556` | API/MCP 监听端口 |
+
+完整配置见 [.env.example](.env.example)。
+
+## CLI
+
+下载作品：
+
+```shell
+uv run xhs-downloader download "小红书作品链接"
+```
+
+下载指定图片：
+
+```shell
+uv run xhs-downloader download "小红书作品链接" -i 1 -i 3
+```
+
+强制重新下载：
+
+```shell
+uv run xhs-downloader download "小红书作品链接" --force
+```
+
+只解析详情：
+
+```shell
+uv run xhs-downloader detail "小红书作品链接"
+```
+
+## HTTP API
+
+```shell
+uv run xhs-downloader api
+```
+
+- 文档：`http://127.0.0.1:5556/docs`
+- 健康检查：`GET /health`
+- 作品接口：`POST /xhs/detail`
+
+```json
+{
+  "url": "小红书作品链接",
+  "download": true,
+  "index": [1, 3],
+  "force": false
+}
+```
+
+Cookie 和代理统一从 `.env` 读取；如需仅覆盖本次 API 请求的 Cookie，可在请求
+体中传入 `cookie`。
+
+## MCP
+
+```shell
+uv run xhs-downloader mcp
+```
+
+Streamable HTTP 地址：`http://127.0.0.1:5556/mcp`
+
+工具：
+
+- `get_detail_data`：只解析作品详情。
+- `download_detail`：下载媒体，可指定图片序号和强制下载。
+
+## Python
+
+```python
+import asyncio
+
+from src import XHS
+
+
+async def main():
+    async with XHS() as client:
+        print(await client.detail("小红书作品链接"))
+        print(await client.download("小红书作品链接"))
+
+
+asyncio.run(main())
+```
+
+可运行 [example.py](example.py)；示例从 `XHS_EXAMPLE_URL` 环境变量读取链接，
+仓库中不保存真实作品或凭据。
+
+## 开发验证
+
+```shell
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+```
+
+测试只使用完全合成的数据，不包含真实作品原文、Cookie 或 API Key。
+
+## 许可证
+
+本项目采用 [MIT 许可证](LICENSE)。

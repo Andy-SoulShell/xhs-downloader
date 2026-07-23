@@ -1,0 +1,21 @@
+"""应用可预期异常。"""
+
+
+class XhsError(Exception):
+    """应用异常基类。"""
+
+
+class InvalidLinkError(XhsError):
+    """输入内容中没有受支持的小红书作品链接。"""
+
+
+class ParseError(XhsError):
+    """页面缺少有效作品数据或数据结构不受支持。"""
+
+
+class DownloadError(XhsError):
+    """媒体请求或文件落盘失败。"""
+
+
+class InvalidPartialContentError(DownloadError):
+    """远端拒绝当前断点位置，需要从头下载。"""
