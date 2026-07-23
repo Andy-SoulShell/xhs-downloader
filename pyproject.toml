@@ -43,7 +43,7 @@ dev = [
 index-url = "https://mirrors.ustc.edu.cn/pypi/simple"
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-branch --cov-report=term-missing --cov-fail-under=80 -q"
+addopts = "--cov=src --cov-branch --cov-report=term-missing --cov-fail-under=85 -q"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
@@ -52,7 +52,7 @@ branch = true
 source = ["src"]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 85
 show_missing = true
 
 [tool.ruff]

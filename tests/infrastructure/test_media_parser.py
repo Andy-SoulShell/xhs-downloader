@@ -1,7 +1,9 @@
 """媒体资源地址解析测试。"""
 
+import pytest
+
 from src.config import ImageFormat, VideoPreference
-from src.domain import WorkType
+from src.domain import MediaKind, WorkType
 from src.infrastructure.media_parser import MediaParser
 
 SIGNED_IMAGE_URL = (
@@ -42,6 +44,98 @@ def test_stable_image_path_is_preserved() -> None:
     assert resource.url == (
         "https://sns-img-bd.xhscdn.com/notes_pre_post/synthetic-token"
     )
+
+
+def test_origin_video_is_preferred_and_decoded() -> None:
+    """确保原始视频键优先于转码流并规范转义字符。"""
+    parser = MediaParser(ImageFormat.JPEG, VideoPreference.RESOLUTION)
+
+    resources = parser.parse(
+        {"video": {"consumer": {"originVideoKey": "folder\\u002Fvideo.mp4"}}},
+        WorkType.VIDEO,
+    )
+
+    assert resources[0].url == "https://sns-video-bd.xhscdn.com/folder/video.mp4"
+    assert resources[0].kind is MediaKind.VIDEO
+
+
+@pytest.mark.parametrize(
+    ("preference", "expected"),
+    [
+        (VideoPreference.RESOLUTION, "https://example.invalid/high"),
+        (VideoPreference.BITRATE, "https://example.invalid/fast"),
+        (VideoPreference.SIZE, "https://example.invalid/fast"),
+    ],
+)
+def test_video_stream_selection_honors_preference(
+    preference: VideoPreference,
+    expected: str,
+) -> None:
+    """确保备用视频流按配置维度选择最大值。
+
+    Args:
+        preference: 视频流排序策略。
+        expected: 预期选中的媒体地址。
+    """
+    streams = {
+        "h264": [
+            {
+                "height": 1080,
+                "videoBitrate": 100,
+                "size": 1000,
+                "backupUrls": ["https:\\u002F\\u002Fexample.invalid\\u002Fhigh"],
+            }
+        ],
+        "h265": [
+            {
+                "height": 720,
+                "videoBitrate": 200,
+                "size": 2000,
+                "masterUrl": "https://example.invalid/fast",
+            }
+        ],
+    }
+    parser = MediaParser(ImageFormat.JPEG, preference)
+
+    resources = parser.parse(
+        {"video": {"media": {"stream": streams}}},
+        WorkType.VIDEO,
+    )
+
+    assert resources[0].url == expected
+
+
+def test_image_parser_keeps_live_companion_resource() -> None:
+    """确保图文作品同时保留静态图片和动态图片资源。"""
+    parser = MediaParser(ImageFormat.AUTO, VideoPreference.RESOLUTION)
+    note = {
+        "imageList": [
+            {
+                "url": "https://sns-img-bd.xhscdn.com/synthetic-image",
+                "stream": {
+                    "h264": [
+                        {"masterUrl": "https:\\u002F\\u002Fexample.invalid/live.mp4"}
+                    ]
+                },
+            }
+        ]
+    }
+
+    resources = parser.parse(note, WorkType.IMAGE)
+
+    assert [resource.kind for resource in resources] == [
+        MediaKind.IMAGE,
+        MediaKind.LIVE,
+    ]
+    assert resources[1].url == "https://example.invalid/live.mp4"
+
+
+def test_unsupported_or_empty_media_returns_no_resources() -> None:
+    """确保未知作品和缺少有效流的视频不产生虚假资源。"""
+    parser = MediaParser(ImageFormat.JPEG, VideoPreference.RESOLUTION)
+
+    assert parser.parse({}, WorkType.UNKNOWN) == []
+    assert parser.parse({"video": {}}, WorkType.VIDEO) == []
 
 
 def _parse_image(raw_url: str, image_format: ImageFormat):

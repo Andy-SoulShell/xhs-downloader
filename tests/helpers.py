@@ -1,6 +1,8 @@
 """测试数据构造工具。"""
 
+import json
 from datetime import UTC, datetime
+from typing import Any
 
 from src.domain import Author, MediaKind, MediaResource, WorkDetail, WorkType
 
@@ -41,3 +43,46 @@ def make_detail(
             )
         ],
     )
+
+
+def make_initial_state_html(
+    note: dict[str, Any] | None = None,
+    *,
+    work_id: str = "synthetic-work",
+    phone_layout: bool = False,
+) -> str:
+    """构造包含页面初始状态的合成 HTML。
+
+    Args:
+        note: 覆盖默认作品对象。
+        work_id: 初始状态中的作品 ID。
+        phone_layout: 是否采用移动端状态结构。
+
+    Returns:
+        可由真实页面解析器读取的 HTML。
+    """
+    resolved_note = note or {
+        "noteId": work_id,
+        "title": "合成测试作品",
+        "desc": "完全合成的测试文本",
+        "type": "video",
+        "time": 1_700_000_000_000,
+        "lastUpdateTime": 1_700_000_100_000,
+        "tagList": [{"name": "公版测试"}],
+        "interactInfo": {
+            "likedCount": "10",
+            "collectedCount": "2",
+            "commentCount": "1",
+            "shareCount": "0",
+        },
+        "user": {"userId": "synthetic-author", "nickname": "合成作者"},
+        "imageList": [{}],
+        "video": {"consumer": {"originVideoKey": "synthetic.mp4"}},
+    }
+    state = (
+        {"noteData": {"data": {"noteData": resolved_note}}}
+        if phone_layout
+        else {"note": {"noteDetailMap": {work_id: {"note": resolved_note}}}}
+    )
+    script = f"window.__INITIAL_STATE__={json.dumps(state, ensure_ascii=False)}"
+    return f"<html><script>{script}</script></html>"

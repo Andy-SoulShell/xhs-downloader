@@ -72,8 +72,15 @@ class MediaParser:
             VideoPreference.SIZE: lambda item: _number(item.get("size")),
         }[self._video_preference]
         selected = max(streams, key=key)
-        backups = _as_list(selected.get("backupUrls"))
-        return str(backups[0] if backups else selected.get("masterUrl", ""))
+        backups = selected.get("backupUrls")
+        if isinstance(backups, list):
+            first_backup = next(
+                (item for item in backups if isinstance(item, str) and item),
+                "",
+            )
+            if first_backup:
+                return first_backup
+        return str(selected.get("masterUrl", ""))
 
     def _image_resources(self, note: dict[str, Any]) -> list[MediaResource]:
         result: list[MediaResource] = []

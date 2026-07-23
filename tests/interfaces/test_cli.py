@@ -6,6 +6,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.interfaces.cli import app
+from src.version import VERSION
 from tests.interfaces.helpers import FakeService
 
 
@@ -21,7 +22,7 @@ def test_cli_help_and_version_use_chinese_text() -> None:
     assert "选项" in help_result.output
     assert "命令" in help_result.output
     assert "显示帮助并退出。" in help_result.output
-    assert version_result.output.strip() == "xhs-downloader 3.0.0"
+    assert version_result.output.strip() == f"xhs-downloader {VERSION}"
 
 
 def test_cli_detail_and_download_commands(

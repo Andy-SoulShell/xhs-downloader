@@ -28,6 +28,12 @@ class _Gateway:
         yield response
 
 
+class _InterruptedStream(httpx.AsyncByteStream):
+    async def __aiter__(self):
+        yield b"h" * (64 * 1024)
+        raise DownloadError("synthetic interruption")
+
+
 def _resource(
     kind: MediaKind = MediaKind.IMAGE,
     *,
@@ -42,31 +48,6 @@ def _resource(
     )
 
 
-def test_auto_suffix_follows_response_content_type() -> None:
-    """确保 auto 图片格式采用响应声明的真实扩展名。"""
-    suffix = FileDownloader._response_suffix("image/webp; charset=binary", "auto")
-
-    assert suffix == "webp"
-    assert FileDownloader._response_suffix("unknown", "auto") == "jpeg"
-    assert FileDownloader._response_suffix("image/png", "avif") == "avif"
-
-
-def test_unknown_partial_file_is_not_resumed(tmp_path: Path) -> None:
-    """确保缺少 URL 指纹的临时文件不会被错误续传。
-
-    Args:
-        tmp_path: Pytest 提供的临时目录。
-    """
-    part = tmp_path.joinpath("synthetic.part")
-    marker = tmp_path.joinpath("synthetic.part.url")
-    part.write_bytes(b"unknown source")
-
-    FileDownloader._prepare_partial(part, marker, "https://example.invalid/media")
-
-    assert not part.exists()
-    assert len(marker.read_text(encoding="utf-8")) == 64
-
-
 async def test_download_writes_atomic_artifact(tmp_path: Path) -> None:
     """确保响应内容原子落盘，并返回可校验的文件元数据。
 
@@ -77,7 +58,7 @@ async def test_download_writes_atomic_artifact(tmp_path: Path) -> None:
     gateway = _Gateway(
         [httpx.Response(200, headers={"Content-Type": "image/webp"}, content=content)]
     )
-    settings = AppSettings(work_path=tmp_path, max_retry=0)
+    settings = AppSettings(work_path=tmp_path, max_retry=0, chunk=64 * 1024)
     downloader = FileDownloader(settings, gateway)
 
     artifacts = await downloader.download(make_detail(media=[_resource()]))
@@ -99,18 +80,23 @@ async def test_download_resumes_matching_partial_file(tmp_path: Path) -> None:
     """
     resource = _resource(suffix="jpeg")
     detail = make_detail(media=[resource])
-    gateway = _Gateway([httpx.Response(206, content=b"-tail")])
-    settings = AppSettings(work_path=tmp_path, max_retry=0)
+    gateway = _Gateway(
+        [
+            httpx.Response(200, stream=_InterruptedStream()),
+            httpx.Response(206, content=b"-tail"),
+        ]
+    )
+    settings = AppSettings(work_path=tmp_path, max_retry=0, chunk=64 * 1024)
     downloader = FileDownloader(settings, gateway)
-    part, marker = downloader._partial_paths(detail, resource)
-    downloader._prepare_partial(part, marker, resource.url)
-    part.write_bytes(b"head")
+
+    with pytest.raises(DownloadError):
+        await downloader.download(detail)
 
     artifact = (await downloader.download(detail))[0]
 
     target = settings.output_root.joinpath(artifact.path)
-    assert gateway.headers == [{"Range": "bytes=4-"}]
-    assert target.read_bytes() == b"head-tail"
+    assert gateway.headers == [None, {"Range": f"bytes={64 * 1024}-"}]
+    assert target.read_bytes() == b"h" * (64 * 1024) + b"-tail"
 
 
 async def test_full_response_replaces_partial_file(tmp_path: Path) -> None:
@@ -121,16 +107,23 @@ async def test_full_response_replaces_partial_file(tmp_path: Path) -> None:
     """
     resource = _resource(suffix="jpeg")
     detail = make_detail(media=[resource])
-    gateway = _Gateway([httpx.Response(200, content=b"complete")])
-    settings = AppSettings(work_path=tmp_path, max_retry=0)
+    gateway = _Gateway(
+        [
+            httpx.Response(200, stream=_InterruptedStream()),
+            httpx.Response(200, content=b"complete"),
+        ]
+    )
+    settings = AppSettings(work_path=tmp_path, max_retry=0, chunk=64 * 1024)
     downloader = FileDownloader(settings, gateway)
-    part, marker = downloader._partial_paths(detail, resource)
-    downloader._prepare_partial(part, marker, resource.url)
-    part.write_bytes(b"stale")
+
+    with pytest.raises(DownloadError):
+        await downloader.download(detail)
 
     artifact = (await downloader.download(detail))[0]
 
-    assert settings.output_root.joinpath(artifact.path).read_bytes() == b"complete"
+    target = settings.output_root.joinpath(artifact.path)
+    assert target.read_bytes() == b"complete"
+    assert target.suffix == ".jpeg"
 
 
 async def test_invalid_partial_state_is_removed(tmp_path: Path) -> None:
@@ -141,18 +134,22 @@ async def test_invalid_partial_state_is_removed(tmp_path: Path) -> None:
     """
     resource = _resource()
     detail = make_detail(media=[resource])
-    gateway = _Gateway([InvalidPartialContentError("invalid range")])
-    settings = AppSettings(work_path=tmp_path, max_retry=0)
+    gateway = _Gateway(
+        [
+            httpx.Response(200, stream=_InterruptedStream()),
+            InvalidPartialContentError("invalid range"),
+        ]
+    )
+    settings = AppSettings(work_path=tmp_path, max_retry=0, chunk=64 * 1024)
     downloader = FileDownloader(settings, gateway)
-    part, marker = downloader._partial_paths(detail, resource)
-    downloader._prepare_partial(part, marker, resource.url)
-    part.write_bytes(b"stale")
+
+    with pytest.raises(DownloadError):
+        await downloader.download(detail)
 
     with pytest.raises(DownloadError, match="重试耗尽"):
         await downloader.download(detail)
 
-    assert not part.exists()
-    assert not marker.exists()
+    assert not list(settings.temp_dir.glob("*"))
 
 
 async def test_empty_response_is_rejected(tmp_path: Path) -> None:

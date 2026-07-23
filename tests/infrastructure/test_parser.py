@@ -1,12 +1,11 @@
 """合成作品页面解析测试。"""
 
-import json
-
 import pytest
 
 from src.config import AppSettings
 from src.domain import ParseError, WorkType
 from src.infrastructure import InitialStateParser
+from tests.helpers import make_initial_state_html
 
 WORK_ID = "synthetic000000000000000001"
 URL = f"https://www.xiaohongshu.com/explore/{WORK_ID}"
@@ -15,7 +14,7 @@ URL = f"https://www.xiaohongshu.com/explore/{WORK_ID}"
 def test_parser_builds_typed_video_detail() -> None:
     """确保合成视频页面被转换为完整领域模型。"""
     parser = InitialStateParser(AppSettings())
-    detail = parser.parse(_synthetic_html(), URL)
+    detail = parser.parse(make_initial_state_html(work_id=WORK_ID), URL)
 
     assert detail.work_id == WORK_ID
     assert detail.work_type is WorkType.VIDEO
@@ -33,25 +32,57 @@ def test_parser_rejects_page_without_state() -> None:
         parser.parse("<html></html>", URL)
 
 
-def _synthetic_html() -> str:
+@pytest.mark.parametrize(
+    ("html", "message"),
+    [
+        ("", "作品页面为空"),
+        ("<script>window.__INITIAL_STATE__=[]</script>", "不是对象"),
+        ("<script>window.__INITIAL_STATE__={broken: [</script>", "无法解析"),
+    ],
+)
+def test_parser_rejects_invalid_initial_state(html: str, message: str) -> None:
+    """确保空页面和损坏状态均返回明确的解析异常。
+
+    Args:
+        html: 合成的无效页面。
+        message: 预期异常信息。
+    """
+    parser = InitialStateParser(AppSettings())
+
+    with pytest.raises(ParseError, match=message):
+        parser.parse(html, URL)
+
+
+def test_parser_supports_phone_state_and_missing_optional_fields() -> None:
+    """确保移动端状态结构与缺失的可选字段可被稳健解析。"""
     note = {
         "noteId": WORK_ID,
-        "title": "合成测试作品",
-        "desc": "完全合成的测试文本",
-        "type": "video",
-        "time": 1_700_000_000_000,
-        "lastUpdateTime": 1_700_000_100_000,
-        "tagList": [{"name": "公版测试"}],
-        "interactInfo": {
-            "likedCount": "10",
-            "collectedCount": "2",
-            "commentCount": "1",
-            "shareCount": "0",
-        },
-        "user": {"userId": "synthetic-author", "nickname": "合成作者"},
-        "imageList": [{}],
-        "video": {"consumer": {"originVideoKey": "synthetic.mp4"}},
+        "type": "normal",
+        "time": "invalid",
+        "user": {"userId": "synthetic-author", "nickName": "移动端作者"},
+        "imageList": [{"url": "https://sns-img-bd.xhscdn.com/synthetic-image"}],
+        "tagList": [None, {"name": ""}, {"name": "合成标签"}],
     }
-    state = {"note": {"noteDetailMap": {WORK_ID: {"note": note}}}}
-    script = f"window.__INITIAL_STATE__={json.dumps(state, ensure_ascii=False)}"
-    return f"<html><script>{script}</script></html>"
+    parser = InitialStateParser(AppSettings())
+
+    detail = parser.parse(
+        make_initial_state_html(note, work_id=WORK_ID, phone_layout=True),
+        URL,
+    )
+
+    assert detail.work_type is WorkType.IMAGE
+    assert detail.author.nickname == "移动端作者"
+    assert detail.published_at is None
+    assert detail.updated_at is None
+    assert detail.tags == ["合成标签"]
+
+
+def test_parser_rejects_state_without_note() -> None:
+    """确保初始状态缺少作品对象时返回领域异常。"""
+    parser = InitialStateParser(AppSettings())
+
+    with pytest.raises(ParseError, match="没有作品数据"):
+        parser.parse(
+            "<script>window.__INITIAL_STATE__={note: {}}</script>",
+            URL,
+        )
