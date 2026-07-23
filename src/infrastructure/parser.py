@@ -51,6 +51,9 @@ class InitialStateParser:
         nickname = str(
             _deep_get(note, "user.nickname") or _deep_get(note, "user.nickName")
         )
+        avatar_url = str(
+            _deep_get(note, "user.avatar") or _deep_get(note, "user.image")
+        )
         work_id = str(note.get("noteId") or work_id_from_url(source_url))
         return WorkDetail(
             work_id=work_id,
@@ -73,6 +76,7 @@ class InitialStateParser:
                 author_id=author_id,
                 nickname=nickname or author_id,
                 profile_url=f"https://www.xiaohongshu.com/user/profile/{author_id}",
+                avatar_url=avatar_url or None,
             ),
             media=self._media_parser.parse(note, work_type),
         )

@@ -46,7 +46,13 @@ describe("帖子卡片", () => {
       .mockImplementation(() => undefined);
     renderCard();
 
-    expect(screen.getAllByRole("img")).toHaveLength(1);
+    expect(
+      screen.getByAltText("合成测试帖子的第 1 张图片"),
+    ).toBeInTheDocument();
+    expect(screen.getByAltText("合成作者的头像")).toHaveAttribute(
+      "src",
+      "https://example.invalid/avatar.jpeg",
+    );
     expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     const livePreview = screen.getByLabelText(
       "合成测试帖子的第 1 个动态图片预览",
@@ -87,8 +93,11 @@ describe("帖子卡片", () => {
 
     fireEvent.click(within(dialog).getByText("选择全部"));
     expect(onSelectionChange).toHaveBeenCalledWith(new Set([1, 2]));
-    fireEvent.click(within(dialog).getAllByRole("checkbox")[0]);
-    expect(onSelectionChange).toHaveBeenLastCalledWith(new Set([1]));
+    fireEvent.click(within(dialog).getByText("第 2 项 · 图片"));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(new Set([2]));
+    expect(
+      within(dialog).getByAltText("第 2 项图片预览"),
+    ).toBeInTheDocument();
     expect(
       within(dialog).getByRole("button", { name: "请选择媒体" }),
     ).toBeDisabled();

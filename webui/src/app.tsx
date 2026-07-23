@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { ArrowDownToLine, Search } from "lucide-react";
+import { ArrowDownToLine, GalleryVerticalEnd, Search } from "lucide-react";
 import { Toast, ToggleGroup } from "radix-ui";
 
 import { LinkComposer } from "./components/link-composer";
@@ -160,8 +160,8 @@ export default function App() {
               <span className="grid size-9 place-items-center rounded-xl bg-red-500 text-white">
                 <ArrowDownToLine aria-hidden size={17} />
               </span>
-              <p className="text-sm font-semibold tracking-tight">
-                xhs-downloader
+              <p className="whitespace-nowrap text-xs font-bold tracking-[0.02em]">
+                XHS-DOWNLOADER
               </p>
             </a>
             <StatusPill online={online} />
@@ -202,7 +202,7 @@ export default function App() {
                   </label>
                   <ToggleGroup.Root
                     aria-label="筛选帖子"
-                    className="flex rounded-xl border border-stone-200 bg-white p-1"
+                    className="flex rounded-xl border border-stone-200 bg-white p-1 lg:hidden"
                     onValueChange={(value) =>
                       value && setFilter(value as Filter)
                     }
@@ -283,7 +283,10 @@ function EmptyList({ hasPosts }: { hasPosts: boolean }) {
   return (
     <div className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-stone-300 bg-white/45 p-8 text-center">
       <div className="max-w-sm">
-        <p className="text-lg font-semibold text-stone-800">
+        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-red-50 text-red-500 ring-1 ring-red-100">
+          <GalleryVerticalEnd aria-hidden size={22} />
+        </span>
+        <p className="mt-4 text-lg font-semibold text-stone-800">
           {hasPosts ? "没有符合条件的帖子" : "帖子列表还是空的"}
         </p>
         <p className="mt-2 text-sm leading-6 text-stone-500">

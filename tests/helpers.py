@@ -75,7 +75,11 @@ def make_initial_state_html(
             "commentCount": "1",
             "shareCount": "0",
         },
-        "user": {"userId": "synthetic-author", "nickname": "合成作者"},
+        "user": {
+            "userId": "synthetic-author",
+            "nickname": "合成作者",
+            "avatar": "https://example.invalid/avatar.jpeg",
+        },
         "imageList": [{}],
         "video": {"consumer": {"originVideoKey": "synthetic.mp4"}},
     }

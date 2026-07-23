@@ -5,11 +5,14 @@ import {
   Heart,
   Images,
   LoaderCircle,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { PostRecord } from "../app";
 import { groupMedia } from "../lib/media";
+import { AuthorAvatar } from "./author-avatar";
 import { MediaPreview } from "./media-preview";
 import { PostDetailDialog } from "./post-detail-dialog";
 
@@ -69,18 +72,30 @@ export function PostCard({
           </button>
           <div className="mt-2 flex items-center justify-between gap-3 text-xs text-stone-500">
             <div className="flex min-w-0 items-center gap-2">
-              <span
-                aria-hidden
-                className="grid size-6 shrink-0 place-items-center rounded-full bg-stone-900 text-[10px] font-semibold text-white"
-              >
-                {detail.作者.作者昵称.slice(0, 1)}
-              </span>
+              <AuthorAvatar
+                name={detail.作者.作者昵称}
+                size="small"
+                src={detail.作者.头像地址}
+              />
               <span className="truncate">{detail.作者.作者昵称}</span>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <Heart aria-hidden size={13} />
-              {detail.点赞数量}
-            </span>
+            <div className="flex shrink-0 items-center gap-2.5">
+              <CompactMetric
+                icon={Heart}
+                label="赞"
+                value={detail.点赞数量}
+              />
+              <CompactMetric
+                icon={Star}
+                label="收藏"
+                value={detail.收藏数量}
+              />
+              <CompactMetric
+                icon={MessageCircle}
+                label="评论"
+                value={detail.评论数量}
+              />
+            </div>
           </div>
         </div>
       </article>
@@ -95,6 +110,26 @@ export function PostCard({
         post={post}
       />
     </>
+  );
+}
+
+function CompactMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Heart;
+  label: string;
+  value: string;
+}) {
+  return (
+    <span
+      aria-label={`${label} ${value}`}
+      className="inline-flex items-center gap-1"
+    >
+      <Icon aria-hidden size={13} />
+      {value}
+    </span>
   );
 }
 

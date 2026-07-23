@@ -26,13 +26,21 @@ class MediaKind(StrEnum):
 
 
 class Author(BaseModel):
-    """作品作者信息。"""
+    """作品作者信息。
+
+    Attributes:
+        author_id: 作者在平台内的唯一标识。
+        nickname: 作者昵称。
+        profile_url: 作者主页地址。
+        avatar_url: 作者头像地址；页面未提供时为空。
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
     author_id: str = Field(alias="作者ID")
     nickname: str = Field(alias="作者昵称")
     profile_url: str = Field(alias="作者链接")
+    avatar_url: str | None = Field(default=None, alias="头像地址")
 
 
 class MediaResource(BaseModel):
@@ -91,6 +99,7 @@ class WorkDetail(BaseModel):
                 "media",
             },
         )
+        payload["author"].pop("avatar_url", None)
         canonical = dumps(
             payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
         )

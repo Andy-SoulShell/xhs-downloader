@@ -25,6 +25,7 @@ export interface WorkDetail {
     作者ID: string;
     作者昵称: string;
     作者链接: string;
+    头像地址?: string | null;
   };
   媒体: MediaResource[];
 }

@@ -5,16 +5,20 @@ import type { PostRecord } from "../app";
 import { mediaLabel, type MediaGroup } from "../lib/media";
 
 interface PostDownloadSelectionProps {
+  activeIndex: number;
   allSelected: boolean;
   media: MediaGroup[];
   post: PostRecord;
+  onPreviewChange: (position: number) => void;
   onSelectionChange: (selected: Set<number>) => void;
 }
 
 export function PostDownloadSelection({
+  activeIndex,
   allSelected,
   media,
   post,
+  onPreviewChange,
   onSelectionChange,
 }: PostDownloadSelectionProps) {
   const toggleMedia = (index: number, checked: boolean) => {
@@ -25,8 +29,8 @@ export function PostDownloadSelection({
   };
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between px-5 py-3 sm:px-7">
         <h3 className="text-sm font-semibold text-stone-900">选择下载项</h3>
         <button
           className="text-xs font-medium text-stone-500 hover:text-stone-950"
@@ -42,18 +46,22 @@ export function PostDownloadSelection({
           {allSelected ? "取消全选" : "选择全部"}
         </button>
       </div>
-      <div className="mt-3 space-y-2">
-        {media.map((item) => {
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-5 pb-4 sm:px-7">
+        {media.map((item, position) => {
           const selected = post.selected.has(item.index);
+          const active = position === activeIndex;
           const status = mediaStatus(post, item);
           return (
             <label
               className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition ${
-                selected
-                  ? "border-red-200 bg-red-50/60"
+                active
+                  ? "border-red-400 bg-red-50 ring-2 ring-red-100"
+                  : selected
+                    ? "border-red-100 bg-red-50/35"
                   : "border-stone-200 hover:border-stone-300"
               }`}
               key={item.index}
+              onClick={() => onPreviewChange(position)}
             >
               <span
                 className={`grid size-5 shrink-0 place-items-center rounded-md border ${

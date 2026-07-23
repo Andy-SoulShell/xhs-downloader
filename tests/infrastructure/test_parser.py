@@ -19,9 +19,13 @@ def test_parser_builds_typed_video_detail() -> None:
     assert detail.work_id == WORK_ID
     assert detail.work_type is WorkType.VIDEO
     assert detail.author.nickname == "合成作者"
+    assert detail.author.avatar_url == "https://example.invalid/avatar.jpeg"
     assert detail.tags == ["公版测试"]
     assert detail.media[0].url.endswith("synthetic.mp4")
     assert len(detail.fingerprint()) == 64
+    fingerprint = detail.fingerprint()
+    detail.author.avatar_url = "https://example.invalid/new-avatar.jpeg"
+    assert detail.fingerprint() == fingerprint
 
 
 def test_parser_rejects_page_without_state() -> None:
@@ -72,6 +76,7 @@ def test_parser_supports_phone_state_and_missing_optional_fields() -> None:
 
     assert detail.work_type is WorkType.IMAGE
     assert detail.author.nickname == "移动端作者"
+    assert detail.author.avatar_url is None
     assert detail.published_at is None
     assert detail.updated_at is None
     assert detail.tags == ["合成标签"]

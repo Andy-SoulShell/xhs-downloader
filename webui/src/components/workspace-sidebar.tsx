@@ -35,7 +35,9 @@ export function WorkspaceSidebar({
         <span className="grid size-10 place-items-center rounded-xl bg-red-500 text-white shadow-[0_8px_24px_rgba(239,68,68,0.25)]">
           <ArrowDownToLine aria-hidden size={19} strokeWidth={2.25} />
         </span>
-        <p className="text-sm font-semibold tracking-tight">xhs-downloader</p>
+        <p className="whitespace-nowrap text-xs font-bold tracking-[0.02em]">
+          XHS-DOWNLOADER
+        </p>
       </a>
 
       <nav aria-label="帖子状态" className="mt-9 space-y-1">

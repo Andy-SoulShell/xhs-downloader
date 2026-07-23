@@ -22,6 +22,7 @@ export function makeDetailResponse(
         作者ID: "synthetic-author",
         作者昵称: "合成作者",
         作者链接: "https://example.invalid/author",
+        头像地址: "https://example.invalid/avatar.jpeg",
       },
       媒体: [
         {
