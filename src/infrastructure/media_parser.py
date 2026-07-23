@@ -56,8 +56,16 @@ class MediaParser:
                 kind=MediaKind.VIDEO,
                 url=_decode_url(str(url)),
                 suffix="mp4",
+                preview_url=self._video_preview(note),
             )
         ]
+
+    def _video_preview(self, note: dict[str, Any]) -> str | None:
+        images = _as_list(note.get("imageList"))
+        if not images:
+            return None
+        raw_url = str(images[0].get("urlDefault") or images[0].get("url") or "")
+        return self._image_url(raw_url) if raw_url else None
 
     def _select_video_stream(self, note: dict[str, Any]) -> str:
         streams = [

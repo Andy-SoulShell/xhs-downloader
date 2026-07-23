@@ -5,6 +5,7 @@ export interface MediaResource {
   类型: MediaKind;
   地址: string;
   扩展名: string;
+  预览地址?: string | null;
 }
 
 export interface WorkDetail {

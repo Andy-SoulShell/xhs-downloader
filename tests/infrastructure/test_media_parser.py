@@ -59,6 +59,24 @@ def test_origin_video_is_preferred_and_decoded() -> None:
     assert resources[0].kind is MediaKind.VIDEO
 
 
+def test_video_resource_keeps_its_cover_image() -> None:
+    """确保视频封面转换为可直接用于预览的稳定地址。"""
+    parser = MediaParser(ImageFormat.JPEG, VideoPreference.RESOLUTION)
+
+    resources = parser.parse(
+        {
+            "imageList": [{"urlDefault": SIGNED_IMAGE_URL}],
+            "video": {"consumer": {"originVideoKey": "synthetic.mp4"}},
+        },
+        WorkType.VIDEO,
+    )
+
+    assert resources[0].preview_url == (
+        "https://ci.xiaohongshu.com/notes_pre_post/synthetic-token"
+        "?imageView2/format/jpeg"
+    )
+
+
 @pytest.mark.parametrize(
     ("preference", "expected"),
     [

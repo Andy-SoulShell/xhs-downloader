@@ -1,22 +1,33 @@
-import { FormEvent, useEffect, useState } from "react";
-import { Switch, Toast, ToggleGroup } from "radix-ui";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { Toast, ToggleGroup } from "radix-ui";
 
-import { MediaPicker } from "./components/media-picker";
-import { ResultPanel } from "./components/result-panel";
+import { LinkComposer } from "./components/link-composer";
+import { PostCard } from "./components/post-card";
 import { StatusPill } from "./components/status-pill";
 import { checkHealth, submitDetail } from "./lib/api";
 import type { DetailResponse } from "./lib/types";
 
-type Mode = "detail" | "download";
+export type PostStatus = "ready" | "downloading" | "done" | "error";
+
+export interface PostRecord {
+  id: string;
+  result: DetailResponse;
+  selected: Set<number>;
+  downloaded: Set<string>;
+  force: boolean;
+  status: PostStatus;
+}
+
+type Filter = "all" | "ready" | "done";
 
 export default function App() {
   const [online, setOnline] = useState<boolean | null>(null);
-  const [mode, setMode] = useState<Mode>("detail");
-  const [url, setUrl] = useState("");
-  const [force, setForce] = useState(false);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [result, setResult] = useState<DetailResponse | null>(null);
-  const [pending, setPending] = useState(false);
+  const [posts, setPosts] = useState<PostRecord[]>([]);
+  const [link, setLink] = useState("");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [parsing, setParsing] = useState(false);
   const [notice, setNotice] = useState("");
   const [toastOpen, setToastOpen] = useState(false);
 
@@ -26,153 +37,201 @@ export default function App() {
     return () => controller.abort();
   }, []);
 
-  const handleSubmit = async (event: FormEvent) => {
+  const notify = (message: string) => {
+    setNotice(message);
+    setToastOpen(true);
+  };
+
+  const handleAdd = async (event: FormEvent) => {
     event.preventDefault();
-    const normalizedUrl = url.trim();
-    if (!normalizedUrl) {
-      setNotice("请先粘贴一个小红书作品链接");
-      setToastOpen(true);
+    const url = link.trim();
+    if (!url) {
+      notify("请先粘贴一个帖子链接");
       return;
     }
 
-    setPending(true);
+    setParsing(true);
     try {
-      const response = await submitDetail({
-        url: normalizedUrl,
-        download: mode === "download",
-        index: selected.size ? [...selected].sort((a, b) => a - b) : undefined,
-        force,
-      });
-      setResult(response);
+      const result = await submitDetail({ url, download: false });
+      if (!result.data) throw new Error("接口没有返回帖子详情");
+      const selected = new Set(result.data.媒体.map((item) => item.序号));
+      const post: PostRecord = {
+        id: result.data.作品ID,
+        result,
+        selected,
+        downloaded: new Set(
+          result.files.map((file) => `${file.media_index}:${file.kind}`),
+        ),
+        force: false,
+        status: "ready",
+      };
+      setPosts((current) => [
+        post,
+        ...current.filter((item) => item.id !== post.id),
+      ]);
+      setLink("");
       setOnline(true);
-      setNotice(response.message);
-      setToastOpen(true);
+      notify(`已添加「${result.data.作品标题 || "未命名帖子"}」`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "请求未能完成");
-      setToastOpen(true);
       setOnline(false);
+      notify(error instanceof Error ? error.message : "帖子解析失败");
     } finally {
-      setPending(false);
+      setParsing(false);
     }
   };
+
+  const updatePost = (id: string, change: Partial<PostRecord>) => {
+    setPosts((current) =>
+      current.map((post) => (post.id === id ? { ...post, ...change } : post)),
+    );
+  };
+
+  const handleDownload = async (post: PostRecord) => {
+    const detail = post.result.data;
+    if (!detail) return;
+    if (!post.selected.size) {
+      notify("请至少选择一组媒体");
+      return;
+    }
+    updatePost(post.id, { status: "downloading" });
+    try {
+      const result = await submitDetail({
+        url: detail.作品链接,
+        download: true,
+        index: [...post.selected].sort((a, b) => a - b),
+        force: post.force,
+      });
+      updatePost(post.id, {
+        result,
+        downloaded: new Set([
+          ...post.downloaded,
+          ...result.files.map((file) => `${file.media_index}:${file.kind}`),
+        ]),
+        status: "done",
+      });
+      setOnline(true);
+      notify(result.message);
+    } catch (error) {
+      updatePost(post.id, { status: "error" });
+      setOnline(false);
+      notify(error instanceof Error ? error.message : "下载任务失败");
+    }
+  };
+
+  const visiblePosts = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
+    return posts.filter((post) => {
+      const detail = post.result.data;
+      if (!detail) return false;
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "done" && post.status === "done") ||
+        (filter === "ready" && post.status !== "done");
+      const matchesQuery =
+        !keyword ||
+        detail.作品标题.toLowerCase().includes(keyword) ||
+        detail.作者.作者昵称.toLowerCase().includes(keyword);
+      return matchesFilter && matchesQuery;
+    });
+  }, [filter, posts, query]);
+
+  const completedCount = posts.filter((post) => post.status === "done").length;
 
   return (
     <Toast.Provider swipeDirection="right">
       <div className="min-h-screen">
-        <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
-          <a
-            className="flex items-center gap-3 text-stone-950"
-            href="/"
-            aria-label="xhs-downloader 首页"
-          >
-            <span className="grid size-9 place-items-center rounded-xl bg-stone-950 text-sm font-bold text-white">
-              x
-            </span>
-            <span className="text-sm font-semibold tracking-tight">
-              xhs-downloader
-            </span>
-          </a>
-          <StatusPill online={online} />
+        <header className="border-b border-stone-200/80 bg-[#f4f1eb]/90 backdrop-blur">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 sm:px-8">
+            <a
+              aria-label="xhs-downloader 首页"
+              className="flex items-center gap-3 text-stone-950"
+              href="/"
+            >
+              <span className="grid size-9 place-items-center rounded-xl bg-stone-950 text-sm font-bold text-white">
+                x
+              </span>
+              <div>
+                <p className="text-sm font-semibold tracking-tight">
+                  xhs-downloader
+                </p>
+                <p className="text-[11px] text-stone-400">帖子下载工作台</p>
+              </div>
+            </a>
+            <StatusPill online={online} />
+          </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-5 pt-10 pb-16 sm:px-8 lg:px-10 lg:pt-16">
-          <div className="mb-10 max-w-3xl">
-            <p className="mb-4 text-xs font-semibold tracking-[0.22em] text-red-500 uppercase">
-              本地媒体工作台 · 3.0
-            </p>
-            <h1 className="text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-stone-950 sm:text-6xl lg:text-7xl">
-              把收藏，
-              <br />
-              <span className="text-stone-400">稳稳落到本地。</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-stone-600">
-              解析作品详情，按需选择媒体，并通过内容指纹与文件哈希确认每一次下载。
-            </p>
-          </div>
+        <main className="mx-auto grid max-w-[1440px] gap-7 px-5 py-7 sm:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-10">
+          <aside className="lg:sticky lg:top-7 lg:self-start">
+            <LinkComposer
+              link={link}
+              onChange={setLink}
+              onSubmit={handleAdd}
+              parsing={parsing}
+            />
+          </aside>
 
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-            <section className="control-shell p-5 sm:p-7">
-              <ToggleGroup.Root
-                aria-label="操作方式"
-                className="grid grid-cols-2 rounded-2xl bg-stone-100 p-1"
-                type="single"
-                value={mode}
-                onValueChange={(value) => value && setMode(value as Mode)}
-              >
-                <ModeButton value="detail">只看详情</ModeButton>
-                <ModeButton value="download">下载媒体</ModeButton>
-              </ToggleGroup.Root>
-
-              <form className="mt-7" onSubmit={handleSubmit}>
-                  <label
-                    className="text-xs font-semibold tracking-[0.14em] text-stone-500 uppercase"
-                    htmlFor="work-url"
-                  >
-                    作品链接
-                  </label>
-                  <textarea
-                    id="work-url"
-                    className="mt-3 min-h-32 w-full resize-none rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-sm leading-6 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:bg-white focus:ring-4 focus:ring-stone-100"
-                    onChange={(event) => setUrl(event.target.value)}
-                    placeholder="粘贴 xiaohongshu.com 或 xhslink.cn 链接"
-                    value={url}
-                  />
-
-                  {mode === "download" && (
-                    <>
-                      <div className="mt-5 flex items-center justify-between rounded-2xl border border-stone-200 px-4 py-3.5">
-                        <div>
-                          <p className="text-sm font-medium text-stone-800">
-                            强制重新下载
-                          </p>
-                          <p className="mt-0.5 text-xs text-stone-400">
-                            忽略完整的本地产物记录
-                          </p>
-                        </div>
-                        <Switch.Root
-                          checked={force}
-                          className="relative h-6 w-11 rounded-full bg-stone-200 outline-none transition data-[state=checked]:bg-red-500 focus:ring-4 focus:ring-red-100"
-                          onCheckedChange={setForce}
-                        >
-                          <Switch.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-5" />
-                        </Switch.Root>
-                      </div>
-                      <MediaPicker
-                        media={result?.data?.媒体 ?? []}
-                        onChange={setSelected}
-                        selected={selected}
-                      />
-                    </>
-                  )}
-
-                  <button
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 py-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(239,68,68,0.24)] transition hover:-translate-y-0.5 hover:bg-red-600 disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0"
-                    disabled={pending}
-                    type="submit"
-                  >
-                    {pending
-                      ? "正在处理…"
-                      : mode === "download"
-                        ? "开始下载"
-                        : "解析作品"}
-                    {!pending && <span aria-hidden>↗</span>}
-                  </button>
-              </form>
-
-              <div className="mt-6 flex items-start gap-3 border-t border-stone-100 pt-5 text-xs leading-5 text-stone-400">
-                <span className="mt-0.5 text-emerald-500">●</span>
-                Cookie、代理与保存目录均由服务端 .env 管理，不会写入浏览器。
+          <section aria-label="帖子列表" className="min-w-0">
+            <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.18em] text-red-500 uppercase">
+                  帖子资料库
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-4xl">
+                  帖子列表
+                </h1>
+                <p className="mt-2 text-sm text-stone-500">
+                  {posts.length} 个帖子 · {completedCount} 个已下载
+                </p>
               </div>
-            </section>
 
-            <ResultPanel result={result} />
-          </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  aria-label="搜索帖子"
+                  className="h-11 min-w-56 rounded-xl border border-stone-200 bg-white px-4 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="搜索标题或作者"
+                  type="search"
+                  value={query}
+                />
+                <ToggleGroup.Root
+                  aria-label="筛选帖子"
+                  className="flex rounded-xl border border-stone-200 bg-white p-1"
+                  onValueChange={(value) => value && setFilter(value as Filter)}
+                  type="single"
+                  value={filter}
+                >
+                  <FilterButton value="all">全部</FilterButton>
+                  <FilterButton value="ready">待处理</FilterButton>
+                  <FilterButton value="done">已下载</FilterButton>
+                </ToggleGroup.Root>
+              </div>
+            </div>
+
+            {visiblePosts.length ? (
+              <div className="space-y-4">
+                {visiblePosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    onDownload={() => void handleDownload(post)}
+                    onForceChange={(force) => updatePost(post.id, { force })}
+                    onRemove={() =>
+                      setPosts((current) =>
+                        current.filter((item) => item.id !== post.id),
+                      )
+                    }
+                    onSelectionChange={(selected) =>
+                      updatePost(post.id, { selected })
+                    }
+                    post={post}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyList hasPosts={posts.length > 0} />
+            )}
+          </section>
         </main>
-
-        <footer className="mx-auto flex max-w-7xl flex-col gap-2 border-t border-stone-200 px-5 py-6 text-xs text-stone-400 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <span>下载发生在服务端，本页面只负责发起任务与展示结果。</span>
-          <span>MIT · ankunhou</span>
-        </footer>
       </div>
 
       <Toast.Root
@@ -184,22 +243,42 @@ export default function App() {
         <Toast.Title className="text-sm font-semibold text-stone-900">
           {notice}
         </Toast.Title>
-        <Toast.Description className="mt-1 text-xs text-stone-500">
-          {online === false ? "请确认 FastAPI 服务已经启动。" : "操作已完成。"}
-        </Toast.Description>
       </Toast.Root>
       <Toast.Viewport className="fixed right-4 bottom-4 z-50 w-[calc(100vw-2rem)] max-w-sm outline-none" />
     </Toast.Provider>
   );
 }
 
-function ModeButton({ value, children }: { value: Mode; children: string }) {
+function FilterButton({
+  value,
+  children,
+}: {
+  value: Filter;
+  children: string;
+}) {
   return (
     <ToggleGroup.Item
-      className="rounded-xl px-4 py-2.5 text-sm font-medium text-stone-500 outline-none transition data-[state=on]:bg-white data-[state=on]:text-stone-950 data-[state=on]:shadow-sm focus:ring-2 focus:ring-stone-300"
+      className="rounded-lg px-3 py-2 text-xs font-medium text-stone-500 outline-none data-[state=on]:bg-stone-900 data-[state=on]:text-white focus:ring-2 focus:ring-stone-300"
       value={value}
     >
       {children}
     </ToggleGroup.Item>
+  );
+}
+
+function EmptyList({ hasPosts }: { hasPosts: boolean }) {
+  return (
+    <div className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-stone-300 bg-white/45 p-8 text-center">
+      <div className="max-w-sm">
+        <p className="text-lg font-semibold text-stone-800">
+          {hasPosts ? "没有符合条件的帖子" : "帖子列表还是空的"}
+        </p>
+        <p className="mt-2 text-sm leading-6 text-stone-500">
+          {hasPosts
+            ? "换一个关键词或筛选条件试试。"
+            : "从左侧粘贴链接，解析完成后帖子会出现在这里。"}
+        </p>
+      </div>
+    </div>
   );
 }

@@ -43,6 +43,7 @@ class MediaResource(BaseModel):
         kind: 视频、图片或动态图片。
         url: 原始媒体地址。
         suffix: 建议文件扩展名，不包含点号。
+        preview_url: 视频封面地址；其他资源不需要。
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -51,6 +52,7 @@ class MediaResource(BaseModel):
     kind: MediaKind = Field(alias="类型")
     url: str = Field(alias="地址")
     suffix: str = Field(alias="扩展名")
+    preview_url: str | None = Field(default=None, alias="预览地址")
 
 
 class WorkDetail(BaseModel):
