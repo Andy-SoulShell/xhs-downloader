@@ -5,7 +5,12 @@ from typing import Protocol
 
 from httpx import Response
 
-from .models import DownloadArtifact, DownloadRecord, WorkDetail
+from .models import (
+    ClientDownloadRecord,
+    DownloadArtifact,
+    DownloadRecord,
+    WorkDetail,
+)
 
 
 class PageGateway(Protocol):
@@ -106,5 +111,31 @@ class DownloadRepository(Protocol):
 
         Args:
             record: 已完成文件校验的下载记录。
+        """
+        ...
+
+
+class ClientRecordRepository(Protocol):
+    """浏览器扩展下载记录仓储端口。"""
+
+    async def save_many(self, records: list[ClientDownloadRecord]) -> int:
+        """幂等保存一批客户端记录。
+
+        Args:
+            records: 扩展生成的下载记录。
+
+        Returns:
+            本次接收的记录数量。
+        """
+        ...
+
+    async def list_recent(self, limit: int) -> list[ClientDownloadRecord]:
+        """读取最近的客户端记录。
+
+        Args:
+            limit: 最大返回数量。
+
+        Returns:
+            按创建时间倒序排列的记录。
         """
         ...

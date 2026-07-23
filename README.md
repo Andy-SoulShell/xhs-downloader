@@ -1,7 +1,7 @@
 # xhs-downloader
 
 小红书（XiaoHongShu / RedNote）作品信息解析与媒体下载工具，提供 WebUI、CLI、
-HTTP API、MCP 和 Python 客户端。
+HTTP API、MCP、Python 客户端和浏览器扩展。
 
 ## 设计特点
 
@@ -11,6 +11,8 @@ HTTP API、MCP 和 Python 客户端。
 - 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
 - 应用、Uvicorn 与 FastMCP 日志统一接入 Loguru，并抑制敏感请求 URL。
 - WebUI 使用 React、Vite、Tailwind CSS 与 Radix UI，敏感配置仅保留在服务端。
+- 浏览器扩展只读取当前帖子页面已有数据，不申请 Cookie 权限；本地服务离线时也
+  能使用浏览器下载。
 - 每个代码文件不超过 300 行，并由自动化测试检查公开接口 docstring。
 
 ## 环境要求
@@ -124,6 +126,29 @@ pnpm --dir webui build
 构建产物位于 `webui/dist/`，不提交到仓库。Cookie、代理、下载目录等敏感配置
 仍由服务端 `.env` 管理，WebUI 不会将其写入浏览器存储。
 
+## 浏览器扩展
+
+构建扩展：
+
+```shell
+pnpm --dir extension install
+pnpm --dir extension build
+```
+
+在 Chromium 浏览器的扩展管理页启用开发者模式，选择“加载已解压的扩展程序”，
+然后打开 `extension/dist/`。访问小红书帖子详情页后，可通过页面右下角的“下载”
+按钮或浏览器工具栏入口打开面板。
+
+扩展提供三种模式：
+
+- `自动选择`：检测到本地服务时交给后台下载，否则使用浏览器下载。
+- `浏览器下载`：始终由浏览器直接下载，服务未启动也可使用。
+- `后台下载`：始终使用本地服务的缓存、代理、校验、目录、断点和重试能力。
+
+独立模式的下载结果保存在扩展本地存储中；服务恢复后，面板会提供显式同步入口。
+扩展只申请当前小红书帖子页、浏览器下载、本地存储和本机服务地址所需权限，不读取
+或保存浏览器 Cookie、密钥和密码。
+
 ## HTTP API
 
 ```shell
@@ -133,6 +158,8 @@ uv run xhs-downloader api
 - 文档：`http://127.0.0.1:5556/docs`
 - 健康检查：`GET /health`
 - 作品接口：`POST /xhs/detail`
+- 扩展能力：`GET /extension/capabilities`
+- 扩展记录：`GET/POST /extension/records`
 
 ```json
 {
@@ -188,6 +215,9 @@ uv run pytest
 pnpm --dir webui lint
 pnpm --dir webui test
 pnpm --dir webui build
+pnpm --dir extension check
+pnpm --dir extension test
+pnpm --dir extension build
 ```
 
 测试只使用完全合成的数据，不包含真实作品原文、Cookie 或 API Key。

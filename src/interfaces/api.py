@@ -3,18 +3,24 @@
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from uvicorn import Config, Server
 
 from src.application import DownloadService, create_service
 from src.config import AppSettings
-from src.domain import DownloadArtifact, XhsError
+from src.domain import ClientDownloadRecord, DownloadArtifact, DownloadMode, XhsError
+from src.infrastructure import SqliteClientRecordRepository
 from src.logging import configure_logging
 from src.version import VERSION
 
 ServiceFactory = Callable[[AppSettings], DownloadService]
+EXTENSION_ORIGIN_PATTERN = (
+    r"^(chrome-extension|moz-extension|safari-web-extension)://"
+    r"[A-Za-z0-9._-]+$"
+)
 
 
 class DetailRequest(BaseModel):
@@ -44,6 +50,25 @@ class DetailResponse(BaseModel):
     skipped: bool = False
 
 
+class ExtensionCapabilities(BaseModel):
+    """浏览器扩展可依赖的服务能力。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    protocol_version: int = 1
+    service_version: str
+    download_modes: list[DownloadMode]
+    features: dict[str, bool]
+
+
+class ClientRecordBatch(BaseModel):
+    """浏览器扩展同步的一批下载记录。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    records: list[ClientDownloadRecord] = Field(max_length=200)
+
+
 def create_api(
     settings: AppSettings | None = None,
     service_factory: ServiceFactory = create_service,
@@ -58,6 +83,9 @@ def create_api(
         可交给 ASGI 服务器运行的应用。
     """
     resolved_settings = settings or AppSettings.from_env()
+    client_records = SqliteClientRecordRepository(
+        resolved_settings.state_dir.joinpath("downloads.db")
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -70,6 +98,13 @@ def create_api(
         summary="小红书作品信息解析与媒体下载服务",
         version=VERSION,
         lifespan=lifespan,
+    )
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=EXTENSION_ORIGIN_PATTERN,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
     )
 
     @api.exception_handler(XhsError)
@@ -87,6 +122,40 @@ def create_api(
     @api.get("/health", tags=["服务"])
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @api.get(
+        "/extension/capabilities",
+        response_model=ExtensionCapabilities,
+        tags=["浏览器扩展"],
+    )
+    async def extension_capabilities() -> ExtensionCapabilities:
+        return ExtensionCapabilities(
+            service_version=VERSION,
+            download_modes=[DownloadMode.BROWSER, DownloadMode.BACKGROUND],
+            features={
+                "background_download": True,
+                "client_record_sync": True,
+                "content_cache": True,
+                "artifact_validation": True,
+                "partial_resume": True,
+                "retry": True,
+            },
+        )
+
+    @api.post("/extension/records", tags=["浏览器扩展"])
+    async def save_client_records(payload: ClientRecordBatch) -> dict[str, int]:
+        accepted = await client_records.save_many(payload.records)
+        return {"accepted": accepted}
+
+    @api.get(
+        "/extension/records",
+        response_model=list[ClientDownloadRecord],
+        tags=["浏览器扩展"],
+    )
+    async def list_client_records(
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> list[ClientDownloadRecord]:
+        return await client_records.list_recent(limit)
 
     @api.post("/xhs/detail", response_model=DetailResponse, tags=["作品"])
     async def detail(payload: DetailRequest, request: Request) -> DetailResponse:

@@ -10,6 +10,13 @@ PYTHON_FILES = [
     *ROOT.joinpath("src").rglob("*.py"),
     *ROOT.joinpath("tests").rglob("*.py"),
 ]
+FRONTEND_FILES = [
+    *ROOT.joinpath("webui", "src").rglob("*.ts"),
+    *ROOT.joinpath("webui", "src").rglob("*.tsx"),
+    *ROOT.joinpath("webui", "src").rglob("*.css"),
+    *ROOT.joinpath("extension", "src").rglob("*.ts"),
+    *ROOT.joinpath("extension", "src").rglob("*.css"),
+]
 
 
 def test_python_files_are_small() -> None:
@@ -17,6 +24,16 @@ def test_python_files_are_small() -> None:
     oversized = {
         file.relative_to(ROOT): len(file.read_text(encoding="utf-8").splitlines())
         for file in PYTHON_FILES
+        if len(file.read_text(encoding="utf-8").splitlines()) > 300
+    }
+    assert not oversized, oversized
+
+
+def test_frontend_files_are_small() -> None:
+    """确保 WebUI 与扩展源文件均不超过三百行。"""
+    oversized = {
+        file.relative_to(ROOT): len(file.read_text(encoding="utf-8").splitlines())
+        for file in FRONTEND_FILES
         if len(file.read_text(encoding="utf-8").splitlines()) > 300
     }
     assert not oversized, oversized

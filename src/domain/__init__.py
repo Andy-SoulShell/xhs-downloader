@@ -9,7 +9,10 @@ from .errors import (
 )
 from .models import (
     Author,
+    ClientDownloadRecord,
+    ClientRecordStatus,
     DownloadArtifact,
+    DownloadMode,
     DownloadOutcome,
     DownloadRecord,
     MediaKind,
@@ -20,8 +23,11 @@ from .models import (
 
 __all__ = [
     "Author",
+    "ClientDownloadRecord",
+    "ClientRecordStatus",
     "DownloadArtifact",
     "DownloadError",
+    "DownloadMode",
     "DownloadOutcome",
     "DownloadRecord",
     "InvalidLinkError",

@@ -25,6 +25,20 @@ class MediaKind(StrEnum):
     LIVE = "动态图片"
 
 
+class DownloadMode(StrEnum):
+    """下载执行位置。"""
+
+    BROWSER = "browser"
+    BACKGROUND = "background"
+
+
+class ClientRecordStatus(StrEnum):
+    """客户端下载记录状态。"""
+
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class Author(BaseModel):
     """作品作者信息。
 
@@ -131,6 +145,32 @@ class DownloadRecord(BaseModel):
     source_fingerprint: str
     artifacts: list[DownloadArtifact]
     updated_at: datetime
+
+
+class ClientDownloadRecord(BaseModel):
+    """浏览器扩展产生并可幂等同步的下载记录。
+
+    Attributes:
+        record_id: 客户端生成的全局唯一记录 ID。
+        work_id: 小红书作品 ID。
+        source_url: 作品来源地址。
+        title: 作品标题；解析不到时为空。
+        mode: 实际执行下载的位置。
+        status: 下载是否完成。
+        media_indexes: 用户选择的一基媒体序号。
+        created_at: 客户端记录创建时间。
+        message: 失败原因或执行结果摘要。
+    """
+
+    record_id: str = Field(min_length=1, max_length=128)
+    work_id: str = Field(min_length=1, max_length=128)
+    source_url: str
+    title: str = Field(default="", max_length=500)
+    mode: DownloadMode
+    status: ClientRecordStatus
+    media_indexes: list[int] = Field(default_factory=list)
+    created_at: datetime
+    message: str = Field(default="", max_length=1000)
 
 
 class DownloadOutcome(BaseModel):
