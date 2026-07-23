@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
@@ -10,25 +16,31 @@ vi.mock("./lib/api", () => ({
   submitDetail: vi.fn(),
 }));
 
+async function addSyntheticPost() {
+  fireEvent.change(screen.getByLabelText("帖子链接"), {
+    target: { value: " https://example.invalid/work " },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
+  return screen.findByRole("button", {
+    name: "打开帖子：合成测试帖子",
+  });
+}
+
 describe("帖子下载工作台", () => {
   beforeEach(() => {
     vi.mocked(checkHealth).mockResolvedValue(true);
     vi.mocked(submitDetail).mockResolvedValue(makeDetailResponse());
   });
 
-  it("解析帖子并把它添加到主列表", async () => {
+  it("解析帖子并以紧凑卡片加入瀑布流", async () => {
     render(<App />);
 
     expect(screen.getByText("帖子列表还是空的")).toBeInTheDocument();
-    expect(await screen.findByText("服务已连接")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
-      target: { value: " https://example.invalid/work " },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
+    expect(await screen.findAllByText("服务已连接")).toHaveLength(2);
+    await addSyntheticPost();
 
-    expect(await screen.findByText("合成测试帖子")).toBeInTheDocument();
     expect(screen.getByText("1 个帖子 · 0 个已下载")).toBeInTheDocument();
-    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     expect(screen.getByLabelText("帖子链接")).toHaveValue("");
     expect(submitDetail).toHaveBeenCalledWith({
       url: "https://example.invalid/work",
@@ -36,16 +48,16 @@ describe("帖子下载工作台", () => {
     });
   });
 
-  it("按帖子选择媒体并完成下载", async () => {
+  it("在帖子详情中选择媒体并完成下载", async () => {
     render(<App />);
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
-      target: { value: "https://example.invalid/work" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    await screen.findByText("合成测试帖子");
+    fireEvent.click(await addSyntheticPost());
 
-    fireEvent.click(screen.getByLabelText("选择第 2 项"));
-    fireEvent.click(screen.getByRole("switch", { name: "强制重新下载" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
+    fireEvent.click(within(dialog).getByLabelText("选择第 2 项"));
+    fireEvent.click(
+      within(dialog).getByRole("switch", { name: "强制重新下载" }),
+    );
     vi.mocked(submitDetail).mockResolvedValue(
       makeDetailResponse({
         message: "作品文件下载完成",
@@ -60,7 +72,9 @@ describe("帖子下载工作台", () => {
         ],
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "下载已选 1 组" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "下载 1 项" }),
+    );
 
     await waitFor(() =>
       expect(submitDetail).toHaveBeenLastCalledWith({
@@ -71,16 +85,12 @@ describe("帖子下载工作台", () => {
       }),
     );
     expect(await screen.findByText("1 个帖子 · 1 个已下载")).toBeInTheDocument();
-    expect(screen.getAllByText("已下载")).toHaveLength(2);
+    expect(within(dialog).getByText("已下载")).toBeInTheDocument();
   });
 
-  it("支持搜索、状态筛选和移除帖子", async () => {
+  it("支持搜索、筛选并从详情中移除帖子", async () => {
     render(<App />);
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
-      target: { value: "https://example.invalid/work" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    await screen.findByText("合成测试帖子");
+    await addSyntheticPost();
 
     fireEvent.change(screen.getByLabelText("搜索帖子"), {
       target: { value: "合成作者" },
@@ -99,7 +109,12 @@ describe("帖子下载工作台", () => {
     expect(screen.getByText("没有符合条件的帖子")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "全部" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "移除帖子：合成测试帖子" }),
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "移除帖子：合成测试帖子",
+      }),
     );
     expect(screen.getByText("帖子列表还是空的")).toBeInTheDocument();
   });
@@ -116,12 +131,13 @@ describe("帖子下载工作台", () => {
     vi.mocked(submitDetail).mockRejectedValue(new Error("链接无效"));
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
     expect(await screen.findByText("链接无效")).toBeInTheDocument();
-    expect(await screen.findByText("服务未连接")).toBeInTheDocument();
+    expect(await screen.findAllByText("服务未连接")).toHaveLength(2);
   });
 
   it("处理空详情、无标题帖子和非标准异常", async () => {
     render(<App />);
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
+    const input = screen.getByLabelText("帖子链接");
+    fireEvent.change(input, {
       target: { value: "https://example.invalid/work" },
     });
 
@@ -144,32 +160,32 @@ describe("帖子下载工作台", () => {
     untitled.data!.发布时间 = null;
     vi.mocked(submitDetail).mockResolvedValue(untitled);
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    expect(await screen.findByText("未命名帖子")).toBeInTheDocument();
-    expect(screen.getByText("发布时间未知")).toBeInTheDocument();
-    expect(screen.getByText("这个帖子没有文字描述。")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
-      target: { value: "https://example.invalid/work" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    expect(screen.getByText("1 个帖子 · 0 个已下载")).toBeInTheDocument();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "打开帖子：未命名帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("发布时间未知")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("这个帖子没有文字描述。"),
+    ).toBeInTheDocument();
   });
 
-  it("在下载失败时标记所选媒体并允许重试", async () => {
+  it("下载失败时标记所选媒体并允许重试", async () => {
     render(<App />);
-    fireEvent.change(screen.getByLabelText("帖子链接"), {
-      target: { value: "https://example.invalid/work" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    await screen.findByText("合成测试帖子");
+    fireEvent.click(await addSyntheticPost());
+    const dialog = screen.getByRole("dialog");
 
     vi.mocked(submitDetail).mockRejectedValueOnce(new Error("下载异常"));
-    fireEvent.click(screen.getByRole("button", { name: "下载已选 2 组" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "下载 2 项" }),
+    );
     expect(await screen.findByText("下载异常")).toBeInTheDocument();
-    expect(screen.getAllByText("下载失败")).toHaveLength(2);
+    expect(within(dialog).getAllByText("失败")).toHaveLength(2);
 
     vi.mocked(submitDetail).mockRejectedValueOnce("未知异常");
-    fireEvent.click(screen.getByRole("button", { name: "下载已选 2 组" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "下载 2 项" }),
+    );
     expect(await screen.findByText("下载任务失败")).toBeInTheDocument();
   });
 });

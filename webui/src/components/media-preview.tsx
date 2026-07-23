@@ -4,6 +4,7 @@ import { Maximize2 } from "lucide-react";
 import type { MediaResource } from "../lib/types";
 
 interface MediaPreviewProps {
+  ariaLabel?: string;
   index: number;
   resources: MediaResource[];
   title: string;
@@ -11,6 +12,7 @@ interface MediaPreviewProps {
 }
 
 export function MediaPreview({
+  ariaLabel,
   index,
   resources,
   title,
@@ -38,7 +40,7 @@ export function MediaPreview({
   if (image) {
     return (
       <div
-        aria-label={`查看第 ${index} 项大图`}
+        aria-label={ariaLabel ?? `查看第 ${index} 项大图`}
         className="relative w-full cursor-zoom-in"
         onClick={onOpen}
         onKeyDown={(event) => {
@@ -104,7 +106,7 @@ export function MediaPreview({
 
   return (
     <button
-      aria-label={`查看第 ${index} 项视频大图`}
+      aria-label={ariaLabel ?? `查看第 ${index} 项视频大图`}
       className="relative block w-full cursor-zoom-in"
       onClick={onOpen}
       type="button"

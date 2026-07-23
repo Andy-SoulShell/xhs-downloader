@@ -36,6 +36,7 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
 }
@@ -44,8 +45,7 @@ button {
   cursor: pointer;
 }
 
-.control-shell,
-.post-card {
+.control-shell {
   border: 1px solid rgb(28 25 23 / 10%);
   border-radius: 24px;
   background: rgb(255 255 255 / 82%);
@@ -55,32 +55,36 @@ button {
   backdrop-filter: blur(16px);
 }
 
-.post-card {
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+.feed-masonry {
+  column-count: 1;
+  column-gap: 1.25rem;
 }
 
-.post-card:hover {
-  border-color: rgb(28 25 23 / 18%);
-  box-shadow:
-    0 18px 54px rgb(28 25 23 / 9%),
-    inset 0 1px 0 rgb(255 255 255 / 75%);
-  transform: translateY(-1px);
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(15.5rem, 100%), 1fr));
+  align-items: start;
+  gap: 1.5rem 1.25rem;
 }
 
-.media-masonry {
-  column-gap: 0.75rem;
-  column-width: 13rem;
-}
-
-.media-tile {
+.feed-card {
   display: inline-block;
   width: 100%;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
   break-inside: avoid;
   vertical-align: top;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.feed-grid .feed-card {
+  margin-bottom: 0;
+}
+
+.feed-card:hover {
+  filter: drop-shadow(0 12px 18px rgb(28 25 23 / 8%));
+  transform: translateY(-2px);
 }
 
 ::selection {
@@ -96,6 +100,30 @@ button {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 640px) {
+  .feed-masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .feed-masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1400px) {
+  .feed-masonry {
+    column-count: 4;
+  }
+}
+
+@media (min-width: 1720px) {
+  .feed-masonry {
+    column-count: 5;
   }
 }
 

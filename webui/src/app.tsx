@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { ArrowDownToLine, Search } from "lucide-react";
 import { Toast, ToggleGroup } from "radix-ui";
 
 import { LinkComposer } from "./components/link-composer";
 import { PostCard } from "./components/post-card";
 import { StatusPill } from "./components/status-pill";
+import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import { checkHealth, submitDetail } from "./lib/api";
 import type { DetailResponse } from "./lib/types";
 
@@ -19,7 +21,7 @@ export interface PostRecord {
   status: PostStatus;
 }
 
-type Filter = "all" | "ready" | "done";
+export type Filter = "all" | "ready" | "done";
 
 export default function App() {
   const [online, setOnline] = useState<boolean | null>(null);
@@ -140,97 +142,108 @@ export default function App() {
   return (
     <Toast.Provider swipeDirection="right">
       <div className="min-h-screen">
-        <header className="border-b border-stone-200/80 bg-[#f4f1eb]/90 backdrop-blur">
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 sm:px-8">
+        <WorkspaceSidebar
+          completedCount={completedCount}
+          filter={filter}
+          onFilterChange={setFilter}
+          online={online}
+          postCount={posts.length}
+        />
+
+        <header className="border-b border-stone-200/80 bg-[#f4f1eb]/90 backdrop-blur lg:hidden">
+          <div className="flex items-center justify-between px-5 py-4 sm:px-8">
             <a
               aria-label="xhs-downloader 首页"
               className="flex items-center gap-3 text-stone-950"
               href="/"
             >
-              <span className="grid size-9 place-items-center rounded-xl bg-stone-950 text-sm font-bold text-white">
-                x
+              <span className="grid size-9 place-items-center rounded-xl bg-red-500 text-white">
+                <ArrowDownToLine aria-hidden size={17} />
               </span>
-              <div>
-                <p className="text-sm font-semibold tracking-tight">
-                  xhs-downloader
-                </p>
-                <p className="text-[11px] text-stone-400">帖子下载工作台</p>
-              </div>
+              <p className="text-sm font-semibold tracking-tight">
+                xhs-downloader
+              </p>
             </a>
             <StatusPill online={online} />
           </div>
         </header>
 
-        <main className="mx-auto grid max-w-[1440px] gap-7 px-5 py-7 sm:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:py-10">
-          <aside className="lg:sticky lg:top-7 lg:self-start">
+        <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
+          <div className="mx-auto max-w-[1460px]">
             <LinkComposer
               link={link}
               onChange={setLink}
               onSubmit={handleAdd}
               parsing={parsing}
             />
-          </aside>
 
-          <section aria-label="帖子列表" className="min-w-0">
-            <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <p className="text-xs font-semibold tracking-[0.18em] text-red-500 uppercase">
-                  帖子资料库
-                </p>
-                <h1 className="mt-2 text-3xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-4xl">
-                  帖子列表
-                </h1>
-                <p className="mt-2 text-sm text-stone-500">
-                  {posts.length} 个帖子 · {completedCount} 个已下载
-                </p>
+            <section aria-label="帖子列表" className="mt-8 min-w-0">
+              <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                  <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-3xl font-semibold tracking-[-0.035em] text-stone-950">
+                    <span>帖子列表</span>
+                    <span className="text-sm font-normal tracking-normal text-stone-500">
+                      {posts.length} 个帖子 · {completedCount} 个已下载
+                    </span>
+                  </h1>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <label className="flex h-11 min-w-60 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-stone-400 transition focus-within:border-stone-400 focus-within:ring-4 focus-within:ring-stone-100">
+                    <Search aria-hidden size={16} />
+                    <input
+                      aria-label="搜索帖子"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="搜索标题或作者"
+                      type="search"
+                      value={query}
+                    />
+                  </label>
+                  <ToggleGroup.Root
+                    aria-label="筛选帖子"
+                    className="flex rounded-xl border border-stone-200 bg-white p-1"
+                    onValueChange={(value) =>
+                      value && setFilter(value as Filter)
+                    }
+                    type="single"
+                    value={filter}
+                  >
+                    <FilterButton value="all">全部</FilterButton>
+                    <FilterButton value="ready">待处理</FilterButton>
+                    <FilterButton value="done">已下载</FilterButton>
+                  </ToggleGroup.Root>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  aria-label="搜索帖子"
-                  className="h-11 min-w-56 rounded-xl border border-stone-200 bg-white px-4 text-sm outline-none transition placeholder:text-stone-400 focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="搜索标题或作者"
-                  type="search"
-                  value={query}
-                />
-                <ToggleGroup.Root
-                  aria-label="筛选帖子"
-                  className="flex rounded-xl border border-stone-200 bg-white p-1"
-                  onValueChange={(value) => value && setFilter(value as Filter)}
-                  type="single"
-                  value={filter}
+              {visiblePosts.length ? (
+                <div
+                  className={
+                    visiblePosts.length <= 5 ? "feed-grid" : "feed-masonry"
+                  }
                 >
-                  <FilterButton value="all">全部</FilterButton>
-                  <FilterButton value="ready">待处理</FilterButton>
-                  <FilterButton value="done">已下载</FilterButton>
-                </ToggleGroup.Root>
-              </div>
-            </div>
-
-            {visiblePosts.length ? (
-              <div className="space-y-4">
-                {visiblePosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    onDownload={() => void handleDownload(post)}
-                    onForceChange={(force) => updatePost(post.id, { force })}
-                    onRemove={() =>
-                      setPosts((current) =>
-                        current.filter((item) => item.id !== post.id),
-                      )
-                    }
-                    onSelectionChange={(selected) =>
-                      updatePost(post.id, { selected })
-                    }
-                    post={post}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyList hasPosts={posts.length > 0} />
-            )}
-          </section>
+                  {visiblePosts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      onDownload={() => void handleDownload(post)}
+                      onForceChange={(force) => updatePost(post.id, { force })}
+                      onRemove={() =>
+                        setPosts((current) =>
+                          current.filter((item) => item.id !== post.id),
+                        )
+                      }
+                      onSelectionChange={(selected) =>
+                        updatePost(post.id, { selected })
+                      }
+                      post={post}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyList hasPosts={posts.length > 0} />
+              )}
+            </section>
+          </div>
         </main>
       </div>
 
@@ -276,7 +289,7 @@ function EmptyList({ hasPosts }: { hasPosts: boolean }) {
         <p className="mt-2 text-sm leading-6 text-stone-500">
           {hasPosts
             ? "换一个关键词或筛选条件试试。"
-            : "从左侧粘贴链接，解析完成后帖子会出现在这里。"}
+            : "在上方粘贴链接，解析完成后帖子会出现在这里。"}
         </p>
       </div>
     </div>

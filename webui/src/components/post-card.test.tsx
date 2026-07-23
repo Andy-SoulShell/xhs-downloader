@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PostRecord } from "../app";
@@ -19,98 +19,137 @@ function makePost(overrides: Partial<PostRecord> = {}): PostRecord {
   };
 }
 
+function renderCard(
+  post = makePost(),
+  onSelectionChange = vi.fn(),
+  onDownload = vi.fn(),
+) {
+  render(
+    <PostCard
+      onDownload={onDownload}
+      onForceChange={vi.fn()}
+      onRemove={vi.fn()}
+      onSelectionChange={onSelectionChange}
+      post={post}
+    />,
+  );
+  return { onDownload, onSelectionChange };
+}
+
 describe("帖子卡片", () => {
-  it("以图片预览动态图片组，并把动态形态显示为标签", () => {
-    const onSelectionChange = vi.fn();
+  it("首页仅展示封面，点击后打开双栏媒体详情", () => {
     const play = vi
       .spyOn(HTMLMediaElement.prototype, "play")
       .mockResolvedValue();
     const pause = vi
       .spyOn(HTMLMediaElement.prototype, "pause")
       .mockImplementation(() => undefined);
-    render(
-      <PostCard
-        onDownload={vi.fn()}
-        onForceChange={vi.fn()}
-        onRemove={vi.fn()}
-        onSelectionChange={onSelectionChange}
-        post={makePost()}
-      />,
-    );
+    renderCard();
 
-    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
-    expect(screen.getAllByRole("img")).toHaveLength(2);
+    expect(screen.getAllByRole("img")).toHaveLength(1);
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     const livePreview = screen.getByLabelText(
       "合成测试帖子的第 1 个动态图片预览",
     );
-    const liveButton = screen.getByRole("button", { name: "动态图片" });
-    expect(livePreview).toBeInTheDocument();
     fireEvent.mouseEnter(livePreview.parentElement!);
     expect(play).toHaveBeenCalledOnce();
-    expect(liveButton).toHaveAttribute("aria-pressed", "true");
     fireEvent.mouseLeave(livePreview.parentElement!);
     expect(pause).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByText("取消全选"));
-    expect(onSelectionChange).toHaveBeenCalledWith(new Set());
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
+    expect(
+      within(dialog).getByLabelText("第 1 项动态图片预览"),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "下一项" }));
+    expect(
+      within(dialog).getByAltText("第 2 项图片预览"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "关闭详情" }),
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("支持重新全选、切换媒体和触发下载", () => {
+  it("支持全选、单项选择和空选择保护", () => {
     const onSelectionChange = vi.fn();
-    const onDownload = vi.fn();
-    render(
-      <PostCard
-        onDownload={onDownload}
-        onForceChange={vi.fn()}
-        onRemove={vi.fn()}
-        onSelectionChange={onSelectionChange}
-        post={makePost({ selected: new Set() })}
-      />,
+    const { onDownload } = renderCard(
+      makePost({ selected: new Set() }),
+      onSelectionChange,
     );
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
 
-    fireEvent.click(screen.getByText("选择全部"));
+    fireEvent.click(within(dialog).getByText("选择全部"));
     expect(onSelectionChange).toHaveBeenCalledWith(new Set([1, 2]));
-    fireEvent.click(screen.getAllByRole("checkbox")[0]);
+    fireEvent.click(within(dialog).getAllByRole("checkbox")[0]);
     expect(onSelectionChange).toHaveBeenLastCalledWith(new Set([1]));
-    expect(screen.getByRole("button", { name: "请选择媒体" })).toBeDisabled();
+    expect(
+      within(dialog).getByRole("button", { name: "请选择媒体" }),
+    ).toBeDisabled();
     expect(onDownload).not.toHaveBeenCalled();
   });
 
-  it("直接在媒体项展示下载状态", () => {
-    render(
-      <PostCard
-        onDownload={vi.fn()}
-        onForceChange={vi.fn()}
-        onRemove={vi.fn()}
-        onSelectionChange={vi.fn()}
-        post={makePost({
-          status: "done",
-          downloaded: new Set(["1:图片"]),
-          result: makeDetailResponse({
-            skipped: true,
-            files: [
-              {
-                path: "small.jpeg",
-                sha256: "1".repeat(64),
-                size: 512,
-                media_index: 1,
-                kind: "图片",
-              },
-              {
-                path: "large.mp4",
-                sha256: "2".repeat(64),
-                size: 2 * 1024 * 1024,
-                media_index: 2,
-                kind: "视频",
-              },
-            ],
-          }),
-        })}
-      />,
+  it("在卡片和详情中就地展示下载状态", () => {
+    renderCard(
+      makePost({
+        status: "done",
+        downloaded: new Set(["1:图片"]),
+      }),
     );
 
     expect(screen.getByText("已下载")).toBeInTheDocument();
-    expect(screen.getByText("未下载")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("已下载")).toBeInTheDocument();
+    expect(within(dialog).getByText("未下载")).toBeInTheDocument();
     expect(screen.queryByText("下载记录")).not.toBeInTheDocument();
+  });
+
+  it("为视频使用封面并支持键盘切换媒体", () => {
+    const result = makeDetailResponse();
+    result.data!.媒体 = [
+      {
+        序号: 1,
+        类型: "视频",
+        地址: "https://example.invalid/video.mp4",
+        扩展名: "mp4",
+        预览地址: "https://example.invalid/cover.jpeg",
+      },
+      {
+        序号: 2,
+        类型: "图片",
+        地址: "https://example.invalid/image.jpeg",
+        扩展名: "jpeg",
+      },
+    ];
+    renderCard(makePost({ result }));
+
+    const cover = screen.getByLabelText("合成测试帖子的第 1 个视频");
+    expect(cover).toHaveAttribute(
+      "poster",
+      "https://example.invalid/cover.jpeg",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(
+      within(dialog).getByAltText("第 2 项图片预览"),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: "ArrowLeft" });
+    expect(within(dialog).getByLabelText("第 1 项视频预览")).toHaveAttribute(
+      "poster",
+      "https://example.invalid/cover.jpeg",
+    );
   });
 
   it("没有详情时不渲染无效卡片", () => {

@@ -1,3 +1,4 @@
+import { Link2, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 
 interface LinkComposerProps {
@@ -14,47 +15,38 @@ export function LinkComposer({
   onSubmit,
 }: LinkComposerProps) {
   return (
-    <section className="control-shell p-5 sm:p-6">
-      <div className="mb-6">
-        <p className="text-xs font-semibold tracking-[0.16em] text-red-500 uppercase">
-          链接解析
-        </p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-stone-950">
-          添加帖子
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-stone-500">
-          每次添加一个链接，解析结果会保留在右侧列表中。
-        </p>
-      </div>
-
-      <form onSubmit={onSubmit}>
-        <label
-          className="text-xs font-semibold tracking-[0.12em] text-stone-500 uppercase"
-          htmlFor="work-url"
-        >
-          帖子链接
-        </label>
-        <textarea
-          className="mt-3 min-h-36 w-full resize-none rounded-2xl border border-stone-200 bg-stone-50 px-4 py-4 text-sm leading-6 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-500 focus:bg-white focus:ring-4 focus:ring-stone-100"
-          id="work-url"
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="粘贴 xiaohongshu.com 或 xhslink.cn 链接"
-          value={link}
-        />
+    <section aria-label="链接解析" className="control-shell p-3">
+      <form
+        className="flex flex-col gap-3 sm:flex-row sm:items-center"
+        onSubmit={onSubmit}
+      >
+        <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl bg-stone-50 px-4 ring-1 ring-stone-200 transition focus-within:bg-white focus-within:ring-stone-400">
+          <Link2
+            aria-hidden
+            className="shrink-0 text-stone-400"
+            size={18}
+          />
+          <label className="min-w-0 flex-1" htmlFor="work-url">
+            <span className="sr-only">帖子链接</span>
+            <input
+              aria-label="帖子链接"
+              className="w-full bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
+              id="work-url"
+              onChange={(event) => onChange(event.target.value)}
+              placeholder="粘贴 xiaohongshu.com 或 xhslink.cn 链接"
+              value={link}
+            />
+          </label>
+        </div>
         <button
-          className="mt-4 w-full rounded-2xl bg-red-500 px-5 py-3.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(239,68,68,0.2)] transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(239,68,68,0.18)] transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-60"
           disabled={parsing}
           type="submit"
         >
+          <Plus aria-hidden size={17} />
           {parsing ? "正在解析…" : "添加到列表"}
         </button>
       </form>
-
-      <div className="mt-6 border-t border-stone-100 pt-5">
-        <p className="text-xs leading-5 text-stone-400">
-          Cookie、代理与保存目录由服务端 .env 管理，链接和结果只保留在当前页面。
-        </p>
-      </div>
     </section>
   );
 }
