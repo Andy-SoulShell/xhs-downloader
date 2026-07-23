@@ -67,13 +67,23 @@ describe("帖子卡片", () => {
     );
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
-    expect(
-      within(dialog).getByLabelText("第 1 项动态图片预览"),
-    ).toBeInTheDocument();
+    const liveMedia = within(dialog).getByLabelText(
+      "第 1 项动态图片预览",
+    );
+    Object.defineProperties(liveMedia, {
+      videoHeight: { configurable: true, value: 1280 },
+      videoWidth: { configurable: true, value: 720 },
+    });
+    fireEvent.loadedMetadata(liveMedia);
+    expect(liveMedia.parentElement).toHaveStyle({ aspectRatio: 720 / 1280 });
     fireEvent.click(within(dialog).getByRole("button", { name: "下一项" }));
-    expect(
-      within(dialog).getByAltText("第 2 项图片预览"),
-    ).toBeInTheDocument();
+    const imageMedia = within(dialog).getByAltText("第 2 项图片预览");
+    Object.defineProperties(imageMedia, {
+      naturalHeight: { configurable: true, value: 1200 },
+      naturalWidth: { configurable: true, value: 800 },
+    });
+    fireEvent.load(imageMedia);
+    expect(imageMedia.parentElement).toHaveStyle({ aspectRatio: 800 / 1200 });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "关闭详情" }),
     );

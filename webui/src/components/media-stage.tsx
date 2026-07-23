@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   mediaCover,
@@ -22,37 +22,36 @@ export function MediaStage({
   onMove,
   onSelect,
 }: MediaStageProps) {
+  const [aspectRatio, setAspectRatio] = useState(3 / 4);
   const image = current.resources.find((item) => item.类型 === "图片");
   const live = current.resources.find((item) => item.类型 === "动态图片");
   const video = current.resources.find((item) => item.类型 === "视频");
-  const cover = mediaCover(current);
+  const applyImageRatio = (element: HTMLImageElement) => {
+    if (element.naturalWidth && element.naturalHeight) {
+      setAspectRatio(element.naturalWidth / element.naturalHeight);
+    }
+  };
+  const applyVideoRatio = (element: HTMLVideoElement) => {
+    if (element.videoWidth && element.videoHeight) {
+      setAspectRatio(element.videoWidth / element.videoHeight);
+    }
+  };
 
   return (
-    <div className="relative grid min-h-[44vh] min-w-0 place-items-center overflow-hidden bg-stone-950 lg:min-h-0">
-      {cover && (
-        <>
-          <img
-            alt=""
-            aria-hidden
-            className="absolute inset-0 size-full scale-110 object-cover opacity-45 blur-2xl"
-            referrerPolicy="no-referrer"
-            src={cover}
-          />
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-stone-950/35"
-          />
-        </>
-      )}
+    <div
+      className="relative grid min-h-[44vh] min-w-0 place-items-center overflow-hidden bg-stone-950 lg:h-full lg:min-h-0 lg:w-auto lg:max-w-[calc(96vw-400px)]"
+      style={{ aspectRatio }}
+    >
       {live ? (
         <video
           aria-label={`第 ${current.index} 项动态图片预览`}
           autoPlay
-          className="relative size-full object-contain"
+          className="absolute inset-0 size-full object-cover object-center"
           controls
           key={`${current.index}-live`}
           loop
           muted
+          onLoadedMetadata={(event) => applyVideoRatio(event.currentTarget)}
           playsInline
           poster={image?.地址}
           src={live.地址}
@@ -60,9 +59,10 @@ export function MediaStage({
       ) : video ? (
         <video
           aria-label={`第 ${current.index} 项视频预览`}
-          className="relative size-full object-contain"
+          className="absolute inset-0 size-full object-cover object-center"
           controls
           key={`${current.index}-video`}
+          onLoadedMetadata={(event) => applyVideoRatio(event.currentTarget)}
           playsInline
           poster={video.预览地址 ?? undefined}
           src={video.地址}
@@ -70,7 +70,8 @@ export function MediaStage({
       ) : (
         <img
           alt={`第 ${current.index} 项图片预览`}
-          className="relative size-full object-contain"
+          className="absolute inset-0 size-full object-cover object-center"
+          onLoad={(event) => applyImageRatio(event.currentTarget)}
           referrerPolicy="no-referrer"
           src={image?.地址}
         />
