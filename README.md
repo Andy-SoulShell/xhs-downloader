@@ -1,7 +1,7 @@
 # xhs-downloader
 
-小红书（XiaoHongShu / RedNote）作品信息解析与媒体下载工具，提供 CLI、HTTP
-API、MCP 和 Python 客户端。
+小红书（XiaoHongShu / RedNote）作品信息解析与媒体下载工具，提供 WebUI、CLI、
+HTTP API、MCP 和 Python 客户端。
 
 ## 设计特点
 
@@ -10,12 +10,15 @@ API、MCP 和 Python 客户端。
 - 下载完成后记录内容指纹、文件大小和 SHA-256；只有三者一致才跳过下载。
 - 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
 - 应用、Uvicorn 与 FastMCP 日志统一接入 Loguru，并抑制敏感请求 URL。
+- WebUI 使用 React、Vite、Tailwind CSS 与 Radix UI，敏感配置仅保留在服务端。
 - 每个代码文件不超过 300 行，并由自动化测试检查公开接口 docstring。
 
 ## 环境要求
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/)
+- Node.js 22.12+
+- [pnpm](https://pnpm.io/)
 
 ## 安装
 
@@ -93,6 +96,34 @@ uv run xhs-downloader download "小红书作品链接" --force
 uv run xhs-downloader detail "小红书作品链接"
 ```
 
+## WebUI
+
+先启动 FastAPI：
+
+```shell
+uv run xhs-downloader api
+```
+
+再打开另一个终端启动前端：
+
+```shell
+pnpm --dir webui install
+pnpm --dir webui dev
+```
+
+浏览器访问 `http://127.0.0.1:5173`。开发服务器会将 `/api` 请求代理到
+`http://127.0.0.1:5556`；如需调整地址，复制并修改
+[`webui/.env.example`](webui/.env.example)。
+
+生产构建：
+
+```shell
+pnpm --dir webui build
+```
+
+构建产物位于 `webui/dist/`，不提交到仓库。Cookie、代理、下载目录等敏感配置
+仍由服务端 `.env` 管理，WebUI 不会将其写入浏览器存储。
+
 ## HTTP API
 
 ```shell
@@ -154,6 +185,9 @@ asyncio.run(main())
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest
+pnpm --dir webui lint
+pnpm --dir webui test
+pnpm --dir webui build
 ```
 
 测试只使用完全合成的数据，不包含真实作品原文、Cookie 或 API Key。

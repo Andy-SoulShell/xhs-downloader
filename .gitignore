@@ -5,6 +5,11 @@ __pycache__/
 /.pytest_cache/
 /.coverage
 /htmlcov/
+/webui/node_modules/
+/webui/dist/
+/webui/coverage/
+/webui/.env
+/webui/*.tsbuildinfo
 /.idea/
 /.run/
 /volume/
