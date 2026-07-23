@@ -25,14 +25,30 @@ export function MediaStage({
   const image = current.resources.find((item) => item.类型 === "图片");
   const live = current.resources.find((item) => item.类型 === "动态图片");
   const video = current.resources.find((item) => item.类型 === "视频");
+  const cover = mediaCover(current);
 
   return (
     <div className="relative grid min-h-[44vh] min-w-0 place-items-center overflow-hidden bg-stone-950 lg:min-h-0">
+      {cover && (
+        <>
+          <img
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full scale-110 object-cover opacity-45 blur-2xl"
+            referrerPolicy="no-referrer"
+            src={cover}
+          />
+          <span
+            aria-hidden
+            className="absolute inset-0 bg-stone-950/35"
+          />
+        </>
+      )}
       {live ? (
         <video
           aria-label={`第 ${current.index} 项动态图片预览`}
           autoPlay
-          className="max-h-full max-w-full object-contain"
+          className="relative size-full object-contain"
           controls
           key={`${current.index}-live`}
           loop
@@ -44,7 +60,7 @@ export function MediaStage({
       ) : video ? (
         <video
           aria-label={`第 ${current.index} 项视频预览`}
-          className="max-h-full max-w-full object-contain"
+          className="relative size-full object-contain"
           controls
           key={`${current.index}-video`}
           playsInline
@@ -54,13 +70,17 @@ export function MediaStage({
       ) : (
         <img
           alt={`第 ${current.index} 项图片预览`}
-          className="max-h-full max-w-full object-contain"
+          className="relative size-full object-contain"
           referrerPolicy="no-referrer"
           src={image?.地址}
         />
       )}
 
-      <span className="absolute top-4 left-4 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-black/65 to-transparent"
+      />
+      <span className="absolute top-4 left-4 z-20 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-white shadow-sm backdrop-blur">
         {activeIndex + 1} / {media.length} · {mediaLabel(current)}
       </span>
       {media.length > 1 && (
@@ -71,7 +91,7 @@ export function MediaStage({
           <CarouselButton label="下一项" onClick={() => onMove(1)} side="right">
             <ChevronRight aria-hidden size={20} />
           </CarouselButton>
-          <div className="absolute right-4 bottom-4 left-4 flex justify-center gap-2">
+          <div className="absolute right-4 bottom-4 left-4 z-20 flex justify-center gap-2">
             {media.map((item, position) => {
               const cover = mediaCover(item);
               return (
@@ -79,7 +99,7 @@ export function MediaStage({
                   aria-label={`查看第 ${item.index} 项`}
                   className={`relative size-12 overflow-hidden rounded-lg border-2 bg-stone-800 transition ${
                     position === activeIndex
-                      ? "border-white"
+                      ? "border-white shadow-lg"
                       : "border-white/25 opacity-70 hover:opacity-100"
                   }`}
                   key={item.index}
@@ -122,7 +142,7 @@ function CarouselButton({
   return (
     <button
       aria-label={label}
-      className={`absolute top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-white hover:text-stone-950 ${
+      className={`absolute top-1/2 z-20 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-white hover:text-stone-950 ${
         side === "left" ? "left-4" : "right-4"
       }`}
       onClick={onClick}

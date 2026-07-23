@@ -60,9 +60,9 @@ export function PostDetailDialog({
       open={open}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-stone-950/55 backdrop-blur-sm" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 z-50 grid h-[min(94vh,880px)] w-[min(96vw,1120px)] -translate-x-1/2 -translate-y-1/2 grid-rows-[minmax(0,1fr)_minmax(320px,46vh)] overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl outline-none lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-1"
+          className="fixed top-1/2 left-1/2 z-50 grid h-[min(94vh,880px)] w-[min(96vw,1120px)] -translate-x-1/2 -translate-y-1/2 grid-rows-[minmax(0,1fr)_minmax(320px,46vh)] overflow-hidden rounded-[22px] border border-white/30 bg-stone-950 shadow-[0_28px_80px_rgba(28,25,23,0.38)] ring-1 ring-stone-950/10 outline-none lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-1"
           onKeyDown={(event) => {
             if (event.key === "ArrowLeft") move(-1);
             if (event.key === "ArrowRight") move(1);
@@ -83,7 +83,7 @@ export function PostDetailDialog({
             onSelect={setActiveIndex}
           />
 
-          <div className="flex min-h-0 flex-col bg-white">
+          <div className="flex min-h-0 flex-col border-l border-stone-200/80 bg-white">
             <div className="shrink-0 border-b border-stone-100 px-5 pt-5 pb-4 sm:px-7 sm:pt-7">
               <div className="flex items-start justify-between gap-4">
                 <Author
