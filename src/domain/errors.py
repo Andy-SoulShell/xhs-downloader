@@ -21,6 +21,10 @@ class SettingsError(XhsError):
     """配置内容无效或无法安全持久化。"""
 
 
+class PublicationError(XhsError):
+    """发布草稿、素材或任务状态无效。"""
+
+
 class DownloadError(XhsError):
     """媒体请求或文件落盘失败。"""
 

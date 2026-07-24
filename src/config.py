@@ -78,6 +78,12 @@ class AppSettings(BaseSettings):
     server_host: str = "0.0.0.0"
     server_port: int = Field(default=5556, ge=1, le=65535)
     log_level: str = "info"
+    publish_max_asset_size: int = Field(
+        default=1024 * 1024 * 1024,
+        ge=1024 * 1024,
+        le=10 * 1024 * 1024 * 1024,
+    )
+    publish_lease_seconds: int = Field(default=300, ge=60, le=1800)
 
     @field_validator("work_path", "proxy", mode="before")
     @classmethod
@@ -204,3 +210,12 @@ class AppSettings(BaseSettings):
             保存断点续传文件的目录。
         """
         return self.state_dir.joinpath("partial")
+
+    @property
+    def publication_dir(self) -> Path:
+        """返回发布素材目录。
+
+        Returns:
+            仅供本地服务和已登记扩展访问的素材目录。
+        """
+        return self.state_dir.joinpath("publication")

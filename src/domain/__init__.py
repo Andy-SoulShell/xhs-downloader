@@ -5,6 +5,7 @@ from .errors import (
     InvalidLinkError,
     InvalidPartialContentError,
     ParseError,
+    PublicationError,
     SettingsError,
     TaskStateError,
     XhsError,
@@ -24,6 +25,14 @@ from .models import (
     WorkDetail,
     WorkType,
 )
+from .publication import (
+    PublicationAsset,
+    PublicationClaim,
+    PublicationDraft,
+    PublicationMode,
+    PublicationTask,
+    PublicationTaskStatus,
+)
 
 __all__ = [
     "Author",
@@ -41,6 +50,13 @@ __all__ = [
     "MediaKind",
     "MediaResource",
     "ParseError",
+    "PublicationAsset",
+    "PublicationClaim",
+    "PublicationDraft",
+    "PublicationError",
+    "PublicationMode",
+    "PublicationTask",
+    "PublicationTaskStatus",
     "SettingsError",
     "TaskStateError",
     "WorkDetail",

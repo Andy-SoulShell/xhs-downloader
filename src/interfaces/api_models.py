@@ -100,6 +100,8 @@ class SettingsValues(BaseModel):
     server_host: str
     server_port: int
     log_level: str
+    publish_max_asset_size: int
+    publish_lease_seconds: int
 
 
 class SettingsUpdate(BaseModel):
@@ -131,6 +133,16 @@ class SettingsUpdate(BaseModel):
     server_host: str | None = None
     server_port: int | None = Field(default=None, ge=1, le=65535)
     log_level: str | None = None
+    publish_max_asset_size: int | None = Field(
+        default=None,
+        ge=1024 * 1024,
+        le=10 * 1024 * 1024 * 1024,
+    )
+    publish_lease_seconds: int | None = Field(
+        default=None,
+        ge=60,
+        le=1800,
+    )
 
 
 class SettingsResponse(BaseModel):

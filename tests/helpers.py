@@ -4,7 +4,15 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from src.domain import Author, MediaKind, MediaResource, WorkDetail, WorkType
+from src.domain import (
+    Author,
+    MediaKind,
+    MediaResource,
+    PublicationAsset,
+    PublicationDraft,
+    WorkDetail,
+    WorkType,
+)
 
 
 def make_detail(
@@ -90,3 +98,43 @@ def make_initial_state_html(
     )
     script = f"window.__INITIAL_STATE__={json.dumps(state, ensure_ascii=False)}"
     return f"<html><script>{script}</script></html>"
+
+
+def make_publication_draft(
+    draft_id: str = "synthetic-draft",
+    *,
+    with_asset: bool = True,
+) -> PublicationDraft:
+    """构造不依赖真实平台的发布草稿。
+
+    Args:
+        draft_id: 草稿唯一标识。
+        with_asset: 是否附带一个合成图片素材。
+
+    Returns:
+        字段完整的合成发布草稿。
+    """
+    now = datetime.now(UTC)
+    assets = (
+        [
+            PublicationAsset(
+                asset_id="synthetic-asset",
+                filename="synthetic.jpg",
+                media_type="image/jpeg",
+                size=16,
+                sha256="a" * 64,
+                position=0,
+            )
+        ]
+        if with_asset
+        else []
+    )
+    return PublicationDraft(
+        draft_id=draft_id,
+        title="合成发布标题",
+        body="合成发布正文",
+        tags=["测试", "#合成", "测试"],
+        assets=assets,
+        created_at=now,
+        updated_at=now,
+    )

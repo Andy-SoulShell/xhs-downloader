@@ -14,6 +14,7 @@ from src.application import (
     DownloadService,
     DownloadTaskCoordinator,
     SettingsManager,
+    create_publication_runtime,
     create_service,
 )
 from src.config import AppSettings
@@ -39,6 +40,7 @@ from .api_models import (
     ExtensionCapabilities,
     TaskRequest,
 )
+from .publication_api import create_publication_router
 from .settings_api import (
     SettingsAccessPolicy,
     allow_loopback_settings,
@@ -85,6 +87,7 @@ def create_api(
         DotenvSettingsRepository(resolved_settings_file),
         runtime_overrides=settings_override_fields,
     )
+    publication = create_publication_runtime(resolved_settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -97,9 +100,11 @@ def create_api(
             app.state.service = service
             app.state.tasks = tasks
             await tasks.start()
+            await publication.scheduler.start()
             try:
                 yield
             finally:
+                await publication.scheduler.close()
                 await tasks.close()
 
     api = FastAPI(
@@ -112,10 +117,30 @@ def create_api(
         CORSMiddleware,
         allow_origin_regex=EXTENSION_ORIGIN_PATTERN,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-        allow_headers=["Content-Type"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Range",
+            "X-Extension-Id",
+            "X-Publish-Lease",
+        ],
+        expose_headers=[
+            "Accept-Ranges",
+            "Content-Length",
+            "Content-Range",
+        ],
     )
     api.include_router(create_settings_router(settings_manager, settings_access_policy))
+    api.include_router(
+        create_publication_router(
+            publication.drafts,
+            publication.tasks,
+            publication.execution,
+            publication.credentials,
+            settings_access_policy,
+        )
+    )
 
     @api.exception_handler(XhsError)
     async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:
@@ -140,6 +165,7 @@ def create_api(
     )
     async def extension_capabilities() -> ExtensionCapabilities:
         return ExtensionCapabilities(
+            protocol_version=2,
             service_version=VERSION,
             download_modes=[DownloadMode.BROWSER, DownloadMode.BACKGROUND],
             features={
@@ -150,6 +176,7 @@ def create_api(
                 "partial_resume": True,
                 "persistent_tasks": True,
                 "retry": True,
+                "publication": True,
             },
         )
 
