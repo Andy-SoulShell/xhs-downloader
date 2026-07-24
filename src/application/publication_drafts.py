@@ -130,8 +130,7 @@ class PublicationDraftService:
             PublicationError: 草稿不存在或素材数量已达上限。
         """
         draft = await self.require(draft_id)
-        if len(draft.assets) >= 20:
-            raise PublicationError("每个草稿最多包含 20 个素材")
+        _validate_new_asset(draft, media_type)
         asset = await self._assets.save(
             draft_id,
             uuid4().hex,
@@ -237,3 +236,16 @@ class PublicationDraftService:
             按更新时间倒序排列的草稿。
         """
         return await self._drafts.list_drafts(limit)
+
+
+def _validate_new_asset(draft: PublicationDraft, media_type: str) -> None:
+    incoming_video = media_type.startswith("video/")
+    existing_video = any(
+        asset.media_type.startswith("video/") for asset in draft.assets
+    )
+    if incoming_video and draft.assets:
+        raise PublicationError("视频笔记只能包含一个视频素材")
+    if not incoming_video and existing_video:
+        raise PublicationError("图文与视频素材不能混合发布")
+    if not incoming_video and len(draft.assets) >= 18:
+        raise PublicationError("图文笔记最多包含 18 张图片")

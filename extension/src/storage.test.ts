@@ -27,6 +27,9 @@ beforeEach(() => {
         set: vi.fn(async (next: Record<string, unknown>) => {
           Object.assign(values, next);
         }),
+        remove: vi.fn(async (key: string) => {
+          delete values[key];
+        }),
       },
     },
   });

@@ -14,7 +14,7 @@ export async function checkService(baseUrl: string): Promise<boolean> {
     });
     if (!response.ok) return false;
     const payload = (await response.json()) as { protocol_version?: number };
-    return payload.protocol_version === 1;
+    return (payload.protocol_version ?? 0) >= 1;
   } catch {
     return false;
   }

@@ -13,7 +13,7 @@ def test_extension_uses_minimum_permissions() -> None:
     permissions = set(manifest["permissions"])
     host_permissions = set(manifest["host_permissions"])
 
-    assert permissions == {"activeTab", "downloads", "storage"}
+    assert permissions == {"activeTab", "alarms", "downloads", "storage"}
     assert "cookies" not in permissions
     assert "webRequest" not in permissions
     assert host_permissions == {
@@ -26,9 +26,11 @@ def test_extension_uses_minimum_permissions() -> None:
 def test_extension_only_runs_on_supported_post_pages() -> None:
     """确保内容脚本只注入受支持的小红书帖子页面。"""
     manifest = loads(MANIFEST.read_text(encoding="utf-8"))
-    matches = manifest["content_scripts"][0]["matches"]
+    content_scripts = manifest["content_scripts"]
+    matches = content_scripts[0]["matches"]
 
     assert matches == [
         "https://www.xiaohongshu.com/explore/*",
         "https://www.xiaohongshu.com/discovery/item/*",
     ]
+    assert content_scripts[1]["matches"] == ["https://creator.xiaohongshu.com/*"]

@@ -116,6 +116,30 @@ async def test_task_service_rejects_invalid_packages_and_schedules(
         await tasks.submit(draft, mode, scheduled_at)
 
 
+async def test_task_service_rejects_unsupported_asset_combinations(
+    tmp_path,
+) -> None:
+    """确保绕过草稿用例的混合素材仍会在提交边界被拒绝。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    _, _, tasks, _, _ = _services(tmp_path)
+    draft = make_publication_draft()
+    video = draft.assets[0].model_copy(
+        update={
+            "asset_id": "video",
+            "filename": "video.mp4",
+            "media_type": "video/mp4",
+            "position": 1,
+        }
+    )
+    mixed = draft.model_copy(update={"assets": [draft.assets[0], video]})
+
+    with pytest.raises(PublicationError, match="不能混合"):
+        await tasks.submit(mixed, PublicationMode.MANUAL, None)
+
+
 async def test_task_service_cancels_and_retries_allowed_states(tmp_path) -> None:
     """确保任务仅能在规定状态取消或重试。
 

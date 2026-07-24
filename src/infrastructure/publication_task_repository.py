@@ -44,10 +44,11 @@ class SqlitePublicationTaskRepository:
             await database.execute(
                 """
                 INSERT INTO publication_task (
-                    task_id, draft_id, status, scheduled_at, payload,
+                    task_id, draft_id, mode, status, scheduled_at, payload,
                     lease_hash, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
                 ON CONFLICT(task_id) DO UPDATE SET
+                    mode = excluded.mode,
                     status = excluded.status,
                     scheduled_at = excluded.scheduled_at,
                     payload = excluded.payload,
@@ -56,6 +57,7 @@ class SqlitePublicationTaskRepository:
                 (
                     task.task_id,
                     task.package.draft_id,
+                    task.mode.value,
                     task.status.value,
                     task.scheduled_at.isoformat(),
                     task.model_dump_json(),

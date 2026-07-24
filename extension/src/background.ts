@@ -3,6 +3,15 @@ import {
   resolveDownloadMode,
 } from "./mode";
 import {
+  handlePublicationRequest,
+  installPublicationAutomation,
+} from "./publication-runner";
+import {
+  isPublicationRequest,
+  type PublicationRequest,
+  type PublicationResponse,
+} from "./publication-types";
+import {
   checkService,
   requestBackgroundDownload,
   syncClientRecords,
@@ -28,9 +37,9 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener(
   (
-    request: ExtensionRequest,
+    request: ExtensionRequest | PublicationRequest,
     _sender,
-    sendResponse: (response: ExtensionResponse) => void,
+    sendResponse: (response: ExtensionResponse | PublicationResponse) => void,
   ) => {
     void handleRequest(request)
       .then(sendResponse)
@@ -45,8 +54,11 @@ chrome.runtime.onMessage.addListener(
 );
 
 async function handleRequest(
-  request: ExtensionRequest,
-): Promise<ExtensionResponse> {
+  request: ExtensionRequest | PublicationRequest,
+): Promise<ExtensionResponse | PublicationResponse> {
+  if (isPublicationRequest(request)) {
+    return handlePublicationRequest(request);
+  }
   if (request.type === "set-mode") {
     await saveMode(request.mode);
     return { ok: true, message: "下载模式已更新" };
@@ -57,6 +69,8 @@ async function handleRequest(
   }
   return getState();
 }
+
+installPublicationAutomation();
 
 async function getState(): Promise<ExtensionResponse> {
   const settings = await loadSettings();

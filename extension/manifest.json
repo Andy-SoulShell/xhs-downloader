@@ -3,7 +3,7 @@
   "name": "xhs-downloader",
   "version": "3.0.0",
   "description": "在小红书帖子页预览、选择并下载媒体，支持本地服务自动联动。",
-  "permissions": ["activeTab", "downloads", "storage"],
+  "permissions": ["activeTab", "alarms", "downloads", "storage"],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://localhost/*"
@@ -21,6 +21,11 @@
         "https://www.xiaohongshu.com/discovery/item/*"
       ],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://creator.xiaohongshu.com/*"],
+      "js": ["publisher.js"],
       "run_at": "document_idle"
     }
   ]

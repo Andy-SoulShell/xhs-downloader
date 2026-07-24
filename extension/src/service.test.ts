@@ -44,7 +44,7 @@ describe("本地服务客户端", () => {
         new Response(JSON.stringify({ protocol_version: 1 })),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ protocol_version: 2 })),
+        new Response(JSON.stringify({ protocol_version: 0 })),
       )
       .mockResolvedValueOnce(new Response(null, { status: 503 }))
       .mockRejectedValueOnce(new Error("offline"));

@@ -47,8 +47,8 @@ async def test_draft_service_manages_content_assets_and_order(tmp_path) -> None:
     )
     second = await service.add_asset(
         draft.draft_id,
-        "second.mp4",
-        "video/mp4",
+        "second.jpg",
+        "image/jpeg",
         _content(b"second"),
     )
     reordered = await service.update(
@@ -62,7 +62,7 @@ async def test_draft_service_manages_content_assets_and_order(tmp_path) -> None:
     assert draft.title == "标题"
     assert draft.tags == ["标签"]
     assert [item.filename for item in reordered.assets] == [
-        "second.mp4",
+        "second.jpeg",
         "first.png",
     ]
     assert [item.position for item in reordered.assets] == [0, 1]
@@ -96,6 +96,46 @@ async def test_draft_service_rejects_invalid_operations(tmp_path) -> None:
         )
     with pytest.raises(PublicationError, match="顺序必须完整"):
         await service.update(draft.draft_id, "", "", [], ["missing"])
+
+
+async def test_draft_service_rejects_mixed_or_multiple_video_assets(
+    tmp_path,
+) -> None:
+    """确保创作平台不支持的图文视频混合包不会进入任务。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    service = _service(tmp_path)
+    images = await service.create("图文", "正文", [])
+    images = await service.add_asset(
+        images.draft_id,
+        "image.png",
+        "image/png",
+        _content(b"image"),
+    )
+    with pytest.raises(PublicationError, match="一个视频"):
+        await service.add_asset(
+            images.draft_id,
+            "video.mp4",
+            "video/mp4",
+            _content(b"video"),
+        )
+
+    video = await service.create("视频", "正文", [])
+    video = await service.add_asset(
+        video.draft_id,
+        "video.mp4",
+        "video/mp4",
+        _content(b"video"),
+    )
+    with pytest.raises(PublicationError, match="不能混合"):
+        await service.add_asset(
+            video.draft_id,
+            "image.png",
+            "image/png",
+            _content(b"image"),
+        )
 
 
 async def test_draft_service_protects_assets_used_by_active_task(tmp_path) -> None:

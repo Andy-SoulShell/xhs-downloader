@@ -10,6 +10,7 @@ await build({
   entryPoints: {
     background: "src/background.ts",
     content: "src/content.ts",
+    publisher: "src/publisher.ts",
   },
   format: "iife",
   loader: { ".css": "text" },

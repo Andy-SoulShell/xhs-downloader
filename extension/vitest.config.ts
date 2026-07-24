@@ -10,6 +10,11 @@ export default defineConfig({
         "src/mode.ts",
         "src/service.ts",
         "src/storage.ts",
+        "src/publication-assets.ts",
+        "src/publication-runner.ts",
+        "src/publication-service.ts",
+        "src/publication-storage.ts",
+        "src/publisher-dom.ts",
       ],
       thresholds: {
         branches: 85,

@@ -18,6 +18,7 @@ def _make_task(
     status: PublicationTaskStatus,
     *,
     task_id: str = "synthetic-task",
+    mode: PublicationMode = PublicationMode.MANUAL,
 ) -> PublicationTask:
     draft = make_publication_draft()
     now = datetime.now(UTC)
@@ -25,7 +26,7 @@ def _make_task(
         task_id=task_id,
         package=draft,
         package_fingerprint=draft.fingerprint(),
-        mode=PublicationMode.MANUAL,
+        mode=mode,
         status=status,
         scheduled_at=now,
         created_at=now,
@@ -129,6 +130,92 @@ async def test_task_repository_lists_and_updates_expected_status(
         "done",
     }
     assert not await repository.has_active_task(ready.package.draft_id)
+
+
+async def test_automatic_claim_skips_manual_tasks(tmp_path) -> None:
+    """确保后台轮询只领取定时任务，手动任务必须按标识领取。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    repository = SqlitePublicationTaskRepository(tmp_path.joinpath("state.db"))
+    manual = _make_task(PublicationTaskStatus.READY, task_id="manual")
+    scheduled = _make_task(
+        PublicationTaskStatus.READY,
+        task_id="scheduled",
+        mode=PublicationMode.SCHEDULED,
+    )
+    await repository.save_task(manual)
+    await repository.save_task(scheduled)
+    now = datetime.now(UTC)
+
+    automatic = await repository.claim_ready(
+        "extension",
+        now,
+        now + timedelta(minutes=5),
+        "a" * 64,
+        None,
+    )
+    selected = await repository.claim_ready(
+        "extension",
+        now,
+        now + timedelta(minutes=5),
+        "b" * 64,
+        manual.task_id,
+    )
+
+    assert automatic.task_id == scheduled.task_id
+    assert selected.task_id == manual.task_id
+
+
+async def test_task_repository_migrates_legacy_mode_column(tmp_path) -> None:
+    """确保旧发布任务表补充触发模式后仍可读取任务。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    database = tmp_path.joinpath("state.db")
+    task = _make_task(
+        PublicationTaskStatus.READY,
+        mode=PublicationMode.SCHEDULED,
+    )
+    async with connect(database) as connection:
+        await connection.executescript(
+            """
+            CREATE TABLE publication_task (
+                task_id TEXT PRIMARY KEY, draft_id TEXT NOT NULL,
+                status TEXT NOT NULL, scheduled_at TEXT NOT NULL,
+                payload TEXT NOT NULL, lease_hash TEXT,
+                created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+            );
+            """
+        )
+        await connection.execute(
+            """
+            INSERT INTO publication_task VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+            """,
+            (
+                task.task_id,
+                task.package.draft_id,
+                task.status.value,
+                task.scheduled_at.isoformat(),
+                task.model_dump_json(),
+                task.created_at.isoformat(),
+                task.updated_at.isoformat(),
+            ),
+        )
+        await connection.commit()
+    repository = SqlitePublicationTaskRepository(database)
+
+    assert (await repository.get_task(task.task_id)).mode is PublicationMode.SCHEDULED
+    async with connect(database) as connection:
+        row = await (
+            await connection.execute(
+                "SELECT mode FROM publication_task WHERE task_id = ?",
+                (task.task_id,),
+            )
+        ).fetchone()
+    assert row[0] == "scheduled"
 
 
 async def test_extension_credentials_rotate_and_validate(tmp_path) -> None:

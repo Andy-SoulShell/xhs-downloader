@@ -22,6 +22,7 @@ async def initialize_publication_task_storage(database_path: Path) -> None:
             CREATE TABLE IF NOT EXISTS publication_task (
                 task_id TEXT PRIMARY KEY,
                 draft_id TEXT NOT NULL,
+                mode TEXT NOT NULL,
                 status TEXT NOT NULL,
                 scheduled_at TEXT NOT NULL,
                 payload TEXT NOT NULL,
@@ -33,6 +34,29 @@ async def initialize_publication_task_storage(database_path: Path) -> None:
                 ON publication_task(status, scheduled_at);
             """
         )
+        columns = {
+            row[1]
+            for row in await (
+                await database.execute("PRAGMA table_info(publication_task)")
+            ).fetchall()
+        }
+        if "mode" not in columns:
+            await database.execute(
+                """
+                ALTER TABLE publication_task
+                ADD COLUMN mode TEXT NOT NULL DEFAULT 'manual'
+                """
+            )
+            cursor = await database.execute(
+                "SELECT task_id, payload FROM publication_task"
+            )
+            for task_id, payload in await cursor.fetchall():
+                task = parse_publication_task(payload)
+                if task:
+                    await database.execute(
+                        "UPDATE publication_task SET mode = ? WHERE task_id = ?",
+                        (task.mode.value, task_id),
+                    )
         await database.commit()
 
 
@@ -74,7 +98,10 @@ def publication_claim_query(
     return (
         """
         SELECT payload FROM publication_task
-        WHERE status = ? ORDER BY scheduled_at LIMIT 1
+        WHERE status = ? AND mode = ? ORDER BY scheduled_at LIMIT 1
         """,
-        (PublicationTaskStatus.READY.value,),
+        (
+            PublicationTaskStatus.READY.value,
+            "scheduled",
+        ),
     )
