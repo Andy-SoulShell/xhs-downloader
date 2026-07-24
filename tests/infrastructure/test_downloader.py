@@ -6,11 +6,11 @@ from pathlib import Path
 
 import httpx
 import pytest
+from xhs_adapters.config import AppSettings
+from xhs_adapters.filesystem.downloader import FileDownloader
+from xhs_core.domain import MediaKind, MediaResource
+from xhs_core.domain.errors import DownloadError, InvalidPartialContentError
 
-from src.config import AppSettings
-from src.domain import MediaKind, MediaResource
-from src.domain.errors import DownloadError, InvalidPartialContentError
-from src.infrastructure.downloader import FileDownloader
 from tests.helpers import make_detail
 
 
@@ -190,7 +190,7 @@ async def test_retry_recovers_after_download_failure(
     async def no_sleep(delay: float) -> None:
         return None
 
-    monkeypatch.setattr("src.infrastructure.downloader.sleep", no_sleep)
+    monkeypatch.setattr("xhs_adapters.filesystem.downloader.sleep", no_sleep)
     artifacts = await downloader.download(make_detail(media=[_resource()]))
 
     assert artifacts[0].size == len(b"recovered")

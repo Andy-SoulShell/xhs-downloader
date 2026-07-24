@@ -16,9 +16,12 @@ WORKDIR /app
 LABEL name="xhs-downloader"
 
 COPY --from=builder /install /usr/local
-COPY src /app/src
-COPY main.py /app/main.py
+COPY packages/xhs-core/src /app/packages/xhs-core/src
+COPY packages/xhs-adapters/src /app/packages/xhs-adapters/src
+COPY apps/api/src /app/apps/api/src
+
+ENV PYTHONPATH="/app/apps/api/src:/app/packages/xhs-adapters/src:/app/packages/xhs-core/src"
 
 EXPOSE 5556
 VOLUME /app/volume
-CMD ["python", "main.py", "api"]
+CMD ["python", "-m", "xhs_api.main"]

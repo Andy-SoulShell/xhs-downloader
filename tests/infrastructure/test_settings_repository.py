@@ -4,10 +4,9 @@ import stat
 from pathlib import Path
 
 import pytest
-
-from src.config import AppSettings, ImageFormat
-from src.domain import SettingsError
-from src.infrastructure import DotenvSettingsRepository
+from xhs_adapters.config import AppSettings, ImageFormat
+from xhs_adapters.settings_repository import DotenvSettingsRepository
+from xhs_core.domain import SettingsError
 
 
 def test_dotenv_repository_preserves_context_and_writes_valid_values(
@@ -77,7 +76,7 @@ def test_dotenv_repository_removes_temporary_file_after_failure(
         raise OSError("synthetic failure")
 
     monkeypatch.setattr(
-        "src.infrastructure.settings_repository.os.replace",
+        "xhs_adapters.settings_repository.os.replace",
         fail_replace,
     )
 

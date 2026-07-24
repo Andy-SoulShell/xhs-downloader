@@ -2,14 +2,12 @@
 
 from pathlib import Path
 
-from src.application.factory import create_service
-from src.config import AppSettings
-from src.infrastructure import (
-    FileDownloader,
-    HttpxGateway,
-    InitialStateParser,
-    SqliteDownloadRepository,
-)
+from xhs_adapters import create_download_service
+from xhs_adapters.config import AppSettings
+from xhs_adapters.filesystem import FileDownloader
+from xhs_adapters.http import HttpxGateway
+from xhs_adapters.parsing import InitialStateParser
+from xhs_adapters.sqlite import SqliteDownloadRepository
 
 
 async def test_create_service_wires_production_adapters(tmp_path: Path) -> None:
@@ -18,7 +16,7 @@ async def test_create_service_wires_production_adapters(tmp_path: Path) -> None:
     Args:
         tmp_path: Pytest 提供的临时目录。
     """
-    service = create_service(AppSettings(work_path=tmp_path))
+    service = create_download_service(AppSettings(work_path=tmp_path))
 
     assert isinstance(service._gateway, HttpxGateway)
     assert isinstance(service._parser, InitialStateParser)

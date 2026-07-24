@@ -1,6 +1,6 @@
 """命令行入口。"""
 
-from src.interfaces.cli import app
+from xhs_cli.app import app
 
 if __name__ == "__main__":
     app()

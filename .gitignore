@@ -5,11 +5,14 @@ __pycache__/
 /.pytest_cache/
 /.coverage
 /htmlcov/
+/node_modules/
+/apps/*/node_modules/
+/apps/*/dist/
+/apps/*/coverage/
+/apps/webui/.env
+/apps/*/*.tsbuildinfo
+# 旧工作区残留可能包含失效的 pnpm 链接，迁移完成前保持忽略。
 /webui/node_modules/
-/webui/dist/
-/webui/coverage/
-/webui/.env
-/webui/*.tsbuildinfo
 /.idea/
 /.run/
 /volume/

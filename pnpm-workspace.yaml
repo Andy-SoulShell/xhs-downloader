@@ -1,0 +1,6 @@
+packages:
+  - "apps/webui"
+  - "apps/extension"
+  - "packages/xhs-contracts"
+allowBuilds:
+  esbuild: true

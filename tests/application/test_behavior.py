@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-from src.application.service import DownloadService
-from src.config import AppSettings
+from xhs_adapters.config import AppSettings
+from xhs_core.application.download import DownloadService
+
 from tests.application.helpers import _Downloader, _Gateway, _Parser, _Repository
 
 URL = "https://www.xiaohongshu.com/explore/synthetic-work"

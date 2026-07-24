@@ -1,6 +1,7 @@
 """文件与目录命名规则测试。"""
 
-from src.domain.naming import build_work_name, sanitize_segment
+from xhs_core.domain.naming import build_work_name, sanitize_segment
+
 from tests.helpers import make_detail
 
 

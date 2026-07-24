@@ -4,19 +4,19 @@ from asyncio import sleep
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
-from src.application import (
+from xhs_adapters.filesystem import FilePublicationAssetStore
+from xhs_adapters.sqlite import (
+    SqliteExtensionCredentialRepository,
+    SqlitePublicationTaskRepository,
+)
+from xhs_core.application import (
     ExtensionCredentialService,
     PublicationExecutionService,
     PublicationScheduler,
     PublicationTaskService,
 )
-from src.domain import PublicationError, PublicationMode, PublicationTaskStatus
-from src.infrastructure import (
-    FilePublicationAssetStore,
-    SqliteExtensionCredentialRepository,
-    SqlitePublicationTaskRepository,
-)
+from xhs_core.domain import PublicationError, PublicationMode, PublicationTaskStatus
+
 from tests.helpers import make_publication_draft
 
 

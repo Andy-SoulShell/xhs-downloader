@@ -3,13 +3,12 @@
 from datetime import UTC, datetime, timedelta
 
 from aiosqlite import connect
-
-from src.domain import (
+from xhs_adapters.sqlite import SqliteClientRecordRepository
+from xhs_core.domain import (
     ClientDownloadRecord,
     ClientRecordStatus,
     DownloadMode,
 )
-from src.infrastructure import SqliteClientRecordRepository
 
 
 def make_record(

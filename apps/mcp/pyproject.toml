@@ -1,0 +1,25 @@
+[project]
+name = "xhs-mcp"
+version = "3.0.0"
+description = "xhs-downloader MCP 应用"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=3.4.4",
+    "typer>=0.21.0",
+    "xhs-adapters",
+    "xhs-core",
+]
+
+[project.scripts]
+xhs-mcp = "xhs_mcp.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/xhs_mcp"]
+
+[tool.uv.sources]
+xhs-adapters = { workspace = true }
+xhs-core = { workspace = true }

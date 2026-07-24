@@ -1,10 +1,10 @@
 """合成作品页面解析测试。"""
 
 import pytest
+from xhs_adapters.config import AppSettings
+from xhs_adapters.parsing import InitialStateParser
+from xhs_core.domain import ParseError, WorkType
 
-from src.config import AppSettings
-from src.domain import ParseError, WorkType
-from src.infrastructure import InitialStateParser
 from tests.helpers import make_initial_state_html
 
 WORK_ID = "synthetic000000000000000001"

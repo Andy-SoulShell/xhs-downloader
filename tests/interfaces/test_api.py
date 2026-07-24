@@ -4,9 +4,9 @@ from asyncio import sleep
 from datetime import UTC, datetime
 
 from httpx import ASGITransport, AsyncClient
+from xhs_adapters.config import AppSettings
+from xhs_api.app import create_api
 
-from src.config import AppSettings
-from src.interfaces.api import create_api
 from tests.interfaces.helpers import FakeService
 
 

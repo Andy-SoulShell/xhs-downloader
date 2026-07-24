@@ -4,7 +4,7 @@ from json import loads
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
-MANIFEST = ROOT.joinpath("extension", "manifest.json")
+MANIFEST = ROOT.joinpath("apps", "extension", "manifest.json")
 
 
 def test_extension_uses_minimum_permissions() -> None:

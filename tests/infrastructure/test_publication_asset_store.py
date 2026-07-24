@@ -1,9 +1,8 @@
 """本地发布素材存储测试。"""
 
 import pytest
-
-from src.domain import PublicationError
-from src.infrastructure import FilePublicationAssetStore
+from xhs_adapters.filesystem import FilePublicationAssetStore
+from xhs_core.domain import PublicationError
 
 
 async def _chunks(*values: bytes):

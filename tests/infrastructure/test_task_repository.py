@@ -3,9 +3,8 @@
 from datetime import UTC, datetime, timedelta
 
 from aiosqlite import connect
-
-from src.domain import DownloadTask, DownloadTaskStatus
-from src.infrastructure import SqliteTaskRepository
+from xhs_adapters.sqlite import SqliteTaskRepository
+from xhs_core.domain import DownloadTask, DownloadTaskStatus
 
 
 def make_task(

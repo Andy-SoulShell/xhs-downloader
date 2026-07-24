@@ -1,19 +1,19 @@
 """发布草稿用例测试。"""
 
 import pytest
-
-from src.application import PublicationDraftService
-from src.domain import (
+from xhs_adapters.filesystem import FilePublicationAssetStore
+from xhs_adapters.sqlite import (
+    SqlitePublicationDraftRepository,
+    SqlitePublicationTaskRepository,
+)
+from xhs_core.application import PublicationDraftService
+from xhs_core.domain import (
     PublicationError,
     PublicationMode,
     PublicationTask,
     PublicationTaskStatus,
 )
-from src.infrastructure import (
-    FilePublicationAssetStore,
-    SqlitePublicationDraftRepository,
-    SqlitePublicationTaskRepository,
-)
+
 from tests.helpers import make_publication_draft
 
 

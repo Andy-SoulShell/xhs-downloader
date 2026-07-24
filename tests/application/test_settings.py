@@ -3,11 +3,10 @@
 from pathlib import Path
 
 import pytest
-
-from src.application import SettingsManager
-from src.config import AppSettings
-from src.domain import SettingsError
-from src.infrastructure import DotenvSettingsRepository
+from xhs_adapters.config import AppSettings
+from xhs_adapters.settings_repository import DotenvSettingsRepository
+from xhs_api.settings_service import SettingsManager
+from xhs_core.domain import SettingsError
 
 
 async def test_settings_manager_tracks_restart_and_environment_overrides(

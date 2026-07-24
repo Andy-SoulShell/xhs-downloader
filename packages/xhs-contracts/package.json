@@ -1,0 +1,9 @@
+{
+  "name": "@xhs-downloader/contracts",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
+from xhs_cli.app import app
+from xhs_core.version import VERSION
 
-from src.interfaces.cli import app
-from src.version import VERSION
 from tests.interfaces.helpers import FakeService
 
 
@@ -37,7 +37,7 @@ def test_cli_detail_and_download_commands(
     """
     service = FakeService(with_artifact=True)
     monkeypatch.setattr(
-        "src.interfaces.cli.create_service",
+        "xhs_cli.app.create_download_service",
         lambda settings: service,
     )
     runner = CliRunner()
@@ -65,7 +65,7 @@ def test_cli_reports_domain_errors(
         monkeypatch: Pytest 提供的替换工具。
     """
     monkeypatch.setattr(
-        "src.interfaces.cli.create_service",
+        "xhs_cli.app.create_download_service",
         lambda settings: FakeService(fail=True),
     )
 

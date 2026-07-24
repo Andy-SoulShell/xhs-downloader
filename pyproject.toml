@@ -1,35 +1,12 @@
-[project]
-name = "xhs-downloader"
-version = "3.0.0"
-description = "小红书作品信息解析与媒体下载工具"
-readme = "README.md"
-license = "MIT"
-requires-python = ">=3.12"
-dependencies = [
-    "aiofiles>=25.1.0",
-    "aiosqlite>=0.22.1",
-    "fastapi>=0.139.0",
-    "fastmcp>=3.4.4",
-    "httpx[http2,socks]>=0.28.1",
-    "lxml>=6.0.0",
-    "loguru>=0.7.3",
-    "pydantic>=2.12.0",
-    "pydantic-settings>=2.12.0",
-    "python-multipart>=0.0.22",
-    "pyyaml>=6.0.0",
-    "typer>=0.21.0",
-    "uvicorn>=0.41.0",
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "apps/cli",
+    "apps/mcp",
+    "packages/xhs-adapters",
+    "packages/xhs-core",
+    "packages/xhs-sdk",
 ]
-
-[project.scripts]
-xhs-downloader = "src.interfaces.cli:app"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
 
 [dependency-groups]
 dev = [
@@ -44,13 +21,12 @@ dev = [
 index-url = "https://mirrors.ustc.edu.cn/pypi/simple"
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-branch --cov-report=term-missing --cov-fail-under=85 -q"
+addopts = "--cov=xhs_core --cov=xhs_adapters --cov=xhs_api --cov=xhs_mcp --cov=xhs_cli --cov=xhs_sdk --cov-branch --cov-report=term-missing --cov-fail-under=85 -q"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["src"]
 
 [tool.coverage.report]
 fail_under = 85
@@ -63,7 +39,9 @@ exclude = [
     ".ruff_cache",
     ".venv",
     "build",
+    "coverage",
     "dist",
+    "node_modules",
 ]
 line-length = 88
 target-version = "py312"

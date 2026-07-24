@@ -1,0 +1,16 @@
+{
+  "name": "xhs-downloader-monorepo",
+  "private": true,
+  "version": "3.0.0",
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm -r --if-present check",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "verify": "pnpm lint && pnpm check && pnpm test && pnpm build"
+  }
+}

@@ -4,10 +4,10 @@ from asyncio import sleep
 from datetime import UTC, datetime
 
 import pytest
+from xhs_adapters.sqlite import SqliteTaskRepository
+from xhs_core.application import DownloadTaskCoordinator
+from xhs_core.domain import DownloadTask, DownloadTaskStatus, TaskStateError
 
-from src.application import DownloadTaskCoordinator
-from src.domain import DownloadTask, DownloadTaskStatus, TaskStateError
-from src.infrastructure import SqliteTaskRepository
 from tests.interfaces.helpers import FakeService
 
 

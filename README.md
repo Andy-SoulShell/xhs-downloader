@@ -5,7 +5,9 @@ HTTP API、MCP、Python 客户端和浏览器扩展。
 
 ## 设计特点
 
-- 领域、应用、基础设施和用户接口分层，CLI 不包含业务逻辑。
+- 使用 uv 与 pnpm 共同管理 Monorepo；API、MCP、CLI、WebUI 和浏览器扩展可独立演进。
+- 领域与应用规则位于 `xhs-core`，HTTP、SQLite 和文件系统实现位于
+  `xhs-adapters`，CLI 不包含业务逻辑。
 - 配置由 Pydantic 验证，通过 `.env` 或 `XHS_` 环境变量统一管理。
 - 下载完成后记录内容指纹、文件大小和 SHA-256；只有三者一致才跳过下载。
 - 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
@@ -29,6 +31,7 @@ HTTP API、MCP、Python 客户端和浏览器扩展。
 
 ```shell
 uv sync
+pnpm install
 ```
 
 查看命令：
@@ -42,6 +45,25 @@ uv run xhs-downloader --help
 ```shell
 uv run python main.py --help
 ```
+
+## 工作区结构
+
+```text
+apps/
+  api/          FastAPI 服务及组合根
+  cli/          Typer 命令行应用
+  mcp/          FastMCP 服务
+  webui/        React 管理界面
+  extension/    浏览器扩展
+packages/
+  xhs-core/       领域模型、端口和应用服务
+  xhs-adapters/   HTTP、SQLite、文件系统等实现
+  xhs-sdk/        Python 客户端
+  xhs-contracts/  WebUI 与扩展共享的 TypeScript 契约
+```
+
+依赖方向为 `apps → xhs-adapters → xhs-core`。各应用之间禁止直接导入；
+`xhs-sdk` 作为独立客户端入口复用核心能力和适配器。
 
 ## 配置
 
@@ -108,27 +130,26 @@ uv run xhs-downloader detail "小红书作品链接"
 先启动 FastAPI：
 
 ```shell
-uv run xhs-downloader api
+uv run xhs-api
 ```
 
 再打开另一个终端启动前端：
 
 ```shell
-pnpm --dir webui install
-pnpm --dir webui dev
+pnpm --filter xhs-downloader-webui dev
 ```
 
 浏览器访问 `http://127.0.0.1:5173`。开发服务器会将 `/api` 请求代理到
 `http://127.0.0.1:5556`；如需调整地址，复制并修改
-[`webui/.env.example`](webui/.env.example)。
+[`apps/webui/.env.example`](apps/webui/.env.example)。
 
 生产构建：
 
 ```shell
-pnpm --dir webui build
+pnpm --filter xhs-downloader-webui build
 ```
 
-构建产物位于 `webui/dist/`，不提交到仓库。WebUI 的“服务配置”页面可集中维护
+构建产物位于 `apps/webui/dist/`，不提交到仓库。WebUI 的“服务配置”页面可集中维护
 `.env`；Cookie 与代理只允许覆盖或清除，服务端不会返回原文，WebUI 也不会将其
 写入浏览器存储。配置端点只接受本机回环地址发起的请求，保存后需重启服务生效。
 
@@ -170,12 +191,11 @@ Cookie。
 构建扩展：
 
 ```shell
-pnpm --dir extension install
-pnpm --dir extension build
+pnpm --filter xhs-downloader-extension build
 ```
 
 在 Chromium 浏览器的扩展管理页启用开发者模式，选择“加载已解压的扩展程序”，
-然后打开 `extension/dist/`。访问小红书帖子详情页后，可通过页面右下角的“下载”
+然后打开 `apps/extension/dist/`。访问小红书帖子详情页后，可通过页面右下角的“下载”
 按钮或浏览器工具栏入口打开面板。
 
 扩展提供三种模式：
@@ -196,7 +216,7 @@ pnpm --dir extension build
 ## HTTP API
 
 ```shell
-uv run xhs-downloader api
+uv run xhs-api
 ```
 
 - 文档：`http://127.0.0.1:5556/docs`
@@ -235,7 +255,7 @@ Cookie 和代理统一从 `.env` 读取；如需仅覆盖本次 API 请求的 Co
 ## MCP
 
 ```shell
-uv run xhs-downloader mcp
+uv run xhs-mcp
 ```
 
 Streamable HTTP 地址：`http://127.0.0.1:5556/mcp`
@@ -250,7 +270,7 @@ Streamable HTTP 地址：`http://127.0.0.1:5556/mcp`
 ```python
 import asyncio
 
-from src import XHS
+from xhs_sdk import XHS
 
 
 async def main():
@@ -271,12 +291,10 @@ asyncio.run(main())
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest
-pnpm --dir webui lint
-pnpm --dir webui test
-pnpm --dir webui build
-pnpm --dir extension check
-pnpm --dir extension test
-pnpm --dir extension build
+pnpm lint
+pnpm check
+pnpm test
+pnpm build
 ```
 
 测试只使用完全合成的数据，不包含真实作品原文、Cookie 或 API Key。

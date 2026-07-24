@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import pytest
+from xhs_core.domain import DownloadOutcome
+from xhs_sdk import XHS
 
-from src.client import XHS
-from src.domain import DownloadOutcome
 from tests.helpers import make_detail
 
 
@@ -53,7 +53,10 @@ async def test_client_delegates_detail_and_download(
         monkeypatch: Pytest 提供的替换工具。
     """
     service = _Service()
-    monkeypatch.setattr("src.client.create_service", lambda settings: service)
+    monkeypatch.setattr(
+        "xhs_sdk.client.create_download_service",
+        lambda settings: service,
+    )
     url = "https://www.xiaohongshu.com/explore/synthetic-work"
 
     async with XHS(work_path=tmp_path) as client:

@@ -1,6 +1,7 @@
 """接口测试使用的合成应用服务。"""
 
-from src.domain import DownloadArtifact, DownloadOutcome, MediaKind, XhsError
+from xhs_core.domain import DownloadArtifact, DownloadOutcome, MediaKind, XhsError
+
 from tests.helpers import make_detail
 
 

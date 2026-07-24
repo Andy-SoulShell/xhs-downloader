@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
-
-from src.config import DEFAULT_USER_AGENT, AppSettings, ImageFormat
+from xhs_adapters.config import DEFAULT_USER_AGENT, AppSettings, ImageFormat
 
 
 def test_environment_overrides_dotenv(

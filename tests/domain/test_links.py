@@ -1,9 +1,8 @@
 """作品链接识别测试。"""
 
 import pytest
-
-from src.domain import InvalidLinkError
-from src.domain.links import extract_supported_links, is_short_link
+from xhs_core.domain import InvalidLinkError
+from xhs_core.domain.links import extract_supported_links, is_short_link
 
 
 def test_links_preserve_input_order_and_strip_punctuation() -> None:

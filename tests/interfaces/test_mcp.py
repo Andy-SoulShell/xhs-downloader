@@ -1,8 +1,8 @@
 """FastMCP 工具接口测试。"""
 
 from fastmcp import Client
+from xhs_mcp.server import create_mcp
 
-from src.interfaces.mcp import create_mcp
 from tests.interfaces.helpers import FakeService
 
 

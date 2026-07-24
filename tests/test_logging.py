@@ -2,7 +2,7 @@
 
 import logging
 
-from src.logging import configure_logging
+from xhs_adapters.logging import configure_logging
 
 
 def test_sensitive_http_logs_are_suppressed() -> None:

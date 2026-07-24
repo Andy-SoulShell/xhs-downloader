@@ -4,9 +4,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from aiosqlite import connect
+from xhs_adapters.sqlite.download_records import SqliteDownloadRepository
+from xhs_core.domain import DownloadArtifact, DownloadRecord, MediaKind
 
-from src.domain import DownloadArtifact, DownloadRecord, MediaKind
-from src.infrastructure.repository import SqliteDownloadRepository
 from tests.helpers import make_detail
 
 

@@ -3,7 +3,7 @@
 import asyncio
 import os
 
-from src import XHS
+from xhs_sdk import XHS
 
 
 async def main() -> None:

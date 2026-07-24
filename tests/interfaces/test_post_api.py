@@ -1,9 +1,9 @@
 """采集帖子 HTTP 接口测试。"""
 
 from httpx import ASGITransport, AsyncClient
+from xhs_adapters.config import AppSettings
+from xhs_api.app import create_api
 
-from src.config import AppSettings
-from src.interfaces.api import create_api
 from tests.interfaces.helpers import FakeService
 
 

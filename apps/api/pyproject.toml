@@ -1,0 +1,28 @@
+[project]
+name = "xhs-api"
+version = "3.0.0"
+description = "xhs-downloader HTTP API 应用"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.139.0",
+    "pydantic>=2.12.0",
+    "python-multipart>=0.0.22",
+    "typer>=0.21.0",
+    "uvicorn>=0.41.0",
+    "xhs-adapters",
+    "xhs-core",
+]
+
+[project.scripts]
+xhs-api = "xhs_api.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/xhs_api"]
+
+[tool.uv.sources]
+xhs-adapters = { workspace = true }
+xhs-core = { workspace = true }

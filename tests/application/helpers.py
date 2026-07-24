@@ -2,8 +2,9 @@
 
 from hashlib import sha256
 
-from src.config import AppSettings
-from src.domain import DownloadArtifact, DownloadRecord, MediaKind, WorkDetail
+from xhs_adapters.config import AppSettings
+from xhs_core.domain import DownloadArtifact, DownloadRecord, MediaKind, WorkDetail
+
 from tests.helpers import make_detail
 
 

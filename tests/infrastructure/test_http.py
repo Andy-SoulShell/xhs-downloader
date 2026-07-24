@@ -4,10 +4,9 @@ from pathlib import Path
 
 import httpx
 import pytest
-
-from src.config import AppSettings
-from src.domain.errors import DownloadError, InvalidPartialContentError
-from src.infrastructure.http import HttpxGateway
+from xhs_adapters.config import AppSettings
+from xhs_adapters.http import HttpxGateway
+from xhs_core.domain.errors import DownloadError, InvalidPartialContentError
 
 
 def _gateway(
@@ -134,7 +133,7 @@ async def test_request_retries_transient_failure(
     async def no_sleep(delay: float) -> None:
         return None
 
-    monkeypatch.setattr("src.infrastructure.http.sleep", no_sleep)
+    monkeypatch.setattr("xhs_adapters.http.sleep", no_sleep)
     async with _gateway(tmp_path, handler, max_retry=1) as gateway:
         result = await gateway.get_text("https://example.invalid")
 

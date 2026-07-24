@@ -4,13 +4,13 @@ from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 
 from aiosqlite import connect
-
-from src.domain import PublicationMode, PublicationTask, PublicationTaskStatus
-from src.infrastructure import (
+from xhs_adapters.sqlite import (
     SqliteExtensionCredentialRepository,
     SqlitePublicationDraftRepository,
     SqlitePublicationTaskRepository,
 )
+from xhs_core.domain import PublicationMode, PublicationTask, PublicationTaskStatus
+
 from tests.helpers import make_publication_draft
 
 

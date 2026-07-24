@@ -2,11 +2,12 @@
 
 from datetime import UTC, datetime
 
-from src.domain import (
+from xhs_core.domain import (
     PublicationMode,
     PublicationTask,
     PublicationTaskStatus,
 )
+
 from tests.helpers import make_publication_draft
 
 

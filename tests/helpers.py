@@ -4,7 +4,7 @@ import json
 from datetime import UTC, datetime
 from typing import Any
 
-from src.domain import (
+from xhs_core.domain import (
     Author,
     MediaKind,
     MediaResource,

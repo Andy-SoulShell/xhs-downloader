@@ -1,10 +1,9 @@
 """媒体资源地址解析测试。"""
 
 import pytest
-
-from src.config import ImageFormat, VideoPreference
-from src.domain import MediaKind, WorkType
-from src.infrastructure.media_parser import MediaParser
+from xhs_adapters.config import ImageFormat, VideoPreference
+from xhs_adapters.parsing.media import MediaParser
+from xhs_core.domain import MediaKind, WorkType
 
 SIGNED_IMAGE_URL = (
     "http://sns-webpic-qc.xhscdn.com/"

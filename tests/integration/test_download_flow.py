@@ -3,15 +3,13 @@
 from pathlib import Path
 
 import httpx
+from xhs_adapters.config import AppSettings
+from xhs_adapters.filesystem import FileDownloader
+from xhs_adapters.http import HttpxGateway
+from xhs_adapters.parsing import InitialStateParser
+from xhs_adapters.sqlite import SqliteDownloadRepository
+from xhs_core.application.download import DownloadService
 
-from src.application.service import DownloadService
-from src.config import AppSettings
-from src.infrastructure import (
-    FileDownloader,
-    HttpxGateway,
-    InitialStateParser,
-    SqliteDownloadRepository,
-)
 from tests.helpers import make_initial_state_html
 
 URL = "https://www.xiaohongshu.com/explore/synthetic-work"

@@ -1,6 +1,7 @@
 """采集帖子 SQLite 仓储测试。"""
 
-from src.infrastructure import SqlitePostRepository
+from xhs_adapters.sqlite import SqlitePostRepository
+
 from tests.helpers import make_detail
 
 
