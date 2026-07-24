@@ -14,10 +14,18 @@ export function parseCurrentDocument(
 ): ExtensionWork {
   const scripts = [...page.scripts]
     .map((script) => script.textContent?.trim() ?? "")
+    .filter((text) => text.startsWith(INITIAL_STATE_PREFIX))
     .reverse();
-  const script = scripts.find((text) => text.startsWith(INITIAL_STATE_PREFIX));
-  if (!script) throw new Error("当前页面没有可解析的帖子数据");
-  return parseInitialStateScript(script, sourceUrl);
+  if (!scripts.length) throw new Error("当前页面没有可解析的帖子数据");
+  let latestError = new Error("当前页面没有可解析的帖子数据");
+  for (const script of scripts) {
+    try {
+      return parseInitialStateScript(script, sourceUrl);
+    } catch (error) {
+      latestError = error as Error;
+    }
+  }
+  throw latestError;
 }
 
 export function parseInitialStateScript(
@@ -62,14 +70,22 @@ export function parseInitialStateScript(
 function selectNote(state: DataMap, workId: string): DataMap {
   const noteMap = object(deepGet(state, "note.noteDetailMap"));
   const direct = object(noteMap[workId]);
-  const wrapper = hasKeys(direct)
-    ? direct
-    : object(Object.values(noteMap).at(-1));
-  const note = object(wrapper.note);
-  if (Object.keys(note).length) return note;
+  const directNote = object(direct.note);
+  if (noteMatches(directNote, workId)) return directNote;
+  const matchingNote = Object.values(noteMap)
+    .map((wrapper) => object(object(wrapper).note))
+    .find((note) => noteMatches(note, workId));
+  if (matchingNote) return matchingNote;
   const phoneNote = object(deepGet(state, "noteData.data.noteData"));
-  if (Object.keys(phoneNote).length) return phoneNote;
+  if (noteMatches(phoneNote, workId)) return phoneNote;
+  if (hasKeys(noteMap) || hasKeys(phoneNote)) {
+    throw new Error("页面帖子数据与当前链接不一致，请刷新页面后重试");
+  }
   throw new Error("当前页面没有可解析的帖子数据");
+}
+
+function noteMatches(note: DataMap, workId: string): boolean {
+  return hasKeys(note) && text(note.noteId) === workId;
 }
 
 function parseVideo(video: DataMap, images: DataMap[]): ExtensionMedia[] {

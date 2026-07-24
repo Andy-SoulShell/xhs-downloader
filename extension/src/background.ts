@@ -14,6 +14,7 @@ import {
 import {
   checkService,
   requestBackgroundDownload,
+  requestWorkDetail,
   syncClientRecords,
 } from "./service";
 import {
@@ -66,6 +67,11 @@ async function handleRequest(
     return { ok: true, message: "下载模式已更新" };
   }
   if (request.type === "sync-records") return syncPendingRecords();
+  if (request.type === "resolve-work") {
+    const settings = await loadSettings();
+    const work = await requestWorkDetail(settings.serviceUrl, request.sourceUrl);
+    return { ok: true, message: "当前帖子解析完成", work };
+  }
   if (request.type === "download") {
     return download(request.work, request.indexes);
   }

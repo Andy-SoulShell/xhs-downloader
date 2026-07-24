@@ -45,6 +45,7 @@ export interface ExtensionState {
 
 export type ExtensionRequest =
   | { type: "get-state" }
+  | { type: "resolve-work"; sourceUrl: string }
   | { type: "set-mode"; mode: DownloadPreference }
   | { type: "download"; work: ExtensionWork; indexes: number[] }
   | { type: "sync-records" };
@@ -54,4 +55,5 @@ export interface ExtensionResponse {
   message: string;
   mode?: DownloadMode;
   state?: ExtensionState;
+  work?: ExtensionWork;
 }

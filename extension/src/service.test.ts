@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   checkService,
   requestBackgroundDownload,
+  requestWorkDetail,
   syncClientRecords,
 } from "./service";
 import type {
@@ -96,6 +97,152 @@ describe("本地服务客户端", () => {
     await expect(
       requestBackgroundDownload("http://service", work, [1], "request-2"),
     ).rejects.toThrow("没有返回任务标识");
+  });
+
+  it("把服务端详情转换为扩展当前帖子", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "作品信息解析完成",
+          data: {
+            作品ID: "synthetic-work",
+            作品标题: "合成测试作品",
+            作品描述: "仅用于自动化测试",
+            作者: {
+              作者ID: "synthetic-author",
+              作者昵称: "合成作者",
+              头像地址: "https://example.invalid/avatar.jpeg",
+            },
+            媒体: [
+              {
+                序号: 1,
+                类型: "视频",
+                地址: "https://example.invalid/video.mp4",
+                扩展名: "mp4",
+                预览地址: "https://example.invalid/cover.jpeg",
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestWorkDetail(
+        "http://127.0.0.1:5556/",
+        "https://example.invalid/synthetic-work",
+      ),
+    ).resolves.toMatchObject({
+      workId: "synthetic-work",
+      authorName: "合成作者",
+      media: [
+        {
+          index: 1,
+          kind: "video",
+          suffix: "mp4",
+        },
+      ],
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://127.0.0.1:5556/xhs/detail",
+    );
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      credentials: "omit",
+      method: "POST",
+    });
+  });
+
+  it("拒绝服务端返回其他帖子", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            作品ID: "stale-work",
+            作品标题: "旧帖子",
+            作品描述: "",
+            作者: { 作者ID: "stale-author", 作者昵称: "旧作者" },
+            媒体: [],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestWorkDetail(
+        "http://127.0.0.1:5556",
+        "https://example.invalid/synthetic-work",
+      ),
+    ).rejects.toThrow("与当前链接不一致");
+  });
+
+  it("转换图片和动态图片并回退到作者 ID", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            作品ID: "synthetic-work",
+            作品标题: "合成图文",
+            作品描述: "",
+            作者: {
+              作者ID: "synthetic-author",
+              作者昵称: "",
+              头像地址: null,
+            },
+            媒体: [
+              {
+                序号: 1,
+                类型: "图片",
+                地址: "https://example.invalid/image.jpeg",
+                扩展名: "jpeg",
+              },
+              {
+                序号: 1,
+                类型: "动态图片",
+                地址: "https://example.invalid/live.mp4",
+                扩展名: "mp4",
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestWorkDetail(
+        "http://127.0.0.1:5556",
+        "https://example.invalid/synthetic-work",
+      ),
+    ).resolves.toMatchObject({
+      authorName: "synthetic-author",
+      authorAvatar: undefined,
+      media: [{ kind: "image" }, { kind: "live" }],
+    });
+  });
+
+  it("保留详情解析错误并处理空数据", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: "详情解析失败" }), {
+          status: 400,
+        }),
+      )
+      .mockResolvedValueOnce(new Response("invalid", { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: null })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestWorkDetail("http://service", work.sourceUrl),
+    ).rejects.toThrow("详情解析失败");
+    await expect(
+      requestWorkDetail("http://service", work.sourceUrl),
+    ).rejects.toThrow("HTTP 503");
+    await expect(
+      requestWorkDetail("http://service", work.sourceUrl),
+    ).rejects.toThrow("没有返回帖子数据");
   });
 
   it("同步记录并跳过空批次", async () => {

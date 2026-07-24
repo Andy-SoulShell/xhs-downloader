@@ -34,10 +34,10 @@ async function togglePanel(): Promise<void> {
     return;
   }
   try {
-    const work = parseCurrentDocument(document, location.href);
-    if (!work.media.length) throw new Error("当前帖子没有可下载媒体");
     const response = await send({ type: "get-state" });
     if (!response.state) throw new Error(response.message);
+    const work = await resolveCurrentWork(response.state.online);
+    if (!work.media.length) throw new Error("当前帖子没有可下载媒体");
     launcher.hidden = true;
     renderPanel(root, work, response.state, {
       close: closePanel,
@@ -54,6 +54,31 @@ async function togglePanel(): Promise<void> {
       error instanceof Error ? error.message : "当前帖子解析失败",
     );
   }
+}
+
+async function resolveCurrentWork(online: boolean): Promise<
+  ReturnType<typeof parseCurrentDocument>
+> {
+  let pageWork: ReturnType<typeof parseCurrentDocument> | undefined;
+  let pageError: unknown;
+  try {
+    pageWork = parseCurrentDocument(document, location.href);
+  } catch (error) {
+    pageError = error;
+  }
+  if (online) {
+    const response = await send({
+      type: "resolve-work",
+      sourceUrl: location.href,
+    });
+    if (response.work) return response.work;
+    if (pageWork) return pageWork;
+    throw new Error(response.message);
+  }
+  if (pageWork) return pageWork;
+  throw pageError instanceof Error
+    ? pageError
+    : new Error("当前帖子解析失败");
 }
 
 function closePanel(): void {

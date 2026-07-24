@@ -219,6 +219,58 @@ describe("帖子页面解析", () => {
     expect(parseCurrentDocument(document, SOURCE_URL).workId).toBe(WORK_ID);
   });
 
+  it("拒绝把单页切换前的旧帖子当作当前帖子", () => {
+    const staleId = "stale00000000000000000001";
+    const staleScript = `window.__INITIAL_STATE__=${JSON.stringify({
+      note: {
+        noteDetailMap: {
+          [staleId]: {
+            note: {
+              noteId: staleId,
+              type: "normal",
+              title: "旧帖子",
+              user: { userId: "stale-author" },
+              imageList: [
+                { url: "https://sns-img-bd.xhscdn.com/stale.jpeg" },
+              ],
+            },
+          },
+        },
+      },
+    })};`;
+
+    expect(() => parseInitialStateScript(staleScript, SOURCE_URL)).toThrow(
+      "与当前链接不一致",
+    );
+  });
+
+  it("跳过不匹配的较新状态并查找当前帖子", () => {
+    const staleId = "stale00000000000000000001";
+    document.body.innerHTML = `
+      <script>${stateScript({
+        noteId: WORK_ID,
+        type: "normal",
+        user: { userId: "synthetic-author" },
+        imageList: [],
+      })}</script>
+      <script>window.__INITIAL_STATE__=${JSON.stringify({
+        note: {
+          noteDetailMap: {
+            [staleId]: {
+              note: {
+                noteId: staleId,
+                user: { userId: "stale-author" },
+                imageList: [],
+              },
+            },
+          },
+        },
+      })}</script>
+    `;
+
+    expect(parseCurrentDocument(document, SOURCE_URL).workId).toBe(WORK_ID);
+  });
+
   it("拒绝缺少或损坏的初始状态", () => {
     document.body.innerHTML = "<main></main>";
     expect(() => parseCurrentDocument(document, SOURCE_URL)).toThrow(
