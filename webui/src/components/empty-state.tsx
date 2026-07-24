@@ -1,20 +1,27 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface EmptyStateProps {
   description: string;
   icon: LucideIcon;
   title: string;
+  action?: ReactNode;
+  compact?: boolean;
 }
 
 export function EmptyState({
   description,
   icon: Icon,
   title,
+  action,
+  compact = false,
 }: EmptyStateProps) {
   return (
     <div
       aria-label={title}
-      className="grid min-h-[420px] place-items-center rounded-3xl border border-dashed border-stone-300 bg-white/45 p-8 text-center"
+      className={`grid place-items-center rounded-3xl border border-dashed border-stone-300 bg-white/45 p-8 text-center ${
+        compact ? "min-h-56" : "min-h-[420px]"
+      }`}
       role="status"
     >
       <div className="max-w-sm">
@@ -23,6 +30,7 @@ export function EmptyState({
         </span>
         <p className="mt-4 text-lg font-semibold text-stone-800">{title}</p>
         <p className="mt-2 text-sm leading-6 text-stone-500">{description}</p>
+        {action && <div className="mt-5 flex justify-center">{action}</div>}
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { LinkComposer } from "./components/link-composer";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
 import { PostLibrary } from "./components/post-library";
 import { ProductBrand } from "./components/product-brand";
+import { PublicationBoard } from "./components/publication-board";
 import { SettingsBoard } from "./components/settings-board";
 import { RecordBoard, TaskBoard } from "./components/task-center";
 import { StatusPill } from "./components/status-pill";
@@ -214,6 +215,9 @@ export default function App() {
                 onRetry={(taskId) => void handleRetry(taskId)}
                 tasks={tasks}
               />
+            )}
+            {view === "publication" && (
+              <PublicationBoard onNotify={notify} />
             )}
             {view === "records" && <RecordBoard records={records} />}
             {view === "settings" && (

@@ -19,7 +19,7 @@ export function MobileWorkspaceNav({
     >
       <SegmentedControl
         ariaLabel="切换工作台视图"
-        className="grid grid-cols-4"
+        className="grid grid-cols-5"
         onValueChange={(value) => onViewChange(value as WorkspaceView)}
         value={view}
       >

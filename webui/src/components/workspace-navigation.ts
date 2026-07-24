@@ -4,6 +4,7 @@ import {
   GalleryVerticalEnd,
   History,
   ListTodo,
+  Send,
   Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -51,6 +52,12 @@ export const workspaceViewItems: WorkspaceViewItem[] = [
     label: "帖子",
     sidebarLabel: "全部帖子",
     view: "posts",
+  },
+  {
+    icon: Send,
+    label: "发布",
+    sidebarLabel: "发布中心",
+    view: "publication",
   },
   {
     icon: ListTodo,

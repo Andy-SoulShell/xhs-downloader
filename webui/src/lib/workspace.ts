@@ -5,7 +5,12 @@ import type {
 
 export type PostStatus = "ready" | "downloading" | "done" | "error";
 export type Filter = "all" | "ready" | "done";
-export type WorkspaceView = "posts" | "tasks" | "records" | "settings";
+export type WorkspaceView =
+  | "posts"
+  | "publication"
+  | "tasks"
+  | "records"
+  | "settings";
 
 export interface PostRecord {
   id: string;

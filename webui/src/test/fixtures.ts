@@ -3,6 +3,10 @@ import type {
   DownloadTask,
   SettingsResponse,
 } from "../lib/types";
+import type {
+  PublicationDraft,
+  PublicationTask,
+} from "../lib/publication";
 
 export function makeDetailResponse(
   overrides: Partial<DetailResponse> = {},
@@ -103,12 +107,60 @@ export function makeSettingsResponse(
       server_host: "127.0.0.1",
       server_port: 5556,
       log_level: "info",
+      publish_max_asset_size: 1073741824,
+      publish_lease_seconds: 300,
     },
     config_file: "/tmp/synthetic.env",
     restart_required: false,
     overridden_fields: [],
     cookie_configured: false,
     proxy_configured: false,
+    ...overrides,
+  };
+}
+
+export function makePublicationDraft(
+  overrides: Partial<PublicationDraft> = {},
+): PublicationDraft {
+  return {
+    draft_id: "synthetic-draft",
+    title: "合成发布标题",
+    body: "合成发布正文",
+    tags: ["合成", "测试"],
+    assets: [
+      {
+        asset_id: "synthetic-asset",
+        filename: "synthetic.jpeg",
+        media_type: "image/jpeg",
+        size: 1024,
+        sha256: "a".repeat(64),
+        position: 0,
+      },
+    ],
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+export function makePublicationTask(
+  overrides: Partial<PublicationTask> = {},
+): PublicationTask {
+  const draft = makePublicationDraft();
+  return {
+    task_id: "synthetic-publication-task",
+    package: draft,
+    package_fingerprint: "b".repeat(64),
+    mode: "manual",
+    status: "ready",
+    scheduled_at: "2026-01-02T00:00:00Z",
+    extension_id: null,
+    lease_expires_at: null,
+    attempts: 0,
+    message: "等待扩展立即发布",
+    result_url: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
   };
 }

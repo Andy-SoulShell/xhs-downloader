@@ -10,6 +10,7 @@ import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
+import { PublicationSettings } from "./publication-settings";
 import {
   DownloadSettings,
   NetworkSettings,
@@ -197,6 +198,7 @@ function SettingsForm({
           values={draft}
         />
         <DownloadSettings onChange={change} values={draft} />
+        <PublicationSettings onChange={change} values={draft} />
         <ServiceSettings onChange={change} values={draft} />
 
         <div className="control-shell flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -264,4 +266,6 @@ const settingLabels: Record<string, string> = {
   server_host: "监听地址",
   server_port: "监听端口",
   log_level: "日志级别",
+  publish_max_asset_size: "发布素材上限",
+  publish_lease_seconds: "发布任务租约",
 };
