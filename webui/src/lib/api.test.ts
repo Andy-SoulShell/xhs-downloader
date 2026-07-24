@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   checkHealth,
+  getSettings,
   listClientRecords,
   listTasks,
   retryTask,
   submitDetail,
   submitTask,
+  updateSettings,
 } from "./api";
+import { makeSettingsResponse } from "../test/fixtures";
 
 describe("API 客户端", () => {
   afterEach(() => {
@@ -131,5 +134,37 @@ describe("API 客户端", () => {
     );
 
     await expect(listClientRecords()).resolves.toEqual(records);
+  });
+
+  it("读取并更新本地服务配置", async () => {
+    const settings = makeSettingsResponse();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(settings)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(settings)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getSettings()).resolves.toEqual(settings);
+    await expect(updateSettings(settings.values)).resolves.toEqual(settings);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/settings",
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify(settings.values),
+      }),
+    );
+  });
+
+  it("显示 FastAPI detail 错误信息", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: "仅允许本机访问" }), {
+          status: 403,
+        }),
+      ),
+    );
+
+    await expect(getSettings()).rejects.toThrow("仅允许本机访问");
   });
 });

@@ -10,24 +10,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./app";
 import {
   checkHealth,
+  getSettings,
   listClientRecords,
   listTasks,
   retryTask,
   submitDetail,
   submitTask,
+  updateSettings,
 } from "./lib/api";
 import {
   makeDetailResponse,
   makeDownloadTask,
+  makeSettingsResponse,
 } from "./test/fixtures";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
+  getSettings: vi.fn(),
   listClientRecords: vi.fn(),
   listTasks: vi.fn(),
   retryTask: vi.fn(),
   submitDetail: vi.fn(),
   submitTask: vi.fn(),
+  updateSettings: vi.fn(),
 }));
 
 async function addSyntheticPost() {
@@ -45,11 +50,15 @@ describe("帖子下载工作台", () => {
     vi.mocked(checkHealth).mockResolvedValue(true);
     vi.mocked(listClientRecords).mockResolvedValue([]);
     vi.mocked(listTasks).mockResolvedValue([]);
+    vi.mocked(getSettings).mockResolvedValue(makeSettingsResponse());
     vi.mocked(retryTask).mockResolvedValue(
       makeDownloadTask({ status: "queued" }),
     );
     vi.mocked(submitDetail).mockResolvedValue(makeDetailResponse());
     vi.mocked(submitTask).mockResolvedValue(makeDownloadTask());
+    vi.mocked(updateSettings).mockResolvedValue(
+      makeSettingsResponse({ restart_required: true }),
+    );
   });
 
   it("解析帖子并以紧凑卡片加入瀑布流", async () => {
@@ -243,5 +252,32 @@ describe("帖子下载工作台", () => {
     fireEvent.click(screen.getByRole("button", { name: /独立记录/ }));
     expect(screen.getByText("合成独立记录")).toBeInTheDocument();
     expect(screen.getByText("浏览器下载完成")).toBeInTheDocument();
+  });
+
+  it("从管理后台更新服务配置", async () => {
+    render(<App />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "服务配置" }),
+    );
+    fireEvent.change(screen.getByLabelText("媒体目录名"), {
+      target: { value: "media" },
+    });
+    fireEvent.change(screen.getByLabelText("小红书 Cookie"), {
+      target: { value: "session=synthetic" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
+
+    await waitFor(() =>
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folder_name: "media",
+          cookie: "session=synthetic",
+        }),
+      ),
+    );
+    expect(
+      await screen.findByText("配置已保存，重启本地服务后生效"),
+    ).toBeInTheDocument();
   });
 });

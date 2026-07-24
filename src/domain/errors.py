@@ -17,6 +17,10 @@ class TaskStateError(XhsError):
     """下载任务状态不允许当前操作。"""
 
 
+class SettingsError(XhsError):
+    """配置内容无效或无法安全持久化。"""
+
+
 class DownloadError(XhsError):
     """媒体请求或文件落盘失败。"""
 

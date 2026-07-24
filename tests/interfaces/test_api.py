@@ -212,3 +212,81 @@ async def test_api_converts_domain_error_to_bad_request() -> None:
 
     assert response.status_code == 400
     assert response.json() == {"message": "合成接口错误"}
+
+
+async def test_api_manages_settings_without_returning_secrets(tmp_path) -> None:
+    """确保管理后台可保存配置，但响应不会回传敏感内容。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    env_file = tmp_path.joinpath(".env")
+    settings = AppSettings(work_path=tmp_path)
+    api = create_api(
+        settings,
+        lambda _: FakeService(),
+        env_file,
+        lambda _: True,
+    )
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://test",
+        ) as client,
+    ):
+        updated = await client.put(
+            "/settings",
+            json={
+                "timeout": 30,
+                "folder_name": "media",
+                "cookie": "session=synthetic",
+                "proxy": "http://user:secret@127.0.0.1:7890",
+            },
+        )
+        loaded = await client.get("/settings")
+
+    assert updated.status_code == 200
+    assert updated.json()["cookie_configured"] is True
+    assert updated.json()["proxy_configured"] is True
+    assert updated.json()["restart_required"] is True
+    assert updated.json()["values"]["timeout"] == 30
+    assert loaded.json()["values"]["folder_name"] == "media"
+    assert "session=synthetic" not in updated.text
+    assert "user:secret" not in updated.text
+    assert "session=synthetic" in env_file.read_text(encoding="utf-8")
+
+
+async def test_api_restricts_settings_to_local_web_origins(tmp_path) -> None:
+    """确保扩展来源和非本机来源不能访问配置管理。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    api = create_api(
+        AppSettings(work_path=tmp_path),
+        lambda _: FakeService(),
+        tmp_path.joinpath(".env"),
+    )
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(
+                app=api,
+                client=("127.0.0.1", 45000),
+            ),
+            base_url="http://127.0.0.1",
+        ) as client,
+    ):
+        local = await client.get(
+            "/settings",
+            headers={"Origin": "http://localhost:5173"},
+        )
+        extension = await client.get(
+            "/settings",
+            headers={"Origin": "chrome-extension://synthetic-id"},
+        )
+
+    assert local.status_code == 200
+    assert extension.status_code == 403
+    assert extension.json()["detail"] == "配置管理仅允许从本机访问"

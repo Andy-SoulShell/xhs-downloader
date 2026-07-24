@@ -4,6 +4,8 @@ import type {
   DetailResponse,
   DownloadTask,
   DownloadTaskStatus,
+  SettingsResponse,
+  SettingsUpdate,
   TaskRequest,
 } from "./types";
 
@@ -11,10 +13,14 @@ const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as
-    | { message?: string }
+    | { detail?: string; message?: string }
     | null;
   if (!response.ok) {
-    throw new Error(payload?.message || `请求失败（HTTP ${response.status}）`);
+    throw new Error(
+      payload?.message ||
+        payload?.detail ||
+        `请求失败（HTTP ${response.status}）`,
+    );
   }
   return payload as T;
 }
@@ -68,4 +74,20 @@ export async function retryTask(taskId: string): Promise<DownloadTask> {
 export async function listClientRecords(): Promise<ClientDownloadRecord[]> {
   const response = await fetch(`${API_BASE}/extension/records`);
   return parseResponse<ClientDownloadRecord[]>(response);
+}
+
+export async function getSettings(): Promise<SettingsResponse> {
+  const response = await fetch(`${API_BASE}/settings`);
+  return parseResponse<SettingsResponse>(response);
+}
+
+export async function updateSettings(
+  values: SettingsUpdate,
+): Promise<SettingsResponse> {
+  const response = await fetch(`${API_BASE}/settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(values),
+  });
+  return parseResponse<SettingsResponse>(response);
 }

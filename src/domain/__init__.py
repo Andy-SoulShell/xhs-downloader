@@ -5,6 +5,7 @@ from .errors import (
     InvalidLinkError,
     InvalidPartialContentError,
     ParseError,
+    SettingsError,
     TaskStateError,
     XhsError,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "MediaKind",
     "MediaResource",
     "ParseError",
+    "SettingsError",
     "TaskStateError",
     "WorkDetail",
     "WorkType",

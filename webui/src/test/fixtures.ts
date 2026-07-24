@@ -1,6 +1,7 @@
 import type {
   DetailResponse,
   DownloadTask,
+  SettingsResponse,
 } from "../lib/types";
 
 export function makeDetailResponse(
@@ -71,6 +72,43 @@ export function makeDownloadTask(
     artifacts: [],
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:01Z",
+    ...overrides,
+  };
+}
+
+export function makeSettingsResponse(
+  overrides: Partial<SettingsResponse> = {},
+): SettingsResponse {
+  return {
+    values: {
+      work_path: null,
+      folder_name: "download",
+      name_format: "发布时间 作者昵称 作品标题",
+      user_agent: "synthetic-agent",
+      timeout: 15,
+      chunk: 2097152,
+      max_retry: 3,
+      max_concurrency: 4,
+      record_data: false,
+      image_format: "jpeg",
+      image_download: true,
+      video_download: true,
+      live_download: false,
+      video_preference: "resolution",
+      folder_mode: false,
+      download_record: true,
+      author_archive: false,
+      write_mtime: false,
+      mapping_data: {},
+      server_host: "127.0.0.1",
+      server_port: 5556,
+      log_level: "info",
+    },
+    config_file: "/tmp/synthetic.env",
+    restart_required: false,
+    overridden_fields: [],
+    cookie_configured: false,
+    proxy_configured: false,
     ...overrides,
   };
 }

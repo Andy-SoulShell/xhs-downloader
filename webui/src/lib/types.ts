@@ -91,3 +91,51 @@ export interface ClientDownloadRecord {
   created_at: string;
   message: string;
 }
+
+export type ImageFormat =
+  | "auto"
+  | "png"
+  | "webp"
+  | "jpeg"
+  | "heic"
+  | "avif";
+export type VideoPreference = "resolution" | "bitrate" | "size";
+
+export interface SettingsValues {
+  work_path: string | null;
+  folder_name: string;
+  name_format: string;
+  user_agent: string;
+  timeout: number;
+  chunk: number;
+  max_retry: number;
+  max_concurrency: number;
+  record_data: boolean;
+  image_format: ImageFormat;
+  image_download: boolean;
+  video_download: boolean;
+  live_download: boolean;
+  video_preference: VideoPreference;
+  folder_mode: boolean;
+  download_record: boolean;
+  author_archive: boolean;
+  write_mtime: boolean;
+  mapping_data: Record<string, string>;
+  server_host: string;
+  server_port: number;
+  log_level: string;
+}
+
+export interface SettingsResponse {
+  values: SettingsValues;
+  config_file: string;
+  restart_required: boolean;
+  overridden_fields: string[];
+  cookie_configured: boolean;
+  proxy_configured: boolean;
+}
+
+export type SettingsUpdate = SettingsValues & {
+  cookie?: string | null;
+  proxy?: string | null;
+};

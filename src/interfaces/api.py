@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -12,6 +13,7 @@ from uvicorn import Config, Server
 from src.application import (
     DownloadService,
     DownloadTaskCoordinator,
+    SettingsManager,
     create_service,
 )
 from src.config import AppSettings
@@ -23,6 +25,7 @@ from src.domain import (
     XhsError,
 )
 from src.infrastructure import (
+    DotenvSettingsRepository,
     SqliteClientRecordRepository,
     SqliteTaskRepository,
 )
@@ -36,6 +39,11 @@ from .api_models import (
     ExtensionCapabilities,
     TaskRequest,
 )
+from .settings_api import (
+    SettingsAccessPolicy,
+    allow_loopback_settings,
+    create_settings_router,
+)
 
 ServiceFactory = Callable[[AppSettings], DownloadService]
 EXTENSION_ORIGIN_PATTERN = (
@@ -47,22 +55,35 @@ EXTENSION_ORIGIN_PATTERN = (
 def create_api(
     settings: AppSettings | None = None,
     service_factory: ServiceFactory = create_service,
+    settings_file: Path | None = None,
+    settings_access_policy: SettingsAccessPolicy = allow_loopback_settings,
+    settings_override_fields: set[str] | None = None,
 ) -> FastAPI:
     """创建具备完整生命周期的 FastAPI 应用。
 
     Args:
         settings: 应用配置；为空时读取默认环境配置。
         service_factory: 用于测试替换基础设施的服务工厂。
+        settings_file: 管理后台维护的 dotenv 文件。
+        settings_access_policy: 配置端点的本机访问判定策略。
+        settings_override_fields: 启动参数覆盖的配置字段。
 
     Returns:
         可交给 ASGI 服务器运行的应用。
     """
     resolved_settings = settings or AppSettings.from_env()
+    resolved_settings_file = settings_file or Path(".env")
     client_records = SqliteClientRecordRepository(
         resolved_settings.state_dir.joinpath("downloads.db")
     )
     task_repository = SqliteTaskRepository(
         resolved_settings.state_dir.joinpath("downloads.db")
+    )
+    settings_manager = SettingsManager(
+        resolved_settings,
+        resolved_settings_file,
+        DotenvSettingsRepository(resolved_settings_file),
+        runtime_overrides=settings_override_fields,
     )
 
     @asynccontextmanager
@@ -91,9 +112,10 @@ def create_api(
         CORSMiddleware,
         allow_origin_regex=EXTENSION_ORIGIN_PATTERN,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
         allow_headers=["Content-Type"],
     )
+    api.include_router(create_settings_router(settings_manager, settings_access_policy))
 
     @api.exception_handler(XhsError)
     async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:
@@ -221,16 +243,26 @@ def create_api(
     return api
 
 
-async def run_api(settings: AppSettings) -> None:
+async def run_api(
+    settings: AppSettings,
+    settings_file: Path | None = None,
+    settings_override_fields: set[str] | None = None,
+) -> None:
     """启动 HTTP API 服务。
 
     Args:
         settings: 服务器与下载配置。
+        settings_file: 管理后台维护的 dotenv 文件。
+        settings_override_fields: 启动参数覆盖的配置字段。
     """
     configure_logging(settings.log_level)
     server = Server(
         Config(
-            create_api(settings),
+            create_api(
+                settings,
+                settings_file=settings_file,
+                settings_override_fields=settings_override_fields,
+            ),
             host=settings.server_host,
             port=settings.server_port,
             log_level=settings.log_level,

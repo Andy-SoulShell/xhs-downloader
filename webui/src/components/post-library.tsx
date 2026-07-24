@@ -1,5 +1,4 @@
 import { GalleryVerticalEnd, Search } from "lucide-react";
-import { ToggleGroup } from "radix-ui";
 
 import type {
   Filter,
@@ -8,6 +7,11 @@ import type {
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
 import { PostCard } from "./post-card";
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from "./segmented-control";
+import { postFilterItems } from "./workspace-navigation";
 
 interface PostLibraryProps {
   completedCount: number;
@@ -52,19 +56,21 @@ export function PostLibrary({
               value={query}
             />
           </label>
-          <ToggleGroup.Root
-            aria-label="筛选帖子"
-            className="flex rounded-xl border border-stone-200 bg-white p-1 lg:hidden"
-            onValueChange={(value) =>
-              value && onFilterChange(value as Filter)
-            }
-            type="single"
+          <SegmentedControl
+            ariaLabel="筛选帖子"
+            className="flex lg:hidden"
+            onValueChange={(value) => onFilterChange(value as Filter)}
             value={filter}
           >
-            <FilterButton value="all">全部</FilterButton>
-            <FilterButton value="ready">待处理</FilterButton>
-            <FilterButton value="done">已下载</FilterButton>
-          </ToggleGroup.Root>
+            {postFilterItems.map((item) => (
+              <SegmentedControlItem
+                key={item.filter}
+                value={item.filter}
+              >
+                {item.label}
+              </SegmentedControlItem>
+            ))}
+          </SegmentedControl>
         </div>
         }
         meta={`${posts.length} 个帖子 · ${completedCount} 个已下载`}
@@ -100,22 +106,5 @@ export function PostLibrary({
         />
       )}
     </section>
-  );
-}
-
-function FilterButton({
-  value,
-  children,
-}: {
-  value: Filter;
-  children: string;
-}) {
-  return (
-    <ToggleGroup.Item
-      className="rounded-lg px-3 py-2 text-xs font-medium text-stone-500 outline-none data-[state=on]:bg-stone-900 data-[state=on]:text-white focus:ring-2 focus:ring-stone-300"
-      value={value}
-    >
-      {children}
-    </ToggleGroup.Item>
   );
 }

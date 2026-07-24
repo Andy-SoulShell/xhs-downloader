@@ -3,12 +3,15 @@ import type { FormEvent } from "react";
 import { Toast } from "radix-ui";
 
 import { LinkComposer } from "./components/link-composer";
+import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
 import { PostLibrary } from "./components/post-library";
 import { ProductBrand } from "./components/product-brand";
+import { SettingsBoard } from "./components/settings-board";
 import { RecordBoard, TaskBoard } from "./components/task-center";
 import { StatusPill } from "./components/status-pill";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import { checkHealth, submitDetail } from "./lib/api";
+import { useSettings } from "./lib/use-settings";
 import { useTaskCenter } from "./lib/use-task-center";
 import {
   mergeTaskResults,
@@ -34,6 +37,14 @@ export default function App() {
     restartTask,
     tasks,
   } = useTaskCenter();
+  const {
+    error: settingsError,
+    loading: settingsLoading,
+    refresh: refreshSettings,
+    save: saveSettings,
+    saving: settingsSaving,
+    settings,
+  } = useSettings();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -165,6 +176,7 @@ export default function App() {
         />
 
         <MobileHeader online={effectiveOnline} />
+        <MobileWorkspaceNav onViewChange={setView} view={view} />
 
         <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
           <div className="mx-auto max-w-[1460px]">
@@ -204,6 +216,17 @@ export default function App() {
               />
             )}
             {view === "records" && <RecordBoard records={records} />}
+            {view === "settings" && (
+              <SettingsBoard
+                error={settingsError}
+                loading={settingsLoading}
+                onRefresh={() => void refreshSettings()}
+                onSave={saveSettings}
+                onSaved={notify}
+                saving={settingsSaving}
+                settings={settings}
+              />
+            )}
           </div>
         </main>
       </div>

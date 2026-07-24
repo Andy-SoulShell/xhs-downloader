@@ -1,9 +1,5 @@
 import {
-  CheckCircle2,
-  CircleDashed,
   GalleryVerticalEnd,
-  History,
-  ListTodo,
 } from "lucide-react";
 
 import type {
@@ -12,6 +8,10 @@ import type {
 } from "../lib/workspace";
 import { ProductBrand } from "./product-brand";
 import { StatusPill } from "./status-pill";
+import {
+  managementViewItems,
+  postFilterItems,
+} from "./workspace-navigation";
 
 interface WorkspaceSidebarProps {
   completedCount: number;
@@ -37,6 +37,15 @@ export function WorkspaceSidebar({
   onViewChange,
 }: WorkspaceSidebarProps) {
   const pendingCount = postCount - completedCount;
+  const filterCounts: Record<Filter, number> = {
+    all: postCount,
+    ready: pendingCount,
+    done: completedCount,
+  };
+  const viewCounts: Partial<Record<WorkspaceView, number>> = {
+    tasks: taskCount,
+    records: recordCount,
+  };
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-stone-800 bg-stone-950 px-4 py-5 text-white lg:flex">
@@ -45,53 +54,32 @@ export function WorkspaceSidebar({
       </div>
 
       <nav aria-label="帖子状态" className="mt-9 space-y-1">
-        <SidebarButton
-          active={view === "posts" && filter === "all"}
-          count={postCount}
-          icon={GalleryVerticalEnd}
-          label="全部帖子"
-          onClick={() => {
-            onViewChange("posts");
-            onFilterChange("all");
-          }}
-        />
-        <SidebarButton
-          active={view === "posts" && filter === "ready"}
-          count={pendingCount}
-          icon={CircleDashed}
-          label="待处理"
-          onClick={() => {
-            onViewChange("posts");
-            onFilterChange("ready");
-          }}
-        />
-        <SidebarButton
-          active={view === "posts" && filter === "done"}
-          count={completedCount}
-          icon={CheckCircle2}
-          label="已下载"
-          onClick={() => {
-            onViewChange("posts");
-            onFilterChange("done");
-          }}
-        />
+        {postFilterItems.map((item) => (
+          <SidebarButton
+            active={view === "posts" && filter === item.filter}
+            count={filterCounts[item.filter]}
+            icon={item.icon}
+            key={item.filter}
+            label={item.sidebarLabel}
+            onClick={() => {
+              onViewChange("posts");
+              onFilterChange(item.filter);
+            }}
+          />
+        ))}
       </nav>
 
       <nav aria-label="下载管理" className="mt-6 space-y-1 border-t border-stone-800 pt-6">
-        <SidebarButton
-          active={view === "tasks"}
-          count={taskCount}
-          icon={ListTodo}
-          label="下载任务"
-          onClick={() => onViewChange("tasks")}
-        />
-        <SidebarButton
-          active={view === "records"}
-          count={recordCount}
-          icon={History}
-          label="独立记录"
-          onClick={() => onViewChange("records")}
-        />
+        {managementViewItems.map((item) => (
+          <SidebarButton
+            active={view === item.view}
+            count={viewCounts[item.view]}
+            icon={item.icon}
+            key={item.view}
+            label={item.sidebarLabel}
+            onClick={() => onViewChange(item.view)}
+          />
+        ))}
       </nav>
 
       <div className="mt-auto rounded-2xl border border-stone-800 bg-stone-900 p-4">
@@ -115,7 +103,7 @@ function SidebarButton({
   onClick,
 }: {
   active: boolean;
-  count: number;
+  count?: number;
   icon: typeof GalleryVerticalEnd;
   label: string;
   onClick: () => void;
@@ -132,9 +120,11 @@ function SidebarButton({
     >
       <Icon aria-hidden size={17} />
       <span className="flex-1 text-left font-medium">{label}</span>
-      <span className={active ? "text-stone-400" : "text-stone-600"}>
-        {count}
-      </span>
+      {count !== undefined && (
+        <span className={active ? "text-stone-400" : "text-stone-600"}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }

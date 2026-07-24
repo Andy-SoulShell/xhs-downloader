@@ -5,9 +5,11 @@ from .downloader import FileDownloader
 from .http import HttpxGateway
 from .parser import InitialStateParser
 from .repository import SqliteDownloadRepository
+from .settings_repository import DotenvSettingsRepository
 from .task_repository import SqliteTaskRepository
 
 __all__ = [
+    "DotenvSettingsRepository",
     "FileDownloader",
     "HttpxGateway",
     "InitialStateParser",

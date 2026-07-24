@@ -153,7 +153,14 @@ def api_command(
         port: 覆盖监听端口。
     """
     overrides = _server_overrides(host, port)
-    _run(run_api(AppSettings.from_env(env_file, **overrides)))
+    settings_file = env_file or Path(".env")
+    _run(
+        run_api(
+            AppSettings.from_env(settings_file, **overrides),
+            settings_file,
+            set(overrides),
+        )
+    )
 
 
 @app.command("mcp", cls=_ChineseTyperCommand)
