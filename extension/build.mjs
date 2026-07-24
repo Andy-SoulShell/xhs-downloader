@@ -11,6 +11,7 @@ await build({
     background: "src/background.ts",
     content: "src/content.ts",
     publisher: "src/publisher.ts",
+    "publisher-main": "src/publisher-main.ts",
   },
   format: "iife",
   loader: { ".css": "text" },

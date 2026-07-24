@@ -168,7 +168,7 @@ function formatTime(value: string): string {
 }
 
 function creatorUrl(taskId: string): string {
-  const url = new URL("https://creator.xiaohongshu.com/publish");
+  const url = new URL("https://creator.xiaohongshu.com/publish/publish");
   url.searchParams.set("xhd_task", taskId);
   return url.toString();
 }

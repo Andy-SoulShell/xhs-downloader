@@ -1,11 +1,13 @@
 import styles from "./publisher.css";
 import { assemblePublicationFile } from "./publication-assets";
 import {
+  activateNativePublishControl,
   attachFiles,
   choosePublicationMode,
   fillPublicationForm,
+  isCustomPublishControl,
   waitForPublishOutcome,
-  waitForPublishButton,
+  waitForPublishControl,
   waitForUploadInput,
 } from "./publisher-dom";
 import type {
@@ -78,10 +80,20 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
       .filter(Boolean)
       .join("\n");
     await fillPublicationForm(document, draft.title, body);
-    const button = await waitForPublishButton(document);
+    const control = await waitForPublishControl(document);
     showStatus("正在提交到创作平台");
     await report(claim, "publishing", "即将点击创作平台发布按钮");
-    button.click();
+    if (isCustomPublishControl(control)) {
+      const activation = await send({
+        type: "publication-activate",
+        taskId: claim.task.task_id,
+        leaseToken: claim.lease_token,
+      });
+      if (!activation.ok) throw new Error(activation.message);
+      await report(claim, "publishing", "已发送可信输入，等待平台确认");
+    } else {
+      activateNativePublishControl(control);
+    }
     await observeOutcome(claim);
   } catch (error) {
     const message = errorMessage(error);

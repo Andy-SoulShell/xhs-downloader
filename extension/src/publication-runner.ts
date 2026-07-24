@@ -16,6 +16,8 @@ import {
   saveActivePublicationOwner,
   savePublicationCredential,
 } from "./publication-storage";
+import { schedulePublicationTabClose } from "./publication-tab";
+import { activatePublicationControl } from "./publication-input";
 import type {
   ExtensionCredential,
   PublicationClaim,
@@ -26,7 +28,7 @@ import type {
 import { loadSettings } from "./storage";
 
 const POLL_ALARM = "publication-poll";
-const CREATOR_URL = "https://creator.xiaohongshu.com/publish";
+const CREATOR_URL = "https://creator.xiaohongshu.com/publish/publish";
 const TERMINAL = new Set<PublicationTaskStatus>([
   "published",
   "needs_review",
@@ -52,6 +54,7 @@ export function installPublicationAutomation(): void {
 export async function handlePublicationRequest(
   request: PublicationRequest,
   senderTabId?: number,
+  senderUrl?: string,
 ): Promise<PublicationResponse> {
   if (request.type === "publication-prepare") {
     const prepared = await preparePublication(
@@ -63,6 +66,15 @@ export async function handlePublicationRequest(
       message: prepared ? "发布任务已准备" : "没有待发布任务",
       claim: prepared?.claim,
     };
+  }
+  if (request.type === "publication-activate") {
+    if (senderTabId === undefined) throw new Error("无法确认创作页标签");
+    const active = await validActiveClaim(request.taskId, senderTabId);
+    if (!active || active.lease_token !== request.leaseToken) {
+      throw new Error("发布任务租约无效");
+    }
+    await activatePublicationControl(senderTabId, senderUrl);
+    return { ok: true, message: "已授权当前创作页提交发布" };
   }
   if (request.type === "publication-status") {
     const task = await withCredential((baseUrl, credential) =>
@@ -83,6 +95,9 @@ export async function handlePublicationRequest(
         task,
         lease_token: request.leaseToken,
       });
+    }
+    if (task.status === "published" && senderTabId !== undefined) {
+      schedulePublicationTabClose(senderTabId);
     }
     return { ok: true, message: task.message };
   }
@@ -115,6 +130,11 @@ async function pollPublicationTasks(): Promise<void> {
     if (!prepared?.isNew) return;
     const url = new URL(CREATOR_URL);
     url.searchParams.set("xhd_task", prepared.claim.task.task_id);
+    const mediaType = prepared.claim.task.package.assets[0]?.media_type;
+    url.searchParams.set(
+      "target",
+      mediaType?.startsWith("video/") ? "video" : "image",
+    );
     const tab = await chrome.tabs.create({ url: url.toString(), active: false });
     if (tab.id !== undefined) await saveActivePublicationOwner(tab.id);
   } catch {
@@ -128,6 +148,7 @@ async function preparePublication(
 ): Promise<PreparedPublication | null> {
   const active = await validActiveClaim(preferredTaskId, senderTabId);
   if (active) return { claim: active, isNew: false };
+  const startsClaim = claimOperation === undefined;
   if (!claimOperation) {
     claimOperation = withCredential((baseUrl, credential) =>
       claimPublicationTask(baseUrl, credential, preferredTaskId),
@@ -148,7 +169,7 @@ async function preparePublication(
   if (claim && preferredTaskId && claim.task.task_id !== preferredTaskId) {
     throw new Error("已有另一项发布任务正在执行");
   }
-  return claim ? { claim, isNew: true } : null;
+  return claim ? { claim, isNew: startsClaim } : null;
 }
 
 async function validActiveClaim(

@@ -66,6 +66,11 @@ export interface PublicationAssetChunk {
 export type PublicationRequest =
   | { type: "publication-prepare"; preferredTaskId?: string }
   | {
+      type: "publication-activate";
+      taskId: string;
+      leaseToken: string;
+    }
+  | {
       type: "publication-status";
       taskId: string;
       leaseToken: string;

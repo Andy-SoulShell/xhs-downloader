@@ -41,6 +41,8 @@ const claim: PublicationClaim = {
   lease_token: "synthetic-lease",
 };
 
+let transferred: File[] = [];
+
 beforeEach(() => {
   vi.resetModules();
   history.replaceState({}, "", "/publish?xhd_task=synthetic-task");
@@ -52,7 +54,16 @@ beforeEach(() => {
     <div class="ProseMirror" contenteditable="true"></div>
     <button id="publish">发布</button>
   `;
-  const transferred: File[] = [];
+  transferred = [];
+  let attached: FileList | null = null;
+  const fileInput = document.querySelector<HTMLInputElement>("input[type=file]")!;
+  Object.defineProperty(fileInput, "files", {
+    configurable: true,
+    get: () => attached,
+    set: (value: FileList | null) => {
+      attached = value;
+    },
+  });
   vi.stubGlobal("crypto", webcrypto);
   vi.stubGlobal(
     "DataTransfer",
@@ -116,5 +127,60 @@ describe("创作页自动发布流程", () => {
     expect(document.querySelector("#xhd-publish-status")?.textContent).toBe(
       "发布成功",
     );
+  });
+
+  it("按素材顺序组装并上传多张图片", async () => {
+    const multiple = structuredClone(claim);
+    multiple.task.package.assets = [
+      {
+        ...multiple.task.package.assets[0],
+        asset_id: "second",
+        filename: "second.png",
+        position: 1,
+      },
+      {
+        ...multiple.task.package.assets[0],
+        asset_id: "first",
+        filename: "first.png",
+        position: 0,
+      },
+    ];
+    const sendMessage = vi.fn(async (request: { type: string }) => {
+      if (request.type === "publication-prepare") {
+        return { ok: true, message: "已准备", claim: multiple };
+      }
+      if (request.type === "publication-asset-chunk") {
+        return {
+          ok: true,
+          message: "已读取",
+          chunk: {
+            base64: "eA==",
+            offset: 0,
+            nextOffset: 1,
+            total: 1,
+            done: true,
+          },
+        };
+      }
+      return { ok: true, message: "状态已更新" };
+    });
+    document.querySelector("#publish")?.addEventListener("click", () => {
+      history.replaceState({}, "", "/publish/success");
+    });
+    vi.stubGlobal("chrome", { runtime: { sendMessage } });
+
+    await import("./publisher");
+    await vi.waitFor(() => {
+      expect(transferred.map((file) => file.name)).toEqual([
+        "first.png",
+        "second.png",
+      ]);
+      expect(sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "published",
+          type: "publication-status",
+        }),
+      );
+    });
   });
 });

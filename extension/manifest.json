@@ -3,7 +3,7 @@
   "name": "xhs-downloader",
   "version": "3.0.0",
   "description": "预览和下载帖子媒体，并与本地服务协作完成草稿发布与定时排期。",
-  "permissions": ["activeTab", "alarms", "downloads", "storage"],
+  "permissions": ["activeTab", "alarms", "debugger", "downloads", "storage"],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://localhost/*"
@@ -22,6 +22,12 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://creator.xiaohongshu.com/*"],
+      "js": ["publisher-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
     },
     {
       "matches": ["https://creator.xiaohongshu.com/*"],

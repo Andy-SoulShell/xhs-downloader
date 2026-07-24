@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  activateNativePublishControl,
   attachFiles,
   choosePublicationMode,
   fillPublicationForm,
   readPublishOutcome,
-  waitForPublishButton,
+  waitForPublishControl,
   waitForPublishOutcome,
   waitForUploadInput,
 } from "./publisher-dom";
@@ -54,6 +55,14 @@ describe("创作页语义适配", () => {
     );
     const input = document.createElement("input");
     input.type = "file";
+    let assigned: FileList | null = null;
+    Object.defineProperty(input, "files", {
+      configurable: true,
+      get: () => assigned,
+      set: (value: FileList | null) => {
+        assigned = value;
+      },
+    });
     const inputEvent = vi.fn();
     const changeEvent = vi.fn();
     input.addEventListener("input", inputEvent);
@@ -63,6 +72,7 @@ describe("创作页语义适配", () => {
     attachFiles(input, [file]);
 
     expect(input.files?.[0]).toBe(file);
+    expect(assigned).toBe(transferred);
     expect(inputEvent).toHaveBeenCalledOnce();
     expect(changeEvent).toHaveBeenCalledOnce();
   });
@@ -97,7 +107,29 @@ describe("创作页语义适配", () => {
       button.disabled = false;
     }, 0);
 
-    await expect(waitForPublishButton(document, 100)).resolves.toBe(button);
+    await expect(waitForPublishControl(document, 100)).resolves.toBe(button);
+  });
+
+  it("等待新版创作页发布控件", async () => {
+    document.body.innerHTML = `
+      <xhs-publish-btn
+        is-publish="true"
+        submit-disabled="false"
+        submit-loading="false"
+      ></xhs-publish-btn>
+    `;
+    const control = await waitForPublishControl(document, 100);
+
+    expect(control.localName).toBe("xhs-publish-btn");
+  });
+
+  it("点击原生发布按钮", () => {
+    const button = document.createElement("button");
+    const clicked = vi.spyOn(button, "click");
+
+    activateNativePublishControl(button);
+
+    expect(clicked).toHaveBeenCalledOnce();
   });
 
   it("识别成功路径、通知和失败消息", async () => {
@@ -124,10 +156,11 @@ describe("创作页语义适配", () => {
   });
 
   it("在关键控件始终缺失时返回明确错误", async () => {
+    document.body.innerHTML = `<input type="file" accept="video/*" />`;
     await expect(waitForUploadInput(document, "image", 1)).rejects.toThrow(
       "没有找到创作页素材上传入口",
     );
-    await expect(waitForPublishButton(document, 1)).rejects.toThrow(
+    await expect(waitForPublishControl(document, 1)).rejects.toThrow(
       "没有找到可用的发布按钮",
     );
   });

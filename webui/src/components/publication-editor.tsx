@@ -68,7 +68,7 @@ export function PublicationEditor({
         await save();
         const task = await onSubmitManual();
         if (popup) {
-          popup.location.href = creatorUrl(task.task_id);
+          popup.location.href = creatorUrl(task);
           onNotify("发布任务已交给浏览器扩展");
         } else {
           onNotify("任务已就绪，但浏览器阻止了创作页弹窗");
@@ -222,9 +222,12 @@ function validateDraft(
   if (!draft.assets.length) throw new Error("请至少添加一个发布素材");
 }
 
-function creatorUrl(taskId: string): string {
-  const url = new URL("https://creator.xiaohongshu.com/publish");
-  url.searchParams.set("xhd_task", taskId);
+function creatorUrl(task: PublicationTask): string {
+  const url = new URL("https://creator.xiaohongshu.com/publish/publish");
+  url.searchParams.set("xhd_task", task.task_id);
+  if (task.package.assets[0]?.media_type.startsWith("video/")) {
+    url.searchParams.set("target", "video");
+  }
   return url.toString();
 }
 

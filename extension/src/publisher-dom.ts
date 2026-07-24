@@ -1,4 +1,5 @@
 export type PublicationMediaKind = "image" | "video";
+const CUSTOM_PUBLISH_CONTROL = "xhs-publish-btn";
 
 const TITLE_SELECTORS = [
   "input[placeholder*='标题']",
@@ -37,17 +38,14 @@ export async function waitForUploadInput(
 ): Promise<HTMLInputElement> {
   return waitForValue(() => {
     const inputs = [...root.querySelectorAll<HTMLInputElement>("input[type=file]")];
-    return inputs.find((input) => acceptsKind(input.accept, kind)) ?? inputs[0];
+    return inputs.find((input) => acceptsKind(input.accept, kind));
   }, timeout, "没有找到创作页素材上传入口");
 }
 
 export function attachFiles(input: HTMLInputElement, files: File[]): void {
   const transfer = new DataTransfer();
   for (const file of files) transfer.items.add(file);
-  Object.defineProperty(input, "files", {
-    configurable: true,
-    value: transfer.files,
-  });
+  input.files = transfer.files;
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -72,11 +70,19 @@ export async function fillPublicationForm(
   setEditorValue(bodyEditor, body);
 }
 
-export async function waitForPublishButton(
+export async function waitForPublishControl(
   root: ParentNode,
   timeout = 90_000,
-): Promise<HTMLButtonElement> {
+): Promise<HTMLElement> {
   return waitForValue(() => {
+    const custom = root.querySelector<HTMLElement>(CUSTOM_PUBLISH_CONTROL);
+    if (
+      custom?.getAttribute("is-publish") === "true" &&
+      custom.getAttribute("submit-disabled") !== "true" &&
+      custom.getAttribute("submit-loading") !== "true"
+    ) {
+      return custom;
+    }
     const buttons = [...root.querySelectorAll<HTMLButtonElement>("button")];
     return buttons.find((button) => {
       const text = normalizedText(button);
@@ -86,6 +92,14 @@ export async function waitForPublishButton(
       );
     });
   }, timeout, "没有找到可用的发布按钮");
+}
+
+export function isCustomPublishControl(control: HTMLElement): boolean {
+  return control.localName === CUSTOM_PUBLISH_CONTROL;
+}
+
+export function activateNativePublishControl(control: HTMLElement): void {
+  control.click();
 }
 
 export function readPublishOutcome(

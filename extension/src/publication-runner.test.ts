@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  PublicationClaim,
-  PublicationTask,
-} from "./publication-types";
+import type { PublicationClaim, PublicationTask } from "./publication-types";
 
 const mocks = vi.hoisted(() => ({
   claim: vi.fn(),
@@ -20,8 +17,8 @@ const mocks = vi.hoisted(() => ({
   saveOwner: vi.fn(),
   saveCredential: vi.fn(),
   loadSettings: vi.fn(),
+  activateControl: vi.fn(),
 }));
-
 vi.mock("./publication-service", () => ({
   claimPublicationTask: mocks.claim,
   fetchPublicationAssetChunk: mocks.fetchChunk,
@@ -41,13 +38,15 @@ vi.mock("./publication-storage", () => ({
   savePublicationCredential: mocks.saveCredential,
 }));
 vi.mock("./storage", () => ({ loadSettings: mocks.loadSettings }));
+vi.mock("./publication-input", () => ({
+  activatePublicationControl: mocks.activateControl,
+}));
 
 import { PublicationUnauthorizedError } from "./publication-service";
 import {
   handlePublicationRequest,
   installPublicationAutomation,
 } from "./publication-runner";
-
 const credential = { extensionId: "extension", token: "token" };
 
 function makeClaim(
@@ -109,12 +108,10 @@ describe("发布任务后台协调器", () => {
   it("领取指定任务并保存活动租约", async () => {
     const claim = makeClaim();
     mocks.claim.mockResolvedValue(claim);
-
     const response = await handlePublicationRequest({
       type: "publication-prepare",
       preferredTaskId: "task",
     });
-
     expect(response.claim).toEqual(claim);
     expect(mocks.claim).toHaveBeenCalledWith(
       "http://service",
@@ -127,12 +124,10 @@ describe("发布任务后台协调器", () => {
   it("复用有效租约并拒绝冲突的手动任务", async () => {
     const claim = makeClaim();
     mocks.loadActive.mockResolvedValue(claim);
-
     const response = await handlePublicationRequest({
       type: "publication-prepare",
       preferredTaskId: "task",
     });
-
     expect(response.claim).toEqual(claim);
     expect(mocks.claim).not.toHaveBeenCalled();
     await expect(
@@ -147,7 +142,6 @@ describe("发布任务后台协调器", () => {
     const claim = makeClaim();
     mocks.loadActive.mockResolvedValue(claim);
     mocks.loadOwner.mockResolvedValueOnce(undefined).mockResolvedValueOnce(41);
-
     await handlePublicationRequest(
       {
         type: "publication-prepare",
@@ -155,7 +149,6 @@ describe("发布任务后台协调器", () => {
       },
       41,
     );
-
     expect(mocks.saveOwner).toHaveBeenCalledWith(41);
     await expect(
       handlePublicationRequest(
@@ -168,6 +161,24 @@ describe("发布任务后台协调器", () => {
     ).rejects.toThrow("另一个创作页");
   });
 
+  it("只授权持有租约的创作页提交发布", async () => {
+    mocks.loadActive.mockResolvedValue(makeClaim("publishing"));
+    mocks.loadOwner.mockResolvedValue(41);
+    const response = await handlePublicationRequest(
+      {
+        type: "publication-activate",
+        taskId: "task",
+        leaseToken: "lease",
+      },
+      41,
+      "https://creator.xiaohongshu.com/publish/publish",
+    );
+    expect(response.ok).toBe(true);
+    expect(mocks.activateControl).toHaveBeenCalledWith(
+      41,
+      "https://creator.xiaohongshu.com/publish/publish",
+    );
+  });
   it("清除过期租约并重新领取", async () => {
     mocks.loadActive.mockResolvedValue(
       makeClaim("claimed", new Date(Date.now() - 1_000).toISOString()),
@@ -253,9 +264,23 @@ describe("发布任务后台协调器", () => {
   });
 
   it("安装闹钟并只为新领取任务打开一次后台标签", async () => {
-    mocks.claim.mockResolvedValue(makeClaim());
+    const claim = makeClaim();
+    claim.task.package.assets = [
+      {
+        asset_id: "image",
+        filename: "synthetic.png",
+        media_type: "image/png",
+        size: 1,
+        sha256: "b".repeat(64),
+        position: 0,
+      },
+    ];
+    mocks.claim.mockResolvedValue(claim);
 
     installPublicationAutomation();
+    const installed = vi.mocked(chrome.runtime.onInstalled.addListener)
+      .mock.calls[0][0];
+    installed({ reason: "install" });
     await vi.waitFor(() => {
       expect(chrome.tabs.create).toHaveBeenCalledOnce();
     });
@@ -266,7 +291,9 @@ describe("发布任务后台协调器", () => {
     });
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       active: false,
-      url: expect.stringContaining("xhd_task=task"),
+      url: expect.stringMatching(
+        /^https:\/\/creator\.xiaohongshu\.com\/publish\/publish\?.*xhd_task=task.*target=image/,
+      ),
     });
     expect(mocks.saveOwner).toHaveBeenCalledWith(31);
   });

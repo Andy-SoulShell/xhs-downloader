@@ -64,6 +64,9 @@ describe("发布草稿编辑器", () => {
     );
     expect(popup.opener).toBeNull();
     expect(popup.location.href).toContain(
+      "creator.xiaohongshu.com/publish/publish",
+    );
+    expect(popup.location.href).toContain(
       "xhd_task=synthetic-publication-task",
     );
     expect(properties.onNotify).toHaveBeenCalledWith(
