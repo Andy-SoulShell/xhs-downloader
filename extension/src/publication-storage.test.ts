@@ -5,8 +5,10 @@ import {
   clearActivePublicationClaim,
   clearPublicationCredential,
   loadActivePublicationClaim,
+  loadActivePublicationOwner,
   loadPublicationCredential,
   saveActivePublicationClaim,
+  saveActivePublicationOwner,
   savePublicationCredential,
 } from "./publication-storage";
 
@@ -21,8 +23,10 @@ beforeEach(() => {
         set: vi.fn(async (next: Record<string, unknown>) => {
           Object.assign(values, next);
         }),
-        remove: vi.fn(async (key: string) => {
-          delete values[key];
+        remove: vi.fn(async (keys: string | string[]) => {
+          for (const key of Array.isArray(keys) ? keys : [keys]) {
+            delete values[key];
+          }
         }),
       },
     },
@@ -51,9 +55,12 @@ describe("扩展发布状态存储", () => {
       lease_token: "lease",
     };
     await saveActivePublicationClaim(claim as PublicationClaim);
+    await saveActivePublicationOwner(42);
     await expect(loadActivePublicationClaim()).resolves.toEqual(claim);
+    await expect(loadActivePublicationOwner()).resolves.toBe(42);
     await clearActivePublicationClaim();
     await expect(loadActivePublicationClaim()).resolves.toBeUndefined();
+    await expect(loadActivePublicationOwner()).resolves.toBeUndefined();
   });
 
   it("忽略缺少任务或租约的活动记录", async () => {
@@ -62,5 +69,7 @@ describe("扩展发布状态存储", () => {
       lease_token: 1,
     };
     await expect(loadActivePublicationClaim()).resolves.toBeUndefined();
+    values.activePublicationOwner = -1;
+    await expect(loadActivePublicationOwner()).resolves.toBeUndefined();
   });
 });

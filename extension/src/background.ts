@@ -38,10 +38,10 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener(
   (
     request: ExtensionRequest | PublicationRequest,
-    _sender,
+    sender,
     sendResponse: (response: ExtensionResponse | PublicationResponse) => void,
   ) => {
-    void handleRequest(request)
+    void handleRequest(request, sender.tab?.id)
       .then(sendResponse)
       .catch((error: unknown) =>
         sendResponse({
@@ -55,9 +55,10 @@ chrome.runtime.onMessage.addListener(
 
 async function handleRequest(
   request: ExtensionRequest | PublicationRequest,
+  senderTabId?: number,
 ): Promise<ExtensionResponse | PublicationResponse> {
   if (isPublicationRequest(request)) {
-    return handlePublicationRequest(request);
+    return handlePublicationRequest(request, senderTabId);
   }
   if (request.type === "set-mode") {
     await saveMode(request.mode);

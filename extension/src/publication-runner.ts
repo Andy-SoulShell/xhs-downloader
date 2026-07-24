@@ -10,8 +10,10 @@ import {
   clearActivePublicationClaim,
   clearPublicationCredential,
   loadActivePublicationClaim,
+  loadActivePublicationOwner,
   loadPublicationCredential,
   saveActivePublicationClaim,
+  saveActivePublicationOwner,
   savePublicationCredential,
 } from "./publication-storage";
 import type {
@@ -49,9 +51,13 @@ export function installPublicationAutomation(): void {
 
 export async function handlePublicationRequest(
   request: PublicationRequest,
+  senderTabId?: number,
 ): Promise<PublicationResponse> {
   if (request.type === "publication-prepare") {
-    const prepared = await preparePublication(request.preferredTaskId);
+    const prepared = await preparePublication(
+      request.preferredTaskId,
+      senderTabId,
+    );
     return {
       ok: Boolean(prepared),
       message: prepared ? "发布任务已准备" : "没有待发布任务",
@@ -109,7 +115,8 @@ async function pollPublicationTasks(): Promise<void> {
     if (!prepared?.isNew) return;
     const url = new URL(CREATOR_URL);
     url.searchParams.set("xhd_task", prepared.claim.task.task_id);
-    await chrome.tabs.create({ url: url.toString(), active: false });
+    const tab = await chrome.tabs.create({ url: url.toString(), active: false });
+    if (tab.id !== undefined) await saveActivePublicationOwner(tab.id);
   } catch {
     // 服务离线、未授权或暂时不可用时保留任务，下一次闹钟会继续尝试。
   }
@@ -117,8 +124,9 @@ async function pollPublicationTasks(): Promise<void> {
 
 async function preparePublication(
   preferredTaskId?: string,
+  senderTabId?: number,
 ): Promise<PreparedPublication | null> {
-  const active = await validActiveClaim(preferredTaskId);
+  const active = await validActiveClaim(preferredTaskId, senderTabId);
   if (active) return { claim: active, isNew: false };
   if (!claimOperation) {
     claimOperation = withCredential((baseUrl, credential) =>
@@ -128,7 +136,12 @@ async function preparePublication(
     });
   }
   const claim = await claimOperation;
-  if (claim) await saveActivePublicationClaim(claim);
+  if (claim) {
+    await saveActivePublicationClaim(claim);
+    if (senderTabId !== undefined) {
+      await saveActivePublicationOwner(senderTabId);
+    }
+  }
   if (!claim && preferredTaskId) {
     throw new Error("指定发布任务尚未就绪或已由其他页面领取");
   }
@@ -140,6 +153,7 @@ async function preparePublication(
 
 async function validActiveClaim(
   preferredTaskId?: string,
+  senderTabId?: number,
 ): Promise<PublicationClaim | undefined> {
   const claim = await loadActivePublicationClaim();
   if (!claim) return undefined;
@@ -150,6 +164,17 @@ async function validActiveClaim(
   }
   if (preferredTaskId && claim.task.task_id !== preferredTaskId) {
     throw new Error("已有另一项发布任务正在执行");
+  }
+  const ownerTabId = await loadActivePublicationOwner();
+  if (
+    ownerTabId !== undefined &&
+    senderTabId !== undefined &&
+    ownerTabId !== senderTabId
+  ) {
+    throw new Error("该发布任务已由另一个创作页执行");
+  }
+  if (ownerTabId === undefined && senderTabId !== undefined) {
+    await saveActivePublicationOwner(senderTabId);
   }
   return claim;
 }

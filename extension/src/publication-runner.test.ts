@@ -14,8 +14,10 @@ const mocks = vi.hoisted(() => ({
   clearActive: vi.fn(),
   clearCredential: vi.fn(),
   loadActive: vi.fn(),
+  loadOwner: vi.fn(),
   loadCredential: vi.fn(),
   saveActive: vi.fn(),
+  saveOwner: vi.fn(),
   saveCredential: vi.fn(),
   loadSettings: vi.fn(),
 }));
@@ -32,8 +34,10 @@ vi.mock("./publication-storage", () => ({
   clearActivePublicationClaim: mocks.clearActive,
   clearPublicationCredential: mocks.clearCredential,
   loadActivePublicationClaim: mocks.loadActive,
+  loadActivePublicationOwner: mocks.loadOwner,
   loadPublicationCredential: mocks.loadCredential,
   saveActivePublicationClaim: mocks.saveActive,
+  saveActivePublicationOwner: mocks.saveOwner,
   savePublicationCredential: mocks.saveCredential,
 }));
 vi.mock("./storage", () => ({ loadSettings: mocks.loadSettings }));
@@ -81,6 +85,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.loadSettings.mockResolvedValue({ serviceUrl: "http://service" });
   mocks.loadActive.mockResolvedValue(undefined);
+  mocks.loadOwner.mockResolvedValue(undefined);
   mocks.loadCredential.mockResolvedValue(credential);
   mocks.register.mockResolvedValue(credential);
   mocks.supports.mockResolvedValue(true);
@@ -94,7 +99,7 @@ beforeEach(() => {
       create: vi.fn(async () => undefined),
       onAlarm: { addListener: vi.fn() },
     },
-    tabs: { create: vi.fn(async () => undefined) },
+    tabs: { create: vi.fn(async () => ({ id: 31 })) },
   });
 });
 
@@ -136,6 +141,31 @@ describe("发布任务后台协调器", () => {
         preferredTaskId: "other",
       }),
     ).rejects.toThrow("另一项发布任务");
+  });
+
+  it("把租约绑定到首个创作页并拒绝重复标签页", async () => {
+    const claim = makeClaim();
+    mocks.loadActive.mockResolvedValue(claim);
+    mocks.loadOwner.mockResolvedValueOnce(undefined).mockResolvedValueOnce(41);
+
+    await handlePublicationRequest(
+      {
+        type: "publication-prepare",
+        preferredTaskId: "task",
+      },
+      41,
+    );
+
+    expect(mocks.saveOwner).toHaveBeenCalledWith(41);
+    await expect(
+      handlePublicationRequest(
+        {
+          type: "publication-prepare",
+          preferredTaskId: "task",
+        },
+        42,
+      ),
+    ).rejects.toThrow("另一个创作页");
   });
 
   it("清除过期租约并重新领取", async () => {
@@ -238,5 +268,6 @@ describe("发布任务后台协调器", () => {
       active: false,
       url: expect.stringContaining("xhd_task=task"),
     });
+    expect(mocks.saveOwner).toHaveBeenCalledWith(31);
   });
 });

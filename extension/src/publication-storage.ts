@@ -5,6 +5,7 @@ import type {
 
 const CREDENTIAL_KEY = "publicationCredential";
 const ACTIVE_CLAIM_KEY = "activePublicationClaim";
+const ACTIVE_OWNER_KEY = "activePublicationOwner";
 
 export async function loadPublicationCredential(): Promise<
   ExtensionCredential | undefined
@@ -51,5 +52,19 @@ export async function saveActivePublicationClaim(
 }
 
 export async function clearActivePublicationClaim(): Promise<void> {
-  await chrome.storage.local.remove(ACTIVE_CLAIM_KEY);
+  await chrome.storage.local.remove([ACTIVE_CLAIM_KEY, ACTIVE_OWNER_KEY]);
+}
+
+export async function loadActivePublicationOwner(): Promise<
+  number | undefined
+> {
+  const stored = await chrome.storage.local.get(ACTIVE_OWNER_KEY);
+  const value = stored[ACTIVE_OWNER_KEY];
+  return Number.isInteger(value) && Number(value) >= 0
+    ? Number(value)
+    : undefined;
+}
+
+export async function saveActivePublicationOwner(tabId: number): Promise<void> {
+  await chrome.storage.local.set({ [ACTIVE_OWNER_KEY]: tabId });
 }
