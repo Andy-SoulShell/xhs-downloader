@@ -11,11 +11,17 @@ import { SettingsBoard } from "./components/settings-board";
 import { RecordBoard, TaskBoard } from "./components/task-center";
 import { StatusPill } from "./components/status-pill";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
-import { checkHealth, submitDetail } from "./lib/api";
+import {
+  checkHealth,
+  deleteCollectedPost,
+  listCollectedPosts,
+  submitDetail,
+} from "./lib/api";
 import { useSettings } from "./lib/use-settings";
 import { useTaskCenter } from "./lib/use-task-center";
 import {
   mergeTaskResults,
+  postFromDetail,
   type Filter,
   type PostRecord,
   type WorkspaceView,
@@ -51,6 +57,30 @@ export default function App() {
     const controller = new AbortController();
     void checkHealth(controller.signal).then(setOnline);
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void listCollectedPosts()
+      .then((details) => {
+        if (!active) return;
+        const restored = details.map(postFromDetail);
+        setPosts((current) => [
+          ...current,
+          ...restored.filter(
+            (post) => !current.some((item) => item.id === post.id),
+          ),
+        ]);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setOnline(false);
+        setNotice(error instanceof Error ? error.message : "帖子库读取失败");
+        setToastOpen(true);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const notify = (message: string) => {
@@ -135,6 +165,16 @@ export default function App() {
     }
   };
 
+  const handleRemove = async (id: string) => {
+    try {
+      await deleteCollectedPost(id);
+      setPosts((current) => current.filter((item) => item.id !== id));
+      notify("帖子已从列表移除");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "帖子移除失败");
+    }
+  };
+
   const managedPosts = useMemo(
     () => mergeTaskResults(posts, tasks),
     [posts, tasks],
@@ -196,11 +236,7 @@ export default function App() {
                   onFilterChange={setFilter}
                   onForceChange={(id, force) => updatePost(id, { force })}
                   onQueryChange={setQuery}
-                  onRemove={(id) =>
-                    setPosts((current) =>
-                      current.filter((item) => item.id !== id),
-                    )
-                  }
+                  onRemove={(id) => void handleRemove(id)}
                   onSelectionChange={(id, selected) =>
                     updatePost(id, { selected })
                   }

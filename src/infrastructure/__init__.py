@@ -7,6 +7,7 @@ from .extension_credential_repository import (
 )
 from .http import HttpxGateway
 from .parser import InitialStateParser
+from .post_repository import SqlitePostRepository
 from .publication_asset_store import FilePublicationAssetStore
 from .publication_draft_repository import SqlitePublicationDraftRepository
 from .publication_task_repository import SqlitePublicationTaskRepository
@@ -23,6 +24,7 @@ __all__ = [
     "SqliteClientRecordRepository",
     "SqliteDownloadRepository",
     "SqliteExtensionCredentialRepository",
+    "SqlitePostRepository",
     "SqlitePublicationDraftRepository",
     "SqlitePublicationTaskRepository",
     "SqliteTaskRepository",

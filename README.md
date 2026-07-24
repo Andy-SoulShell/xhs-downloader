@@ -134,6 +134,8 @@ pnpm --dir webui build
 
 管理后台包含帖子列表、发布中心、持久化下载任务、扩展独立下载记录和服务配置。
 关闭 WebUI 不会中断已经提交的后台任务；重新打开后会从服务端恢复任务和完成状态。
+帖子详情解析成功后会立即写入本地 SQLite，即使尚未下载，刷新或重启 WebUI 也会
+恢复到帖子列表；从列表移除时会同步删除这条采集记录。
 
 ## 内容发布
 
@@ -202,6 +204,7 @@ uv run xhs-downloader api
 - 作品接口：`POST /xhs/detail`
 - 扩展能力：`GET /extension/capabilities`
 - 扩展记录：`GET/POST /extension/records`
+- 采集帖子：`GET /posts`、`DELETE /posts/{work_id}`
 - 下载任务：`POST /tasks`
 - 任务列表：`GET /tasks`
 - 任务详情：`GET /tasks/{task_id}`

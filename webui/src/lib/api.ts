@@ -7,6 +7,7 @@ import type {
   SettingsResponse,
   SettingsUpdate,
   TaskRequest,
+  WorkDetail,
 } from "./types";
 
 import { API_BASE, parseResponse } from "./http";
@@ -31,6 +32,19 @@ export async function submitDetail(
     body: JSON.stringify(request),
   });
   return parseResponse<DetailResponse>(response);
+}
+
+export async function listCollectedPosts(): Promise<WorkDetail[]> {
+  const response = await fetch(`${API_BASE}/posts`);
+  return parseResponse<WorkDetail[]>(response);
+}
+
+export async function deleteCollectedPost(workId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/posts/${encodeURIComponent(workId)}`,
+    { method: "DELETE" },
+  );
+  await parseResponse<void>(response);
 }
 
 export async function submitTask(request: TaskRequest): Promise<DownloadTask> {

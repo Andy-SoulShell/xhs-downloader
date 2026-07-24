@@ -6,6 +6,7 @@ import {
   checkHealth,
   getSettings,
   listClientRecords,
+  listCollectedPosts,
   listTasks,
 } from "./lib/api";
 import {
@@ -19,8 +20,10 @@ import {
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
+  deleteCollectedPost: vi.fn(),
   getSettings: vi.fn(),
   listClientRecords: vi.fn(),
+  listCollectedPosts: vi.fn(),
   listTasks: vi.fn(),
   retryTask: vi.fn(),
   submitDetail: vi.fn(),
@@ -44,6 +47,7 @@ beforeEach(() => {
   vi.mocked(checkHealth).mockResolvedValue(true);
   vi.mocked(getSettings).mockResolvedValue(makeSettingsResponse());
   vi.mocked(listClientRecords).mockResolvedValue([]);
+  vi.mocked(listCollectedPosts).mockResolvedValue([]);
   vi.mocked(listTasks).mockResolvedValue([]);
   vi.mocked(listPublicationTasks).mockResolvedValue([]);
 });

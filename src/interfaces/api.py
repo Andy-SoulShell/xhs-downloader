@@ -28,6 +28,7 @@ from src.domain import (
 from src.infrastructure import (
     DotenvSettingsRepository,
     SqliteClientRecordRepository,
+    SqlitePostRepository,
     SqliteTaskRepository,
 )
 from src.logging import configure_logging
@@ -35,11 +36,10 @@ from src.version import VERSION
 
 from .api_models import (
     ClientRecordBatch,
-    DetailRequest,
-    DetailResponse,
     ExtensionCapabilities,
     TaskRequest,
 )
+from .post_api import create_post_router
 from .publication_api import create_publication_router
 from .settings_api import (
     SettingsAccessPolicy,
@@ -79,6 +79,9 @@ def create_api(
         resolved_settings.state_dir.joinpath("downloads.db")
     )
     task_repository = SqliteTaskRepository(
+        resolved_settings.state_dir.joinpath("downloads.db")
+    )
+    post_repository = SqlitePostRepository(
         resolved_settings.state_dir.joinpath("downloads.db")
     )
     settings_manager = SettingsManager(
@@ -132,6 +135,7 @@ def create_api(
         ],
     )
     api.include_router(create_settings_router(settings_manager, settings_access_policy))
+    api.include_router(create_post_router(post_repository))
     api.include_router(
         create_publication_router(
             publication.drafts,
@@ -247,25 +251,6 @@ def create_api(
         if not task:
             raise HTTPException(status_code=404, detail="下载任务不存在")
         return task
-
-    @api.post("/xhs/detail", response_model=DetailResponse, tags=["作品"])
-    async def detail(payload: DetailRequest, request: Request) -> DetailResponse:
-        service: DownloadService = request.app.state.service
-        if payload.download:
-            outcome = await service.download(
-                payload.url,
-                set(payload.index or []),
-                payload.force,
-                payload.cookie,
-            )
-            return DetailResponse(
-                message=outcome.message,
-                data=outcome.detail.public_dict(),
-                files=outcome.artifacts,
-                skipped=outcome.skipped,
-            )
-        work = await service.get_detail(payload.url, payload.cookie)
-        return DetailResponse(message="作品信息解析完成", data=work.public_dict())
 
     return api
 

@@ -1,6 +1,7 @@
 import type {
   DetailResponse,
   DownloadTask,
+  WorkDetail,
 } from "./types";
 
 export type PostStatus = "ready" | "downloading" | "done" | "error";
@@ -19,6 +20,22 @@ export interface PostRecord {
   downloaded: Set<string>;
   force: boolean;
   status: PostStatus;
+}
+
+export function postFromDetail(detail: WorkDetail): PostRecord {
+  return {
+    id: detail.作品ID,
+    result: {
+      message: "已从帖子库恢复",
+      data: detail,
+      files: [],
+      skipped: false,
+    },
+    selected: new Set(detail.媒体.map((item) => item.序号)),
+    downloaded: new Set(),
+    force: false,
+    status: "ready",
+  };
 }
 
 export function mergeTaskResults(

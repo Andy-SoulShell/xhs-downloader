@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   checkHealth,
+  deleteCollectedPost,
   getSettings,
   listClientRecords,
+  listCollectedPosts,
   listTasks,
   retryTask,
   submitDetail,
@@ -134,6 +136,22 @@ describe("API 客户端", () => {
     );
 
     await expect(listClientRecords()).resolves.toEqual(records);
+  });
+
+  it("读取并删除采集帖子", async () => {
+    const posts = [{ 作品ID: "synthetic-work" }];
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(posts)))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(listCollectedPosts()).resolves.toEqual(posts);
+    await expect(deleteCollectedPost("synthetic/work")).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/posts",
+      "/api/posts/synthetic%2Fwork",
+    ]);
   });
 
   it("读取并更新本地服务配置", async () => {

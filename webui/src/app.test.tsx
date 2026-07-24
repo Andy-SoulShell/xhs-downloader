@@ -10,8 +10,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./app";
 import {
   checkHealth,
+  deleteCollectedPost,
   getSettings,
   listClientRecords,
+  listCollectedPosts,
   listTasks,
   retryTask,
   submitDetail,
@@ -26,8 +28,10 @@ import {
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
+  deleteCollectedPost: vi.fn(),
   getSettings: vi.fn(),
   listClientRecords: vi.fn(),
+  listCollectedPosts: vi.fn(),
   listTasks: vi.fn(),
   retryTask: vi.fn(),
   submitDetail: vi.fn(),
@@ -48,7 +52,9 @@ async function addSyntheticPost() {
 describe("帖子下载工作台", () => {
   beforeEach(() => {
     vi.mocked(checkHealth).mockResolvedValue(true);
+    vi.mocked(deleteCollectedPost).mockResolvedValue();
     vi.mocked(listClientRecords).mockResolvedValue([]);
+    vi.mocked(listCollectedPosts).mockResolvedValue([]);
     vi.mocked(listTasks).mockResolvedValue([]);
     vi.mocked(getSettings).mockResolvedValue(makeSettingsResponse());
     vi.mocked(retryTask).mockResolvedValue(
@@ -145,7 +151,9 @@ describe("帖子下载工作台", () => {
         name: "移除帖子：合成测试帖子",
       }),
     );
-    expect(screen.getByText("帖子列表还是空的")).toBeInTheDocument();
+    expect(
+      await screen.findByText("帖子列表还是空的"),
+    ).toBeInTheDocument();
   });
 
   it("为空链接和接口错误提供明确反馈", async () => {
