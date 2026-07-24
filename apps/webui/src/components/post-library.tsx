@@ -5,6 +5,7 @@ import type {
   PostRecord,
 } from "../lib/workspace";
 import { EmptyState } from "./empty-state";
+import { MasonryFeed } from "./masonry-feed";
 import { PageHeading } from "./page-heading";
 import { PostCard } from "./post-card";
 import {
@@ -27,6 +28,12 @@ interface PostLibraryProps {
   onSelectionChange: (id: string, selected: Set<number>) => void;
 }
 
+/**
+ * 展示可筛选、搜索和操作的帖子列表。
+ *
+ * @param props 组件属性。
+ * @returns 根据结果数量自适应排列的帖子列表或空状态。
+ */
 export function PostLibrary({
   completedCount,
   filter,
@@ -78,22 +85,37 @@ export function PostLibrary({
       />
 
       {visiblePosts.length ? (
-        <div
-          className={visiblePosts.length <= 5 ? "feed-grid" : "feed-masonry"}
-        >
-          {visiblePosts.map((post) => (
-            <PostCard
-              key={post.id}
-              onDownload={() => onDownload(post)}
-              onForceChange={(force) => onForceChange(post.id, force)}
-              onRemove={() => onRemove(post.id)}
-              onSelectionChange={(selected) =>
-                onSelectionChange(post.id, selected)
-              }
-              post={post}
-            />
-          ))}
-        </div>
+        visiblePosts.length <= 5 ? (
+          <div className="feed-grid">
+            {visiblePosts.map((post) => (
+              <PostCard
+                key={post.id}
+                onDownload={() => onDownload(post)}
+                onForceChange={(force) => onForceChange(post.id, force)}
+                onRemove={() => onRemove(post.id)}
+                onSelectionChange={(selected) =>
+                  onSelectionChange(post.id, selected)
+                }
+                post={post}
+              />
+            ))}
+          </div>
+        ) : (
+          <MasonryFeed>
+            {visiblePosts.map((post) => (
+              <PostCard
+                key={post.id}
+                onDownload={() => onDownload(post)}
+                onForceChange={(force) => onForceChange(post.id, force)}
+                onRemove={() => onRemove(post.id)}
+                onSelectionChange={(selected) =>
+                  onSelectionChange(post.id, selected)
+                }
+                post={post}
+              />
+            ))}
+          </MasonryFeed>
+        )
       ) : (
         <EmptyState
           description={

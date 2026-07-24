@@ -89,7 +89,7 @@ describe("媒体预览", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("视频资源使用原生视频预览", () => {
+  it("视频资源优先使用完整封面并为缺失封面提供回退", () => {
     const video: MediaResource = {
       序号: 1,
       类型: "视频",
@@ -106,13 +106,13 @@ describe("媒体预览", () => {
       />,
     );
 
-    expect(screen.getByLabelText("合成帖子的第 1 个视频")).toHaveAttribute(
+    expect(screen.getByAltText("合成帖子的第 1 个视频封面")).toHaveAttribute(
       "src",
-      video.地址,
-    );
-    expect(screen.getByLabelText("合成帖子的第 1 个视频")).toHaveAttribute(
-      "poster",
       video.预览地址,
+    );
+    expect(screen.getByAltText("合成帖子的第 1 个视频封面")).toHaveAttribute(
+      "referrerpolicy",
+      "no-referrer",
     );
 
     rerender(

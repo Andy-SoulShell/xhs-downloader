@@ -15,6 +15,17 @@ interface MediaStageProps {
   onSelect: (index: number) => void;
 }
 
+/**
+ * 在帖子详情中完整展示当前媒体及切换控件。
+ *
+ * @param props 组件属性。
+ * @param props.activeIndex 当前媒体的零基位置。
+ * @param props.current 当前媒体组。
+ * @param props.media 帖子的全部媒体组。
+ * @param props.onMove 切换到前一项或后一项。
+ * @param props.onSelect 选择指定媒体。
+ * @returns 保持原始宽高比的详情媒体舞台。
+ */
 export function MediaStage({
   activeIndex,
   current,
@@ -46,7 +57,7 @@ export function MediaStage({
         <video
           aria-label={`第 ${current.index} 项动态图片预览`}
           autoPlay
-          className="absolute inset-0 size-full object-cover object-center"
+          className="absolute inset-0 size-full object-contain object-center"
           controls
           key={`${current.index}-live`}
           loop
@@ -59,7 +70,7 @@ export function MediaStage({
       ) : video ? (
         <video
           aria-label={`第 ${current.index} 项视频预览`}
-          className="absolute inset-0 size-full object-cover object-center"
+          className="absolute inset-0 size-full object-contain object-center"
           controls
           key={`${current.index}-video`}
           onLoadedMetadata={(event) => applyVideoRatio(event.currentTarget)}
@@ -70,7 +81,7 @@ export function MediaStage({
       ) : (
         <img
           alt={`第 ${current.index} 项图片预览`}
-          className="absolute inset-0 size-full object-cover object-center"
+          className="absolute inset-0 size-full object-contain object-center"
           onLoad={(event) => applyImageRatio(event.currentTarget)}
           referrerPolicy="no-referrer"
           src={image?.地址}

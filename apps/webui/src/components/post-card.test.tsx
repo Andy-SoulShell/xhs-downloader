@@ -151,11 +151,12 @@ describe("帖子卡片", () => {
     ];
     renderCard(makePost({ result }));
 
-    const cover = screen.getByLabelText("合成测试帖子的第 1 个视频");
+    const cover = screen.getByAltText("合成测试帖子的第 1 个视频封面");
     expect(cover).toHaveAttribute(
-      "poster",
+      "src",
       "https://example.invalid/cover.jpeg",
     );
+    expect(cover).toHaveAttribute("referrerpolicy", "no-referrer");
     fireEvent.click(
       screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
     );

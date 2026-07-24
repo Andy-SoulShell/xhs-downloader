@@ -11,6 +11,17 @@ interface MediaPreviewProps {
   onOpen: () => void;
 }
 
+/**
+ * 展示帖子媒体的完整封面，并提供详情入口。
+ *
+ * @param props 组件属性。
+ * @param props.ariaLabel 自定义无障碍名称。
+ * @param props.index 一基媒体序号。
+ * @param props.resources 同一媒体序号下的静态、动态或视频资源。
+ * @param props.title 帖子标题。
+ * @param props.onOpen 打开帖子详情的回调。
+ * @returns 保持资源原始宽高比的媒体封面。
+ */
 export function MediaPreview({
   ariaLabel,
   index,
@@ -111,15 +122,24 @@ export function MediaPreview({
       onClick={onOpen}
       type="button"
     >
-      <video
-        aria-label={`${title}的第 ${index} 个视频`}
-        className="block h-auto w-full bg-stone-950 object-contain"
-        muted
-        playsInline
-        poster={video?.预览地址 ?? undefined}
-        preload="metadata"
-        src={(video ?? live)?.地址}
-      />
+      {video?.预览地址 ? (
+        <img
+          alt={`${title}的第 ${index} 个视频封面`}
+          className="block h-auto w-full bg-stone-950 object-contain"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          src={video.预览地址}
+        />
+      ) : (
+        <video
+          aria-label={`${title}的第 ${index} 个视频`}
+          className="block h-auto w-full bg-stone-950 object-contain"
+          muted
+          playsInline
+          preload="metadata"
+          src={(video ?? live)?.地址}
+        />
+      )}
       <span
         aria-hidden
         className="absolute right-2.5 bottom-2.5 grid size-7 place-items-center rounded-full bg-black/55 text-white backdrop-blur"
