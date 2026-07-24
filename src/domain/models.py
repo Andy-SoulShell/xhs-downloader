@@ -39,6 +39,15 @@ class ClientRecordStatus(StrEnum):
     FAILED = "failed"
 
 
+class DownloadTaskStatus(StrEnum):
+    """后台下载任务状态。"""
+
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class Author(BaseModel):
     """作品作者信息。
 
@@ -136,6 +145,38 @@ class DownloadArtifact(BaseModel):
     size: int = Field(ge=0)
     media_index: int = Field(ge=1)
     kind: MediaKind
+
+
+class DownloadTask(BaseModel):
+    """可持久化、可恢复的后台下载任务。
+
+    Attributes:
+        task_id: 服务端生成的任务唯一标识。
+        client_request_id: 客户端幂等请求标识；未提供时为空。
+        source_url: 作品地址。
+        media_indexes: 需要下载的一基媒体序号。
+        force: 是否忽略已有有效产物。
+        status: 当前任务状态。
+        attempts: 已开始执行的次数。
+        message: 当前状态或失败原因。
+        detail: 完成后保存的作品详情。
+        artifacts: 完成后生成的文件产物。
+        created_at: 任务创建时间。
+        updated_at: 任务最近更新时间。
+    """
+
+    task_id: str = Field(min_length=1, max_length=128)
+    client_request_id: str | None = Field(default=None, max_length=128)
+    source_url: str
+    media_indexes: list[int] = Field(default_factory=list)
+    force: bool = False
+    status: DownloadTaskStatus = DownloadTaskStatus.QUEUED
+    attempts: int = Field(default=0, ge=0)
+    message: str = Field(default="等待后台执行", max_length=1000)
+    detail: WorkDetail | None = None
+    artifacts: list[DownloadArtifact] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
 
 
 class DownloadRecord(BaseModel):

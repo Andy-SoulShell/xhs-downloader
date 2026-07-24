@@ -5,6 +5,7 @@ from .downloader import FileDownloader
 from .http import HttpxGateway
 from .parser import InitialStateParser
 from .repository import SqliteDownloadRepository
+from .task_repository import SqliteTaskRepository
 
 __all__ = [
     "FileDownloader",
@@ -12,4 +13,5 @@ __all__ = [
     "InitialStateParser",
     "SqliteClientRecordRepository",
     "SqliteDownloadRepository",
+    "SqliteTaskRepository",
 ]

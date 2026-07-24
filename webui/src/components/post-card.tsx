@@ -10,10 +10,12 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import type { PostRecord } from "../app";
 import { groupMedia } from "../lib/media";
+import type { PostRecord } from "../lib/workspace";
 import { AuthorAvatar } from "./author-avatar";
+import { Badge } from "./badge";
 import { MediaPreview } from "./media-preview";
+import { Metric } from "./metric";
 import { PostDetailDialog } from "./post-detail-dialog";
 
 interface PostCardProps {
@@ -54,10 +56,14 @@ export function PostCard({
             resources={first.resources}
             title={title}
           />
-          <span className="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-stone-950/75 px-2.5 py-1.5 text-[10px] font-medium text-white backdrop-blur">
-            <Images aria-hidden size={12} />
+          <Badge
+            className="pointer-events-none absolute top-3 left-3"
+            icon={Images}
+            size="floating"
+            tone="overlay"
+          >
             {media.length} 项
-          </span>
+          </Badge>
           <StatusBadge status={status} />
         </div>
 
@@ -80,17 +86,20 @@ export function PostCard({
               <span className="truncate">{detail.作者.作者昵称}</span>
             </div>
             <div className="flex shrink-0 items-center gap-2.5">
-              <CompactMetric
+              <Metric
+                compact
                 icon={Heart}
                 label="赞"
                 value={detail.点赞数量}
               />
-              <CompactMetric
+              <Metric
+                compact
                 icon={Star}
                 label="收藏"
                 value={detail.收藏数量}
               />
-              <CompactMetric
+              <Metric
+                compact
                 icon={MessageCircle}
                 label="评论"
                 value={detail.评论数量}
@@ -110,26 +119,6 @@ export function PostCard({
         post={post}
       />
     </>
-  );
-}
-
-function CompactMetric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Heart;
-  label: string;
-  value: string;
-}) {
-  return (
-    <span
-      aria-label={`${label} ${value}`}
-      className="inline-flex items-center gap-1"
-    >
-      <Icon aria-hidden size={13} />
-      {value}
-    </span>
   );
 }
 
@@ -154,23 +143,22 @@ function StatusBadge({ status }: { status: VisibleStatus }) {
   const Icon = icon;
   const color =
     status === "已下载"
-      ? "bg-emerald-50/95 text-emerald-700"
+      ? "success"
       : status === "下载中"
-        ? "bg-amber-50/95 text-amber-700"
+        ? "warning"
         : status === "失败"
-          ? "bg-red-50/95 text-red-600"
-          : "bg-white/92 text-stone-600";
+          ? "danger"
+          : "surface";
 
   return (
-    <span
-      className={`pointer-events-none absolute top-3 right-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-medium shadow-sm backdrop-blur ${color}`}
+    <Badge
+      className="pointer-events-none absolute top-3 right-3"
+      icon={Icon}
+      size="floating"
+      spinning={status === "下载中"}
+      tone={color}
     >
-      <Icon
-        aria-hidden
-        className={status === "下载中" ? "animate-spin" : ""}
-        size={12}
-      />
       {status}
-    </span>
+    </Badge>
   );
 }

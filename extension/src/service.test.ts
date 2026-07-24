@@ -59,16 +59,25 @@ describe("本地服务客户端", () => {
 
   it("提交后台下载且不携带浏览器凭据", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ message: "后台下载完成" })),
+      new Response(JSON.stringify({ task_id: "1234567890abcdef" })),
     );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestBackgroundDownload("http://127.0.0.1:5556", work, [1, 3]),
-    ).resolves.toBe("后台下载完成");
+      requestBackgroundDownload(
+        "http://127.0.0.1:5556",
+        work,
+        [1, 3],
+        "request-1",
+      ),
+    ).resolves.toBe("后台任务 12345678 已提交");
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       credentials: "omit",
       method: "POST",
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:5556/tasks");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      request_id: "request-1",
     });
   });
 
@@ -82,11 +91,11 @@ describe("本地服务客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestBackgroundDownload("http://service", work, [1]),
+      requestBackgroundDownload("http://service", work, [1], "request-1"),
     ).rejects.toThrow("合成错误");
     await expect(
-      requestBackgroundDownload("http://service", work, [1]),
-    ).resolves.toBe("后台下载完成");
+      requestBackgroundDownload("http://service", work, [1], "request-2"),
+    ).rejects.toThrow("没有返回任务标识");
   });
 
   it("同步记录并跳过空批次", async () => {

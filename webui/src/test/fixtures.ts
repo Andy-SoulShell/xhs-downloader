@@ -1,4 +1,7 @@
-import type { DetailResponse } from "../lib/types";
+import type {
+  DetailResponse,
+  DownloadTask,
+} from "../lib/types";
 
 export function makeDetailResponse(
   overrides: Partial<DetailResponse> = {},
@@ -47,6 +50,27 @@ export function makeDetailResponse(
     },
     files: [],
     skipped: false,
+    ...overrides,
+  };
+}
+
+export function makeDownloadTask(
+  overrides: Partial<DownloadTask> = {},
+): DownloadTask {
+  const detail = makeDetailResponse().data;
+  return {
+    task_id: "synthetic-task",
+    client_request_id: "synthetic-request",
+    source_url: "https://example.invalid/work",
+    media_indexes: [1, 2],
+    force: false,
+    status: "completed",
+    attempts: 1,
+    message: "作品文件下载完成",
+    detail,
+    artifacts: [],
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:01Z",
     ...overrides,
   };
 }

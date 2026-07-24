@@ -1,8 +1,10 @@
 import { Check, Download as DownloadIcon } from "lucide-react";
 import { Switch } from "radix-ui";
 
-import type { PostRecord } from "../app";
 import { mediaLabel, type MediaGroup } from "../lib/media";
+import type { PostRecord } from "../lib/workspace";
+import { ActionButton } from "./action-button";
+import { Badge } from "./badge";
 
 interface PostDownloadSelectionProps {
   activeIndex: number;
@@ -84,7 +86,7 @@ export function PostDownloadSelection({
               <span className="min-w-0 flex-1 text-xs font-medium text-stone-700">
                 第 {item.index} 项 · {mediaLabel(item)}
               </span>
-              <span className={statusClass(status)}>{status}</span>
+              <Badge tone={statusTone(status)}>{status}</Badge>
             </label>
           );
         })}
@@ -116,11 +118,11 @@ export function PostDownloadBar({
           </Switch.Root>
           强制重新下载
         </label>
-        <button
-          className="inline-flex min-w-36 items-center justify-center gap-2 rounded-xl bg-red-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+        <ActionButton
+          className="h-auto min-w-36 rounded-xl py-3"
           disabled={post.status === "downloading" || post.selected.size === 0}
           onClick={onDownload}
-          type="button"
+          size="large"
         >
           <DownloadIcon aria-hidden size={16} />
           {post.status === "downloading"
@@ -128,7 +130,7 @@ export function PostDownloadBar({
             : post.selected.size
               ? `下载 ${post.selected.size} 项`
               : "请选择媒体"}
-        </button>
+        </ActionButton>
       </div>
     </div>
   );
@@ -144,14 +146,11 @@ function mediaStatus(post: PostRecord, group: MediaGroup): string {
   return downloaded ? "已下载" : "未下载";
 }
 
-function statusClass(status: string): string {
-  const color =
-    status === "已下载"
-      ? "bg-emerald-100 text-emerald-700"
-      : status === "失败"
-        ? "bg-red-100 text-red-600"
-        : status === "下载中"
-          ? "bg-amber-100 text-amber-700"
-          : "bg-stone-100 text-stone-500";
-  return `rounded-full px-2 py-1 text-[10px] font-medium ${color}`;
+function statusTone(
+  status: string,
+): "success" | "danger" | "warning" | "neutral" {
+  if (status === "已下载") return "success";
+  if (status === "失败") return "danger";
+  if (status === "下载中") return "warning";
+  return "neutral";
 }

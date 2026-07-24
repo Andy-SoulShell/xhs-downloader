@@ -2,5 +2,6 @@
 
 from .factory import create_service
 from .service import DownloadService
+from .tasks import DownloadTaskCoordinator
 
-__all__ = ["DownloadService", "create_service"]
+__all__ = ["DownloadService", "DownloadTaskCoordinator", "create_service"]

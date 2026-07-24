@@ -8,12 +8,26 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
-import { checkHealth, submitDetail } from "./lib/api";
-import { makeDetailResponse } from "./test/fixtures";
+import {
+  checkHealth,
+  listClientRecords,
+  listTasks,
+  retryTask,
+  submitDetail,
+  submitTask,
+} from "./lib/api";
+import {
+  makeDetailResponse,
+  makeDownloadTask,
+} from "./test/fixtures";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
+  listClientRecords: vi.fn(),
+  listTasks: vi.fn(),
+  retryTask: vi.fn(),
   submitDetail: vi.fn(),
+  submitTask: vi.fn(),
 }));
 
 async function addSyntheticPost() {
@@ -29,7 +43,13 @@ async function addSyntheticPost() {
 describe("帖子下载工作台", () => {
   beforeEach(() => {
     vi.mocked(checkHealth).mockResolvedValue(true);
+    vi.mocked(listClientRecords).mockResolvedValue([]);
+    vi.mocked(listTasks).mockResolvedValue([]);
+    vi.mocked(retryTask).mockResolvedValue(
+      makeDownloadTask({ status: "queued" }),
+    );
     vi.mocked(submitDetail).mockResolvedValue(makeDetailResponse());
+    vi.mocked(submitTask).mockResolvedValue(makeDownloadTask());
   });
 
   it("解析帖子并以紧凑卡片加入瀑布流", async () => {
@@ -58,10 +78,10 @@ describe("帖子下载工作台", () => {
     fireEvent.click(
       within(dialog).getByRole("switch", { name: "强制重新下载" }),
     );
-    vi.mocked(submitDetail).mockResolvedValue(
-      makeDetailResponse({
-        message: "作品文件下载完成",
-        files: [
+    vi.mocked(submitTask).mockResolvedValue(
+      makeDownloadTask({
+        media_indexes: [1],
+        artifacts: [
           {
             path: "download/synthetic.jpeg",
             sha256: "0".repeat(64),
@@ -77,11 +97,11 @@ describe("帖子下载工作台", () => {
     );
 
     await waitFor(() =>
-      expect(submitDetail).toHaveBeenLastCalledWith({
+      expect(submitTask).toHaveBeenLastCalledWith({
         url: "https://example.invalid/work",
-        download: true,
         index: [1],
         force: true,
+        request_id: expect.any(String),
       }),
     );
     expect(await screen.findByText("1 个帖子 · 1 个已下载")).toBeInTheDocument();
@@ -175,17 +195,53 @@ describe("帖子下载工作台", () => {
     fireEvent.click(await addSyntheticPost());
     const dialog = screen.getByRole("dialog");
 
-    vi.mocked(submitDetail).mockRejectedValueOnce(new Error("下载异常"));
+    vi.mocked(submitTask).mockRejectedValueOnce(new Error("下载异常"));
     fireEvent.click(
       within(dialog).getByRole("button", { name: "下载 2 项" }),
     );
     expect(await screen.findByText("下载异常")).toBeInTheDocument();
     expect(within(dialog).getAllByText("失败")).toHaveLength(2);
 
-    vi.mocked(submitDetail).mockRejectedValueOnce("未知异常");
+    vi.mocked(submitTask).mockRejectedValueOnce("未知异常");
     fireEvent.click(
       within(dialog).getByRole("button", { name: "下载 2 项" }),
     );
-    expect(await screen.findByText("下载任务失败")).toBeInTheDocument();
+    expect(await screen.findByText("下载任务提交失败")).toBeInTheDocument();
+  });
+
+  it("统一展示后台任务和独立下载记录", async () => {
+    vi.mocked(listTasks).mockResolvedValue([
+      makeDownloadTask({
+        status: "failed",
+        message: "合成任务失败",
+      }),
+    ]);
+    vi.mocked(listClientRecords).mockResolvedValue([
+      {
+        record_id: "synthetic-record",
+        work_id: "synthetic-work",
+        source_url: "https://example.invalid/work",
+        title: "合成独立记录",
+        mode: "browser",
+        status: "completed",
+        media_indexes: [1],
+        created_at: "2026-01-01T00:00:00Z",
+        message: "浏览器下载完成",
+      },
+    ]);
+    render(<App />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /下载任务/ }),
+    );
+    expect(screen.getByText("合成任务失败")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    await waitFor(() =>
+      expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /独立记录/ }));
+    expect(screen.getByText("合成独立记录")).toBeInTheDocument();
+    expect(screen.getByText("浏览器下载完成")).toBeInTheDocument();
   });
 });

@@ -2,71 +2,46 @@
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
 from uvicorn import Config, Server
 
-from src.application import DownloadService, create_service
+from src.application import (
+    DownloadService,
+    DownloadTaskCoordinator,
+    create_service,
+)
 from src.config import AppSettings
-from src.domain import ClientDownloadRecord, DownloadArtifact, DownloadMode, XhsError
-from src.infrastructure import SqliteClientRecordRepository
+from src.domain import (
+    ClientDownloadRecord,
+    DownloadMode,
+    DownloadTask,
+    DownloadTaskStatus,
+    XhsError,
+)
+from src.infrastructure import (
+    SqliteClientRecordRepository,
+    SqliteTaskRepository,
+)
 from src.logging import configure_logging
 from src.version import VERSION
+
+from .api_models import (
+    ClientRecordBatch,
+    DetailRequest,
+    DetailResponse,
+    ExtensionCapabilities,
+    TaskRequest,
+)
 
 ServiceFactory = Callable[[AppSettings], DownloadService]
 EXTENSION_ORIGIN_PATTERN = (
     r"^(chrome-extension|moz-extension|safari-web-extension)://"
     r"[A-Za-z0-9._-]+$"
 )
-
-
-class DetailRequest(BaseModel):
-    """作品详情与下载请求。"""
-
-    model_config = ConfigDict(extra="forbid")
-
-    url: str = Field(description="小红书作品链接")
-    download: bool = Field(default=False, description="是否下载媒体文件")
-    index: list[int] | None = Field(default=None, description="指定图片序号")
-    cookie: str | None = Field(
-        default=None,
-        description="仅用于本次请求的 Cookie",
-        repr=False,
-    )
-    force: bool = Field(default=False, description="是否强制重新下载")
-
-
-class DetailResponse(BaseModel):
-    """作品详情与下载响应。"""
-
-    model_config = ConfigDict(extra="forbid")
-
-    message: str
-    data: dict | None = None
-    files: list[DownloadArtifact] = Field(default_factory=list)
-    skipped: bool = False
-
-
-class ExtensionCapabilities(BaseModel):
-    """浏览器扩展可依赖的服务能力。"""
-
-    model_config = ConfigDict(extra="forbid")
-
-    protocol_version: int = 1
-    service_version: str
-    download_modes: list[DownloadMode]
-    features: dict[str, bool]
-
-
-class ClientRecordBatch(BaseModel):
-    """浏览器扩展同步的一批下载记录。"""
-
-    model_config = ConfigDict(extra="forbid")
-
-    records: list[ClientDownloadRecord] = Field(max_length=200)
 
 
 def create_api(
@@ -86,12 +61,25 @@ def create_api(
     client_records = SqliteClientRecordRepository(
         resolved_settings.state_dir.joinpath("downloads.db")
     )
+    task_repository = SqliteTaskRepository(
+        resolved_settings.state_dir.joinpath("downloads.db")
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         async with service_factory(resolved_settings) as service:
+            tasks = DownloadTaskCoordinator(
+                service,
+                task_repository,
+                resolved_settings.max_concurrency,
+            )
             app.state.service = service
-            yield
+            app.state.tasks = tasks
+            await tasks.start()
+            try:
+                yield
+            finally:
+                await tasks.close()
 
     api = FastAPI(
         title="xhs-downloader",
@@ -138,6 +126,7 @@ def create_api(
                 "content_cache": True,
                 "artifact_validation": True,
                 "partial_resume": True,
+                "persistent_tasks": True,
                 "retry": True,
             },
         )
@@ -156,6 +145,59 @@ def create_api(
         limit: int = Query(default=100, ge=1, le=500),
     ) -> list[ClientDownloadRecord]:
         return await client_records.list_recent(limit)
+
+    @api.post(
+        "/tasks",
+        response_model=DownloadTask,
+        status_code=202,
+        tags=["下载任务"],
+    )
+    async def submit_task(payload: TaskRequest, request: Request) -> DownloadTask:
+        tasks: DownloadTaskCoordinator = request.app.state.tasks
+        return await tasks.submit(
+            payload.url,
+            payload.index,
+            payload.force,
+            payload.request_id,
+        )
+
+    @api.get(
+        "/tasks",
+        response_model=list[DownloadTask],
+        tags=["下载任务"],
+    )
+    async def list_tasks(
+        request: Request,
+        limit: int = Query(default=100, ge=1, le=500),
+        status: Annotated[DownloadTaskStatus | None, Query()] = None,
+    ) -> list[DownloadTask]:
+        tasks: DownloadTaskCoordinator = request.app.state.tasks
+        return await tasks.list_recent(limit, status)
+
+    @api.get(
+        "/tasks/{task_id}",
+        response_model=DownloadTask,
+        tags=["下载任务"],
+    )
+    async def get_task(task_id: str, request: Request) -> DownloadTask:
+        tasks: DownloadTaskCoordinator = request.app.state.tasks
+        task = await tasks.get(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="下载任务不存在")
+        return task
+
+    @api.post(
+        "/tasks/{task_id}/retry",
+        response_model=DownloadTask,
+        status_code=202,
+        tags=["下载任务"],
+    )
+    async def retry_task(task_id: str, request: Request) -> DownloadTask:
+        tasks: DownloadTaskCoordinator = request.app.state.tasks
+        task = await tasks.retry(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="下载任务不存在")
+        return task
 
     @api.post("/xhs/detail", response_model=DetailResponse, tags=["作品"])
     async def detail(payload: DetailRequest, request: Request) -> DetailResponse:

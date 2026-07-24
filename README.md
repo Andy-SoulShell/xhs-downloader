@@ -13,6 +13,7 @@ HTTP API、MCP、Python 客户端和浏览器扩展。
 - WebUI 使用 React、Vite、Tailwind CSS 与 Radix UI，敏感配置仅保留在服务端。
 - 浏览器扩展只读取当前帖子页面已有数据，不申请 Cookie 权限；本地服务离线时也
   能使用浏览器下载。
+- 后台下载先写入 SQLite 任务队列再执行，支持幂等提交、进程重启恢复和失败重试。
 - 每个代码文件不超过 300 行，并由自动化测试检查公开接口 docstring。
 
 ## 环境要求
@@ -126,6 +127,9 @@ pnpm --dir webui build
 构建产物位于 `webui/dist/`，不提交到仓库。Cookie、代理、下载目录等敏感配置
 仍由服务端 `.env` 管理，WebUI 不会将其写入浏览器存储。
 
+管理后台包含帖子列表、持久化下载任务和扩展独立下载记录。关闭 WebUI 不会中断
+已经提交的后台任务；重新打开后会从服务端恢复任务和完成状态。
+
 ## 浏览器扩展
 
 构建扩展：
@@ -146,6 +150,7 @@ pnpm --dir extension build
 - `后台下载`：始终使用本地服务的缓存、代理、校验、目录、断点和重试能力。
 
 独立模式的下载结果保存在扩展本地存储中；服务恢复后，面板会提供显式同步入口。
+后台模式只负责提交持久化任务，任务由本地服务继续执行，可在 WebUI 中查看和重试。
 扩展只申请当前小红书帖子页、浏览器下载、本地存储和本机服务地址所需权限，不读取
 或保存浏览器 Cookie、密钥和密码。
 
@@ -160,6 +165,10 @@ uv run xhs-downloader api
 - 作品接口：`POST /xhs/detail`
 - 扩展能力：`GET /extension/capabilities`
 - 扩展记录：`GET/POST /extension/records`
+- 下载任务：`POST /tasks`
+- 任务列表：`GET /tasks`
+- 任务详情：`GET /tasks/{task_id}`
+- 失败重试：`POST /tasks/{task_id}/retry`
 
 ```json
 {

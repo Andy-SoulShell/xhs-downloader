@@ -1,5 +1,6 @@
 """FastAPI 接口测试。"""
 
+from asyncio import sleep
 from datetime import UTC, datetime
 
 from httpx import ASGITransport, AsyncClient
@@ -99,6 +100,48 @@ async def test_api_allows_only_extension_origins_for_cross_origin_requests() -> 
         "chrome-extension://synthetic-id"
     )
     assert "access-control-allow-origin" not in rejected.headers
+
+
+async def test_api_manages_persistent_download_tasks(tmp_path) -> None:
+    """确保任务接口支持幂等提交、查询和状态约束。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    payload = {
+        "url": "https://example.invalid/synthetic-work",
+        "index": [2, 1],
+        "request_id": "synthetic-request",
+    }
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://test",
+        ) as client,
+    ):
+        submitted = await client.post("/tasks", json=payload)
+        repeated = await client.post("/tasks", json=payload)
+        task_id = submitted.json()["task_id"]
+        completed = None
+        for _ in range(100):
+            completed = await client.get(f"/tasks/{task_id}")
+            if completed.json()["status"] == "completed":
+                break
+            await sleep(0.01)
+        listed = await client.get("/tasks?status=completed")
+        missing = await client.get("/tasks/missing")
+        invalid_retry = await client.post(f"/tasks/{task_id}/retry")
+        missing_retry = await client.post("/tasks/missing/retry")
+
+    assert submitted.status_code == 202
+    assert repeated.json()["task_id"] == task_id
+    assert completed.json()["attempts"] == 1
+    assert listed.json()[0]["task_id"] == task_id
+    assert missing.status_code == 404
+    assert invalid_retry.status_code == 400
+    assert missing_retry.status_code == 404
 
 
 async def test_api_returns_chinese_structured_data() -> None:

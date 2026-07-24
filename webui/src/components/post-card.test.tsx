@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { PostRecord } from "../app";
+import type { PostRecord } from "../lib/workspace";
 import { makeDetailResponse } from "../test/fixtures";
 import { PostCard } from "./post-card";
 

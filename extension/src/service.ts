@@ -24,25 +24,27 @@ export async function requestBackgroundDownload(
   baseUrl: string,
   work: ExtensionWork,
   indexes: number[],
+  requestId: string,
 ): Promise<string> {
-  const response = await fetch(`${normalizeBase(baseUrl)}/xhs/detail`, {
+  const response = await fetch(`${normalizeBase(baseUrl)}/tasks`, {
     method: "POST",
     credentials: "omit",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       url: work.sourceUrl,
-      download: true,
       index: indexes,
       force: false,
+      request_id: requestId,
     }),
   });
   const payload = (await response.json().catch(() => null)) as
-    | { message?: string }
+    | { task_id?: string; message?: string }
     | null;
   if (!response.ok) {
     throw new Error(payload?.message || `后台下载失败（HTTP ${response.status}）`);
   }
-  return payload?.message || "后台下载完成";
+  if (!payload?.task_id) throw new Error("后台没有返回任务标识");
+  return `后台任务 ${payload.task_id.slice(0, 8)} 已提交`;
 }
 
 export async function syncClientRecords(

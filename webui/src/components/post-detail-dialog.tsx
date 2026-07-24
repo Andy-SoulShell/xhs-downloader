@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import { Dialog } from "radix-ui";
 
-import type { PostRecord } from "../app";
 import { groupMedia } from "../lib/media";
+import type { PostRecord } from "../lib/workspace";
 import { AuthorAvatar } from "./author-avatar";
+import { Badge } from "./badge";
 import { MediaStage } from "./media-stage";
+import { Metric } from "./metric";
 import {
   PostDownloadBar,
   PostDownloadSelection,
@@ -113,12 +115,12 @@ export function PostDetailDialog({
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full bg-stone-900 px-2.5 py-1 text-[11px] font-medium text-white">
+                <Badge size="regular" tone="dark">
                   {detail.作品类型}
-                </span>
-                <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-600">
+                </Badge>
+                <Badge size="regular" tone="accent">
                   {media.length} 项媒体
-                </span>
+                </Badge>
               </div>
               <h2 className="mt-4 text-xl leading-snug font-semibold tracking-tight text-stone-950">
                 {detail.作品标题 || "未命名帖子"}
@@ -181,26 +183,6 @@ function Author({
           {formatTime(publishedAt)}
         </p>
       </div>
-    </div>
-  );
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Heart;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div
-      aria-label={`${label} ${value}`}
-      className="inline-flex items-center gap-1.5 text-stone-500"
-    >
-      <Icon aria-hidden size={15} />
-      <span className="text-xs font-medium text-stone-700">{value}</span>
     </div>
   );
 }

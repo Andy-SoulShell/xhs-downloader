@@ -51,3 +51,43 @@ export interface DetailRequest {
   index?: number[];
   force?: boolean;
 }
+
+export type DownloadTaskStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
+export interface DownloadTask {
+  task_id: string;
+  client_request_id: string | null;
+  source_url: string;
+  media_indexes: number[];
+  force: boolean;
+  status: DownloadTaskStatus;
+  attempts: number;
+  message: string;
+  detail: WorkDetail | null;
+  artifacts: DownloadArtifact[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskRequest {
+  url: string;
+  index: number[];
+  force: boolean;
+  request_id: string;
+}
+
+export interface ClientDownloadRecord {
+  record_id: string;
+  work_id: string;
+  source_url: string;
+  title: string;
+  mode: "browser" | "background";
+  status: "completed" | "failed";
+  media_indexes: number[];
+  created_at: string;
+  message: string;
+}

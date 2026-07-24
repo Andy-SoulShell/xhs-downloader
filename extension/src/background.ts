@@ -87,15 +87,23 @@ async function download(
     throw new Error("本地服务未启动，无法使用后台下载");
   }
   try {
-    const message =
-      mode === "background"
-        ? await requestBackgroundDownload(settings.serviceUrl, work, indexes)
-        : await downloadInBrowser(work, indexes);
+    if (mode === "background") {
+      const message = await requestBackgroundDownload(
+        settings.serviceUrl,
+        work,
+        indexes,
+        crypto.randomUUID(),
+      );
+      return { ok: true, message, mode };
+    }
+    const message = await downloadInBrowser(work, indexes);
     await saveRecord(work, indexes, mode, "completed", message, online);
     return { ok: true, message, mode };
   } catch (error) {
     const message = error instanceof Error ? error.message : "下载失败";
-    await saveRecord(work, indexes, mode, "failed", message, online);
+    if (mode === "browser") {
+      await saveRecord(work, indexes, mode, "failed", message, online);
+    }
     throw error;
   }
 }

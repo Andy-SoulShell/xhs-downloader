@@ -1,11 +1,16 @@
 import {
-  ArrowDownToLine,
   CheckCircle2,
   CircleDashed,
   GalleryVerticalEnd,
+  History,
+  ListTodo,
 } from "lucide-react";
 
-import type { Filter } from "../app";
+import type {
+  Filter,
+  WorkspaceView,
+} from "../lib/workspace";
+import { ProductBrand } from "./product-brand";
 import { StatusPill } from "./status-pill";
 
 interface WorkspaceSidebarProps {
@@ -13,7 +18,11 @@ interface WorkspaceSidebarProps {
   filter: Filter;
   online: boolean | null;
   postCount: number;
+  recordCount: number;
+  taskCount: number;
+  view: WorkspaceView;
   onFilterChange: (filter: Filter) => void;
+  onViewChange: (view: WorkspaceView) => void;
 }
 
 export function WorkspaceSidebar({
@@ -21,46 +30,67 @@ export function WorkspaceSidebar({
   filter,
   online,
   postCount,
+  recordCount,
+  taskCount,
+  view,
   onFilterChange,
+  onViewChange,
 }: WorkspaceSidebarProps) {
   const pendingCount = postCount - completedCount;
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-stone-800 bg-stone-950 px-4 py-5 text-white lg:flex">
-      <a
-        aria-label="xhs-downloader 首页"
-        className="flex items-center gap-3 rounded-2xl px-3 py-2"
-        href="/"
-      >
-        <span className="grid size-10 place-items-center rounded-xl bg-red-500 text-white shadow-[0_8px_24px_rgba(239,68,68,0.25)]">
-          <ArrowDownToLine aria-hidden size={19} strokeWidth={2.25} />
-        </span>
-        <p className="whitespace-nowrap text-xs font-bold tracking-[0.02em]">
-          XHS-DOWNLOADER
-        </p>
-      </a>
+      <div className="px-3 py-2">
+        <ProductBrand />
+      </div>
 
       <nav aria-label="帖子状态" className="mt-9 space-y-1">
         <SidebarButton
-          active={filter === "all"}
+          active={view === "posts" && filter === "all"}
           count={postCount}
           icon={GalleryVerticalEnd}
           label="全部帖子"
-          onClick={() => onFilterChange("all")}
+          onClick={() => {
+            onViewChange("posts");
+            onFilterChange("all");
+          }}
         />
         <SidebarButton
-          active={filter === "ready"}
+          active={view === "posts" && filter === "ready"}
           count={pendingCount}
           icon={CircleDashed}
           label="待处理"
-          onClick={() => onFilterChange("ready")}
+          onClick={() => {
+            onViewChange("posts");
+            onFilterChange("ready");
+          }}
         />
         <SidebarButton
-          active={filter === "done"}
+          active={view === "posts" && filter === "done"}
           count={completedCount}
           icon={CheckCircle2}
           label="已下载"
-          onClick={() => onFilterChange("done")}
+          onClick={() => {
+            onViewChange("posts");
+            onFilterChange("done");
+          }}
+        />
+      </nav>
+
+      <nav aria-label="下载管理" className="mt-6 space-y-1 border-t border-stone-800 pt-6">
+        <SidebarButton
+          active={view === "tasks"}
+          count={taskCount}
+          icon={ListTodo}
+          label="下载任务"
+          onClick={() => onViewChange("tasks")}
+        />
+        <SidebarButton
+          active={view === "records"}
+          count={recordCount}
+          icon={History}
+          label="独立记录"
+          onClick={() => onViewChange("records")}
         />
       </nav>
 

@@ -1,6 +1,8 @@
 import { Link2, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 
+import { ActionButton } from "./action-button";
+
 interface LinkComposerProps {
   link: string;
   parsing: boolean;
@@ -38,14 +40,15 @@ export function LinkComposer({
             />
           </label>
         </div>
-        <button
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(239,68,68,0.18)] transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-60"
+        <ActionButton
+          className="disabled:cursor-wait"
           disabled={parsing}
+          size="large"
           type="submit"
         >
           <Plus aria-hidden size={17} />
           {parsing ? "正在解析…" : "添加到列表"}
-        </button>
+        </ActionButton>
       </form>
     </section>
   );

@@ -13,6 +13,10 @@ class ParseError(XhsError):
     """页面缺少有效作品数据或数据结构不受支持。"""
 
 
+class TaskStateError(XhsError):
+    """下载任务状态不允许当前操作。"""
+
+
 class DownloadError(XhsError):
     """媒体请求或文件落盘失败。"""
 

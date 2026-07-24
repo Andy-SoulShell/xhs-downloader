@@ -9,6 +9,8 @@ from .models import (
     ClientDownloadRecord,
     DownloadArtifact,
     DownloadRecord,
+    DownloadTask,
+    DownloadTaskStatus,
     WorkDetail,
 )
 
@@ -137,5 +139,63 @@ class ClientRecordRepository(Protocol):
 
         Returns:
             按创建时间倒序排列的记录。
+        """
+        ...
+
+
+class TaskRepository(Protocol):
+    """后台下载任务仓储端口。"""
+
+    async def get(self, task_id: str) -> DownloadTask | None:
+        """按任务 ID 读取记录。
+
+        Args:
+            task_id: 任务唯一标识。
+
+        Returns:
+            已有任务；不存在时返回 ``None``。
+        """
+        ...
+
+    async def get_by_request_id(self, request_id: str) -> DownloadTask | None:
+        """按客户端幂等标识读取任务。
+
+        Args:
+            request_id: 客户端请求标识。
+
+        Returns:
+            已有任务；不存在时返回 ``None``。
+        """
+        ...
+
+    async def save(self, task: DownloadTask) -> None:
+        """新增或覆盖任务状态。
+
+        Args:
+            task: 完整任务快照。
+        """
+        ...
+
+    async def list_recent(
+        self,
+        limit: int,
+        status: DownloadTaskStatus | None = None,
+    ) -> list[DownloadTask]:
+        """读取最近任务。
+
+        Args:
+            limit: 最大返回数量。
+            status: 可选状态筛选。
+
+        Returns:
+            按更新时间倒序排列的任务。
+        """
+        ...
+
+    async def list_recoverable(self) -> list[DownloadTask]:
+        """读取服务重启后需要恢复的任务。
+
+        Returns:
+            排队中或执行中的任务。
         """
         ...
