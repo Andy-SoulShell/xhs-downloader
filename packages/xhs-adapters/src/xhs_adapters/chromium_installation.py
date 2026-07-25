@@ -3,6 +3,7 @@
 import os
 import shutil
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 
@@ -45,9 +46,26 @@ def _platform_candidates() -> list[Path]:
             ]
         )
     if os.name == "nt":
-        for root_name in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
-            if root := os.environ.get(root_name):
-                found.append(
-                    Path(root, "Google", "Chrome", "Application", "chrome.exe")
-                )
+        found.extend(_windows_installation_candidates(os.environ))
     return found
+
+
+def _windows_installation_candidates(
+    environment: Mapping[str, str],
+) -> list[Path]:
+    candidates: list[Path] = []
+    for root_name in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
+        if root := environment.get(root_name):
+            candidates.extend(
+                [
+                    Path(root, "Google", "Chrome", "Application", "chrome.exe"),
+                    Path(
+                        root,
+                        "Microsoft",
+                        "Edge",
+                        "Application",
+                        "msedge.exe",
+                    ),
+                ]
+            )
+    return candidates

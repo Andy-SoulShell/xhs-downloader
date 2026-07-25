@@ -1,7 +1,10 @@
 """Loguru 日志配置与标准库日志桥接。"""
 
 import logging
+import os
 import sys
+from pathlib import Path
+from typing import TextIO
 
 from loguru import logger
 
@@ -34,21 +37,44 @@ class _InterceptHandler(logging.Handler):
         )
 
 
-def configure_logging(level: str = "INFO") -> None:
+def configure_logging(
+    level: str = "INFO",
+    log_file: Path | None = None,
+) -> None:
     """配置 Loguru，并接管标准库日志。
 
     Args:
         level: 最低日志级别，不区分大小写。
+        log_file: 可选的持久化日志文件；桌面无控制台模式必须提供。
     """
     logger.remove()
-    logger.add(
-        sys.stderr,
-        level=level.upper(),
-        format=_format_record,
-        colorize=sys.stderr.isatty(),
-        backtrace=False,
-        diagnose=False,
-    )
+    stderr = _available_stderr()
+    if stderr is not None:
+        logger.add(
+            stderr,
+            level=level.upper(),
+            format=_format_record,
+            colorize=stderr.isatty(),
+            backtrace=False,
+            diagnose=False,
+        )
+    if log_file is not None:
+        resolved_log = log_file.expanduser().resolve()
+        resolved_log.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        resolved_log.parent.chmod(0o700)
+        logger.add(
+            resolved_log,
+            level=level.upper(),
+            format=_format_record,
+            colorize=False,
+            backtrace=False,
+            diagnose=False,
+            rotation="10 MB",
+            retention=5,
+            opener=_secure_log_opener,
+        )
+    if stderr is None and log_file is None:
+        logger.add(lambda _: None, level=level.upper())
     logging.basicConfig(
         handlers=[_InterceptHandler()],
         level=0,
@@ -60,6 +86,15 @@ def configure_logging(level: str = "INFO") -> None:
         standard_logger.propagate = True
     for name in ("httpx", "httpcore", "aiosqlite"):
         logging.getLogger(name).setLevel(logging.WARNING)
+
+
+def _available_stderr() -> TextIO | None:
+    stderr = sys.stderr or sys.__stderr__
+    return stderr if stderr is not None and hasattr(stderr, "isatty") else None
+
+
+def _secure_log_opener(path: str, flags: int) -> int:
+    return os.open(path, flags, 0o600)
 
 
 def _format_record(record: dict) -> str:

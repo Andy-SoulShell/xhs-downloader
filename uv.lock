@@ -1900,6 +1900,7 @@ version = "3.0.0"
 source = { editable = "apps/api" }
 dependencies = [
     { name = "fastapi" },
+    { name = "platformdirs" },
     { name = "pydantic" },
     { name = "python-multipart" },
     { name = "typer" },
@@ -1911,6 +1912,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.139.0" },
+    { name = "platformdirs", specifier = ">=4.5.0" },
     { name = "pydantic", specifier = ">=2.12.0" },
     { name = "python-multipart", specifier = ">=0.0.22" },
     { name = "typer", specifier = ">=0.21.0" },
