@@ -1,5 +1,10 @@
 """可由不同交付应用复用的应用用例。"""
 
+from .atomic_client import (
+    AsyncCloseable,
+    AtomicClientSlot,
+    AtomicClientSlotClosedError,
+)
 from .browser_execution import BrowserExecutionService
 from .browser_read_provider import BrowserReadProvider
 from .browser_readiness import BrowserReadinessProbe, BrowserReadinessService
@@ -16,6 +21,9 @@ from .publication_scheduler import PublicationScheduler
 from .publication_tasks import PublicationTaskService
 
 __all__ = [
+    "AsyncCloseable",
+    "AtomicClientSlot",
+    "AtomicClientSlotClosedError",
     "BrowserExecutionService",
     "BrowserReadProvider",
     "BrowserReadinessProbe",
