@@ -18,6 +18,7 @@ from .errors import (
     TaskStateError,
     XhsError,
 )
+from .extension_presence import ExtensionPresence
 from .feeds import (
     BrowserAccount,
     FeedAuthor,
@@ -70,6 +71,7 @@ __all__ = [
     "DownloadRecord",
     "DownloadTask",
     "DownloadTaskStatus",
+    "ExtensionPresence",
     "FeedAuthor",
     "FeedComment",
     "FeedDetailResult",

@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from hashlib import sha256
 from secrets import token_urlsafe
 
+from xhs_core.domain import ExtensionPresence
 from xhs_core.domain.publication_ports import ExtensionCredentialRepository
 
 
@@ -27,10 +28,11 @@ class ExtensionCredentialService:
             只在本次响应中返回的随机令牌。
         """
         token = token_urlsafe(32)
+        now = datetime.now(UTC)
         await self._repository.register_extension(
             extension_id,
             _token_hash(token),
-            datetime.now(UTC),
+            now,
         )
         return token
 
@@ -44,10 +46,24 @@ class ExtensionCredentialService:
         Returns:
             令牌有效时返回真。
         """
-        return await self._repository.validate_extension(
+        valid = await self._repository.validate_extension(
             extension_id,
             _token_hash(token),
         )
+        if valid:
+            await self._repository.touch_extension(
+                extension_id,
+                datetime.now(UTC),
+            )
+        return valid
+
+    async def list_presence(self) -> list[ExtensionPresence]:
+        """列出扩展登记与最近认证时间。
+
+        Returns:
+            按最近认证时间倒序排列的扩展状态。
+        """
+        return await self._repository.list_extensions()
 
 
 def _token_hash(token: str) -> str:

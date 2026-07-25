@@ -71,6 +71,14 @@ export interface BrowserTaskClaim {
   lease_token: string;
 }
 
+/** 本机服务记录的浏览器扩展登记与最近心跳。 */
+export interface BrowserExtensionStatus {
+  extension_id: string;
+  registered_at: string;
+  last_seen_at: string;
+  online: boolean;
+}
+
 /** 登录状态任务返回的最小账号信息，不包含 Cookie。 */
 export interface BrowserLoginState {
   logged_in: boolean;

@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
+from .extension_presence import ExtensionPresence
 from .publication import (
     PublicationAsset,
     PublicationDraft,
@@ -197,6 +198,27 @@ class ExtensionCredentialRepository(Protocol):
 
         Returns:
             令牌与登记记录一致时返回真。
+        """
+        ...
+
+    async def touch_extension(
+        self,
+        extension_id: str,
+        seen_at: datetime,
+    ) -> None:
+        """记录扩展最近一次通过认证的时间。
+
+        Args:
+            extension_id: 浏览器分配的扩展 ID。
+            seen_at: 本次认证成功时间。
+        """
+        ...
+
+    async def list_extensions(self) -> list[ExtensionPresence]:
+        """列出已经登记的扩展及其最近心跳。
+
+        Returns:
+            按最近心跳倒序排列的扩展状态。
         """
         ...
 

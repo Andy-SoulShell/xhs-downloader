@@ -59,6 +59,7 @@ async def test_browser_api_completes_login_status_task(tmp_path) -> None:
             "/browser/extension/tasks/claim",
             headers=headers,
         )
+        extensions = await client.get("/browser/extensions")
         task_id = claimed.json()["task"]["task_id"]
         lease_headers = {
             **headers,
@@ -90,6 +91,8 @@ async def test_browser_api_completes_login_status_task(tmp_path) -> None:
     assert completed.json()["status"] == "succeeded"
     assert completed.json()["result"]["logged_in"] is False
     assert listed.json()[0]["task_id"] == task_id
+    assert extensions.json()[0]["extension_id"] == _EXTENSION_ID
+    assert extensions.json()[0]["online"] is True
 
 
 async def test_browser_api_enforces_local_and_extension_boundaries(
@@ -110,6 +113,10 @@ async def test_browser_api_enforces_local_and_extension_boundaries(
     ):
         hostile = await client.get(
             "/browser/tasks",
+            headers={"Origin": "https://example.invalid"},
+        )
+        hostile_extensions = await client.get(
+            "/browser/extensions",
             headers={"Origin": "https://example.invalid"},
         )
         wrong_origin = await client.post(
@@ -134,6 +141,7 @@ async def test_browser_api_enforces_local_and_extension_boundaries(
         )
 
     assert hostile.status_code == 403
+    assert hostile_extensions.status_code == 403
     assert wrong_origin.status_code == 403
     assert unauthorized.status_code == 401
     assert claimed.status_code == 200

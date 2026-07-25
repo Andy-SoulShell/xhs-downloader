@@ -1,5 +1,6 @@
 """浏览器任务 HTTP 请求模型。"""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
@@ -54,3 +55,14 @@ class BrowserExtensionTokenResponse(BaseModel):
 
     extension_id: str
     token: str
+
+
+class BrowserExtensionStatus(BaseModel):
+    """供本机管理界面展示的扩展在线状态。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    extension_id: str
+    registered_at: datetime
+    last_seen_at: datetime
+    online: bool

@@ -230,6 +230,41 @@ async def test_extension_credentials_rotate_and_validate(tmp_path) -> None:
     await repository.register_extension("extension", "first", now)
     assert await repository.validate_extension("extension", "first")
     await repository.register_extension("extension", "second", now)
+    seen_at = now + timedelta(seconds=5)
+    await repository.touch_extension("extension", seen_at)
+    presence = await repository.list_extensions()
 
     assert not await repository.validate_extension("extension", "first")
     assert await repository.validate_extension("extension", "second")
+    assert presence[0].last_seen_at == seen_at
+
+
+async def test_extension_credentials_migrate_existing_presence(tmp_path) -> None:
+    """确保旧凭据表升级后以登记时间初始化最近心跳。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    database = tmp_path.joinpath("state.db")
+    registered_at = datetime.now(UTC)
+    async with connect(database) as connection:
+        await connection.execute(
+            """
+            CREATE TABLE publication_extension (
+                extension_id TEXT PRIMARY KEY,
+                token_hash TEXT NOT NULL,
+                registered_at TEXT NOT NULL
+            )
+            """
+        )
+        await connection.execute(
+            "INSERT INTO publication_extension VALUES (?, ?, ?)",
+            ("legacy-extension", "synthetic-hash", registered_at.isoformat()),
+        )
+        await connection.commit()
+
+    repository = SqliteExtensionCredentialRepository(database)
+    presence = await repository.list_extensions()
+
+    assert presence[0].extension_id == "legacy-extension"
+    assert presence[0].last_seen_at == registered_at

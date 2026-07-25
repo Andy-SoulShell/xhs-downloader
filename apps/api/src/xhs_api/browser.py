@@ -1,5 +1,6 @@
 """本机管理端与浏览器扩展协作的通用任务 API。"""
 
+from datetime import UTC, datetime, timedelta
 from ipaddress import ip_address
 from urllib.parse import urlsplit
 
@@ -13,6 +14,7 @@ from xhs_core.domain import BrowserTask, BrowserTaskClaim
 
 from .browser_models import (
     BrowserExtensionRegisterRequest,
+    BrowserExtensionStatus,
     BrowserExtensionTokenResponse,
     BrowserTaskRequest,
     BrowserTaskResultRequest,
@@ -25,6 +27,7 @@ _EXTENSION_SCHEMES = {
     "moz-extension",
     "safari-web-extension",
 }
+_ONLINE_GRACE = timedelta(seconds=75)
 
 
 def create_browser_router(
@@ -61,6 +64,20 @@ def create_browser_router(
     ) -> list[BrowserTask]:
         _require_management(request, management_access)
         return await tasks.list_recent(limit)
+
+    @router.get("/extensions", response_model=list[BrowserExtensionStatus])
+    async def list_extensions(request: Request) -> list[BrowserExtensionStatus]:
+        _require_management(request, management_access)
+        now = datetime.now(UTC)
+        return [
+            BrowserExtensionStatus(
+                extension_id=item.extension_id,
+                registered_at=item.registered_at,
+                last_seen_at=item.last_seen_at,
+                online=now - item.last_seen_at <= _ONLINE_GRACE,
+            )
+            for item in await credentials.list_presence()
+        ]
 
     @router.get("/tasks/{task_id}", response_model=BrowserTask)
     async def get_task(task_id: str, request: Request) -> BrowserTask:
