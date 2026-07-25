@@ -24,6 +24,7 @@ from .chromium_process import (
 )
 from .chromium_state import read_runtime_port, write_runtime_state
 from .config import AppSettings
+from .file_security import restrict_directory_to_current_user
 
 
 class ChromiumController(ManagedBrowserController):
@@ -194,7 +195,7 @@ class ChromiumController(ManagedBrowserController):
             exist_ok=True,
             mode=0o700,
         )
-        self._settings.managed_browser_profile_dir.chmod(0o700)
+        restrict_directory_to_current_user(self._settings.managed_browser_profile_dir)
 
     async def _wait_for_endpoint(self) -> int:
         loop = asyncio.get_running_loop()

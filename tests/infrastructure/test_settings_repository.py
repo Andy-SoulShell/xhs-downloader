@@ -1,12 +1,13 @@
 """dotenv 配置仓储测试。"""
 
-import stat
 from pathlib import Path
 
 import pytest
 from xhs_adapters.config import AppSettings, ImageFormat
 from xhs_adapters.settings_repository import DotenvSettingsRepository
 from xhs_core.domain import SettingsError
+
+from tests.helpers import assert_private_file
 
 
 def test_dotenv_repository_preserves_context_and_writes_valid_values(
@@ -44,7 +45,7 @@ def test_dotenv_repository_preserves_context_and_writes_valid_values(
     assert settings.download_record is False
     assert settings.mapping_data == {"synthetic": "合成作者"}
     assert settings.cookie.get_secret_value() == "session=synthetic"
-    assert stat.S_IMODE(env_file.stat().st_mode) == 0o600
+    assert_private_file(env_file)
 
 
 def test_dotenv_repository_creates_missing_file(tmp_path: Path) -> None:

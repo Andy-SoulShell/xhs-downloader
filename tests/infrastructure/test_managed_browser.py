@@ -9,6 +9,8 @@ from xhs_adapters.config import AppSettings
 from xhs_adapters.managed_browser import ChromiumController
 from xhs_core.domain import ManagedBrowserError, ManagedBrowserState
 
+from tests.helpers import assert_private_directory, assert_private_file
+
 
 class FakeChromiumProcess:
     """记录终止动作的合成 Chromium 进程。"""
@@ -104,7 +106,31 @@ async def test_managed_browser_starts_once_and_preserves_profile(
     assert stopped.state is ManagedBrowserState.STOPPED
     assert process.terminated is True
     assert settings.managed_browser_profile_dir.exists()
+    assert_private_directory(settings.managed_browser_profile_dir)
     assert not settings.managed_browser_dir.joinpath("runtime.json").exists()
+
+
+async def test_managed_browser_runtime_state_is_private(tmp_path: Path) -> None:
+    """确保运行状态文件使用跨平台的当前用户专属权限。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    process = FakeChromiumProcess()
+    settings = AppSettings(
+        work_path=tmp_path,
+        managed_browser_executable=_executable(tmp_path),
+    )
+    controller = ChromiumController(
+        settings,
+        launcher=_launcher(process, []),
+        endpoint_probe=_healthy,
+    )
+
+    await controller.start()
+
+    assert_private_file(settings.managed_browser_dir.joinpath("runtime.json"))
+    await controller.stop()
 
 
 async def test_managed_browser_does_not_take_over_external_instance(

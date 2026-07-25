@@ -6,6 +6,7 @@ from typing import cast
 from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 from xhs_adapters.config import AppSettings
+from xhs_adapters.settings_repository import DotenvSettingsRepository
 from xhs_api.app import create_api
 from xhs_api.capability_reads import create_capability_read_router
 from xhs_api.capability_runtime import ReadCapabilityRuntime
@@ -188,10 +189,7 @@ async def test_settings_hot_swap_changes_next_read_without_restart(tmp_path) -> 
         tmp_path: Pytest 提供的临时工作目录。
     """
     settings_file = tmp_path.joinpath(".env")
-    settings_file.write_text(
-        f'XHS_WORK_PATH="{tmp_path}"\n',
-        encoding="utf-8",
-    )
+    DotenvSettingsRepository(settings_file).save({"work_path": tmp_path})
     settings = AppSettings.from_env(settings_file)
     api = create_api(
         settings,

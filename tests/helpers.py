@@ -1,7 +1,10 @@
 """测试数据构造工具。"""
 
 import json
+import stat
+import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from xhs_core.domain import (
@@ -13,6 +16,88 @@ from xhs_core.domain import (
     WorkDetail,
     WorkType,
 )
+
+
+def assert_private_file(path: Path) -> None:
+    """断言敏感文件只允许当前用户访问。
+
+    Args:
+        path: 待核对的本地文件。
+    """
+    if sys.platform != "win32":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        return
+
+    import ntsecuritycon
+    import win32api
+    import win32security
+
+    token = win32security.OpenProcessToken(
+        win32api.GetCurrentProcess(),
+        ntsecuritycon.TOKEN_QUERY,
+    )
+    try:
+        current_sid = win32security.GetTokenInformation(
+            token,
+            win32security.TokenUser,
+        )[0]
+    finally:
+        token.Close()
+    descriptor = win32security.GetNamedSecurityInfo(
+        str(path),
+        win32security.SE_FILE_OBJECT,
+        win32security.DACL_SECURITY_INFORMATION,
+    )
+    dacl = descriptor.GetSecurityDescriptorDacl()
+    assert dacl is not None
+    assert dacl.GetAceCount() == 1
+    header, mask, sid = dacl.GetAce(0)
+    assert header[0] == win32security.ACCESS_ALLOWED_ACE_TYPE
+    assert sid == current_sid
+    assert mask & ntsecuritycon.FILE_ALL_ACCESS == ntsecuritycon.FILE_ALL_ACCESS
+
+
+def assert_private_directory(path: Path) -> None:
+    """断言敏感目录及其子项只允许当前用户访问。
+
+    Args:
+        path: 待核对的本地目录。
+    """
+    if sys.platform != "win32":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o700
+        return
+
+    import ntsecuritycon
+    import win32api
+    import win32security
+
+    token = win32security.OpenProcessToken(
+        win32api.GetCurrentProcess(),
+        ntsecuritycon.TOKEN_QUERY,
+    )
+    try:
+        current_sid = win32security.GetTokenInformation(
+            token,
+            win32security.TokenUser,
+        )[0]
+    finally:
+        token.Close()
+    descriptor = win32security.GetNamedSecurityInfo(
+        str(path),
+        win32security.SE_FILE_OBJECT,
+        win32security.DACL_SECURITY_INFORMATION,
+    )
+    dacl = descriptor.GetSecurityDescriptorDacl()
+    assert dacl is not None
+    assert dacl.GetAceCount() == 1
+    header, mask, sid = dacl.GetAce(0)
+    expected_flags = (
+        ntsecuritycon.OBJECT_INHERIT_ACE | ntsecuritycon.CONTAINER_INHERIT_ACE
+    )
+    assert header[0] == win32security.ACCESS_ALLOWED_ACE_TYPE
+    assert header[1] & expected_flags == expected_flags
+    assert sid == current_sid
+    assert mask & ntsecuritycon.FILE_ALL_ACCESS == ntsecuritycon.FILE_ALL_ACCESS
 
 
 def make_detail(

@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 
+from .file_security import restrict_file_to_current_user
+
 
 def read_runtime_port(path: Path) -> int | None:
     """读取上一次记录的本机 CDP 端口。
@@ -47,5 +49,5 @@ def write_runtime_state(
         json.dumps(payload, ensure_ascii=False),
         encoding="utf-8",
     )
-    temporary.chmod(0o600)
+    restrict_file_to_current_user(temporary)
     os.replace(temporary, path)

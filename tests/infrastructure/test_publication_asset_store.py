@@ -4,6 +4,8 @@ import pytest
 from xhs_adapters.filesystem import FilePublicationAssetStore
 from xhs_core.domain import PublicationError
 
+from tests.helpers import assert_private_file
+
 
 async def _chunks(*values: bytes):
     for value in values:
@@ -30,7 +32,7 @@ async def test_asset_store_writes_validated_file_atomically(tmp_path) -> None:
     assert asset.filename == "unsafe.jpeg"
     assert asset.size == 15
     assert path.read_bytes() == b"synthetic-media"
-    assert path.stat().st_mode & 0o777 == 0o600
+    assert_private_file(path)
 
     await store.delete("draft", asset)
     await store.delete_draft("draft")

@@ -11,6 +11,8 @@ from pathlib import Path
 import aiofiles
 from xhs_core.domain import PublicationAsset, PublicationError
 
+from ..file_security import restrict_file_to_current_user
+
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 _MIME_SUFFIX = {
     "image/jpeg": ".jpeg",
@@ -85,7 +87,7 @@ class FilePublicationAssetStore:
                 await asyncio.to_thread(os.fsync, stream.fileno())
             if size == 0:
                 raise PublicationError("发布素材不能为空")
-            os.chmod(temporary, 0o600)
+            restrict_file_to_current_user(temporary)
             os.replace(temporary, target)
         except OSError as error:
             raise PublicationError(f"发布素材写入失败：{error}") from error

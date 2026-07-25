@@ -12,6 +12,8 @@ from typing import Any
 
 from xhs_core.domain import SettingsError
 
+from .file_security import restrict_file_to_current_user
+
 _ENV_LINE = re.compile(
     r"^(?P<prefix>\s*(?:export\s+)?)(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*=.*$"
 )
@@ -64,7 +66,7 @@ class DotenvSettingsRepository:
                 temporary.write(content)
                 temporary.flush()
                 os.fsync(temporary.fileno())
-            os.chmod(temporary_path, 0o600)
+            restrict_file_to_current_user(temporary_path)
             os.replace(temporary_path, self.path)
         except OSError as error:
             if temporary_path is not None:
