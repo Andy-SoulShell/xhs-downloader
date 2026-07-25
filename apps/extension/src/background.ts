@@ -2,6 +2,7 @@ import {
   buildDownloadFilename,
   resolveDownloadMode,
 } from "./mode";
+import { installBrowserTaskAutomation } from "./browser-task-runner";
 import {
   handlePublicationRequest,
   installPublicationAutomation,
@@ -79,6 +80,7 @@ async function handleRequest(
 }
 
 installPublicationAutomation();
+installBrowserTaskAutomation();
 
 async function getState(): Promise<ExtensionResponse> {
   const settings = await loadSettings();

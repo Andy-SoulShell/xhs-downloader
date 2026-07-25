@@ -19,7 +19,14 @@ beforeEach(() => {
   vi.stubGlobal("chrome", {
     storage: {
       local: {
-        get: vi.fn(async (key: string) => ({ [key]: values[key] })),
+        get: vi.fn(async (keys: string | string[]) =>
+          Object.fromEntries(
+            (Array.isArray(keys) ? keys : [keys]).map((key) => [
+              key,
+              values[key],
+            ]),
+          ),
+        ),
         set: vi.fn(async (next: Record<string, unknown>) => {
           Object.assign(values, next);
         }),

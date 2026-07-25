@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   supports: vi.fn(),
   clearActive: vi.fn(),
   clearCredential: vi.fn(),
+  ensureCredential: vi.fn(),
   loadActive: vi.fn(),
   loadOwner: vi.fn(),
   loadCredential: vi.fn(),
@@ -29,13 +30,14 @@ vi.mock("./publication-service", () => ({
 }));
 vi.mock("./publication-storage", () => ({
   clearActivePublicationClaim: mocks.clearActive,
-  clearPublicationCredential: mocks.clearCredential,
   loadActivePublicationClaim: mocks.loadActive,
   loadActivePublicationOwner: mocks.loadOwner,
-  loadPublicationCredential: mocks.loadCredential,
   saveActivePublicationClaim: mocks.saveActive,
   saveActivePublicationOwner: mocks.saveOwner,
-  savePublicationCredential: mocks.saveCredential,
+}));
+vi.mock("./extension-credential", () => ({
+  clearExtensionCredential: mocks.clearCredential,
+  ensureExtensionCredential: mocks.ensureCredential,
 }));
 vi.mock("./storage", () => ({ loadSettings: mocks.loadSettings }));
 vi.mock("./publication-input", () => ({
@@ -86,6 +88,7 @@ beforeEach(() => {
   mocks.loadActive.mockResolvedValue(undefined);
   mocks.loadOwner.mockResolvedValue(undefined);
   mocks.loadCredential.mockResolvedValue(credential);
+  mocks.ensureCredential.mockResolvedValue(credential);
   mocks.register.mockResolvedValue(credential);
   mocks.supports.mockResolvedValue(true);
   vi.stubGlobal("chrome", {
@@ -192,9 +195,6 @@ describe("发布任务后台协调器", () => {
   });
 
   it("未授权时重新登记并重试一次", async () => {
-    mocks.loadCredential
-      .mockResolvedValueOnce(credential)
-      .mockResolvedValueOnce(undefined);
     mocks.claim
       .mockRejectedValueOnce(new PublicationUnauthorizedError())
       .mockResolvedValueOnce(makeClaim());
@@ -205,11 +205,11 @@ describe("发布任务后台协调器", () => {
 
     expect(response.ok).toBe(true);
     expect(mocks.clearCredential).toHaveBeenCalledOnce();
-    expect(mocks.register).toHaveBeenCalledWith(
+    expect(mocks.ensureCredential).toHaveBeenCalledWith(
       "http://service",
-      "extension",
+      mocks.register,
     );
-    expect(mocks.saveCredential).toHaveBeenCalledWith(credential);
+    expect(mocks.ensureCredential).toHaveBeenCalledTimes(2);
     expect(mocks.claim).toHaveBeenCalledTimes(2);
   });
 

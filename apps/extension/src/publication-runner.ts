@@ -8,14 +8,15 @@ import {
 } from "./publication-service";
 import {
   clearActivePublicationClaim,
-  clearPublicationCredential,
   loadActivePublicationClaim,
   loadActivePublicationOwner,
-  loadPublicationCredential,
   saveActivePublicationClaim,
   saveActivePublicationOwner,
-  savePublicationCredential,
 } from "./publication-storage";
+import {
+  clearExtensionCredential,
+  ensureExtensionCredential,
+} from "./extension-credential";
 import { schedulePublicationTabClose } from "./publication-tab";
 import { activatePublicationControl } from "./publication-input";
 import type {
@@ -212,7 +213,7 @@ async function withCredential<T>(
     return await operation(settings.serviceUrl, credential);
   } catch (error) {
     if (!(error instanceof PublicationUnauthorizedError)) throw error;
-    await clearPublicationCredential();
+    await clearExtensionCredential();
     credential = await ensureCredential(settings.serviceUrl);
     return operation(settings.serviceUrl, credential);
   }
@@ -221,10 +222,5 @@ async function withCredential<T>(
 async function ensureCredential(
   baseUrl: string,
 ): Promise<ExtensionCredential> {
-  const extensionId = chrome.runtime.id;
-  const stored = await loadPublicationCredential();
-  if (stored?.extensionId === extensionId) return stored;
-  const credential = await registerPublicationExtension(baseUrl, extensionId);
-  await savePublicationCredential(credential);
-  return credential;
+  return ensureExtensionCredential(baseUrl, registerPublicationExtension);
 }

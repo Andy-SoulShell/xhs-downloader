@@ -32,18 +32,7 @@ export function parseInitialStateScript(
   script: string,
   sourceUrl: string,
 ): ExtensionWork {
-  const separator = script.indexOf("=");
-  if (separator < 0) throw new Error("帖子初始状态格式无效");
-  const raw = script
-    .slice(separator + 1)
-    .trim()
-    .replace(/;$/, "");
-  let state: DataMap;
-  try {
-    state = JSON.parse(normalizeJavaScriptValue(raw)) as DataMap;
-  } catch {
-    throw new Error("帖子初始状态无法解析");
-  }
+  const state = parseInitialStateValue(script);
   const workId = workIdFromUrl(sourceUrl);
   const note = selectNote(state, workId);
   const resolvedWorkId = text(note.noteId) || workId;
@@ -65,6 +54,23 @@ export function parseInitialStateScript(
     authorAvatar: text(user.avatar) || text(user.image) || undefined,
     media,
   };
+}
+
+/** 解析页面内嵌的 ``window.__INITIAL_STATE__`` 对象。 */
+export function parseInitialStateValue(script: string): Record<string, unknown> {
+  const separator = script.indexOf("=");
+  if (separator < 0) throw new Error("帖子初始状态格式无效");
+  const raw = script
+    .slice(separator + 1)
+    .trim()
+    .replace(/;$/, "");
+  let state: DataMap;
+  try {
+    state = JSON.parse(normalizeJavaScriptValue(raw)) as DataMap;
+  } catch {
+    throw new Error("帖子初始状态无法解析");
+  }
+  return state;
 }
 
 function selectNote(state: DataMap, workId: string): DataMap {

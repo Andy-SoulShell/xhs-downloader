@@ -2,33 +2,29 @@ import type {
   ExtensionCredential,
   PublicationClaim,
 } from "./publication-types";
+import {
+  clearExtensionCredential,
+  loadExtensionCredential,
+  saveExtensionCredential,
+} from "./extension-credential";
 
-const CREDENTIAL_KEY = "publicationCredential";
 const ACTIVE_CLAIM_KEY = "activePublicationClaim";
 const ACTIVE_OWNER_KEY = "activePublicationOwner";
 
 export async function loadPublicationCredential(): Promise<
   ExtensionCredential | undefined
 > {
-  const stored = await chrome.storage.local.get(CREDENTIAL_KEY);
-  const value = stored[CREDENTIAL_KEY] as Partial<ExtensionCredential> | undefined;
-  if (
-    typeof value?.extensionId !== "string" ||
-    typeof value.token !== "string"
-  ) {
-    return undefined;
-  }
-  return { extensionId: value.extensionId, token: value.token };
+  return loadExtensionCredential();
 }
 
 export async function savePublicationCredential(
   credential: ExtensionCredential,
 ): Promise<void> {
-  await chrome.storage.local.set({ [CREDENTIAL_KEY]: credential });
+  await saveExtensionCredential(credential);
 }
 
 export async function clearPublicationCredential(): Promise<void> {
-  await chrome.storage.local.remove(CREDENTIAL_KEY);
+  await clearExtensionCredential();
 }
 
 export async function loadActivePublicationClaim(): Promise<
