@@ -9,6 +9,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type {
+  BrowserDriver,
   BrowserLoginState,
   BrowserTask,
   BrowserTaskKind,
@@ -16,12 +17,16 @@ import type {
 } from "@xhs-downloader/contracts";
 
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
+import type { ManagedBrowserControl } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
+import { ManagedBrowserPanel } from "./managed-browser-panel";
 
 interface BrowserMonitorProps {
   account: BrowserLoginState | null;
+  browserDriver: BrowserDriver | null;
+  managedBrowser: ManagedBrowserControl;
 }
 
 const KIND_LABELS: Record<BrowserTaskKind, string> = {
@@ -48,13 +53,21 @@ const STATUS_LABELS: Record<BrowserTaskStatus, string> = {
   needs_review: "需要确认",
 };
 
-/** 展示扩展心跳、登录账号和浏览器任务审计记录。 */
-export function BrowserMonitor({ account }: BrowserMonitorProps) {
+/** 展示浏览器执行器状态、登录账号和任务审计记录。 */
+export function BrowserMonitor({
+  account,
+  browserDriver,
+  managedBrowser,
+}: BrowserMonitorProps) {
   const monitor = useBrowserMonitor();
   const latestExtension = monitor.extensions[0] ?? null;
 
   return (
     <>
+      <ManagedBrowserPanel
+        control={managedBrowser}
+        selected={browserDriver === "managed"}
+      />
       <section aria-label="浏览器状态" className="mt-6">
         <div className="grid gap-3 md:grid-cols-3">
           <StatusCard

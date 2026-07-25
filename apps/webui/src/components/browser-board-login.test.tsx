@@ -7,6 +7,11 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
 } from "../lib/browser-management-api";
+import { useManagedBrowser } from "../lib/use-managed-browser";
+import {
+  makeManagedBrowserControl,
+  makeManagedBrowserStatus,
+} from "../test/managed-browser";
 import { BrowserBoard } from "./browser-board";
 
 vi.mock("../lib/browser-api", () => ({
@@ -18,6 +23,9 @@ vi.mock("../lib/browser-management-api", () => ({
   listBrowserExtensions: vi.fn(),
   listBrowserTasks: vi.fn(),
   retryBrowserTask: vi.fn(),
+}));
+vi.mock("../lib/use-managed-browser", () => ({
+  useManagedBrowser: vi.fn(),
 }));
 
 const qrCode: LoginQrCodeResult = {
@@ -46,6 +54,9 @@ const qrTask: BrowserTask = {
 
 describe("浏览器登录与会话操作", () => {
   beforeEach(() => {
+    vi.mocked(useManagedBrowser).mockReturnValue(
+      makeManagedBrowserControl(),
+    );
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockResolvedValue({
@@ -159,4 +170,38 @@ describe("浏览器登录与会话操作", () => {
       screen.getByRole("button", { name: "清除浏览器 Cookie" }),
     ).toBeEnabled();
   });
+
+  it.each([
+    [
+      "extension",
+      makeManagedBrowserStatus(),
+      "登录会在浏览器扩展连接的真实小红书页面完成",
+      false,
+    ],
+    [
+      "managed",
+      makeManagedBrowserStatus({ state: "running", cdp_port: 9222 }),
+      "登录会在已启动的受管浏览器中完成",
+      false,
+    ],
+    [
+      "managed",
+      makeManagedBrowserStatus({ state: "stopped" }),
+      "请先在下方启动受管浏览器",
+      true,
+    ],
+  ] as const)(
+    "根据 %s 执行器展示首次登录引导",
+    (browserDriver, status, guidance, disabled) => {
+      vi.mocked(useManagedBrowser).mockReturnValue(
+        makeManagedBrowserControl({ status }),
+      );
+      render(<BrowserBoard browserDriver={browserDriver} />);
+
+      expect(screen.getByText(new RegExp(guidance))).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "获取登录二维码" }),
+      ).toHaveProperty("disabled", disabled);
+    },
+  );
 });

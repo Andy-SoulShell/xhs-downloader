@@ -8,9 +8,10 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import type { FeedSummary } from "../lib/types";
+import type { BrowserDriver, FeedSummary } from "../lib/types";
 import { capabilityRouteSource } from "../lib/browser-route";
 import { useBrowserExplorer } from "../lib/use-browser-explorer";
+import { useManagedBrowser } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BrowserDetail } from "./browser-detail";
@@ -20,9 +21,14 @@ import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
 import { PageHeading } from "./page-heading";
 
-/** 浏览器登录态、内容探索和互动操作的统一工作台。 */
-export function BrowserBoard() {
+/** 浏览器登录态、执行器控制、内容探索和互动操作的统一工作台。 */
+export function BrowserBoard({
+  browserDriver = null,
+}: {
+  browserDriver?: BrowserDriver | null;
+}) {
   const explorer = useBrowserExplorer();
+  const managedBrowser = useManagedBrowser();
   const [keyword, setKeyword] = useState("");
 
   const submitSearch = (event: FormEvent) => {
@@ -51,7 +57,9 @@ export function BrowserBoard() {
       />
 
       <BrowserLoginActions
+        browserDriver={browserDriver}
         busy={explorer.busy}
+        managedStatus={managedBrowser.status}
         message={explorer.sessionMessage}
         onCheckLogin={explorer.checkLogin}
         onDeleteCookies={explorer.deleteBrowserCookies}
@@ -122,7 +130,11 @@ export function BrowserBoard() {
         </div>
       </div>
 
-      <BrowserMonitor account={explorer.account} />
+      <BrowserMonitor
+        account={explorer.account}
+        browserDriver={browserDriver}
+        managedBrowser={managedBrowser}
+      />
 
       {explorer.detail && (
         <BrowserDetail

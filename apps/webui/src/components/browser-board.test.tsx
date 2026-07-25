@@ -12,6 +12,8 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
 } from "../lib/browser-management-api";
+import { useManagedBrowser } from "../lib/use-managed-browser";
+import { makeManagedBrowserControl } from "../test/managed-browser";
 import { BrowserBoard } from "./browser-board";
 
 vi.mock("../lib/browser-api", () => ({
@@ -23,6 +25,9 @@ vi.mock("../lib/browser-management-api", () => ({
   listBrowserExtensions: vi.fn(),
   listBrowserTasks: vi.fn(),
   retryBrowserTask: vi.fn(),
+}));
+vi.mock("../lib/use-managed-browser", () => ({
+  useManagedBrowser: vi.fn(),
 }));
 
 const feed = {
@@ -83,6 +88,9 @@ function completedTask(result: Record<string, JsonValue>): BrowserTask {
 
 describe("浏览器探索工作台", () => {
   beforeEach(() => {
+    vi.mocked(useManagedBrowser).mockReturnValue(
+      makeManagedBrowserControl(),
+    );
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockImplementation(async (path) => {

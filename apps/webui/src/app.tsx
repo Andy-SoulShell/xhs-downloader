@@ -253,7 +253,7 @@ export default function App() {
                 tasks={tasks}
               />
             )}
-            {view === "browser" && <BrowserBoard />}
+            {view === "browser" && <BrowserBoard browserDriver={settings?.values.browser_driver} />}
             {view === "publication" && (
               <PublicationBoard onNotify={notify} />
             )}

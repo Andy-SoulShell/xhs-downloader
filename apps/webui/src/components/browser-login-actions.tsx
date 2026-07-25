@@ -1,12 +1,15 @@
 import { LogIn, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
-import type { LoginQrCodeResult } from "../lib/types";
+import type { BrowserDriver, LoginQrCodeResult } from "../lib/types";
+import type { ManagedBrowserStatus } from "../lib/managed-browser-api";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 
 interface BrowserLoginActionsProps {
+  browserDriver: BrowserDriver | null;
   busy: boolean;
+  managedStatus: ManagedBrowserStatus | null;
   message: string;
   qrCode: LoginQrCodeResult | null;
   onCheckLogin: () => Promise<void>;
@@ -16,7 +19,9 @@ interface BrowserLoginActionsProps {
 
 /** 提供浏览器登录检查、扫码登录和站点 Cookie 清理入口。 */
 export function BrowserLoginActions({
+  browserDriver,
   busy,
+  managedStatus,
   message,
   qrCode,
   onCheckLogin,
@@ -24,6 +29,8 @@ export function BrowserLoginActions({
   onGetQrCode,
 }: BrowserLoginActionsProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const managedReady =
+    browserDriver !== "managed" || managedStatus?.state === "running";
 
   const confirmDelete = async () => {
     await onDeleteCookies();
@@ -44,12 +51,12 @@ export function BrowserLoginActions({
             </h2>
           </div>
           <p className="mt-1 text-xs leading-5 text-stone-500">
-            扫码在真实小红书页面完成；扩展只清理站点 Cookie，不能读取其内容。
+            {loginGuidance(browserDriver, managedStatus)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton
-            disabled={busy}
+            disabled={busy || !managedReady}
             onClick={() => void onCheckLogin()}
             variant="outline"
           >
@@ -57,7 +64,7 @@ export function BrowserLoginActions({
             检查登录
           </ActionButton>
           <ActionButton
-            disabled={busy}
+            disabled={busy || !managedReady}
             onClick={() => void onGetQrCode()}
             variant="outline"
           >
@@ -65,7 +72,7 @@ export function BrowserLoginActions({
             获取登录二维码
           </ActionButton>
           <ActionButton
-            disabled={busy}
+            disabled={busy || !managedReady}
             onClick={() => setConfirmingDelete(true)}
             variant="ghost"
           >
@@ -142,4 +149,23 @@ function formatExpiry(value: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function loginGuidance(
+  browserDriver: BrowserDriver | null,
+  managedStatus: ManagedBrowserStatus | null,
+): string {
+  if (browserDriver === "extension") {
+    return "登录会在浏览器扩展连接的真实小红书页面完成，Cookie 始终留在日常浏览器内。";
+  }
+  if (browserDriver === "managed") {
+    if (managedStatus?.state === "running") {
+      return "登录会在已启动的受管浏览器中完成，并保存在独立的本机用户目录。";
+    }
+    if (managedStatus && !managedStatus.installed) {
+      return "请先安装并配置 Chrome 或 Chromium，再在下方启动受管浏览器。";
+    }
+    return "请先在下方启动受管浏览器，再获取二维码完成首次登录。";
+  }
+  return "扫码会在设置中选定的真实浏览器页面完成，不会向 WebUI 返回 Cookie。";
 }

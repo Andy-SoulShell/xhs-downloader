@@ -10,6 +10,7 @@ import {
   listBrowserTasks,
   retryBrowserTask,
 } from "../lib/browser-management-api";
+import { makeManagedBrowserControl } from "../test/managed-browser";
 import { BrowserMonitor } from "./browser-monitor";
 
 vi.mock("../lib/browser-management-api", () => ({
@@ -66,6 +67,8 @@ describe("浏览器状态与操作记录", () => {
           nickname: "合成账号",
           user_id: "synthetic-user",
         }}
+        browserDriver="managed"
+        managedBrowser={makeManagedBrowserControl()}
       />,
     );
 
@@ -86,7 +89,13 @@ describe("浏览器状态与操作记录", () => {
       status: "queued",
       message: "等待浏览器扩展重试",
     });
-    render(<BrowserMonitor account={null} />);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver="extension"
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
 
     const retry = await screen.findByRole("button", { name: "重试" });
     expect(screen.getAllByRole("button", { name: "重试" })).toHaveLength(1);
@@ -107,7 +116,13 @@ describe("浏览器状态与操作记录", () => {
         last_seen_at: new Date(Date.now() - 30_000).toISOString(),
       },
     ]);
-    render(<BrowserMonitor account={null} />);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver={null}
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
 
     expect(await screen.findByText("30 秒前")).toBeInTheDocument();
     vi.mocked(listBrowserExtensions).mockResolvedValue([
@@ -126,7 +141,13 @@ describe("浏览器状态与操作记录", () => {
     vi.mocked(retryBrowserTask).mockRejectedValue(
       new Error("浏览器任务当前不可重试"),
     );
-    render(<BrowserMonitor account={null} />);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver="managed"
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
 
     fireEvent.click(await screen.findByRole("button", { name: "重试" }));
 
@@ -141,7 +162,13 @@ describe("浏览器状态与操作记录", () => {
     vi.mocked(listBrowserTasks).mockRejectedValueOnce(
       new Error("浏览器管理接口不可用"),
     );
-    render(<BrowserMonitor account={null} />);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver="managed"
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
 
     expect(
       await screen.findByText("浏览器管理接口不可用"),
