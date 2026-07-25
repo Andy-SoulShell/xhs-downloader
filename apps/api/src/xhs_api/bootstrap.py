@@ -16,12 +16,17 @@ from xhs_adapters.sqlite import (
     SqlitePostRepository,
     SqliteTaskRepository,
 )
+from xhs_core.application import AtomicClientSlot
 from xhs_core.domain.ports import (
     ClientRecordRepository,
     PostRepository,
     TaskRepository,
 )
 
+from .capability_runtime import (
+    ReadCapabilityRuntime,
+    create_read_capability_runtime,
+)
 from .settings_service import SettingsManager
 
 
@@ -30,6 +35,7 @@ class ApiDependencies:
     """HTTP API 生命周期所需依赖。"""
 
     browser: BrowserRuntime
+    capabilities: AtomicClientSlot[ReadCapabilityRuntime]
     client_records: ClientRecordRepository
     download_tasks: TaskRepository
     posts: PostRepository
@@ -53,16 +59,34 @@ def create_api_dependencies(
         可供 API 生命周期使用的依赖集合。
     """
     database = settings.state_dir.joinpath("downloads.db")
+    browser = create_browser_runtime(settings)
+    publication = create_publication_runtime(settings)
+    capabilities = AtomicClientSlot(
+        create_read_capability_runtime(settings, browser, publication)
+    )
+
+    async def apply_runtime(candidate: AppSettings) -> None:
+        async def build() -> ReadCapabilityRuntime:
+            return create_read_capability_runtime(
+                candidate,
+                browser,
+                publication,
+            )
+
+        await capabilities.replace(build)
+
     return ApiDependencies(
-        browser=create_browser_runtime(settings),
+        browser=browser,
+        capabilities=capabilities,
         client_records=SqliteClientRecordRepository(database),
         download_tasks=SqliteTaskRepository(database),
         posts=SqlitePostRepository(database),
-        publication=create_publication_runtime(settings),
+        publication=publication,
         settings=SettingsManager(
             settings,
             settings_file,
             DotenvSettingsRepository(settings_file),
             runtime_overrides=runtime_overrides,
+            apply_runtime=apply_runtime,
         ),
     )

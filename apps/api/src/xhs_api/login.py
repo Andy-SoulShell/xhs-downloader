@@ -1,8 +1,15 @@
 """二维码登录与双会话 Cookie 管理 API。"""
 
+from collections.abc import Callable
+
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from xhs_core.application import BrowserTaskService
-from xhs_core.domain import BrowserTask, BrowserTaskKind, BrowserTaskStatus
+from xhs_core.domain import (
+    BrowserDriver,
+    BrowserTask,
+    BrowserTaskKind,
+    BrowserTaskStatus,
+)
 
 from .browser_operation_models import BrowserOperationRequest
 from .login_models import DeleteCookiesRequest, DeleteCookiesResponse
@@ -13,6 +20,7 @@ from .settings_service import SettingsManager
 def create_login_router(
     tasks: BrowserTaskService,
     settings: SettingsManager,
+    browser_driver: Callable[[], BrowserDriver],
     management_access: SettingsAccessPolicy,
 ) -> APIRouter:
     """创建普通用户登录会话路由。
@@ -20,6 +28,7 @@ def create_login_router(
     Args:
         tasks: 浏览器任务提交与等待用例。
         settings: HTTP Cookie 配置管理用例。
+        browser_driver: 返回当前登录会话使用的浏览器驱动。
         management_access: 本机管理端访问判定策略。
 
     Returns:
@@ -43,6 +52,7 @@ def create_login_router(
             BrowserTaskKind.GET_LOGIN_QRCODE,
             {},
             payload.request_id,
+            browser_driver(),
         )
         completed = await tasks.wait(task.task_id, wait_seconds)
         if (
@@ -69,6 +79,7 @@ def create_login_router(
             BrowserTaskKind.DELETE_COOKIES,
             {"confirmed": payload.confirmed},
             payload.request_id,
+            browser_driver(),
         )
         completed = await tasks.wait(task.task_id, wait_seconds)
         return DeleteCookiesResponse(
@@ -99,7 +110,7 @@ async def _delete_http_cookie(
         message=(
             "HTTP Cookie 已从配置中清除，重启本地服务后生效"
             if updated.restart_required
-            else "HTTP Cookie 当前未配置"
+            else "HTTP Cookie 已清除，新请求已使用更新后的配置"
         ),
         restart_required=updated.restart_required,
     )

@@ -3,6 +3,7 @@
 from httpx import ASGITransport, AsyncClient
 from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
+from xhs_core.domain import BrowserDriver
 
 from tests.interfaces.helpers import FakeService
 
@@ -16,7 +17,10 @@ async def test_login_routes_create_browser_tasks_and_require_confirmation(
         tmp_path: Pytest 提供的临时目录。
     """
     api = create_api(
-        AppSettings(work_path=tmp_path),
+        AppSettings(
+            work_path=tmp_path,
+            browser_driver=BrowserDriver.MANAGED,
+        ),
         lambda _: FakeService(),
         settings_file=tmp_path.joinpath(".env"),
     )
@@ -39,6 +43,9 @@ async def test_login_routes_create_browser_tasks_and_require_confirmation(
                 "request_id": "synthetic-delete-request",
             },
         )
+        deleted_task = await client.get(
+            f"/browser/tasks/{deleted.json()['task_id']}"
+        )
         rejected = await client.post(
             "/xhs/login/cookies/delete",
             json={"target": "browser", "confirmed": False},
@@ -46,8 +53,10 @@ async def test_login_routes_create_browser_tasks_and_require_confirmation(
 
     assert qrcode.status_code == 202
     assert qrcode.json()["kind"] == "get_login_qrcode"
+    assert qrcode.json()["target_driver"] == "managed"
     assert deleted.json()["status"] == "queued"
     assert deleted.json()["task_id"]
+    assert deleted_task.json()["target_driver"] == "managed"
     assert rejected.status_code == 422
 
 

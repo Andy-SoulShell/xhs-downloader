@@ -49,7 +49,7 @@ async def test_settings_manager_rejects_invalid_combination(tmp_path: Path) -> N
     """
     env_file = tmp_path.joinpath(".env")
     manager = SettingsManager(
-        AppSettings(),
+        AppSettings(_env_file=None),
         env_file,
         DotenvSettingsRepository(env_file),
         {},
@@ -59,3 +59,103 @@ async def test_settings_manager_rejects_invalid_combination(tmp_path: Path) -> N
         await manager.update({"folder_name": "../outside"})
 
     assert not env_file.exists()
+
+
+async def test_settings_manager_hot_applies_network_and_route_fields(
+    tmp_path: Path,
+) -> None:
+    """确保网络与只读路由配置排空替换后无需重启。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    applied: list[AppSettings] = []
+
+    async def apply_runtime(settings: AppSettings) -> None:
+        applied.append(settings)
+
+    env_file = tmp_path.joinpath(".env")
+    manager = SettingsManager(
+        AppSettings(_env_file=None),
+        env_file,
+        DotenvSettingsRepository(env_file),
+        {},
+        apply_runtime=apply_runtime,
+    )
+
+    snapshot = await manager.update(
+        {
+            "timeout": 30,
+            "cookie": "session=synthetic",
+            "route_strategy": "http_first",
+            "browser_driver": "managed",
+        }
+    )
+
+    assert len(applied) == 1
+    assert applied[0].timeout == 30
+    assert applied[0].cookie.get_secret_value() == "session=synthetic"
+    assert manager.current.browser_driver.value == "managed"
+    assert snapshot.restart_required is False
+
+
+async def test_settings_manager_keeps_cold_fields_for_restart(tmp_path: Path) -> None:
+    """确保混合保存时只热应用安全字段并保留其余重启提示。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    applied: list[AppSettings] = []
+
+    async def apply_runtime(settings: AppSettings) -> None:
+        applied.append(settings)
+
+    env_file = tmp_path.joinpath(".env")
+    manager = SettingsManager(
+        AppSettings(_env_file=None),
+        env_file,
+        DotenvSettingsRepository(env_file),
+        {},
+        apply_runtime=apply_runtime,
+    )
+
+    snapshot = await manager.update(
+        {
+            "timeout": 30,
+            "folder_name": "media",
+        }
+    )
+
+    assert applied[0].timeout == 30
+    assert applied[0].folder_name == AppSettings(_env_file=None).folder_name
+    assert manager.current.timeout == 30
+    assert snapshot.values.folder_name == "media"
+    assert snapshot.restart_required is True
+
+
+async def test_settings_manager_reports_saved_hot_reload_failure(
+    tmp_path: Path,
+) -> None:
+    """确保热替换失败时保留旧运行时并给出明确重启提示。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+
+    async def fail_runtime(_: AppSettings) -> None:
+        raise RuntimeError("synthetic replacement failure")
+
+    env_file = tmp_path.joinpath(".env")
+    manager = SettingsManager(
+        AppSettings(_env_file=None),
+        env_file,
+        DotenvSettingsRepository(env_file),
+        {},
+        apply_runtime=fail_runtime,
+    )
+
+    with pytest.raises(SettingsError, match=r"配置已保存.*重启"):
+        await manager.update({"timeout": 30})
+
+    assert manager.current.timeout == 15
+    assert "XHS_TIMEOUT=30" in env_file.read_text(encoding="utf-8")

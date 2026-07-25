@@ -16,12 +16,13 @@ from xhs_core.application import (
     DownloadService,
     DownloadTaskCoordinator,
 )
-from xhs_core.domain import XhsError
+from xhs_core.domain import ProviderError, XhsError
 from xhs_core.version import VERSION
 
 from .bootstrap import create_api_dependencies
 from .browser import create_browser_router
 from .browser_operations import create_browser_operation_router
+from .capability_reads import create_capability_read_router
 from .extension import create_extension_router
 from .login import create_login_router
 from .managed_browser import create_managed_browser_router
@@ -85,6 +86,7 @@ def create_api(
             try:
                 yield
             finally:
+                await dependencies.capabilities.close()
                 await dependencies.browser.worker.close()
                 await dependencies.browser.managed.close()
                 await dependencies.publication.scheduler.close()
@@ -124,8 +126,15 @@ def create_api(
         )
     )
     api.include_router(
+        create_capability_read_router(
+            dependencies.capabilities,
+            settings_access_policy,
+        )
+    )
+    api.include_router(
         create_browser_operation_router(
             dependencies.browser.tasks,
+            lambda: dependencies.settings.current.browser_driver,
             settings_access_policy,
         )
     )
@@ -139,6 +148,7 @@ def create_api(
         create_login_router(
             dependencies.browser.tasks,
             dependencies.settings,
+            lambda: dependencies.settings.current.browser_driver,
             settings_access_policy,
         )
     )
@@ -157,6 +167,20 @@ def create_api(
             settings_access_policy,
         )
     )
+
+    @api.exception_handler(ProviderError)
+    async def handle_provider_error(
+        _: Request,
+        error: ProviderError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "message": error.message,
+                "provider": error.provider.value,
+                "code": error.code.value,
+            },
+        )
 
     @api.exception_handler(XhsError)
     async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:
