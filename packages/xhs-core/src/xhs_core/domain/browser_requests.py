@@ -117,6 +117,7 @@ class DesiredStateResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     feed_id: str
+    kind: Literal["like", "favorite"]
     active: bool
     changed: bool
     verified: Literal[True]

@@ -117,29 +117,34 @@ async def test_qrcode_page_stays_open_and_is_brought_to_front() -> None:
     [
         (
             synthetic_browser_task(
-                BrowserTaskKind.LIST_FEEDS,
-                driver=BrowserDriver.EXTENSION,
-            ),
-            "没有固定到受管浏览器驱动",
-        ),
-        (
-            synthetic_browser_task(
                 BrowserTaskKind.SET_LIKE,
                 {
                     "feed_id": "synthetic-feed",
                     "xsec_token": "synthetic-token",
                     "active": True,
                 },
+                driver=BrowserDriver.EXTENSION,
+            ),
+            "没有固定到受管浏览器驱动",
+        ),
+        (
+            synthetic_browser_task(
+                BrowserTaskKind.POST_COMMENT,
+                {
+                    "feed_id": "synthetic-feed",
+                    "xsec_token": "synthetic-token",
+                    "content": "合成评论",
+                },
             ),
             "尚未支持此任务",
         ),
     ],
 )
-async def test_executor_explicitly_rejects_wrong_driver_and_write_task(
+async def test_executor_explicitly_rejects_wrong_driver_and_unsupported_task(
     task: BrowserTask,
     message: str,
 ) -> None:
-    """确保扩展目标与尚未支持的写任务明确失败且不连接页面。
+    """确保扩展目标与尚未支持的任务明确失败且不连接页面。
 
     Args:
         task: 合成的错误驱动或写操作任务。
@@ -153,5 +158,27 @@ async def test_executor_explicitly_rejects_wrong_driver_and_write_task(
 
     assert outcome.status is BrowserTaskStatus.FAILED
     assert message in outcome.message
+    assert controller.status_calls == 0
+    assert session.connected_ports == []
+
+
+async def test_executor_requires_task_to_enter_running_before_execution() -> None:
+    """确保尚未进入运行态的受管任务不会连接浏览器。"""
+    controller = FakeController(synthetic_browser_status(cdp_port=_CDP_PORT))
+    session = FakeSession()
+    executor = PlaywrightManagedTaskExecutor(controller, lambda: session)
+    task = synthetic_browser_task(
+        BrowserTaskKind.SET_LIKE,
+        {
+            "feed_id": "synthetic-feed",
+            "xsec_token": "synthetic-token",
+            "active": True,
+        },
+    ).model_copy(update={"status": BrowserTaskStatus.CLAIMED})
+
+    outcome = await executor.execute(task)
+
+    assert outcome.status is BrowserTaskStatus.FAILED
+    assert "运行态" in outcome.message
     assert controller.status_calls == 0
     assert session.connected_ports == []

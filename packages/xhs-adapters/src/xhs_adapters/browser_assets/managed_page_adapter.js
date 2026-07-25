@@ -652,20 +652,42 @@
   var CONTROL_READY_ATTEMPTS = 20;
   var CONTROL_READY_INTERVAL_MS = 250;
   async function setDesiredInteraction(page, feedId, kind, active, activate) {
+    const preparation = await prepareDesiredInteraction(
+      page,
+      feedId,
+      kind,
+      active
+    );
+    if (preparation.result) return preparation.result;
+    if (activate) await activate();
+    else clickInteractionControl(page, preparation.selector);
+    return verifyDesiredInteraction(page, feedId, kind, active);
+  }
+  async function prepareDesiredInteraction(page, feedId, kind, active) {
     const before = interactionState(
       await readLiveInitialState(page),
       feedId,
       kind
     );
     if (before === active) {
-      return { feed_id: feedId, active, changed: false, verified: true };
+      return {
+        result: {
+          feed_id: feedId,
+          kind,
+          active,
+          changed: false,
+          verified: true
+        },
+        selector: null
+      };
     }
     const control = await waitForInteractionControl(page, kind);
     if (!control) {
       throw new Error(kind === "like" ? "\u9875\u9762\u6CA1\u6709\u70B9\u8D5E\u6309\u94AE" : "\u9875\u9762\u6CA1\u6709\u6536\u85CF\u6309\u94AE");
     }
-    if (activate) await activate();
-    else clickInteractionControl(page, control);
+    return { result: null, selector: SELECTORS[kind] };
+  }
+  async function verifyDesiredInteraction(page, feedId, kind, active) {
     for (let attempt = 0; attempt < 16; attempt += 1) {
       try {
         const current = interactionState(
@@ -674,7 +696,13 @@
           kind
         );
         if (current === active) {
-          return { feed_id: feedId, active, changed: true, verified: true };
+          return {
+            feed_id: feedId,
+            kind,
+            active,
+            changed: true,
+            verified: true
+          };
         }
       } catch {
       }
@@ -693,7 +721,9 @@
     }
     return null;
   }
-  function clickInteractionControl(page, control) {
+  function clickInteractionControl(page, selector) {
+    const control = page.querySelector(selector);
+    if (!control) throw new Error("\u4E92\u52A8\u6309\u94AE\u5728\u6267\u884C\u524D\u5DF2\u7ECF\u5931\u6548");
     const clickable = control;
     if (typeof clickable.click === "function") {
       clickable.click();
@@ -721,6 +751,9 @@
     const field = kind === "like" ? "liked" : "collected";
     if (typeof info[field] !== "boolean") {
       throw new Error("\u9875\u9762\u6CA1\u6709\u53EF\u6838\u9A8C\u7684\u4E92\u52A8\u72B6\u6001");
+    }
+    if (dataText(interact.noteId) !== feedId) {
+      throw new Error("\u9875\u9762\u4E92\u52A8\u72B6\u6001\u4E0D\u5C5E\u4E8E\u76EE\u6807\u5E16\u5B50");
     }
     return info[field];
   }
@@ -1060,7 +1093,7 @@
 
   // src/managed-page-adapter.ts
   var MANAGED_PAGE_ADAPTER_GLOBAL = "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
-  var MANAGED_PAGE_ADAPTER_VERSION = "1";
+  var MANAGED_PAGE_ADAPTER_VERSION = "2";
   function installManagedPageAdapter(scope = window) {
     const current = scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
     if (current?.version === MANAGED_PAGE_ADAPTER_VERSION) return current;
@@ -1068,6 +1101,8 @@
     const adapter = {
       version: MANAGED_PAGE_ADAPTER_VERSION,
       execute: (task) => executeSafely(task, scope),
+      prepareInteraction: (task) => prepareInteractionSafely(task, scope),
+      verifyInteraction: (task) => verifyInteractionSafely(task, scope),
       diagnostics: () => buildPageCompatibilityDiagnostics(scope.document, scope.location.href)
     };
     Object.defineProperty(scope, MANAGED_PAGE_ADAPTER_GLOBAL, {
@@ -1079,6 +1114,12 @@
     return adapter;
   }
   async function executeSafely(task, scope) {
+    if (isInteractionTask(task)) {
+      return failure(
+        new Error("\u53D7\u7BA1\u6D4F\u89C8\u5668\u4E92\u52A8\u5FC5\u987B\u901A\u8FC7\u53EF\u4FE1\u8F93\u5165\u6D41\u7A0B\u6267\u884C"),
+        scope
+      );
+    }
     try {
       return await executeBrowserPageTask(
         task,
@@ -1086,16 +1127,90 @@
         scope.location.href
       );
     } catch (error) {
+      return failure(error, scope);
+    }
+  }
+  async function prepareInteractionSafely(task, scope) {
+    try {
+      const input = interactionInput(task);
+      const preparation = await prepareDesiredInteraction(
+        scope.document,
+        input.feedId,
+        input.kind,
+        input.active
+      );
+      if (preparation.result) {
+        return success2("\u4E92\u52A8\u72B6\u6001\u5DF2\u7ECF\u6EE1\u8DB3\u76EE\u6807", preparation.result);
+      }
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "\u9875\u9762\u6570\u636E\u89E3\u6790\u5931\u8D25",
-        status: error instanceof UncertainBrowserActionError ? "needs_review" : "failed",
-        result: buildPageCompatibilityDiagnostics(
-          scope.document,
-          scope.location.href
-        )
+        message: "\u4E92\u52A8\u72B6\u6001\u9700\u8981\u53D7\u7BA1\u6D4F\u89C8\u5668\u53EF\u4FE1\u8F93\u5165",
+        action: {
+          task_id: task.task_id,
+          feed_id: input.feedId,
+          kind: input.kind,
+          active: input.active,
+          selector: preparation.selector
+        }
       };
+    } catch (error) {
+      return failure(error, scope);
     }
+  }
+  async function verifyInteractionSafely(task, scope) {
+    try {
+      const input = interactionInput(task);
+      return success2(
+        "\u4E92\u52A8\u72B6\u6001\u5DF2\u901A\u8FC7\u9875\u9762\u5B9E\u65F6\u6570\u636E\u786E\u8BA4",
+        await verifyDesiredInteraction(
+          scope.document,
+          input.feedId,
+          input.kind,
+          input.active
+        )
+      );
+    } catch (error) {
+      return failure(error, scope);
+    }
+  }
+  function interactionInput(task) {
+    if (!isInteractionTask(task)) {
+      throw new Error("\u5F53\u524D\u4EFB\u52A1\u4E0D\u662F\u53D7\u652F\u6301\u7684\u4E92\u52A8\u7C7B\u578B");
+    }
+    const feedId = task.payload.feed_id;
+    const active = task.payload.active;
+    if (typeof feedId !== "string" || !feedId) {
+      throw new Error("\u6D4F\u89C8\u5668\u4EFB\u52A1\u7F3A\u5C11\u53C2\u6570 feed_id");
+    }
+    if (typeof active !== "boolean") {
+      throw new Error("\u6D4F\u89C8\u5668\u4EFB\u52A1\u53C2\u6570 active \u65E0\u6548");
+    }
+    return {
+      feedId,
+      kind: task.kind === "set_like" ? "like" : "favorite",
+      active
+    };
+  }
+  function isInteractionTask(task) {
+    return task.kind === "set_like" || task.kind === "set_favorite";
+  }
+  function success2(message, result) {
+    return {
+      ok: true,
+      message,
+      result
+    };
+  }
+  function failure(error, scope) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "\u9875\u9762\u6570\u636E\u89E3\u6790\u5931\u8D25",
+      status: error instanceof UncertainBrowserActionError ? "needs_review" : "failed",
+      result: buildPageCompatibilityDiagnostics(
+        scope.document,
+        scope.location.href
+      )
+    };
   }
   installManagedPageAdapter();
 })();

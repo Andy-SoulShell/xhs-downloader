@@ -60,6 +60,15 @@ class ManagedPage(Protocol):
         """
         ...
 
+    async def click(self, selector: str, **options: Any) -> None:
+        """通过浏览器级输入点击页面控件。
+
+        Args:
+            selector: 页面适配器预检并由执行器复核的固定选择器。
+            **options: Playwright 严格匹配和等待上限。
+        """
+        ...
+
     async def close(self) -> None:
         """关闭当前任务新建的页面。"""
         ...

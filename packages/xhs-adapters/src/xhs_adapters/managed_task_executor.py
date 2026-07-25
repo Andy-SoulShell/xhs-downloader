@@ -1,4 +1,4 @@
-"""在受管 Chromium 页面中执行登录和只读浏览器任务。"""
+"""在受管 Chromium 页面中执行登录、读取和首批互动任务。"""
 
 from typing import Any
 
@@ -19,6 +19,10 @@ from .managed_page_session import (
     ManagedPageSession,
     ManagedPageSessionFactory,
     PlaywrightCdpSession,
+)
+from .managed_task_interactions import (
+    PREPARE_INTERACTION_EXPRESSION,
+    complete_managed_interaction,
 )
 from .managed_task_navigation import (
     is_explore_or_login_page,
@@ -43,10 +47,12 @@ _READ_TASKS = {
     BrowserTaskKind.GET_USER_PROFILE,
     BrowserTaskKind.GET_MY_PROFILE,
 }
+_WRITE_TASKS = {BrowserTaskKind.SET_LIKE, BrowserTaskKind.SET_FAVORITE}
+_SUPPORTED_TASKS = _READ_TASKS | _WRITE_TASKS
 
 
 class PlaywrightManagedTaskExecutor:
-    """通过共享页面适配器执行受管浏览器首批只读能力。
+    """通过共享页面适配器执行受管浏览器读取与首批互动能力。
 
     Args:
         controller: 提供当前 CDP 端点的受管 Chromium 控制器。
@@ -63,7 +69,7 @@ class PlaywrightManagedTaskExecutor:
         self._closed = False
 
     async def execute(self, task: BrowserTask) -> BrowserTaskExecutionResult:
-        """执行一个固定为受管驱动的登录或只读任务。
+        """执行一个固定为受管驱动且已进入运行态的任务。
 
         Args:
             task: 已验证且进入运行态的浏览器任务。
@@ -78,7 +84,9 @@ class PlaywrightManagedTaskExecutor:
             raise ManagedBrowserError("受管浏览器页面执行器已经关闭")
         if task.target_driver is not BrowserDriver.MANAGED:
             return _failure("任务没有固定到受管浏览器驱动")
-        if task.kind not in _READ_TASKS:
+        if task.status is not BrowserTaskStatus.RUNNING:
+            return _failure("受管浏览器任务必须先进入运行态")
+        if task.kind not in _SUPPORTED_TASKS:
             return _failure("当前受管浏览器版本尚未支持此任务")
         status = await self._controller.status()
         if status.state is not ManagedBrowserState.RUNNING or status.cdp_port is None:
@@ -89,8 +97,11 @@ class PlaywrightManagedTaskExecutor:
             page, created = await self._prepare_page(session, task)
             keep_open = False
             try:
-                response = await self._execute_with_navigation(page, task)
-                outcome = _parse_response(response)
+                if task.kind in _WRITE_TASKS:
+                    outcome = await self._execute_interaction(page, task)
+                else:
+                    response = await self._execute_with_navigation(page, task)
+                    outcome = _parse_response(response)
                 keep_open = _keep_login_page(task, outcome)
                 if keep_open:
                     await page.bring_to_front()
@@ -161,15 +172,29 @@ class PlaywrightManagedTaskExecutor:
             await _navigate(page, safe_xhs_navigation(navigate_url))
         return {"ok": False, "message": "页面导航状态无效", "status": "failed"}
 
+    async def _execute_interaction(
+        self,
+        page: ManagedPage,
+        task: BrowserTask,
+    ) -> BrowserTaskExecutionResult:
+        await page.evaluate(load_managed_page_adapter())
+        preparation = await self._execute_when_ready(
+            page,
+            task,
+            PREPARE_INTERACTION_EXPRESSION,
+        )
+        return await complete_managed_interaction(page, task, preparation)
+
     async def _execute_when_ready(
         self,
         page: ManagedPage,
         task: BrowserTask,
+        expression: str = _EXECUTE_EXPRESSION,
     ) -> dict[str, Any]:
         latest: dict[str, Any] = {}
         for attempt in range(_PAGE_READY_ATTEMPTS):
             value = await page.evaluate(
-                _EXECUTE_EXPRESSION,
+                expression,
                 task.model_dump(mode="json"),
             )
             if not isinstance(value, dict):
@@ -179,7 +204,11 @@ class PlaywrightManagedTaskExecutor:
                     "status": "failed",
                 }
             latest = value
-            if value.get("ok") is True or value.get("navigateUrl"):
+            if (
+                value.get("ok") is True
+                or value.get("navigateUrl")
+                or value.get("action")
+            ):
                 return value
             if not _is_transient_message(value.get("message")):
                 return value

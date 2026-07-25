@@ -43,6 +43,7 @@ describe("点赞与收藏目标状态执行器", () => {
 
     expect(result).toEqual({
       feed_id: "synthetic-feed",
+      kind: "like",
       active: true,
       changed: false,
       verified: true,
@@ -173,6 +174,22 @@ describe("点赞与收藏目标状态执行器", () => {
     await expect(
       setDesiredInteraction(document, "synthetic-feed", "like", true),
     ).rejects.toThrow("没有可核验的互动状态");
+
+    scope.__INITIAL_STATE__ = {
+      note: {
+        noteDetailMap: {
+          "synthetic-feed": {
+            note: {
+              noteId: "other-feed",
+              interactInfo: { liked: true, collected: false },
+            },
+          },
+        },
+      },
+    };
+    await expect(
+      setDesiredInteraction(document, "synthetic-feed", "like", true),
+    ).rejects.toThrow("不属于目标帖子");
     uninstall();
   });
 });

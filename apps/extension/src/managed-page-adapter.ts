@@ -10,18 +10,42 @@ import {
   type BrowserPageTaskResponse,
 } from "./browser-page-runner";
 import { installBrowserStateBridge } from "./browser-state-main";
+import {
+  prepareDesiredInteraction,
+  verifyDesiredInteraction,
+  type InteractionKind,
+} from "./interaction-runner";
 
 /** 受管浏览器在页面主世界读取的稳定全局对象名。 */
 export const MANAGED_PAGE_ADAPTER_GLOBAL =
   "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
 
 /** 受管浏览器页面适配器协议版本。 */
-export const MANAGED_PAGE_ADAPTER_VERSION = "1";
+export const MANAGED_PAGE_ADAPTER_VERSION = "2";
+
+/** 受管浏览器完成互动所需的同页可信输入。 */
+export interface ManagedInteractionAction {
+  task_id: string;
+  feed_id: string;
+  kind: InteractionKind;
+  active: boolean;
+  selector: string;
+}
+
+/** 互动预检响应，可直接成功或请求一次可信输入。 */
+export interface ManagedInteractionPreparationResponse
+  extends BrowserPageTaskResponse {
+  action?: ManagedInteractionAction;
+}
 
 /** 受管浏览器通过 CDP 调用的页面能力入口。 */
 export interface ManagedPageAdapter {
   version: string;
   execute(task: BrowserTask): Promise<BrowserPageTaskResponse>;
+  prepareInteraction(
+    task: BrowserTask,
+  ): Promise<ManagedInteractionPreparationResponse>;
+  verifyInteraction(task: BrowserTask): Promise<BrowserPageTaskResponse>;
   diagnostics(): Record<string, JsonValue>;
 }
 
@@ -40,6 +64,8 @@ export function installManagedPageAdapter(
   const adapter: ManagedPageAdapter = {
     version: MANAGED_PAGE_ADAPTER_VERSION,
     execute: (task) => executeSafely(task, scope),
+    prepareInteraction: (task) => prepareInteractionSafely(task, scope),
+    verifyInteraction: (task) => verifyInteractionSafely(task, scope),
     diagnostics: () =>
       buildPageCompatibilityDiagnostics(scope.document, scope.location.href),
   };
@@ -56,6 +82,12 @@ async function executeSafely(
   task: BrowserTask,
   scope: AdapterScope,
 ): Promise<BrowserPageTaskResponse> {
+  if (isInteractionTask(task)) {
+    return failure(
+      new Error("受管浏览器互动必须通过可信输入流程执行"),
+      scope,
+    );
+  }
   try {
     return await executeBrowserPageTask(
       task,
@@ -63,19 +95,117 @@ async function executeSafely(
       scope.location.href,
     );
   } catch (error) {
+    return failure(error, scope);
+  }
+}
+
+async function prepareInteractionSafely(
+  task: BrowserTask,
+  scope: AdapterScope,
+): Promise<ManagedInteractionPreparationResponse> {
+  try {
+    const input = interactionInput(task);
+    const preparation = await prepareDesiredInteraction(
+      scope.document,
+      input.feedId,
+      input.kind,
+      input.active,
+    );
+    if (preparation.result) {
+      return success("互动状态已经满足目标", preparation.result);
+    }
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "页面数据解析失败",
-      status:
-        error instanceof UncertainBrowserActionError
-          ? "needs_review"
-          : "failed",
-      result: buildPageCompatibilityDiagnostics(
-        scope.document,
-        scope.location.href,
-      ),
+      message: "互动状态需要受管浏览器可信输入",
+      action: {
+        task_id: task.task_id,
+        feed_id: input.feedId,
+        kind: input.kind,
+        active: input.active,
+        selector: preparation.selector,
+      },
     };
+  } catch (error) {
+    return failure(error, scope);
   }
+}
+
+async function verifyInteractionSafely(
+  task: BrowserTask,
+  scope: AdapterScope,
+): Promise<BrowserPageTaskResponse> {
+  try {
+    const input = interactionInput(task);
+    return success(
+      "互动状态已通过页面实时数据确认",
+      await verifyDesiredInteraction(
+        scope.document,
+        input.feedId,
+        input.kind,
+        input.active,
+      ),
+    );
+  } catch (error) {
+    return failure(error, scope);
+  }
+}
+
+function interactionInput(task: BrowserTask): {
+  feedId: string;
+  kind: InteractionKind;
+  active: boolean;
+} {
+  if (!isInteractionTask(task)) {
+    throw new Error("当前任务不是受支持的互动类型");
+  }
+  const feedId = task.payload.feed_id;
+  const active = task.payload.active;
+  if (typeof feedId !== "string" || !feedId) {
+    throw new Error("浏览器任务缺少参数 feed_id");
+  }
+  if (typeof active !== "boolean") {
+    throw new Error("浏览器任务参数 active 无效");
+  }
+  return {
+    feedId,
+    kind: task.kind === "set_like" ? "like" : "favorite",
+    active,
+  };
+}
+
+function isInteractionTask(
+  task: BrowserTask,
+): task is BrowserTask & { kind: "set_like" | "set_favorite" } {
+  return task.kind === "set_like" || task.kind === "set_favorite";
+}
+
+function success(
+  message: string,
+  result: object,
+): BrowserPageTaskResponse {
+  return {
+    ok: true,
+    message,
+    result: result as Record<string, JsonValue>,
+  };
+}
+
+function failure(
+  error: unknown,
+  scope: AdapterScope,
+): BrowserPageTaskResponse {
+  return {
+    ok: false,
+    message: error instanceof Error ? error.message : "页面数据解析失败",
+    status:
+      error instanceof UncertainBrowserActionError
+        ? "needs_review"
+        : "failed",
+    result: buildPageCompatibilityDiagnostics(
+      scope.document,
+      scope.location.href,
+    ),
+  };
 }
 
 installManagedPageAdapter();

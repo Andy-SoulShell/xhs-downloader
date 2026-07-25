@@ -45,7 +45,11 @@ def managed_task_target_url(task: BrowserTask) -> str:
             }
         )
         return f"{XHS_ORIGIN}/user/profile/{user_id}?{query}"
-    if task.kind is BrowserTaskKind.GET_FEED_DETAIL:
+    if task.kind in {
+        BrowserTaskKind.GET_FEED_DETAIL,
+        BrowserTaskKind.SET_LIKE,
+        BrowserTaskKind.SET_FAVORITE,
+    }:
         feed_id = quote(_payload_text(task, "feed_id"), safe="")
         query = urlencode(
             {

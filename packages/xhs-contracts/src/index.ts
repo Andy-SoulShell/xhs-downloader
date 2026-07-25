@@ -199,6 +199,7 @@ export interface UserProfileResult {
 /** 点赞或收藏达到目标状态后的核验结果。 */
 export interface DesiredStateResult {
   feed_id: string;
+  kind: "like" | "favorite";
   active: boolean;
   changed: boolean;
   verified: true;

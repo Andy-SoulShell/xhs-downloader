@@ -46,17 +46,22 @@ class FakePage:
         url: str = "about:blank",
         *,
         responses: Sequence[dict[str, Any]] = (),
+        click_error: Exception | None = None,
     ) -> None:
         """创建具有固定响应序列的页面。
 
         Args:
             url: 页面初始地址。
             responses: 每次执行页面适配器时依次返回的结构化响应。
+            click_error: 浏览器级点击需要模拟抛出的异常。
         """
         self._url = url
         self._responses = list(responses)
+        self._click_error = click_error
         self.goto_calls: list[tuple[str, dict[str, Any]]] = []
         self.execute_args: list[dict[str, Any]] = []
+        self.execute_expressions: list[str] = []
+        self.click_calls: list[tuple[str, dict[str, Any]]] = []
         self.injection_count = 0
         self.diagnostics_count = 0
         self.closed = False
@@ -102,6 +107,7 @@ class FakePage:
             if not isinstance(arg, dict):
                 raise AssertionError("页面任务输入应为结构化字典")
             self.execute_args.append(arg)
+            self.execute_expressions.append(expression)
             if not self._responses:
                 raise AssertionError("合成页面缺少任务响应")
             return self._responses.pop(0)
@@ -112,6 +118,20 @@ class FakePage:
             return None
         self.injection_count += 1
         return None
+
+    async def click(self, selector: str, **options: Any) -> None:
+        """记录一次浏览器级可信点击。
+
+        Args:
+            selector: 经过执行器复核的互动控件选择器。
+            **options: Playwright 点击选项。
+
+        Raises:
+            Exception: 构造页面时指定的合成点击异常。
+        """
+        self.click_calls.append((selector, options))
+        if self._click_error:
+            raise self._click_error
 
     async def close(self) -> None:
         """记录页面已关闭。"""

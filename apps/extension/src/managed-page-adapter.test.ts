@@ -82,4 +82,105 @@ describe("受管浏览器页面适配器", () => {
       matched_anchors: ["main_container"],
     });
   });
+
+  it("互动预检在目标已满足时不请求可信输入", async () => {
+    const scope = window as AdapterWindow;
+    scope.__INITIAL_STATE__ = interactionState(true, false);
+    const adapter = scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
+
+    const response = await adapter?.prepareInteraction(
+      pageTask("set_like", {
+        feed_id: "synthetic-feed",
+        xsec_token: "synthetic-token",
+        active: true,
+      }),
+    );
+
+    expect(response).toMatchObject({
+      ok: true,
+      result: {
+        feed_id: "synthetic-feed",
+        kind: "like",
+        active: true,
+        changed: false,
+        verified: true,
+      },
+    });
+    expect(response?.action).toBeUndefined();
+  });
+
+  it("互动预检和可信输入后的回读固定同一任务语义", async () => {
+    const scope = window as AdapterWindow;
+    scope.__INITIAL_STATE__ = interactionState(false, false);
+    document.body.innerHTML = `
+      <div class="interact-container">
+        <div class="left"><button class="like-lottie"></button></div>
+      </div>
+    `;
+    const adapter = scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
+    const task = pageTask("set_like", {
+      feed_id: "synthetic-feed",
+      xsec_token: "synthetic-token",
+      active: true,
+    });
+
+    const preparation = await adapter?.prepareInteraction(task);
+    scope.__INITIAL_STATE__ = interactionState(true, false);
+    const verification = await adapter?.verifyInteraction(task);
+
+    expect(preparation).toMatchObject({
+      ok: false,
+      action: {
+        task_id: task.task_id,
+        feed_id: "synthetic-feed",
+        kind: "like",
+        active: true,
+        selector: ".interact-container .left .like-lottie",
+      },
+    });
+    expect(verification).toMatchObject({
+      ok: true,
+      result: {
+        feed_id: "synthetic-feed",
+        kind: "like",
+        active: true,
+        changed: true,
+        verified: true,
+      },
+    });
+  });
+
+  it("通用入口拒绝绕过受管浏览器可信互动流程", async () => {
+    const adapter = (window as AdapterWindow)
+      .__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
+
+    const response = await adapter?.execute(
+      pageTask("set_favorite", {
+        feed_id: "synthetic-feed",
+        xsec_token: "synthetic-token",
+        active: true,
+      }),
+    );
+
+    expect(response).toMatchObject({
+      ok: false,
+      status: "failed",
+      message: "受管浏览器互动必须通过可信输入流程执行",
+    });
+  });
 });
+
+function interactionState(liked: boolean, collected: boolean): object {
+  return {
+    note: {
+      noteDetailMap: {
+        "synthetic-feed": {
+          note: {
+            noteId: "synthetic-feed",
+            interactInfo: { liked, collected },
+          },
+        },
+      },
+    },
+  };
+}

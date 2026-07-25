@@ -4,7 +4,13 @@ import { UncertainBrowserActionError } from "./browser-action-errors";
 import { readLiveInitialState } from "./browser-state-bridge";
 import { dataRecord, dataText } from "./page-data";
 
-type InteractionKind = "like" | "favorite";
+/** 页面互动的稳定语义类型。 */
+export type InteractionKind = "like" | "favorite";
+
+/** 互动预检结果：已满足目标，或等待浏览器级可信输入。 */
+export type DesiredInteractionPreparation =
+  | { result: DesiredStateResult; selector: null }
+  | { result: null; selector: string };
 
 const SELECTORS: Record<InteractionKind, string> = {
   like: ".interact-container .left .like-lottie",
@@ -21,20 +27,56 @@ export async function setDesiredInteraction(
   active: boolean,
   activate?: () => Promise<void>,
 ): Promise<DesiredStateResult> {
+  const preparation = await prepareDesiredInteraction(
+    page,
+    feedId,
+    kind,
+    active,
+  );
+  if (preparation.result) return preparation.result;
+  if (activate) await activate();
+  else clickInteractionControl(page, preparation.selector);
+  return verifyDesiredInteraction(page, feedId, kind, active);
+}
+
+/** 操作前读取目标状态并确认对应控件已经就绪。 */
+export async function prepareDesiredInteraction(
+  page: Document,
+  feedId: string,
+  kind: InteractionKind,
+  active: boolean,
+): Promise<DesiredInteractionPreparation> {
   const before = interactionState(
     await readLiveInitialState(page),
     feedId,
     kind,
   );
   if (before === active) {
-    return { feed_id: feedId, active, changed: false, verified: true };
+    return {
+      result: {
+        feed_id: feedId,
+        kind,
+        active,
+        changed: false,
+        verified: true,
+      },
+      selector: null,
+    };
   }
   const control = await waitForInteractionControl(page, kind);
   if (!control) {
     throw new Error(kind === "like" ? "页面没有点赞按钮" : "页面没有收藏按钮");
   }
-  if (activate) await activate();
-  else clickInteractionControl(page, control);
+  return { result: null, selector: SELECTORS[kind] };
+}
+
+/** 可信输入触发后轮询实时状态，并返回严格的目标状态核验结果。 */
+export async function verifyDesiredInteraction(
+  page: Document,
+  feedId: string,
+  kind: InteractionKind,
+  active: boolean,
+): Promise<DesiredStateResult> {
   for (let attempt = 0; attempt < 16; attempt += 1) {
     try {
       const current = interactionState(
@@ -43,7 +85,13 @@ export async function setDesiredInteraction(
         kind,
       );
       if (current === active) {
-        return { feed_id: feedId, active, changed: true, verified: true };
+        return {
+          feed_id: feedId,
+          kind,
+          active,
+          changed: true,
+          verified: true,
+        };
       }
     } catch {
       // 点击后的瞬时页面切换可能暂时读不到状态，继续在有界窗口内核验。
@@ -68,7 +116,9 @@ async function waitForInteractionControl(
   return null;
 }
 
-function clickInteractionControl(page: Document, control: Element): void {
+function clickInteractionControl(page: Document, selector: string): void {
+  const control = page.querySelector(selector);
+  if (!control) throw new Error("互动按钮在执行前已经失效");
   const clickable = control as Element & { click?: () => void };
   if (typeof clickable.click === "function") {
     clickable.click();
@@ -105,6 +155,9 @@ function interactionState(
   const field = kind === "like" ? "liked" : "collected";
   if (typeof info[field] !== "boolean") {
     throw new Error("页面没有可核验的互动状态");
+  }
+  if (dataText(interact.noteId) !== feedId) {
+    throw new Error("页面互动状态不属于目标帖子");
   }
   return info[field];
 }

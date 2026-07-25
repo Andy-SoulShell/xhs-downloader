@@ -81,3 +81,29 @@ def test_login_session_contracts_require_qrcode_and_confirmation() -> None:
                 "consumed": False,
             },
         )
+
+
+def test_desired_state_result_requires_interaction_kind() -> None:
+    """确保互动结果明确区分点赞和收藏语义。"""
+    result = validate_browser_task_result(
+        BrowserTaskKind.SET_LIKE,
+        {
+            "feed_id": "synthetic-feed",
+            "kind": "like",
+            "active": True,
+            "changed": False,
+            "verified": True,
+        },
+    )
+
+    assert result["kind"] == "like"
+    with pytest.raises(BrowserTaskError, match="结果结构无效"):
+        validate_browser_task_result(
+            BrowserTaskKind.SET_FAVORITE,
+            {
+                "feed_id": "synthetic-feed",
+                "active": True,
+                "changed": False,
+                "verified": True,
+            },
+        )
