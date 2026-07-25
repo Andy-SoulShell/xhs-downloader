@@ -33,10 +33,12 @@
 
 Cookie 当前由本地服务的 `XHS_COOKIE` 配置管理，只允许覆盖或清除，
 API 和 WebUI 不返回原文。扩展使用浏览器已有登录态，不申请 Cookie 读取权限；
-它只通过 `browsingData` 按小红书来源清理站点 Cookie。
+它只通过 `browsingData` 按小红书来源清理站点 Cookie。WebUI 将 HTTP Cookie
+标为高级可选项，默认收起获取说明；普通用户优先使用扩展或受管浏览器，需要 HTTP
+路由时才从同账号网页请求中只复制 Cookie 请求头值，不复制整条 cURL 或其他标头。
 
-早期真实验收曾确认扩展会话与 Cookie HTTP 会话属于同一账号；当前 HTTP Cookie
-已经清除，受管 Profile 又是独立会话，不能沿用该结论。Cookie 可以让 HTTP 页面
+早期真实验收曾确认扩展会话与 Cookie HTTP 会话属于同一账号；当前保存的 HTTP
+Cookie 已过期，受管 Profile 又是独立会话，不能沿用该结论。Cookie 可以让 HTTP 页面
 返回登录身份，但不能替代帖子链接携带的 `xsec_token` 等访问上下文；私密帖子
 去掉该上下文后仍可能没有可解析的作品数据。
 

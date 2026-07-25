@@ -119,6 +119,9 @@ queued → claimed → running → succeeded | failed | needs_review
 - WebUI 已按冻结驱动区分扩展与受管发布；受管模式不会打开日常浏览器创作页，并在
   提交前禁用非私密可见范围和商品绑定。浏览器失败记录只展示和复制严格白名单中的
   脱敏页面诊断。
+- WebUI 将 Cookie + HTTP 标为高级可选模式，默认收起安全获取说明，只指导用户从
+  同账号请求中复制 Cookie 请求头值，不引导复制整条 cURL、其他请求头或把凭据
+  发到聊天和日志；输入仍为密码类型，保存后不回显。
 - 混合路由已接入一次性账号一致性门禁：HTTP 在 Provider 内计算 HMAC，协议 5
   扩展通过独立内存 Claim/Answer 通道计算，受管浏览器通过同一 Profile 的 CDP
   旁路计算。只有 `matched` 允许跨 Provider 回退；挑战不进入浏览器任务、SQLite、
