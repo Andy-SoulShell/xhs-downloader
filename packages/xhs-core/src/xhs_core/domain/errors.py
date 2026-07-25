@@ -29,6 +29,10 @@ class BrowserTaskError(XhsError):
     """浏览器任务提交或执行失败。"""
 
 
+class BrowserTaskLeaseConflictError(BrowserTaskError):
+    """浏览器任务租约失效或状态快照已经被其他执行器更新。"""
+
+
 class ManagedBrowserError(XhsError):
     """受管浏览器安装、启动或生命周期操作失败。"""
 

@@ -76,6 +76,8 @@ export interface BrowserTask {
 export interface BrowserTaskClaim {
   task: BrowserTask;
   lease_token: string;
+  /** 服务端配置的完整租约秒数；旧版服务可能不返回。 */
+  lease_seconds?: number;
 }
 
 /** 本机服务记录的浏览器扩展登记与最近心跳。 */

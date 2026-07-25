@@ -79,10 +79,17 @@ class BrowserTask(BaseModel):
 
 
 class BrowserTaskClaim(BaseModel):
-    """浏览器执行器领取任务后获得的短期执行凭据。"""
+    """浏览器执行器领取任务后获得的短期执行凭据。
+
+    Attributes:
+        task: 已进入领取态的任务快照。
+        lease_token: 仅当前执行器可使用的租约令牌。
+        lease_seconds: 服务端配置的完整租约时长，用于安排安全续租。
+    """
 
     task: BrowserTask
     lease_token: str = Field(min_length=32, max_length=256)
+    lease_seconds: float = Field(default=30, ge=0.01, le=3600)
 
 
 class BrowserTaskExecutionResult(BaseModel):

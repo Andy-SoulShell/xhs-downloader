@@ -5,13 +5,18 @@ from pathlib import Path
 from secrets import compare_digest
 
 from aiosqlite import connect
-from xhs_core.domain import BrowserDriver, BrowserTask, BrowserTaskStatus
+from xhs_core.domain import (
+    BrowserDriver,
+    BrowserTask,
+    BrowserTaskStatus,
+)
 
+from .browser_task_safety import fetch_safe_browser_tasks
 from .browser_task_storage import (
     browser_task_parameters,
     first_queued_browser_task,
     initialize_browser_task_storage,
-    parse_browser_task,
+    save_browser_task_if_snapshot,
 )
 
 
@@ -64,7 +69,11 @@ class SqliteBrowserTaskRepository:
         """
         await self._initialize()
         tasks = await self._fetch(
-            "SELECT payload FROM browser_task WHERE task_id = ?",
+            """
+            SELECT task_id, request_id, kind, status, target_driver,
+                   lease_expires_at, created_at, updated_at, payload
+            FROM browser_task WHERE task_id = ?
+            """,
             (task_id,),
         )
         return tasks[0] if tasks else None
@@ -80,7 +89,11 @@ class SqliteBrowserTaskRepository:
         """
         await self._initialize()
         tasks = await self._fetch(
-            "SELECT payload FROM browser_task WHERE request_id = ?",
+            """
+            SELECT task_id, request_id, kind, status, target_driver,
+                   lease_expires_at, created_at, updated_at, payload
+            FROM browser_task WHERE request_id = ?
+            """,
             (request_id,),
         )
         return tasks[0] if tasks else None
@@ -97,7 +110,9 @@ class SqliteBrowserTaskRepository:
         await self._initialize()
         return await self._fetch(
             """
-            SELECT payload FROM browser_task
+            SELECT task_id, request_id, kind, status, target_driver,
+                   lease_expires_at, created_at, updated_at, payload
+            FROM browser_task
             ORDER BY updated_at DESC LIMIT ?
             """,
             (limit,),
@@ -107,39 +122,35 @@ class SqliteBrowserTaskRepository:
         self,
         task: BrowserTask,
         expected: BrowserTaskStatus,
+        *,
+        expected_updated_at: datetime | None = None,
+        expected_lease_expires_at: datetime | None = None,
+        expected_lease_hash: str | None = None,
+        clear_lease: bool = False,
     ) -> bool:
-        """按预期状态原子更新任务。
+        """按预期状态和可选旧快照原子更新任务。
 
         Args:
             task: 新任务快照。
             expected: 数据库中必须匹配的旧状态。
+            expected_updated_at: 可选的旧快照更新时间。
+            expected_lease_expires_at: 可选的旧租约到期时间。
+            expected_lease_hash: 可选的当前租约摘要。
+            clear_lease: 是否在同一原子更新中清除旧租约。
 
         Returns:
-            成功更新一条记录时返回真。
+            所有指定条件匹配并成功更新一条记录时返回真。
         """
         await self._initialize()
-        async with connect(self._database) as database:
-            cursor = await database.execute(
-                """
-                UPDATE browser_task SET
-                    status = ?, payload = ?, lease_expires_at = ?, updated_at = ?
-                WHERE task_id = ? AND status = ?
-                """,
-                (
-                    task.status.value,
-                    task.model_dump_json(),
-                    (
-                        task.lease_expires_at.isoformat()
-                        if task.lease_expires_at
-                        else None
-                    ),
-                    task.updated_at.isoformat(),
-                    task.task_id,
-                    expected.value,
-                ),
-            )
-            await database.commit()
-        return cursor.rowcount == 1
+        return await save_browser_task_if_snapshot(
+            self._database,
+            task,
+            expected,
+            expected_updated_at,
+            expected_lease_expires_at,
+            expected_lease_hash,
+            clear_lease,
+        )
 
     async def claim_next(
         self,
@@ -164,9 +175,15 @@ class SqliteBrowserTaskRepository:
         await self._initialize()
         async with connect(self._database) as database:
             await database.execute("BEGIN IMMEDIATE")
-            task = await first_queued_browser_task(database, target_driver)
+            task, cleaned = await first_queued_browser_task(
+                database,
+                target_driver,
+            )
             if not task:
-                await database.rollback()
+                if cleaned:
+                    await database.commit()
+                else:
+                    await database.rollback()
                 return None
             claimed = task.model_copy(
                 update={
@@ -260,7 +277,9 @@ class SqliteBrowserTaskRepository:
         await self._initialize()
         return await self._fetch(
             """
-            SELECT payload FROM browser_task
+            SELECT task_id, request_id, kind, status, target_driver,
+                   lease_expires_at, created_at, updated_at, payload
+            FROM browser_task
             WHERE status IN (?, ?) AND lease_expires_at <= ?
             ORDER BY updated_at
             """,
@@ -272,14 +291,7 @@ class SqliteBrowserTaskRepository:
         )
 
     async def _fetch(self, query: str, parameters: tuple) -> list[BrowserTask]:
-        async with connect(self._database) as database:
-            cursor = await database.execute(query, parameters)
-            rows = await cursor.fetchall()
-        return [
-            task
-            for (payload,) in rows
-            if (task := parse_browser_task(payload)) is not None
-        ]
+        return await fetch_safe_browser_tasks(self._database, query, parameters)
 
     async def _initialize(self) -> None:
         if self._initialized:

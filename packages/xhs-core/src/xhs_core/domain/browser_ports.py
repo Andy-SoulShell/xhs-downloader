@@ -111,15 +111,24 @@ class BrowserTaskRepository(Protocol):
         self,
         task: BrowserTask,
         expected: BrowserTaskStatus,
+        *,
+        expected_updated_at: datetime | None = None,
+        expected_lease_expires_at: datetime | None = None,
+        expected_lease_hash: str | None = None,
+        clear_lease: bool = False,
     ) -> bool:
-        """按预期状态原子更新任务。
+        """按预期状态和可选旧快照原子更新任务。
 
         Args:
             task: 新任务快照。
             expected: 数据库中必须匹配的旧状态。
+            expected_updated_at: 可选的旧快照更新时间。
+            expected_lease_expires_at: 可选的旧租约到期时间。
+            expected_lease_hash: 可选的当前租约摘要。
+            clear_lease: 是否在同一原子更新中清除旧租约。
 
         Returns:
-            成功更新一条记录时返回真。
+            所有指定条件匹配并成功更新一条记录时返回真。
         """
         ...
 

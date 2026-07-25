@@ -9,6 +9,8 @@ from xhs_core.domain import (
     BrowserDriver,
     BrowserTask,
     BrowserTaskClaim,
+    BrowserTaskExecutionResult,
+    BrowserTaskLeaseConflictError,
     BrowserTaskStatus,
     ManagedBrowserState,
     browser_task_may_write_platform,
@@ -18,13 +20,16 @@ from xhs_core.domain.browser_ports import BrowserTaskExecutor, ManagedBrowserCon
 from .browser_execution import BrowserExecutionService
 from .managed_browser_gate import ManagedBrowserExecutionGate
 
+_MAX_HEARTBEAT_INTERVAL_SECONDS = 15
+
 
 class ManagedBrowserWorker:
     """在受管 Chromium 运行期间串行执行其专属任务。
 
     Worker 不负责启动或停止 Chromium，只观察控制器状态。领取后的任务
-    会先进入运行态；执行中断时，读取任务明确失败，可能改变平台状态的
-    任务转为人工核对，避免产生不可控的重复写入。
+    会先进入运行态并按服务端租约周期续租；续租失效会取消在途执行。
+    执行中断时，读取任务明确失败，可能改变平台状态的任务转为人工
+    核对，避免产生不可控的重复写入。
 
     Args:
         controller: 受管浏览器生命周期控制器。
@@ -121,6 +126,8 @@ class ManagedBrowserWorker:
 
     async def _execute(self, claim: BrowserTaskClaim) -> None:
         running: BrowserTask | None = None
+        execution_task: asyncio.Task[BrowserTaskExecutionResult] | None = None
+        heartbeat_task: asyncio.Task[None] | None = None
         try:
             running = await self._execution.update(
                 claim.task.task_id,
@@ -128,7 +135,23 @@ class ManagedBrowserWorker:
                 BrowserTaskStatus.RUNNING,
                 "受管浏览器正在执行",
             )
-            outcome = await self._executor.execute(running)
+            execution_task = asyncio.create_task(self._executor.execute(running))
+            heartbeat_task = asyncio.create_task(
+                self._renew_lease(claim),
+                name=f"managed-browser-heartbeat-{running.task_id}",
+            )
+            completed, _ = await asyncio.wait(
+                {execution_task, heartbeat_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if heartbeat_task in completed:
+                error = heartbeat_task.exception()
+                if error is None:
+                    raise RuntimeError("受管浏览器任务续租意外停止")
+                raise error
+            outcome = execution_task.result()
+            await _cancel_task(heartbeat_task)
+            heartbeat_task = None
             await self._execution.update(
                 running.task_id,
                 claim.lease_token,
@@ -137,10 +160,21 @@ class ManagedBrowserWorker:
                 outcome.result,
             )
         except asyncio.CancelledError:
+            await _cancel_task(execution_task)
+            await _cancel_task(heartbeat_task)
             if running:
                 await self._finish_interrupted(running, claim.lease_token, True)
             raise
+        except BrowserTaskLeaseConflictError:
+            await _cancel_task(execution_task)
+            await _cancel_task(heartbeat_task)
+            logger.warning(
+                "受管浏览器任务 {} 租约已经失效，停止当前页面执行",
+                claim.task.task_id,
+            )
         except Exception as error:
+            await _cancel_task(execution_task)
+            await _cancel_task(heartbeat_task)
             logger.error(
                 "受管浏览器任务 {} 执行失败：{}",
                 claim.task.task_id,
@@ -148,6 +182,21 @@ class ManagedBrowserWorker:
             )
             if running:
                 await self._finish_interrupted(running, claim.lease_token, False)
+
+    async def _renew_lease(self, claim: BrowserTaskClaim) -> None:
+        interval = min(
+            _MAX_HEARTBEAT_INTERVAL_SECONDS,
+            claim.lease_seconds / 3,
+        )
+        while True:
+            await asyncio.sleep(interval)
+            async with asyncio.timeout(interval):
+                await self._execution.update(
+                    claim.task.task_id,
+                    claim.lease_token,
+                    BrowserTaskStatus.RUNNING,
+                    "受管浏览器正在执行",
+                )
 
     async def _finish_interrupted(
         self,
@@ -180,3 +229,13 @@ class ManagedBrowserWorker:
                 task.task_id,
                 type(error).__name__,
             )
+
+
+async def _cancel_task[TaskResult](
+    task: asyncio.Task[TaskResult] | None,
+) -> None:
+    if task is None:
+        return
+    if not task.done():
+        task.cancel()
+    await asyncio.gather(task, return_exceptions=True)

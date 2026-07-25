@@ -200,7 +200,13 @@ async def test_worker_preserves_executor_confirmed_failure(tmp_path) -> None:
         BrowserTaskExecutionResult(
             status=BrowserTaskStatus.FAILED,
             message="目标控件不存在，未执行写入",
-            result={"diagnostic_code": "synthetic-control-missing"},
+            result={
+                "adapter_version": "xhs-web-2026.07",
+                "selector_profile": "semantic-dom-v1",
+                "page_kind": "feed_detail",
+                "matched_anchors": ["main_container"],
+                "missing_anchors": ["detail_container"],
+            },
         )
     )
     task = await tasks.submit(
@@ -230,8 +236,14 @@ async def test_worker_preserves_executor_confirmed_failure(tmp_path) -> None:
     finally:
         await worker.close()
 
-    assert failed.message == "目标控件不存在，未执行写入"
-    assert failed.result == {"diagnostic_code": "synthetic-control-missing"}
+    assert failed.message == "浏览器任务执行失败，可安全重试"
+    assert failed.result == {
+        "adapter_version": "xhs-web-2026.07",
+        "selector_profile": "semantic-dom-v1",
+        "page_kind": "feed_detail",
+        "matched_anchors": ["main_container"],
+        "missing_anchors": ["detail_container"],
+    }
 
 
 async def test_worker_start_and_close_are_idempotent_and_cancel_execution(

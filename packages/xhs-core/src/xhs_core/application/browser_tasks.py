@@ -213,8 +213,11 @@ class BrowserTaskService:
                     "updated_at": datetime.now(UTC),
                 }
             )
-            if await self._repository.save_if_status(canceled, task.status):
-                await self._repository.clear_lease(task_id)
+            if await self._repository.save_if_status(
+                canceled,
+                task.status,
+                clear_lease=True,
+            ):
                 return canceled
 
     async def retry(self, task_id: str) -> BrowserTask:
@@ -248,9 +251,9 @@ class BrowserTaskService:
         if not await self._repository.save_if_status(
             queued,
             BrowserTaskStatus.FAILED,
+            clear_lease=True,
         ):
             raise BrowserTaskError("浏览器任务状态已经变化，请刷新后重试")
-        await self._repository.clear_lease(task_id)
         if queued.target_driver is BrowserDriver.EXTENSION:
             self._claim_waiter.notify()
         return queued

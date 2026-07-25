@@ -1,5 +1,10 @@
 """领域模型、端口和纯业务规则。"""
 
+from .browser_diagnostics import (
+    sanitize_browser_page_diagnostics,
+    sanitize_browser_task_message,
+    sanitize_stored_browser_task,
+)
 from .browser_ports import BrowserTaskExecutor
 from .browser_sessions import BrowserCookieDeletionResult, LoginQrCodeResult
 from .browser_tasks import (
@@ -23,6 +28,7 @@ from .capability_routing import (
 )
 from .errors import (
     BrowserTaskError,
+    BrowserTaskLeaseConflictError,
     DownloadError,
     InvalidLinkError,
     InvalidPartialContentError,
@@ -88,6 +94,7 @@ __all__ = [
     "BrowserTaskExecutionResult",
     "BrowserTaskExecutor",
     "BrowserTaskKind",
+    "BrowserTaskLeaseConflictError",
     "BrowserTaskStatus",
     "ClientDownloadRecord",
     "ClientRecordStatus",
@@ -142,4 +149,7 @@ __all__ = [
     "XhsError",
     "browser_task_may_write_platform",
     "can_retry_browser_task",
+    "sanitize_browser_page_diagnostics",
+    "sanitize_browser_task_message",
+    "sanitize_stored_browser_task",
 ]

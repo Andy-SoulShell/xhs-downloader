@@ -16,7 +16,7 @@ from xhs_core.application import (
     DownloadService,
     DownloadTaskCoordinator,
 )
-from xhs_core.domain import ProviderError, XhsError
+from xhs_core.domain import BrowserTaskLeaseConflictError, ProviderError, XhsError
 from xhs_core.version import VERSION
 
 from .bootstrap import create_api_dependencies
@@ -191,6 +191,22 @@ def create_api(
                 "code": error.code.value,
             },
         )
+
+    @api.exception_handler(BrowserTaskLeaseConflictError)
+    async def handle_browser_lease_conflict(
+        _: Request,
+        error: BrowserTaskLeaseConflictError,
+    ) -> JSONResponse:
+        """将浏览器执行器的陈旧租约映射为 HTTP 冲突。
+
+        Args:
+            _: 当前 HTTP 请求。
+            error: 已确认的租约或状态快照冲突。
+
+        Returns:
+            不包含租约令牌的冲突响应。
+        """
+        return JSONResponse(status_code=409, content={"message": str(error)})
 
     @api.exception_handler(XhsError)
     async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:
