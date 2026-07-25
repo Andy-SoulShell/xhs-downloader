@@ -122,10 +122,10 @@ queued → claimed → running → succeeded | failed | needs_review
 - 混合路由已接入一次性账号一致性门禁：HTTP 在 Provider 内计算 HMAC，协议 5
   扩展通过独立内存 Claim/Answer 通道计算，受管浏览器通过同一 Profile 的 CDP
   旁路计算。只有 `matched` 允许跨 Provider 回退；挑战不进入浏览器任务、SQLite、
-  浏览器存储、日志或诊断。协议 5 挑战通道构建已真实重载并完成响应；随后补充的
-  页面水合后 DOM 账号识别兜底已构建、待再次重载。受管真实页面已返回
-  `proved`；当前 HTTP Cookie 已过期，刷新 Cookie 后的 `matched/different`
-  现场矩阵仍待复验。
+  浏览器存储、日志或诊断。协议 5 挑战通道与页面水合后的 DOM 账号识别兜底均已
+  真实重载；扩展真实登录页命中严格同源主页锚点，受管真实页面已返回 `proved`。
+  当前 HTTP Cookie 已过期，刷新 Cookie 后的 `matched/different` 现场矩阵仍待
+  复验。
 
 ## 类型化 API
 

@@ -327,9 +327,9 @@ XHS_BROWSER_DRIVER=extension
   标识或可跨任务关联的稳定指纹。
 
 领域门禁、HTTP、扩展、受管 CDP、API、MCP 和 WebUI 已完成自动化契约与构建验证；
-协议 5 挑战通道构建已真实重载并完成 Claim/Answer；随后补充的页面水合后 DOM
-账号识别兜底已构建、待再次重载。当前 HTTP Cookie 已过期，受管 Profile 尚未
-登录；刷新 Cookie 和扫码后的 `matched/different` 现场矩阵仍需复验。
+协议 5 挑战通道与页面水合后的 DOM 账号识别兜底均已真实重载，扩展真实登录页
+满足严格同源主页证明条件，受管真实页面已返回 `proved`。当前 HTTP Cookie 已
+过期，刷新 Cookie 后的 `matched/different` 现场矩阵仍需复验。
 
 ## 可观测性
 
