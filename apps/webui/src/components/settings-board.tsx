@@ -9,6 +9,7 @@ import type {
 import { ActionButton } from "./action-button";
 import { AccessModeSettings } from "./access-mode-settings";
 import { Badge } from "./badge";
+import { DesktopServiceControl } from "./desktop-service-control";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
 import { PublicationSettings } from "./publication-settings";
@@ -41,42 +42,53 @@ export function SettingsBoard({
 }: SettingsBoardProps) {
   if (loading && !settings) {
     return (
-      <section className="mt-8" aria-label="配置管理">
-        <EmptyState
-          description="正在从本地服务读取下次启动使用的配置。"
-          icon={Settings2}
-          title="正在读取配置"
-        />
-      </section>
+      <>
+        <section className="mt-8" aria-label="配置管理">
+          <EmptyState
+            description="正在从本地服务读取下次启动使用的配置。"
+            icon={Settings2}
+            title="正在读取配置"
+          />
+        </section>
+        <DesktopServiceControl />
+      </>
     );
   }
 
   if (!settings) {
     return (
-      <section className="mt-8" aria-label="配置管理">
-        <EmptyState
-          description={error || "请确认本地服务已启动，并从本机打开管理后台。"}
-          icon={CircleAlert}
-          title="暂时无法读取配置"
-        />
-        <div className="mt-4 flex justify-center">
-          <ActionButton onClick={onRefresh} variant="outline">
-            <RotateCcw aria-hidden size={14} />
-            重新读取
-          </ActionButton>
-        </div>
-      </section>
+      <>
+        <section className="mt-8" aria-label="配置管理">
+          <EmptyState
+            description={
+              error || "请确认本地服务已启动，并从本机打开管理后台。"
+            }
+            icon={CircleAlert}
+            title="暂时无法读取配置"
+          />
+          <div className="mt-4 flex justify-center">
+            <ActionButton onClick={onRefresh} variant="outline">
+              <RotateCcw aria-hidden size={14} />
+              重新读取
+            </ActionButton>
+          </div>
+        </section>
+        <DesktopServiceControl />
+      </>
     );
   }
 
   return (
-    <SettingsForm
-      error={error}
-      onSave={onSave}
-      onSaved={onSaved}
-      saving={saving}
-      settings={settings}
-    />
+    <>
+      <SettingsForm
+        error={error}
+        onSave={onSave}
+        onSaved={onSaved}
+        saving={saving}
+        settings={settings}
+      />
+      <DesktopServiceControl />
+    </>
   );
 }
 

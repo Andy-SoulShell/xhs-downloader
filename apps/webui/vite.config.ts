@@ -5,6 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const target = env.VITE_API_TARGET || "http://127.0.0.1:5556";
+  const base = env.VITE_BASE_PATH || "/";
   const proxy = {
     "/api": {
       target,
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
+    base,
     plugins: [react(), tailwindcss()],
     server: { port: 5173, strictPort: true, proxy },
     preview: { port: 4173, strictPort: true, proxy },
