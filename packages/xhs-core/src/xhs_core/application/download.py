@@ -73,13 +73,13 @@ class DownloadService:
             经过领域模型验证的作品详情。
         """
         url = await self.normalize_url(text)
-        logger.info("开始解析作品 {}", _work_id_for_log(url))
+        logger.info("开始解析作品页面")
         html = await self._gateway.get_text(url, cookie)
         detail = self._parser.parse(html, url)
         mapped_name = self.settings.mapping_data.get(detail.author.author_id)
         if mapped_name:
             detail.author.nickname = mapped_name
-        logger.info("作品 {} 解析完成", detail.work_id)
+        logger.info("作品页面解析完成")
         return detail
 
     async def download(
@@ -105,7 +105,7 @@ class DownloadService:
         if self.settings.download_record and not force:
             record = await self._repository.get(detail.work_id)
             if record and await self._record_is_current(record, fingerprint):
-                logger.info("作品 {} 的本地产物校验通过，跳过下载", detail.work_id)
+                logger.info("本地产物与内容指纹校验通过，跳过下载")
                 return DownloadOutcome(
                     message="本地产物完整且内容指纹未变化，跳过下载",
                     detail=detail,
@@ -124,9 +124,7 @@ class DownloadService:
                     updated_at=datetime.now(UTC),
                 )
             )
-        logger.info(
-            "作品 {} 下载完成，共生成 {} 个文件", detail.work_id, len(artifacts)
-        )
+        logger.info("作品下载完成，共生成 {} 个文件", len(artifacts))
         message = "作品文件下载完成" if artifacts else "没有符合当前配置的媒体文件"
         return DownloadOutcome(
             message=message,
@@ -183,7 +181,3 @@ def _hash_file(path: Path) -> str:
         for chunk in iter(lambda: file.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
-def _work_id_for_log(url: str) -> str:
-    return url.partition("?")[0].rstrip("/").rsplit("/", 1)[-1]

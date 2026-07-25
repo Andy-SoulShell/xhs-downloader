@@ -108,7 +108,8 @@ class HttpxGateway:
         except InvalidPartialContentError:
             raise
         except HTTPError as error:
-            raise DownloadError(f"媒体请求失败：{error}") from error
+            message = _request_error_message("媒体请求失败", error)
+            raise DownloadError(message) from error
 
     async def _request_with_retry(
         self,
@@ -131,4 +132,12 @@ class HttpxGateway:
                         error.__class__.__name__,
                     )
                     await sleep(min(2**attempt, 4))
-        raise DownloadError(f"页面请求失败：{last_error}") from last_error
+        raise DownloadError(
+            _request_error_message("页面请求失败", last_error)
+        ) from last_error
+
+
+def _request_error_message(prefix: str, error: HTTPError | None) -> str:
+    response = getattr(error, "response", None)
+    status = getattr(response, "status_code", None)
+    return f"{prefix}（HTTP {status}）" if status else f"{prefix}：网络连接异常"

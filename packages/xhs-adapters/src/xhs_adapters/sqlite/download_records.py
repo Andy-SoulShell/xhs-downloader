@@ -40,8 +40,8 @@ class SqliteDownloadRepository:
             return None
         try:
             return DownloadRecord.model_validate_json(row[0])
-        except ValidationError as error:
-            logger.warning("作品 {} 的下载记录无效，将重新下载：{}", work_id, error)
+        except ValidationError:
+            logger.warning("下载记录无效，将重新下载")
             return None
 
     async def save(self, record: DownloadRecord) -> None:

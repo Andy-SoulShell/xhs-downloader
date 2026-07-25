@@ -122,6 +122,37 @@ def test_video_stream_selection_honors_preference(
     assert resources[0].url == expected
 
 
+def test_video_stream_selection_supports_current_family_names() -> None:
+    """确保解析器不依赖平台视频流分组的历史名称。"""
+    streams = {
+        "EF4": [
+            {
+                "height": 720,
+                "videoBitrate": 100,
+                "size": 1000,
+                "masterUrl": "https://example.invalid/ef4",
+            }
+        ],
+        "EF5": [
+            {
+                "height": 1080,
+                "videoBitrate": 200,
+                "size": 2000,
+                "backupUrls": ["https://example.invalid/ef5"],
+            }
+        ],
+        "EF6": [],
+    }
+    parser = MediaParser(ImageFormat.JPEG, VideoPreference.RESOLUTION)
+
+    resources = parser.parse(
+        {"video": {"media": {"stream": streams}}},
+        WorkType.VIDEO,
+    )
+
+    assert resources[0].url == "https://example.invalid/ef5"
+
+
 def test_image_parser_keeps_live_companion_resource() -> None:
     """确保图文作品同时保留静态图片和动态图片资源。"""
     parser = MediaParser(ImageFormat.AUTO, VideoPreference.RESOLUTION)

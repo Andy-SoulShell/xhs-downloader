@@ -144,7 +144,7 @@ class FileDownloader:
                 marker.unlink(missing_ok=True)
                 raise
             if not part.exists() or part.stat().st_size == 0:
-                raise DownloadError(f"下载结果为空：{resource.url}")
+                raise DownloadError("下载结果为空")
             target = folder.joinpath(self._filename(work_name, resource, suffix))
             target.parent.mkdir(parents=True, exist_ok=True)
             os.replace(part, target)
@@ -154,7 +154,11 @@ class FileDownloader:
                 os.utime(target, (timestamp, timestamp))
             digest = await to_thread(_hash_file, target)
             relative = target.relative_to(self._settings.output_root)
-            logger.success("文件下载完成：{}", relative)
+            logger.success(
+                "媒体文件下载完成（类型：{}，序号：{}）",
+                resource.kind.value,
+                resource.index,
+            )
             return DownloadArtifact(
                 path=str(relative),
                 sha256=digest,

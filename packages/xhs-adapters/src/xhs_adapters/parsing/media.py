@@ -69,10 +69,12 @@ class MediaParser:
         return self._image_url(raw_url) if raw_url else None
 
     def _select_video_stream(self, note: dict[str, Any]) -> str:
-        streams = [
-            *_as_list(_deep_get(note, "video.media.stream.h264", [])),
-            *_as_list(_deep_get(note, "video.media.stream.h265", [])),
-        ]
+        stream_groups = _deep_get(note, "video.media.stream", {})
+        streams = (
+            [stream for group in stream_groups.values() for stream in _as_list(group)]
+            if isinstance(stream_groups, dict)
+            else []
+        )
         if not streams:
             return ""
         key = {
