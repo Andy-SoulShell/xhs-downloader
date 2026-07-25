@@ -2,6 +2,7 @@
 
 from .browser_execution import BrowserExecutionService
 from .browser_tasks import BrowserTaskService
+from .capability_router import CapabilityRouter
 from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
@@ -15,6 +16,7 @@ from .publication_tasks import PublicationTaskService
 __all__ = [
     "BrowserExecutionService",
     "BrowserTaskService",
+    "CapabilityRouter",
     "CollectionService",
     "DownloadService",
     "DownloadTaskCoordinator",

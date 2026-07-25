@@ -12,6 +12,15 @@ from .browser_tasks import (
     browser_task_may_write_platform,
     can_retry_browser_task,
 )
+from .capability_routing import (
+    ProviderError,
+    ProviderFailure,
+    ProviderFailureCode,
+    ProviderKind,
+    RoutedCapabilityResult,
+    RoutePolicyError,
+    RouteStrategy,
+)
 from .errors import (
     BrowserTaskError,
     DownloadError,
@@ -100,6 +109,10 @@ __all__ = [
     "MediaResource",
     "ParseError",
     "ProfileMetric",
+    "ProviderError",
+    "ProviderFailure",
+    "ProviderFailureCode",
+    "ProviderKind",
     "PublicationAsset",
     "PublicationClaim",
     "PublicationDraft",
@@ -108,6 +121,9 @@ __all__ = [
     "PublicationTask",
     "PublicationTaskStatus",
     "PublicationVisibility",
+    "RoutePolicyError",
+    "RouteStrategy",
+    "RoutedCapabilityResult",
     "SettingsError",
     "TaskStateError",
     "UserProfileResult",
