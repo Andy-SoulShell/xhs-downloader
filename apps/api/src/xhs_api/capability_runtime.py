@@ -26,6 +26,8 @@ from xhs_core.domain.browser_requests import SearchFilters
 
 type _UnsupportedCall[ResultT] = Callable[[], Awaitable[ResultT]]
 
+_BROWSER_READ_TIMEOUT_SECONDS = 60.0
+
 
 class ReadCapabilityRuntime:
     """固定一份路由配置及其 HTTP、浏览器只读 Provider。
@@ -228,7 +230,10 @@ def create_read_capability_runtime(
             browser.tasks,
             readiness,
             settings.browser_driver,
-            timeout_seconds=settings.timeout,
+            timeout_seconds=max(
+                settings.timeout,
+                _BROWSER_READ_TIMEOUT_SECONDS,
+            ),
         ),
     )
 
