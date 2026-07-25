@@ -25,6 +25,7 @@ export default defineConfig({
         "src/interaction-runner.ts",
         "src/login-qrcode.ts",
         "src/login-state.ts",
+        "src/managed-page-adapter.ts",
         "src/page-data.ts",
         "src/publication-assets.ts",
         "src/publication-runner.ts",
