@@ -179,6 +179,9 @@
     }
     button.scrollIntoView({ block: "center", inline: "center" });
     button.focus({ preventScroll: true });
+    if (action === "prepare") {
+      return { ok: true, message: "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u5DF2\u51C6\u5907" };
+    }
     const rect = button.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) {
       return { ok: false, message: "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u5F53\u524D\u4E0D\u53EF\u89C1" };
@@ -256,6 +259,22 @@
         subtree: true
       });
     });
+  }
+
+  // src/managed-publisher-control.ts
+  var PUBLISH_CONTROL2 = /* @__PURE__ */ Symbol.for("xhs-downloader.publisher-control");
+  var PREPARED_MESSAGE = "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u5DF2\u51C6\u5907";
+  function prepareManagedPublishControl() {
+    try {
+      const result = globalThis[PUBLISH_CONTROL2]?.(
+        "prepare"
+      );
+      if (result?.ok === true && result.message === PREPARED_MESSAGE) {
+        return { ok: true, message: result.message };
+      }
+    } catch {
+    }
+    return { ok: false, message: "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u672A\u80FD\u51C6\u5907" };
   }
 
   // src/publisher-options.ts
@@ -485,7 +504,6 @@
   var UPLOAD_SELECTOR = `[${UPLOAD_ATTRIBUTE}='true']`;
   var SCHEDULE_SELECTOR = `[${SCHEDULE_ATTRIBUTE}='true']`;
   var PUBLISH_SELECTOR = `[${PUBLISH_ATTRIBUTE}='true']`;
-  var PUBLISH_CONTROL2 = /* @__PURE__ */ Symbol.for("xhs-downloader.publisher-control");
   function installManagedPublisherAdapter() {
     const scope = globalThis;
     if (scope[ADAPTER_GLOBAL]) return scope[ADAPTER_GLOBAL];
@@ -588,23 +606,12 @@
           selector: PUBLISH_SELECTOR
         };
       }
-      const location = globalThis[PUBLISH_CONTROL2]?.();
-      if (location?.ok !== true || !Number.isFinite(location.x) || !Number.isFinite(location.y)) {
-        throw new Error(location?.message || "\u65E0\u6CD5\u5B9A\u4F4D\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE");
-      }
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      if (viewportWidth <= 0 || viewportHeight <= 0 || location.x < 0 || location.y < 0 || location.x >= viewportWidth || location.y >= viewportHeight) {
-        throw new Error("\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u5750\u6807\u8D85\u51FA\u5F53\u524D\u89C6\u53E3");
-      }
+      const prepared = prepareManagedPublishControl();
+      if (!prepared.ok) throw new Error(prepared.message);
       return {
         ok: true,
-        message: "\u5C01\u95ED\u53D1\u5E03\u6309\u94AE\u5DF2\u6838\u9A8C",
-        action: "click_coordinates",
-        x: location.x,
-        y: location.y,
-        viewportWidth,
-        viewportHeight
+        message: "\u5C01\u95ED\u53D1\u5E03\u6309\u94AE\u5DF2\u51C6\u5907",
+        action: "activate_focused"
       };
     } catch {
       const verification = verificationStep();

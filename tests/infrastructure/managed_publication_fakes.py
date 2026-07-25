@@ -238,6 +238,7 @@ class FakePublicationSession:
         self.page = page
         self.connected_ports: list[int] = []
         self.new_page_calls = 0
+        self.publish_activation_calls = 0
         self.closed = False
 
     async def connect(self, port: int) -> None:
@@ -256,6 +257,18 @@ class FakePublicationSession:
         """
         self.new_page_calls += 1
         return self.page
+
+    async def activate_focused_publish_button(
+        self,
+        page: FakePublicationPage,
+    ) -> None:
+        """记录语义发布按钮激活并模拟可信 Space。
+
+        Args:
+            page: 当前合成创作页面。
+        """
+        self.publish_activation_calls += 1
+        await page.keyboard.press("Space")
 
     async def close(self) -> None:
         """记录 Playwright 已断开但浏览器未被终止。"""

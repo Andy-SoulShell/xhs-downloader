@@ -5,7 +5,7 @@ type BridgeScope = typeof globalThis & {
   [BRIDGE]?: (action?: PublicationControlAction) => PublicationControlLocation;
 };
 
-type PublicationControlAction = "locate" | "activate";
+type PublicationControlAction = "locate" | "prepare" | "activate";
 
 export function installPublisherBridge(): () => void {
   const roots = new WeakMap<Element, ShadowRoot>();
@@ -61,6 +61,9 @@ function accessCapturedControl(
   }
   button.scrollIntoView({ block: "center", inline: "center" });
   button.focus({ preventScroll: true });
+  if (action === "prepare") {
+    return { ok: true, message: "创作平台发布按钮已准备" };
+  }
   const rect = button.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
     return { ok: false, message: "创作平台发布按钮当前不可见" };

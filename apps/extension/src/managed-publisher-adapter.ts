@@ -8,6 +8,7 @@ import {
 } from "./publisher-dom";
 import { installPublisherBridge } from "./publisher-bridge";
 import { waitForMediaReady } from "./publisher-media";
+import { prepareManagedPublishControl } from "./managed-publisher-control";
 import {
   preparePlatformSchedule,
   setOriginalDeclaration,
@@ -24,20 +25,15 @@ const PUBLISH_ATTRIBUTE = "data-xhd-managed-publish";
 const UPLOAD_SELECTOR = `[${UPLOAD_ATTRIBUTE}='true']`;
 const SCHEDULE_SELECTOR = `[${SCHEDULE_ATTRIBUTE}='true']`;
 const PUBLISH_SELECTOR = `[${PUBLISH_ATTRIBUTE}='true']`;
-const PUBLISH_CONTROL = Symbol.for("xhs-downloader.publisher-control");
 
 interface StepResponse {
   ok: boolean;
   message: string;
   verification?: true;
-  action?: "upload" | "type_schedule" | "click_selector" | "click_coordinates";
+  action?: "upload" | "type_schedule" | "click_selector" | "activate_focused";
   mediaKind?: "image" | "video";
   selector?: string;
   value?: string;
-  x?: number;
-  y?: number;
-  viewportWidth?: number;
-  viewportHeight?: number;
 }
 
 interface Observation {
@@ -58,12 +54,6 @@ interface ManagedPublisherAdapter {
 
 type AdapterScope = typeof globalThis & {
   __XHS_DOWNLOADER_MANAGED_PUBLISHER_ADAPTER__?: ManagedPublisherAdapter;
-  [PUBLISH_CONTROL]?: () => {
-    ok?: boolean;
-    message?: string;
-    x?: number;
-    y?: number;
-  };
 };
 
 /**
@@ -177,34 +167,12 @@ async function preparePublish(): Promise<StepResponse> {
         selector: PUBLISH_SELECTOR,
       };
     }
-    const location = (globalThis as AdapterScope)[PUBLISH_CONTROL]?.();
-    if (
-      location?.ok !== true ||
-      !Number.isFinite(location.x) ||
-      !Number.isFinite(location.y)
-    ) {
-      throw new Error(location?.message || "无法定位创作平台发布按钮");
-    }
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    if (
-      viewportWidth <= 0 ||
-      viewportHeight <= 0 ||
-      location.x! < 0 ||
-      location.y! < 0 ||
-      location.x! >= viewportWidth ||
-      location.y! >= viewportHeight
-    ) {
-      throw new Error("创作平台发布按钮坐标超出当前视口");
-    }
+    const prepared = prepareManagedPublishControl();
+    if (!prepared.ok) throw new Error(prepared.message);
     return {
       ok: true,
-      message: "封闭发布按钮已核验",
-      action: "click_coordinates",
-      x: location.x,
-      y: location.y,
-      viewportWidth,
-      viewportHeight,
+      message: "封闭发布按钮已准备",
+      action: "activate_focused",
     };
   } catch {
     const verification = verificationStep();

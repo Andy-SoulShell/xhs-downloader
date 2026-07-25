@@ -111,7 +111,7 @@ describe("受管浏览器发布页面适配器", () => {
     });
   });
 
-  it("只返回封闭发布按钮坐标而不触发内部点击", async () => {
+  it("聚焦封闭影子根内的真实发布按钮", async () => {
     const control = document.createElement("xhs-publish-btn");
     control.setAttribute("is-publish", "true");
     control.setAttribute("submit-disabled", "false");
@@ -121,19 +121,15 @@ describe("受管浏览器发布页面适配器", () => {
     const button = document.createElement("button");
     button.textContent = "发布";
     button.scrollIntoView = vi.fn();
-    vi.spyOn(button, "getBoundingClientRect").mockReturnValue(rect(100, 120));
     const clicked = vi.spyOn(button, "click");
     root.append(button);
     document.body.append(control);
 
     await expect(adapter.preparePublish()).resolves.toMatchObject({
       ok: true,
-      action: "click_coordinates",
-      x: 160,
-      y: 140,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
+      action: "activate_focused",
     });
+    expect(root.activeElement).toBe(button);
     expect(clicked).not.toHaveBeenCalled();
   });
 
@@ -274,19 +270,5 @@ function createAsset(
     size: 1,
     sha256: "b".repeat(64),
     position,
-  };
-}
-
-function rect(left: number, top: number): DOMRect {
-  return {
-    bottom: top + 40,
-    height: 40,
-    left,
-    right: left + 120,
-    top,
-    width: 120,
-    x: left,
-    y: top,
-    toJSON: () => ({}),
   };
 }

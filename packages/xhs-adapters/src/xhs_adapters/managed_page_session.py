@@ -1,7 +1,8 @@
 """通过本机 CDP 建立短生命周期的 Playwright 页面会话。"""
 
 from collections.abc import Callable, Sequence
-from typing import Any, Protocol
+from contextlib import suppress
+from typing import Any, Protocol, cast
 
 from playwright.async_api import (
     Browser,
@@ -19,6 +20,13 @@ from .chromium_process import CDP_HOST
 
 CDP_CONNECT_TIMEOUT_MILLISECONDS = 10_000
 _XHS_COOKIE_DOMAINS = ("xiaohongshu.com", ".xiaohongshu.com")
+_PUBLISH_BUTTON_NAMES = {"发布", "定时发布"}
+_SPACE_KEY = {
+    "key": " ",
+    "code": "Space",
+    "windowsVirtualKeyCode": 32,
+    "nativeVirtualKeyCode": 32,
+}
 
 
 class ManagedPage(Protocol):
@@ -106,6 +114,14 @@ class ManagedPageSession(Protocol):
         """
         ...
 
+    async def activate_focused_publish_button(self, page: ManagedPage) -> None:
+        """通过 CDP 语义节点激活当前已聚焦的真实发布按钮。
+
+        Args:
+            page: 当前受管创作页面。
+        """
+        ...
+
     async def delete_xhs_cookies(self) -> None:
         """仅清理小红书顶级域的 Cookie，且不读取 Cookie 值。"""
         ...
@@ -176,6 +192,45 @@ class PlaywrightCdpSession:
             raise ManagedBrowserError("受管浏览器自动化会话尚未连接")
         return await self._context.new_page()
 
+    async def activate_focused_publish_button(self, page: ManagedPage) -> None:
+        """通过 CDP 语义节点激活当前已聚焦的真实发布按钮。
+
+        Args:
+            page: 页面适配器已将真实按钮聚焦的创作页面。
+
+        Raises:
+            ManagedBrowserError: 会话不可用、按钮不唯一或 CDP 输入失败。
+        """
+        if not self._context:
+            raise ManagedBrowserError("受管浏览器自动化会话尚未连接")
+        cdp = await self._context.new_cdp_session(cast(Page, page))
+        try:
+            tree = await cdp.send("Accessibility.getFullAXTree", {"depth": -1})
+            matches = [
+                node
+                for node in tree.get("nodes", [])
+                if _is_focused_publish_button(node)
+            ]
+            if len(matches) != 1:
+                raise ManagedBrowserError("无法唯一确认已聚焦的真实发布按钮")
+            backend_node_id = matches[0]["backendDOMNodeId"]
+            await cdp.send("DOM.focus", {"backendNodeId": backend_node_id})
+            await cdp.send(
+                "Input.dispatchKeyEvent",
+                {"type": "keyDown", **_SPACE_KEY},
+            )
+            await cdp.send(
+                "Input.dispatchKeyEvent",
+                {"type": "keyUp", **_SPACE_KEY},
+            )
+        except ManagedBrowserError:
+            raise
+        except PlaywrightError as error:
+            raise ManagedBrowserError("受管浏览器发布按钮激活失败") from error
+        finally:
+            with suppress(PlaywrightError):
+                await cdp.detach()
+
     async def delete_xhs_cookies(self) -> None:
         """仅清理精确匹配小红书顶级域的 Cookie。
 
@@ -201,3 +256,21 @@ class PlaywrightCdpSession:
 
 
 ManagedPageSessionFactory = Callable[[], ManagedPageSession]
+
+
+def _is_focused_publish_button(node: dict[str, Any]) -> bool:
+    name = node.get("name", {}).get("value")
+    role = node.get("role", {}).get("value")
+    backend_node_id = node.get("backendDOMNodeId")
+    focused = any(
+        item.get("name") == "focused" and item.get("value", {}).get("value") is True
+        for item in node.get("properties", [])
+    )
+    return (
+        role == "button"
+        and name in _PUBLISH_BUTTON_NAMES
+        and isinstance(backend_node_id, int)
+        and not isinstance(backend_node_id, bool)
+        and backend_node_id > 0
+        and focused
+    )

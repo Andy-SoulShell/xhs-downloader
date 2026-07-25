@@ -1,6 +1,5 @@
 """校验受管发布页面适配器的固定动作和严格回读结果。"""
 
-import math
 from dataclasses import dataclass
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -46,14 +45,11 @@ class SelectorPublishClick:
 
 
 @dataclass(frozen=True)
-class CoordinatePublishClick:
-    """使用封闭影子根桥接坐标完成的发布点击。"""
-
-    x: float
-    y: float
+class CapturedPublishClick:
+    """使用可信键盘输入激活封闭影子根内已聚焦的真实发布按钮。"""
 
 
-type PublicationClick = SelectorPublishClick | CoordinatePublishClick
+type PublicationClick = SelectorPublishClick | CapturedPublishClick
 
 
 def validate_publication_task(task: PublicationTask) -> Literal["image", "video"]:
@@ -217,10 +213,10 @@ def validate_publish_response(value: Any) -> PublicationClick:
         value: 页面适配器发布按钮预检响应。
 
     Returns:
-        固定选择器或通过视口约束的坐标点击。
+        固定选择器点击或已聚焦真实按钮的可信键盘激活。
 
     Raises:
-        ManagedBrowserError: 响应包含未知动作、选择器或越界坐标。
+        ManagedBrowserError: 响应包含未知动作或选择器。
     """
     native = {
         "ok": True,
@@ -230,37 +226,11 @@ def validate_publish_response(value: Any) -> PublicationClick:
     }
     if value == native:
         return SelectorPublishClick(selector=PUBLISH_SELECTOR)
-    if not isinstance(value, dict) or set(value) != {
-        "ok",
-        "message",
-        "action",
-        "x",
-        "y",
-        "viewportWidth",
-        "viewportHeight",
-    }:
-        raise ManagedBrowserError("受管发布按钮预检响应无效")
-    if (
-        value["ok"] is not True
-        or value["message"] != "封闭发布按钮已核验"
-        or value["action"] != "click_coordinates"
-    ):
-        raise ManagedBrowserError("受管发布按钮动作无效")
-    x = _number(value["x"])
-    y = _number(value["y"])
-    width = _number(value["viewportWidth"])
-    height = _number(value["viewportHeight"])
-    if not (0 < width <= 16_384 and 0 < height <= 16_384):
-        raise ManagedBrowserError("受管发布页面视口无效")
-    if not (0 <= x < width and 0 <= y < height):
-        raise ManagedBrowserError("受管发布按钮坐标超出页面视口")
-    return CoordinatePublishClick(x=x, y=y)
-
-
-def _number(value: Any) -> float:
-    if isinstance(value, bool) or not isinstance(value, int | float):
-        raise ManagedBrowserError("受管发布页面坐标类型无效")
-    result = float(value)
-    if not math.isfinite(result):
-        raise ManagedBrowserError("受管发布页面坐标不是有限数值")
-    return result
+    captured = {
+        "ok": True,
+        "message": "封闭发布按钮已准备",
+        "action": "activate_focused",
+    }
+    if value == captured:
+        return CapturedPublishClick()
+    raise ManagedBrowserError("受管发布按钮预检响应无效")

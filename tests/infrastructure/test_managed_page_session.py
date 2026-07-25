@@ -8,18 +8,61 @@ from xhs_adapters.managed_page_session import PlaywrightCdpSession
 from xhs_core.domain import ManagedBrowserError
 
 
+class _Cdp:
+    """返回固定无障碍树并记录浏览器协议输入。"""
+
+    def __init__(self, nodes: list[dict[str, Any]]) -> None:
+        self.nodes = nodes
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+        self.detached = False
+
+    async def send(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
+        """记录 CDP 命令并返回合成无障碍树。
+
+        Args:
+            method: 浏览器协议方法名。
+            params: 已校验的固定命令参数。
+
+        Returns:
+            仅无障碍树查询返回合成节点。
+        """
+        self.calls.append((method, params))
+        return {"nodes": self.nodes} if method == "Accessibility.getFullAXTree" else {}
+
+    async def detach(self) -> None:
+        """记录 CDP 子会话已经断开。"""
+        self.detached = True
+
+
 class _Context:
     """提供固定页面的合成 Playwright 上下文。"""
 
-    def __init__(self, page: object) -> None:
+    def __init__(self, page: object, cdp: _Cdp | None = None) -> None:
         self.pages = [page]
         self.page = page
+        self.cdp = cdp
         self.new_page_calls = 0
         self.clear_cookie_calls: list[dict[str, Any]] = []
 
     async def new_page(self) -> object:
         self.new_page_calls += 1
         return self.page
+
+    async def new_cdp_session(self, page: object) -> _Cdp:
+        """返回绑定固定页面的合成 CDP 子会话。
+
+        Args:
+            page: 必须与上下文固定页面一致。
+
+        Returns:
+            构造时提供的合成 CDP 子会话。
+
+        Raises:
+            AssertionError: 页面或子会话与测试脚本不一致。
+        """
+        assert page is self.page
+        assert self.cdp is not None
+        return self.cdp
 
     async def clear_cookies(self, **filters: Any) -> None:
         self.clear_cookie_calls.append(filters)
@@ -138,6 +181,63 @@ async def test_cdp_session_clears_only_exact_xhs_cookie_domains(
         {"domain": "xiaohongshu.com"},
         {"domain": ".xiaohongshu.com"},
     ]
+
+
+async def test_cdp_session_activates_unique_focused_publish_button(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """确保语义节点聚焦后只发送一次可信 Space。
+
+    Args:
+        monkeypatch: Pytest 提供的属性替换工具。
+    """
+    page = object()
+    cdp = _Cdp(
+        [
+            {
+                "name": {"value": "定时发布"},
+                "role": {"value": "button"},
+                "backendDOMNodeId": 114,
+                "properties": [{"name": "focused", "value": {"value": True}}],
+            }
+        ]
+    )
+    runtime = _Playwright(_Browser([_Context(page, cdp)]))
+    monkeypatch.setattr(
+        session_module,
+        "async_playwright",
+        lambda: _Starter(runtime),
+    )
+    session = PlaywrightCdpSession()
+
+    await session.connect(19222)
+    await session.activate_focused_publish_button(page)
+
+    assert cdp.calls == [
+        ("Accessibility.getFullAXTree", {"depth": -1}),
+        ("DOM.focus", {"backendNodeId": 114}),
+        (
+            "Input.dispatchKeyEvent",
+            {
+                "type": "keyDown",
+                "key": " ",
+                "code": "Space",
+                "windowsVirtualKeyCode": 32,
+                "nativeVirtualKeyCode": 32,
+            },
+        ),
+        (
+            "Input.dispatchKeyEvent",
+            {
+                "type": "keyUp",
+                "key": " ",
+                "code": "Space",
+                "windowsVirtualKeyCode": 32,
+                "nativeVirtualKeyCode": 32,
+            },
+        ),
+    ]
+    assert cdp.detached is True
 
 
 async def test_cdp_session_rejects_browser_without_default_context(

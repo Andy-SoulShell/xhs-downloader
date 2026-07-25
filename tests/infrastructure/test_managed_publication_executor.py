@@ -93,30 +93,25 @@ async def test_image_publication_uses_ordered_assets_and_atomic_click_boundary(
     assert session.closed is True
 
 
-async def test_video_publication_uses_only_validated_shadow_button_coordinates(
+async def test_video_publication_activates_focused_shadow_button(
     tmp_path: Path,
 ) -> None:
-    """确保视频发布通过封闭按钮桥接坐标执行且没有选择器兜底。
+    """确保视频发布通过可信键盘输入激活已聚焦的真实按钮。
 
     Args:
         tmp_path: Pytest 提供的合成素材目录。
     """
     task, paths = synthetic_publication_task(tmp_path, "video")
-    coordinate = {
+    captured = {
         "ok": True,
-        "message": "封闭发布按钮已核验",
-        "action": "click_coordinates",
-        "x": 160,
-        "y": 140,
-        "viewportWidth": 1280,
-        "viewportHeight": 720,
+        "message": "封闭发布按钮已准备",
+        "action": "activate_focused",
     }
     responses = native_publication_responses(
         "video",
         observe=[PENDING_RESPONSE, PUBLISHED_RESPONSE],
     )
-    refreshed_coordinate = coordinate | {"x": 180, "y": 150}
-    responses["prepare_publish"] = [coordinate, refreshed_coordinate]
+    responses["prepare_publish"] = [captured, captured]
     page = FakePublicationPage(responses=responses)
     session = FakePublicationSession(page)
     executor = PlaywrightManagedPublicationExecutor(
@@ -130,14 +125,54 @@ async def test_video_publication_uses_only_validated_shadow_button_coordinates(
 
     assert outcome.status is PublicationTaskStatus.PUBLISHED
     assert page.goto_calls[0][0].endswith("?target=video")
-    assert page.mouse.clicks == [(180.0, 150.0, {})]
+    assert page.mouse.clicks == []
     assert page.click_calls == []
+    assert page.keyboard.presses == [("Space", {})]
+    assert session.publish_activation_calls == 1
     prepare_calls = [
         expression
         for expression, _ in page.evaluate_calls
         if ".preparePublish(" in expression
     ]
     assert len(prepare_calls) == 2
+
+
+async def test_captured_button_change_after_atomic_boundary_requires_review(
+    tmp_path: Path,
+) -> None:
+    """确保原子边界后的按钮类型变化进入人工核对且不点击。
+
+    Args:
+        tmp_path: Pytest 提供的合成素材目录。
+    """
+    task, paths = synthetic_publication_task(tmp_path, "video")
+    captured = {
+        "ok": True,
+        "message": "封闭发布按钮已准备",
+        "action": "activate_focused",
+    }
+    native = {
+        "ok": True,
+        "message": "原生发布按钮已核验",
+        "action": "click_selector",
+        "selector": PUBLISH_SELECTOR,
+    }
+    responses = native_publication_responses(
+        "video",
+        observe=[PENDING_RESPONSE],
+    )
+    responses["prepare_publish"] = [captured, native]
+    page = FakePublicationPage(responses=responses)
+    outcome = await PlaywrightManagedPublicationExecutor(
+        FakeController(synthetic_browser_status()),
+        lambda: FakePublicationSession(page),
+        observation_timeout=0.1,
+        poll_interval=0.001,
+    ).execute(task, paths, _ignore_progress)
+
+    assert outcome.status is PublicationTaskStatus.NEEDS_REVIEW
+    assert page.mouse.clicks == []
+    assert page.click_calls == []
 
 
 async def test_platform_schedule_uses_keyboard_and_strict_page_readback(

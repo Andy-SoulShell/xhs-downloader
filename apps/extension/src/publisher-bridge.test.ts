@@ -52,7 +52,7 @@ describe("创作页主世界按钮桥接", () => {
     const locate = (
       globalThis as Record<
         symbol,
-        ((action?: "locate" | "activate") => unknown) | undefined
+        ((action?: "locate" | "prepare" | "activate") => unknown) | undefined
       >
     )[Symbol.for("xhs-downloader.publisher-control")];
 
@@ -66,6 +66,10 @@ describe("创作页主世界按钮桥接", () => {
     expect(button.scrollIntoView).toHaveBeenCalledWith({
       block: "center",
       inline: "center",
+    });
+    expect(locate?.("prepare")).toEqual({
+      ok: true,
+      message: "创作平台发布按钮已准备",
     });
     const click = vi.spyOn(button, "click");
     expect(locate?.("activate")).toEqual({

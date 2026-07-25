@@ -6,20 +6,6 @@ from typing import Any, Protocol
 from .managed_page_session import ManagedPage
 
 
-class ManagedPublicationMouse(Protocol):
-    """执行封闭影子根按钮坐标点击的浏览器鼠标。"""
-
-    async def click(self, x: float, y: float, **options: Any) -> None:
-        """点击已经过同页适配器核验的视口坐标。
-
-        Args:
-            x: 视口横坐标。
-            y: 视口纵坐标。
-            **options: Playwright 鼠标点击选项。
-        """
-        ...
-
-
 class ManagedPublicationKeyboard(Protocol):
     """填写官方定时控件的浏览器键盘。"""
 
@@ -43,15 +29,6 @@ class ManagedPublicationKeyboard(Protocol):
 
 class ManagedPublicationPage(ManagedPage, Protocol):
     """上传素材、填写官方定时并可信提交发布的页面接口。"""
-
-    @property
-    def mouse(self) -> ManagedPublicationMouse:
-        """返回绑定当前页面的浏览器鼠标。
-
-        Returns:
-            仅用于发布按钮坐标点击的鼠标接口。
-        """
-        ...
 
     @property
     def keyboard(self) -> ManagedPublicationKeyboard:

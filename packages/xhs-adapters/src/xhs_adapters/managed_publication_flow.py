@@ -146,7 +146,7 @@ class _ManagedPublicationFlow:
         )
         active.publish_attempted = True
         validate_creator_page(page.url)
-        await click_prepared_publish(page, click)
+        await click_prepared_publish(page, click, session)
         return await self._observe(active, report)
 
     async def _cleanup(self, active: _ActiveExecution) -> None:
