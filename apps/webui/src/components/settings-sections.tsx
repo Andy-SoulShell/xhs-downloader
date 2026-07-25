@@ -3,6 +3,7 @@ import type {
   SettingsValues,
   VideoPreference,
 } from "../lib/types";
+import { CookieSetupGuide } from "./cookie-setup-guide";
 import {
   NumberSetting,
   SelectSetting,
@@ -94,6 +95,7 @@ export function StorageSettings({
   );
 }
 
+/** 渲染网络请求和本机敏感凭据设置。 */
 export function NetworkSettings({
   clearCookie,
   clearProxy,
@@ -129,13 +131,14 @@ export function NetworkSettings({
       <SensitiveSetting
         clear={clearCookie}
         configured={cookieConfigured}
-        help="留空会保留现有值；公开作品通常不需要 Cookie。"
+        help="高级可选项；留空会保留现有值，普通用户优先使用浏览器模式。"
         label="小红书 Cookie"
         onChange={onCookieChange}
         onClearChange={onClearCookieChange}
         placeholder={cookieConfigured ? "输入新值以替换" : "可选"}
         value={cookie}
       />
+      <CookieSetupGuide />
       <SensitiveSetting
         clear={clearProxy}
         configured={proxyConfigured}

@@ -85,11 +85,49 @@ describe("配置分组控件", () => {
       target: { value: "updated-agent" },
     });
 
+    expect(screen.getByLabelText("小红书 Cookie")).toHaveAttribute(
+      "type",
+      "password",
+    );
     expect(onCookieChange).toHaveBeenCalledOnce();
     expect(onProxyChange).toHaveBeenCalledOnce();
     expect(onClearCookieChange).toHaveBeenCalledWith(false);
     expect(onClearProxyChange).toHaveBeenCalledWith(false);
     expect(onChange).toHaveBeenCalledTimes(3);
+  });
+
+  it("默认收起并展示 HTTP Cookie 安全获取说明", () => {
+    render(
+      <NetworkSettings
+        clearCookie={false}
+        clearProxy={false}
+        cookie=""
+        cookieConfigured={false}
+        onChange={vi.fn()}
+        onClearCookieChange={vi.fn()}
+        onClearProxyChange={vi.fn()}
+        onCookieChange={vi.fn()}
+        onProxyChange={vi.fn()}
+        proxy=""
+        proxyConfigured={false}
+        values={values}
+      />,
+    );
+
+    const summary = screen.getByText("如何安全获取 HTTP Cookie（高级）");
+    const disclosure = summary.closest("details");
+    expect(disclosure).not.toHaveAttribute("open");
+
+    fireEvent.click(summary);
+
+    expect(disclosure).toHaveAttribute("open");
+    expect(
+      screen.getByText(/普通用户优先选择浏览器扩展或受管浏览器/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/不要复制 Set-Cookie、整条 cURL 或其他请求头/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Cookie 只保存在本机且不会再次显示/)).toBeInTheDocument();
   });
 
   it("编辑下载策略和媒体开关", () => {
