@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
-from xhs_core.domain import BrowserTaskKind, BrowserTaskStatus
+from xhs_core.domain import BrowserDriver, BrowserTaskKind, BrowserTaskStatus
 
 
 class BrowserTaskRequest(BaseModel):
@@ -15,6 +15,7 @@ class BrowserTaskRequest(BaseModel):
     kind: BrowserTaskKind
     payload: dict[str, JsonValue] = Field(default_factory=dict)
     request_id: str | None = Field(default=None, min_length=1, max_length=128)
+    target_driver: BrowserDriver = BrowserDriver.EXTENSION
 
 
 class BrowserTaskStatusRequest(BaseModel):

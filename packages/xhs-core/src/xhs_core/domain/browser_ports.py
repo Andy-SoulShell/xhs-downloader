@@ -3,7 +3,12 @@
 from datetime import datetime
 from typing import Protocol
 
-from .browser_tasks import BrowserDriver, BrowserTask, BrowserTaskStatus
+from .browser_tasks import (
+    BrowserDriver,
+    BrowserTask,
+    BrowserTaskExecutionResult,
+    BrowserTaskStatus,
+)
 from .managed_browser import ManagedBrowserStatus
 
 
@@ -36,6 +41,25 @@ class ManagedBrowserController(Protocol):
 
     async def close(self) -> None:
         """释放进程、端口和单实例锁。"""
+        ...
+
+
+class BrowserTaskExecutor(Protocol):
+    """在已连接的浏览器页面中执行一个受管任务。"""
+
+    async def execute(self, task: BrowserTask) -> BrowserTaskExecutionResult:
+        """执行任务并返回可验证的明确终态。
+
+        Args:
+            task: 已进入运行态且固定为受管驱动的任务。
+
+        Returns:
+            成功、明确失败或需要人工核对的结构化结论。
+        """
+        ...
+
+    async def close(self) -> None:
+        """关闭页面连接并释放执行器资源。"""
         ...
 
 

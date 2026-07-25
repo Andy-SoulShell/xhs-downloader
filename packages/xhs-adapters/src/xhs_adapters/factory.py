@@ -7,6 +7,7 @@ from xhs_core.application import (
     BrowserTaskService,
     DownloadService,
     ExtensionCredentialService,
+    ManagedBrowserWorker,
     PublicationDraftService,
     PublicationExecutionService,
     PublicationScheduler,
@@ -18,6 +19,7 @@ from .config import AppSettings
 from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
 from .managed_browser import ChromiumController
+from .managed_task_executor import PlaywrightManagedTaskExecutor
 from .parsing import InitialStateParser
 from .sqlite import (
     SqliteBrowserTaskRepository,
@@ -35,6 +37,7 @@ class BrowserRuntime:
     tasks: BrowserTaskService
     execution: BrowserExecutionService
     managed: ManagedBrowserController
+    worker: ManagedBrowserWorker
 
 
 @dataclass(frozen=True)
@@ -81,13 +84,21 @@ def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
     repository = SqliteBrowserTaskRepository(
         settings.state_dir.joinpath("downloads.db")
     )
+    tasks = BrowserTaskService(repository)
+    execution = BrowserExecutionService(
+        repository,
+        settings.browser_task_lease_seconds,
+    )
+    managed = ChromiumController(settings)
     return BrowserRuntime(
-        tasks=BrowserTaskService(repository),
-        execution=BrowserExecutionService(
-            repository,
-            settings.browser_task_lease_seconds,
+        tasks=tasks,
+        execution=execution,
+        managed=managed,
+        worker=ManagedBrowserWorker(
+            managed,
+            execution,
+            PlaywrightManagedTaskExecutor(managed),
         ),
-        managed=ChromiumController(settings),
     )
 
 

@@ -186,11 +186,11 @@ def validate_browser_task_result(
     kind: BrowserTaskKind,
     result: dict[str, JsonValue],
 ) -> dict[str, JsonValue]:
-    """验证并规范化扩展回传结果。
+    """验证并规范化浏览器执行器回传结果。
 
     Args:
         kind: 浏览器任务类型。
-        result: 扩展回传的 JSON 对象。
+        result: 扩展或受管浏览器回传的 JSON 对象。
 
     Returns:
         通过对应结果模型验证的数据。

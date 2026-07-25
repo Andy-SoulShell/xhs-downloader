@@ -5,6 +5,7 @@ from .browser_tasks import BrowserTaskService
 from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
+from .managed_browser_worker import ManagedBrowserWorker
 from .publication_auth import ExtensionCredentialService
 from .publication_drafts import PublicationDraftService
 from .publication_execution import PublicationExecutionService
@@ -18,6 +19,7 @@ __all__ = [
     "DownloadService",
     "DownloadTaskCoordinator",
     "ExtensionCredentialService",
+    "ManagedBrowserWorker",
     "PublicationDraftService",
     "PublicationExecutionService",
     "PublicationScheduler",

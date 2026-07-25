@@ -146,3 +146,41 @@ async def test_browser_api_enforces_local_and_extension_boundaries(
     assert unauthorized.status_code == 401
     assert claimed.status_code == 200
     assert no_lease.status_code == 401
+
+
+async def test_browser_api_freezes_managed_driver_before_queueing(tmp_path) -> None:
+    """确保本机可以提交受管任务且扩展不能误领。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    settings = AppSettings(
+        work_path=tmp_path,
+        managed_browser_executable=tmp_path.joinpath("missing-browser"),
+    )
+    api = create_api(settings, lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        submitted = await client.post(
+            "/browser/tasks",
+            json={
+                "kind": "check_login_status",
+                "payload": {},
+                "target_driver": "managed",
+            },
+        )
+        headers = await _register(client)
+        extension_claim = await client.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+
+    assert submitted.status_code == 202
+    assert submitted.json()["target_driver"] == "managed"
+    assert extension_claim.status_code == 200
+    assert extension_claim.json() is None

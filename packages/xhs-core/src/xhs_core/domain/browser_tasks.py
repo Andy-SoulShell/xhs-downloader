@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
 class BrowserTaskKind(StrEnum):
@@ -78,10 +79,30 @@ class BrowserTask(BaseModel):
 
 
 class BrowserTaskClaim(BaseModel):
-    """扩展领取浏览器任务后获得的短期执行凭据。"""
+    """浏览器执行器领取任务后获得的短期执行凭据。"""
 
     task: BrowserTask
     lease_token: str = Field(min_length=32, max_length=256)
+
+
+class BrowserTaskExecutionResult(BaseModel):
+    """浏览器执行器返回的结构化终态。
+
+    Attributes:
+        status: 已确认的成功、失败或需要人工核对状态。
+        message: 不包含用户原文和敏感请求数据的执行摘要。
+        result: 可选的结构化结果或脱敏诊断。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal[
+        BrowserTaskStatus.SUCCEEDED,
+        BrowserTaskStatus.FAILED,
+        BrowserTaskStatus.NEEDS_REVIEW,
+    ]
+    message: str = Field(min_length=1, max_length=1000)
+    result: dict[str, JsonValue] | None = None
 
 
 def can_retry_browser_task(task: BrowserTask) -> bool:
@@ -97,3 +118,29 @@ def can_retry_browser_task(task: BrowserTask) -> bool:
         任务处于明确失败状态时返回真。
     """
     return task.status is BrowserTaskStatus.FAILED
+
+
+def browser_task_may_write_platform(kind: BrowserTaskKind) -> bool:
+    """判断任务是否可能改变小红书平台状态。
+
+    规则采用保守白名单：只有已知的登录、读取和本地 Cookie 清理任务
+    被视为不会写入平台。以后新增的任务类型默认按可能写入处理，避免
+    执行中断后被误判为可以安全重试。
+
+    Args:
+        kind: 浏览器任务类型。
+
+    Returns:
+        任务可能已经产生平台写入时返回真。
+    """
+    safe_kinds = {
+        BrowserTaskKind.CHECK_LOGIN_STATUS,
+        BrowserTaskKind.GET_LOGIN_QRCODE,
+        BrowserTaskKind.DELETE_COOKIES,
+        BrowserTaskKind.LIST_FEEDS,
+        BrowserTaskKind.SEARCH_FEEDS,
+        BrowserTaskKind.GET_FEED_DETAIL,
+        BrowserTaskKind.GET_USER_PROFILE,
+        BrowserTaskKind.GET_MY_PROFILE,
+    }
+    return kind not in safe_kinds

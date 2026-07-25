@@ -1,12 +1,15 @@
 """领域模型、端口和纯业务规则。"""
 
+from .browser_ports import BrowserTaskExecutor
 from .browser_sessions import BrowserCookieDeletionResult, LoginQrCodeResult
 from .browser_tasks import (
     BrowserDriver,
     BrowserTask,
     BrowserTaskClaim,
+    BrowserTaskExecutionResult,
     BrowserTaskKind,
     BrowserTaskStatus,
+    browser_task_may_write_platform,
     can_retry_browser_task,
 )
 from .errors import (
@@ -67,6 +70,8 @@ __all__ = [
     "BrowserTask",
     "BrowserTaskClaim",
     "BrowserTaskError",
+    "BrowserTaskExecutionResult",
+    "BrowserTaskExecutor",
     "BrowserTaskKind",
     "BrowserTaskStatus",
     "ClientDownloadRecord",
@@ -109,5 +114,6 @@ __all__ = [
     "WorkDetail",
     "WorkType",
     "XhsError",
+    "browser_task_may_write_platform",
     "can_retry_browser_task",
 ]

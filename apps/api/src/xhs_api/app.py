@@ -81,9 +81,11 @@ def create_api(
             app.state.collection = CollectionService(service, dependencies.posts)
             await tasks.start()
             await dependencies.publication.scheduler.start()
+            await dependencies.browser.worker.start()
             try:
                 yield
             finally:
+                await dependencies.browser.worker.close()
                 await dependencies.browser.managed.close()
                 await dependencies.publication.scheduler.close()
                 await tasks.close()

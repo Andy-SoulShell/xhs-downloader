@@ -55,7 +55,12 @@ def create_browser_router(
         request: Request,
     ) -> BrowserTask:
         _require_management(request, management_access)
-        return await tasks.submit(payload.kind, payload.payload, payload.request_id)
+        return await tasks.submit(
+            payload.kind,
+            payload.payload,
+            payload.request_id,
+            payload.target_driver,
+        )
 
     @router.get("/tasks", response_model=list[BrowserTask])
     async def list_tasks(

@@ -10,6 +10,7 @@ dependencies = [
     "httpx[http2,socks]>=0.28.1",
     "loguru>=0.7.3",
     "lxml>=6.0.0",
+    "playwright>=1.61.0",
     "pydantic-settings>=2.12.0",
     "pyyaml>=6.0.0",
     "xhs-core",
