@@ -7,6 +7,8 @@ from xhs_core.domain.browser_requests import (
     validate_browser_task_result,
 )
 
+QR_DATA = "data:image/png;base64,aGVsbG8="
+
 
 def test_search_payload_is_normalized_with_explicit_defaults() -> None:
     """确保搜索输入在持久化前补全筛选默认值。"""
@@ -47,5 +49,35 @@ def test_feed_result_rejects_untrusted_extra_fields() -> None:
                 "keyword": None,
                 "items": [],
                 "cookie": "不允许的字段",
+            },
+        )
+
+
+def test_login_session_contracts_require_qrcode_and_confirmation() -> None:
+    """确保二维码只接受短期图片，Cookie 清理必须明确确认。"""
+    result = validate_browser_task_result(
+        BrowserTaskKind.GET_LOGIN_QRCODE,
+        {
+            "is_logged_in": False,
+            "image_data_url": QR_DATA,
+            "expires_at": "2026-08-01T12:04:00Z",
+            "consumed": False,
+        },
+    )
+
+    assert result["image_data_url"] == QR_DATA
+    with pytest.raises(BrowserTaskError, match="参数无效"):
+        validate_browser_task_payload(
+            BrowserTaskKind.DELETE_COOKIES,
+            {"confirmed": False},
+        )
+    with pytest.raises(BrowserTaskError, match="结果结构无效"):
+        validate_browser_task_result(
+            BrowserTaskKind.GET_LOGIN_QRCODE,
+            {
+                "is_logged_in": False,
+                "image_data_url": "https://example.invalid/qr.png",
+                "expires_at": "2026-08-01T12:04:00Z",
+                "consumed": False,
             },
         )

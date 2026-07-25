@@ -201,3 +201,34 @@ async def test_expired_leases_follow_operation_safety(tmp_path) -> None:
     reviewed = await tasks.require(write_task.task_id)
     assert reviewed.status is BrowserTaskStatus.NEEDS_REVIEW
     assert "人工核对" in reviewed.message
+
+
+async def test_login_qrcode_is_removed_after_delivery(tmp_path) -> None:
+    """确保短期二维码交付后不会继续保存在任务记录中。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    _, tasks, execution = _services(tmp_path)
+    task = await tasks.submit(BrowserTaskKind.GET_LOGIN_QRCODE, {})
+    claim = await execution.claim("extension")
+    assert claim is not None
+    completed = await execution.update(
+        task.task_id,
+        claim.lease_token,
+        BrowserTaskStatus.SUCCEEDED,
+        "二维码已生成",
+        {
+            "is_logged_in": False,
+            "image_data_url": "data:image/png;base64,aGVsbG8=",
+            "expires_at": "2026-08-01T12:04:00Z",
+            "consumed": False,
+        },
+    )
+
+    assert completed.result["image_data_url"]
+    await tasks.consume_login_qrcode(task.task_id)
+    consumed = await tasks.require(task.task_id)
+
+    assert consumed.result["image_data_url"] is None
+    assert consumed.result["consumed"] is True

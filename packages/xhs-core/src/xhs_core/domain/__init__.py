@@ -1,5 +1,6 @@
 """领域模型、端口和纯业务规则。"""
 
+from .browser_sessions import BrowserCookieDeletionResult, LoginQrCodeResult
 from .browser_tasks import (
     BrowserTask,
     BrowserTaskClaim,
@@ -58,6 +59,7 @@ from .publication import (
 __all__ = [
     "Author",
     "BrowserAccount",
+    "BrowserCookieDeletionResult",
     "BrowserTask",
     "BrowserTaskClaim",
     "BrowserTaskError",
@@ -81,6 +83,7 @@ __all__ = [
     "FeedSummary",
     "InvalidLinkError",
     "InvalidPartialContentError",
+    "LoginQrCodeResult",
     "MediaKind",
     "MediaResource",
     "ParseError",

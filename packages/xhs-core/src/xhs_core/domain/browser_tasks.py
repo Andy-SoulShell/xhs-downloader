@@ -10,6 +10,8 @@ class BrowserTaskKind(StrEnum):
     """浏览器扩展可执行的任务类型。"""
 
     CHECK_LOGIN_STATUS = "check_login_status"
+    GET_LOGIN_QRCODE = "get_login_qrcode"
+    DELETE_COOKIES = "delete_cookies"
     LIST_FEEDS = "list_feeds"
     SEARCH_FEEDS = "search_feeds"
     GET_FEED_DETAIL = "get_feed_detail"

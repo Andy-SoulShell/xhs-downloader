@@ -23,6 +23,7 @@ from .bootstrap import create_api_dependencies
 from .browser import create_browser_router
 from .browser_operations import create_browser_operation_router
 from .extension import create_extension_router
+from .login import create_login_router
 from .posts import create_post_router
 from .publication import create_publication_router
 from .settings import (
@@ -121,6 +122,13 @@ def create_api(
     api.include_router(
         create_browser_operation_router(
             dependencies.browser.tasks,
+            settings_access_policy,
+        )
+    )
+    api.include_router(
+        create_login_router(
+            dependencies.browser.tasks,
+            dependencies.settings,
             settings_access_policy,
         )
     )

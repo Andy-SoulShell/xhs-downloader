@@ -167,3 +167,35 @@ class BrowserTaskService:
             raise BrowserTaskError("浏览器任务状态已经变化，请刷新后重试")
         await self._repository.clear_lease(task_id)
         return queued
+
+    async def consume_login_qrcode(self, task_id: str) -> None:
+        """从已交付任务中移除短期二维码图像。
+
+        Args:
+            task_id: 二维码任务标识。
+        """
+        task = await self.require(task_id)
+        if (
+            task.kind is not BrowserTaskKind.GET_LOGIN_QRCODE
+            or task.status is not BrowserTaskStatus.SUCCEEDED
+            or not task.result
+            or task.result.get("consumed") is True
+            or not task.result.get("image_data_url")
+        ):
+            return
+        result = {
+            **task.result,
+            "image_data_url": None,
+            "consumed": True,
+        }
+        consumed = task.model_copy(
+            update={
+                "result": result,
+                "message": "登录二维码已交付，任务记录中的图像已清除",
+                "updated_at": datetime.now(UTC),
+            }
+        )
+        await self._repository.save_if_status(
+            consumed,
+            BrowserTaskStatus.SUCCEEDED,
+        )

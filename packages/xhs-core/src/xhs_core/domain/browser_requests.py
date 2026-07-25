@@ -11,6 +11,7 @@ from pydantic import (
     model_validator,
 )
 
+from .browser_sessions import BrowserCookieDeletionResult, LoginQrCodeResult
 from .browser_tasks import BrowserTaskKind
 from .errors import BrowserTaskError
 from .feeds import (
@@ -25,6 +26,14 @@ class EmptyBrowserPayload(BaseModel):
     """不需要参数的浏览器任务输入。"""
 
     model_config = ConfigDict(extra="forbid")
+
+
+class DeleteCookiesPayload(BaseModel):
+    """清理浏览器 Cookie 的显式确认输入。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirmed: Literal[True]
 
 
 class SearchFilters(BaseModel):
@@ -125,6 +134,8 @@ class CommentResult(BaseModel):
 
 _PAYLOAD_MODELS: dict[BrowserTaskKind, type[BaseModel]] = {
     BrowserTaskKind.CHECK_LOGIN_STATUS: EmptyBrowserPayload,
+    BrowserTaskKind.GET_LOGIN_QRCODE: EmptyBrowserPayload,
+    BrowserTaskKind.DELETE_COOKIES: DeleteCookiesPayload,
     BrowserTaskKind.LIST_FEEDS: EmptyBrowserPayload,
     BrowserTaskKind.SEARCH_FEEDS: SearchFeedsPayload,
     BrowserTaskKind.GET_FEED_DETAIL: FeedDetailPayload,
@@ -138,6 +149,8 @@ _PAYLOAD_MODELS: dict[BrowserTaskKind, type[BaseModel]] = {
 
 _RESULT_MODELS: dict[BrowserTaskKind, type[BaseModel]] = {
     BrowserTaskKind.CHECK_LOGIN_STATUS: BrowserAccount,
+    BrowserTaskKind.GET_LOGIN_QRCODE: LoginQrCodeResult,
+    BrowserTaskKind.DELETE_COOKIES: BrowserCookieDeletionResult,
     BrowserTaskKind.LIST_FEEDS: FeedListResult,
     BrowserTaskKind.SEARCH_FEEDS: FeedListResult,
     BrowserTaskKind.GET_FEED_DETAIL: FeedDetailResult,

@@ -24,6 +24,8 @@ _TERMINAL = {
 }
 _RECOVERABLE = {
     BrowserTaskKind.CHECK_LOGIN_STATUS,
+    BrowserTaskKind.GET_LOGIN_QRCODE,
+    BrowserTaskKind.DELETE_COOKIES,
     BrowserTaskKind.LIST_FEEDS,
     BrowserTaskKind.SEARCH_FEEDS,
     BrowserTaskKind.GET_FEED_DETAIL,
