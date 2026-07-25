@@ -8,6 +8,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  resumePublicationVerification,
   reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
@@ -27,6 +28,7 @@ vi.mock("./publication-api", () => ({
   listPublicationDrafts: vi.fn(),
   listPublicationTasks: vi.fn(),
   removePublicationAsset: vi.fn(),
+  resumePublicationVerification: vi.fn(),
   reviewPublicationTask: vi.fn(),
   retryPublicationTask: vi.fn(),
   submitPublicationTask: vi.fn(),
@@ -132,6 +134,40 @@ describe("发布中心状态管理", () => {
     });
 
     expect(listPublicationTasks).toHaveBeenCalledTimes(3);
+  });
+
+  it("恢复验证后更新任务说明，失败时保留等待中的原任务", async () => {
+    const task = makePublicationTask({
+      status: "awaiting_verification",
+      message: "等待用户完成安全验证",
+    });
+    vi.mocked(listPublicationTasks).mockResolvedValue([task]);
+    vi.mocked(resumePublicationVerification)
+      .mockResolvedValueOnce({
+        task_id: task.task_id,
+        resumed: true,
+        publish_attempted: true,
+        message: "已受理，正在原页面继续",
+      })
+      .mockRejectedValueOnce(new Error("发布任务当前未等待安全验证"));
+    const { result } = renderHook(() => usePublicationCenter());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.resumeVerification(task.task_id);
+    });
+    expect(result.current.tasks).toEqual([
+      { ...task, message: "已受理，正在原页面继续" },
+    ]);
+
+    await expect(
+      act(async () => {
+        await result.current.resumeVerification(task.task_id);
+      }),
+    ).rejects.toThrow("发布任务当前未等待安全验证");
+    expect(result.current.tasks).toEqual([
+      { ...task, message: "已受理，正在原页面继续" },
+    ]);
   });
 
   it("区分读取异常和非标准任务错误", async () => {

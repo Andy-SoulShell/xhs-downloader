@@ -14,6 +14,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  resumePublicationVerification,
   reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
@@ -25,8 +26,10 @@ import type {
   PublicationDraftInput,
   PublicationMode,
   PublicationTask,
+  PublicationVerificationResumeResult,
 } from "./publication";
 
+/** 统一管理发布草稿、任务轮询及需要用户确认的任务操作。 */
 export function usePublicationCenter() {
   const [drafts, setDrafts] = useState<PublicationDraft[]>([]);
   const [tasks, setTasks] = useState<PublicationTask[]>([]);
@@ -71,6 +74,7 @@ export function usePublicationCenter() {
           "claimed",
           "filling",
           "publishing",
+          "awaiting_verification",
         ].includes(task.status),
       ),
     [tasks],
@@ -130,6 +134,21 @@ export function usePublicationCenter() {
     return task;
   }, []);
 
+  const resumeVerification = useCallback(
+    async (taskId: string): Promise<PublicationVerificationResumeResult> => {
+      const result = await resumePublicationVerification(taskId);
+      setTasks((current) =>
+        current.map((task) =>
+          task.task_id === result.task_id
+            ? { ...task, message: result.message }
+            : task,
+        ),
+      );
+      return result;
+    },
+    [],
+  );
+
   const reviewTask = useCallback(async (taskId: string, published: boolean) => {
     const task = await reviewPublicationTask(taskId, published);
     replaceTask(setTasks, task);
@@ -151,6 +170,7 @@ export function usePublicationCenter() {
     loading,
     refreshTasks,
     removeAsset,
+    resumeVerification,
     reviewTask,
     retryTask,
     saveDraft,

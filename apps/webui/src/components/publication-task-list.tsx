@@ -16,15 +16,19 @@ import type {
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
+import { PublicationVerificationResume } from "./publication-verification-resume";
 
+/** 展示发布任务状态，并提供与状态匹配的安全操作入口。 */
 export function PublicationTaskList({
   tasks,
   onCancel,
+  onResumeVerification,
   onReview,
   onRetry,
 }: {
   tasks: PublicationTask[];
   onCancel: (taskId: string) => Promise<void>;
+  onResumeVerification: (taskId: string) => Promise<void>;
   onReview: (taskId: string, published: boolean) => Promise<void>;
   onRetry: (taskId: string) => Promise<void>;
 }) {
@@ -48,6 +52,7 @@ export function PublicationTaskList({
             <TaskRow
               key={task.task_id}
               onCancel={() => void onCancel(task.task_id)}
+              onResumeVerification={() => onResumeVerification(task.task_id)}
               onReview={(published) => void onReview(task.task_id, published)}
               onRetry={() => void onRetry(task.task_id)}
               task={task}
@@ -71,11 +76,13 @@ export function PublicationTaskList({
 function TaskRow({
   task,
   onCancel,
+  onResumeVerification,
   onReview,
   onRetry,
 }: {
   task: PublicationTask;
   onCancel: () => void;
+  onResumeVerification: () => Promise<void>;
   onReview: (published: boolean) => void;
   onRetry: () => void;
 }) {
@@ -98,6 +105,9 @@ function TaskRow({
         <TaskBadge status={task.status} />
       </div>
       <p className="mt-3 text-xs leading-5 text-stone-500">{task.message}</p>
+      {task.status === "awaiting_verification" && (
+        <PublicationVerificationResume onResume={onResumeVerification} />
+      )}
       {task.status === "needs_review" && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] leading-5 text-amber-900">
@@ -196,6 +206,7 @@ function TaskBadge({ status }: { status: PublicationTaskStatus }) {
     claimed: ["已领取", "accent", CalendarClock],
     filling: ["正在填写", "accent", RotateCcw],
     publishing: ["正在发布", "accent", RotateCcw],
+    awaiting_verification: ["等待验证", "warning", ShieldCheck],
     published: ["已发布", "success", CheckCircle2],
     needs_review: ["待确认", "warning", CircleAlert],
     failed: ["失败", "danger", CircleAlert],

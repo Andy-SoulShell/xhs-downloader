@@ -7,6 +7,7 @@ import { PublicationTaskList } from "./publication-task-list";
 describe("发布任务列表", () => {
   it("展示全部状态并提供取消、重试和结果入口", () => {
     const onCancel = vi.fn().mockResolvedValue(undefined);
+    const onResumeVerification = vi.fn().mockResolvedValue(undefined);
     const onReview = vi.fn().mockResolvedValue(undefined);
     const onRetry = vi.fn().mockResolvedValue(undefined);
     const statuses = [
@@ -15,6 +16,7 @@ describe("发布任务列表", () => {
       "claimed",
       "filling",
       "publishing",
+      "awaiting_verification",
       "published",
       "needs_review",
       "failed",
@@ -23,6 +25,7 @@ describe("发布任务列表", () => {
     render(
       <PublicationTaskList
         onCancel={onCancel}
+        onResumeVerification={onResumeVerification}
         onReview={onReview}
         onRetry={onRetry}
         tasks={statuses.map((status) =>
@@ -44,6 +47,7 @@ describe("发布任务列表", () => {
       "已领取",
       "正在填写",
       "正在发布",
+      "等待验证",
       "已发布",
       "待确认",
       "失败",
@@ -77,6 +81,7 @@ describe("发布任务列表", () => {
     render(
       <PublicationTaskList
         onCancel={vi.fn()}
+        onResumeVerification={vi.fn()}
         onReview={vi.fn()}
         onRetry={vi.fn()}
         tasks={[]}

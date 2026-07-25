@@ -5,6 +5,7 @@ import {
   createPublicationDraft,
   listPublicationDrafts,
   listPublicationTasks,
+  resumePublicationVerification,
   retryPublicationTask,
 } from "../lib/publication-api";
 import {
@@ -20,6 +21,7 @@ vi.mock("../lib/publication-api", () => ({
   listPublicationDrafts: vi.fn(),
   listPublicationTasks: vi.fn(),
   removePublicationAsset: vi.fn(),
+  resumePublicationVerification: vi.fn(),
   reviewPublicationTask: vi.fn(),
   retryPublicationTask: vi.fn(),
   submitPublicationTask: vi.fn(),
@@ -90,5 +92,40 @@ describe("发布中心界面", () => {
       await screen.findByText("本地发布服务不可用"),
     ).toBeInTheDocument();
     expect(screen.getByText("还没有发布草稿")).toBeInTheDocument();
+  });
+
+  it("二次确认后恢复等待验证的原任务", async () => {
+    const draft = makePublicationDraft();
+    const task = makePublicationTask({
+      status: "awaiting_verification",
+      message: "请在受管浏览器完成验证",
+    });
+    vi.mocked(listPublicationDrafts).mockResolvedValue([draft]);
+    vi.mocked(listPublicationTasks).mockResolvedValue([task]);
+    vi.mocked(resumePublicationVerification).mockResolvedValue({
+      task_id: task.task_id,
+      resumed: true,
+      publish_attempted: false,
+      message: "已确认安全验证完成，受管发布将在原页面继续",
+    });
+    const onNotify = vi.fn();
+    render(<PublicationBoard onNotify={onNotify} />);
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "我已完成验证，继续原任务",
+      }),
+    );
+    expect(resumePublicationVerification).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "确认验证完成并继续" }),
+    );
+
+    await waitFor(() =>
+      expect(resumePublicationVerification).toHaveBeenCalledWith(task.task_id),
+    );
+    expect(onNotify).toHaveBeenCalledWith(
+      "已确认验证完成，原发布任务正在继续",
+    );
   });
 });

@@ -7,6 +7,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  resumePublicationVerification,
   reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
@@ -117,6 +118,45 @@ describe("发布中心 API 客户端", () => {
     });
     expect(JSON.parse(fetchMock.mock.calls[4][1].body)).toEqual({
       decision: "published",
+    });
+  });
+
+  it("只在显式确认后恢复受管浏览器中的原验证任务", async () => {
+    const result = {
+      task_id: "synthetic-publication-task",
+      resumed: true as const,
+      publish_attempted: true,
+      message: "已确认安全验证完成，受管发布将在原页面继续",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(result), { status: 202 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ detail: "发布任务当前未等待安全验证" }),
+          { status: 409 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      resumePublicationVerification(result.task_id),
+    ).resolves.toEqual(result);
+    await expect(
+      resumePublicationVerification(result.task_id),
+    ).rejects.toThrow("发布任务当前未等待安全验证");
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "/api/publication/tasks/synthetic-publication-task/verification/resume",
+    );
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      confirmed: true,
     });
   });
 

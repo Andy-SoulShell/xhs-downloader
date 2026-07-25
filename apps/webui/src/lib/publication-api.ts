@@ -4,6 +4,7 @@ import type {
   PublicationDraftInput,
   PublicationMode,
   PublicationTask,
+  PublicationVerificationResumeResult,
 } from "./publication";
 
 export async function listPublicationDrafts(): Promise<PublicationDraft[]> {
@@ -97,6 +98,21 @@ export async function retryPublicationTask(
     { method: "POST" },
   );
   return parseResponse<PublicationTask>(response);
+}
+
+/** 显式确认验证已完成，并恢复同一受管浏览器页面中的发布任务。 */
+export async function resumePublicationVerification(
+  taskId: string,
+): Promise<PublicationVerificationResumeResult> {
+  const response = await fetch(
+    `${API_BASE}/publication/tasks/${taskId}/verification/resume`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmed: true }),
+    },
+  );
+  return parseResponse<PublicationVerificationResumeResult>(response);
 }
 
 /** 提交人工核对结论，使不确定发布任务进入明确终态。 */

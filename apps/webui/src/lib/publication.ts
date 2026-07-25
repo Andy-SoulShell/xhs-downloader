@@ -2,12 +2,14 @@
 export type PublicationMode = "manual" | "scheduled" | "platform_scheduled";
 /** 小红书作品的目标可见范围。 */
 export type PublicationVisibility = "public" | "private" | "mutual";
+/** 发布任务从排期、执行、人机验证到终态的完整状态。 */
 export type PublicationTaskStatus =
   | "scheduled"
   | "ready"
   | "claimed"
   | "filling"
   | "publishing"
+  | "awaiting_verification"
   | "published"
   | "needs_review"
   | "failed"
@@ -49,6 +51,14 @@ export interface PublicationTask {
   result_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** 用户确认受管浏览器验证完成后，后端受理原页面恢复的结果。 */
+export interface PublicationVerificationResumeResult {
+  task_id: string;
+  resumed: true;
+  publish_attempted: boolean;
+  message: string;
 }
 
 export interface PublicationDraftInput {

@@ -9,6 +9,7 @@ import { PageHeading } from "./page-heading";
 import { PublicationEditor } from "./publication-editor";
 import { PublicationTaskList } from "./publication-task-list";
 
+/** 组合发布草稿编辑、任务状态和需要用户确认的安全操作。 */
 export function PublicationBoard({
   onNotify,
 }: {
@@ -47,6 +48,15 @@ export function PublicationBoard({
       onNotify(message);
     } catch (error) {
       onNotify(error instanceof Error ? error.message : "任务操作失败");
+    }
+  };
+  const resumeVerification = async (taskId: string) => {
+    try {
+      await center.resumeVerification(taskId);
+      onNotify("已确认验证完成，原发布任务正在继续");
+    } catch (error) {
+      onNotify(error instanceof Error ? error.message : "验证恢复请求失败");
+      throw error;
     }
   };
 
@@ -149,6 +159,7 @@ export function PublicationBoard({
             onCancel={(taskId) =>
               taskAction(() => center.cancelTask(taskId), "发布任务已取消")
             }
+            onResumeVerification={resumeVerification}
             onRetry={(taskId) =>
               taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")
             }
