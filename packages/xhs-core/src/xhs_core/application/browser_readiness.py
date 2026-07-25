@@ -108,6 +108,8 @@ class BrowserReadinessService(BrowserReadinessProbe):
             raise _unavailable("无法读取受管浏览器状态") from error
         if not status.installed:
             raise _not_configured("未检测到可用的 Chromium 浏览器")
+        if not status.owned_by_current_process:
+            raise _unavailable("受管浏览器正由另一个服务实例管理")
         if status.state is not ManagedBrowserState.RUNNING or status.cdp_port is None:
             raise _unavailable("受管浏览器尚未启动")
 

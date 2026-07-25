@@ -136,6 +136,7 @@ async def test_managed_browser_does_not_take_over_external_instance(
     observed = await second.start()
 
     assert observed.state is ManagedBrowserState.RUNNING
+    assert observed.owned_by_current_process is False
     assert "另一个服务实例" in observed.message
     assert second_commands == []
     with pytest.raises(ManagedBrowserError, match="另一个服务实例"):

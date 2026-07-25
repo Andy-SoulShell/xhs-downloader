@@ -34,6 +34,7 @@ class _RunningController:
             state=ManagedBrowserState.RUNNING,
             executable_name="synthetic-chromium",
             cdp_port=_CDP_PORT,
+            owned_by_current_process=True,
             message="合成运行状态",
         )
 

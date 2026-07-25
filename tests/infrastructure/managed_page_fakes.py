@@ -243,6 +243,7 @@ def synthetic_browser_status(
         state=state,
         executable_name="synthetic-chromium",
         cdp_port=cdp_port if state is ManagedBrowserState.RUNNING else None,
+        owned_by_current_process=True,
         message="合成状态",
     )
 

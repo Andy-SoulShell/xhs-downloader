@@ -165,10 +165,12 @@ class PublicationExecutionService:
                 "updated_at": now,
             }
         )
-        if not await self._repository.save_task_if_status(updated, task.status):
+        if not await self._repository.save_task_if_status(
+            updated,
+            task.status,
+            clear_lease=status in _TERMINAL,
+        ):
             raise PublicationError("发布任务状态已经变化，请刷新后重试")
-        if status in _TERMINAL:
-            await self._repository.clear_lease(task_id)
         return updated
 
     async def asset_paths(

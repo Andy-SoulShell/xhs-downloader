@@ -9,6 +9,7 @@ import pytest
 from xhs_adapters.filesystem import FilePublicationAssetStore
 from xhs_adapters.sqlite import SqlitePublicationTaskRepository
 from xhs_core.application import (
+    ManagedBrowserExecutionGate,
     ManagedPublicationWorker,
     PublicationExecutionService,
     PublicationScheduler,
@@ -44,6 +45,7 @@ class _Controller:
             state=ManagedBrowserState.RUNNING,
             executable_name="synthetic-chromium",
             cdp_port=19222,
+            owned_by_current_process=True,
         )
 
 
@@ -197,6 +199,7 @@ async def test_worker_claims_only_managed_task_and_persists_success(
         _Controller(),
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
         heartbeat_interval=0.01,
     )
@@ -254,6 +257,7 @@ async def test_worker_maps_exceptions_by_persisted_publish_attempt(
         _Controller(),
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
         heartbeat_interval=0.01,
     )

@@ -16,6 +16,7 @@ from xhs_core.domain import (
 from xhs_core.domain.browser_ports import BrowserTaskExecutor, ManagedBrowserController
 
 from .browser_execution import BrowserExecutionService
+from .managed_browser_gate import ManagedBrowserExecutionGate
 
 
 class ManagedBrowserWorker:
@@ -29,6 +30,7 @@ class ManagedBrowserWorker:
         controller: 受管浏览器生命周期控制器。
         execution: 浏览器任务租约与状态服务。
         executor: 已连接受管页面的任务执行器。
+        execution_gate: 与其他受管 Worker 共享的独占执行闸门。
         poll_interval: 空闲或浏览器未运行时的轮询间隔秒数。
         worker_id: 可选稳定实例标识，默认生成进程内唯一标识。
 
@@ -41,6 +43,7 @@ class ManagedBrowserWorker:
         controller: ManagedBrowserController,
         execution: BrowserExecutionService,
         executor: BrowserTaskExecutor,
+        execution_gate: ManagedBrowserExecutionGate,
         poll_interval: float = 0.25,
         worker_id: str | None = None,
     ) -> None:
@@ -49,6 +52,7 @@ class ManagedBrowserWorker:
         self._controller = controller
         self._execution = execution
         self._executor = executor
+        self._execution_gate = execution_gate
         self._poll_interval = poll_interval
         self._worker_id = worker_id or f"managed-{uuid4().hex}"
         self._lifecycle_lock = asyncio.Lock()
@@ -87,18 +91,8 @@ class ManagedBrowserWorker:
     async def _run(self) -> None:
         while True:
             try:
-                status = await self._controller.status()
-                if status.state is not ManagedBrowserState.RUNNING:
+                if not await self._run_once():
                     await asyncio.sleep(self._poll_interval)
-                    continue
-                claim = await self._execution.claim(
-                    self._worker_id,
-                    BrowserDriver.MANAGED,
-                )
-                if claim is None:
-                    await asyncio.sleep(self._poll_interval)
-                    continue
-                await self._execute(claim)
             except asyncio.CancelledError:
                 raise
             except Exception as error:
@@ -107,6 +101,23 @@ class ManagedBrowserWorker:
                     type(error).__name__,
                 )
                 await asyncio.sleep(self._poll_interval)
+
+    async def _run_once(self) -> bool:
+        async with self._execution_gate.hold():
+            status = await self._controller.status()
+            if (
+                status.state is not ManagedBrowserState.RUNNING
+                or not status.owned_by_current_process
+            ):
+                return False
+            claim = await self._execution.claim(
+                self._worker_id,
+                BrowserDriver.MANAGED,
+            )
+            if claim is None:
+                return False
+            await self._execute(claim)
+            return True
 
     async def _execute(self, claim: BrowserTaskClaim) -> None:
         running: BrowserTask | None = None

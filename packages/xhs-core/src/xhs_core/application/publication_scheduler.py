@@ -106,8 +106,12 @@ class PublicationScheduler:
                 "updated_at": datetime.now(UTC),
             }
         )
-        if await self._repository.save_task_if_status(ready, task.status):
-            await self._repository.clear_lease(task.task_id)
+        await self._repository.save_task_if_status(
+            ready,
+            task.status,
+            task.updated_at,
+            clear_lease=True,
+        )
 
     async def _save_needs_review(
         self,
@@ -124,5 +128,9 @@ class PublicationScheduler:
                 "updated_at": datetime.now(UTC),
             }
         )
-        if await self._repository.save_task_if_status(reviewed, task.status):
-            await self._repository.clear_lease(task.task_id)
+        await self._repository.save_task_if_status(
+            reviewed,
+            task.status,
+            task.updated_at,
+            clear_lease=True,
+        )

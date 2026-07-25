@@ -13,6 +13,7 @@ from .capability_router import CapabilityRouter
 from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
+from .managed_browser_gate import ManagedBrowserExecutionGate
 from .managed_browser_worker import ManagedBrowserWorker
 from .managed_publication_worker import ManagedPublicationWorker
 from .publication_auth import ExtensionCredentialService
@@ -35,6 +36,7 @@ __all__ = [
     "DownloadService",
     "DownloadTaskCoordinator",
     "ExtensionCredentialService",
+    "ManagedBrowserExecutionGate",
     "ManagedBrowserWorker",
     "ManagedPublicationWorker",
     "PublicationDraftService",

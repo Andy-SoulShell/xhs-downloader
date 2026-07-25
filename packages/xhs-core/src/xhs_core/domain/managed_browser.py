@@ -26,6 +26,7 @@ class ManagedBrowserStatus(BaseModel):
         cdp_host: 固定的本机回环监听地址。
         cdp_port: Chromium 实际分配的调试端口。
         profile_persistent: 登录资料是否保存在专用持久化目录。
+        owned_by_current_process: 当前服务是否持有该浏览器进程。
         message: 面向用户的自然语言状态说明。
     """
 
@@ -37,4 +38,5 @@ class ManagedBrowserStatus(BaseModel):
     cdp_host: Literal["127.0.0.1"] = "127.0.0.1"
     cdp_port: int | None = Field(default=None, ge=1, le=65535)
     profile_persistent: bool = True
+    owned_by_current_process: bool = Field(default=False, exclude=True)
     message: str = Field(default="", max_length=500)

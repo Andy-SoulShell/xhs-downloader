@@ -7,6 +7,7 @@ from xhs_core.application import (
     BrowserTaskService,
     DownloadService,
     ExtensionCredentialService,
+    ManagedBrowserExecutionGate,
     ManagedBrowserWorker,
     PublicationDraftService,
     PublicationExecutionService,
@@ -36,6 +37,7 @@ class BrowserRuntime:
 
     tasks: BrowserTaskService
     execution: BrowserExecutionService
+    execution_gate: ManagedBrowserExecutionGate
     managed: ManagedBrowserController
     worker: ManagedBrowserWorker
 
@@ -90,14 +92,17 @@ def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
         settings.browser_task_lease_seconds,
     )
     managed = ChromiumController(settings)
+    execution_gate = ManagedBrowserExecutionGate()
     return BrowserRuntime(
         tasks=tasks,
         execution=execution,
+        execution_gate=execution_gate,
         managed=managed,
         worker=ManagedBrowserWorker(
             managed,
             execution,
             PlaywrightManagedTaskExecutor(managed),
+            execution_gate,
         ),
     )
 

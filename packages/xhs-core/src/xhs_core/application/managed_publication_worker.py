@@ -17,6 +17,7 @@ from xhs_core.domain import (
 )
 from xhs_core.domain.browser_ports import ManagedBrowserController
 
+from .managed_browser_gate import ManagedBrowserExecutionGate
 from .publication_execution import PublicationExecutionService
 
 
@@ -31,6 +32,7 @@ class ManagedPublicationWorker:
         controller: 共享独立 Profile 的受管 Chromium 控制器。
         execution: 发布租约、素材和状态机用例。
         executor: 保持同一页面完成发布与验证恢复的执行器。
+        execution_gate: 与通用受管 Worker 共享的独占执行闸门。
         poll_interval: 浏览器停止或队列为空时的轮询秒数。
         heartbeat_interval: 发布执行期间的续租秒数。
         worker_id: 可选稳定执行器标识。
@@ -44,6 +46,7 @@ class ManagedPublicationWorker:
         controller: ManagedBrowserController,
         execution: PublicationExecutionService,
         executor: ManagedPublicationExecutor,
+        execution_gate: ManagedBrowserExecutionGate,
         poll_interval: float = 0.5,
         heartbeat_interval: float = 15,
         worker_id: str | None = None,
@@ -55,6 +58,7 @@ class ManagedPublicationWorker:
         self._controller = controller
         self._execution = execution
         self._executor = executor
+        self._execution_gate = execution_gate
         self._poll_interval = poll_interval
         self._heartbeat_interval = heartbeat_interval
         self._worker_id = worker_id or f"managed-publication-{uuid4().hex}"
@@ -107,18 +111,8 @@ class ManagedPublicationWorker:
     async def _run(self) -> None:
         while True:
             try:
-                status = await self._controller.status()
-                if status.state is not ManagedBrowserState.RUNNING:
+                if not await self._run_once():
                     await asyncio.sleep(self._poll_interval)
-                    continue
-                claim = await self._execution.claim(
-                    self._worker_id,
-                    target_driver=BrowserDriver.MANAGED,
-                )
-                if claim is None:
-                    await asyncio.sleep(self._poll_interval)
-                    continue
-                await self._execute(claim)
             except asyncio.CancelledError:
                 raise
             except Exception as error:
@@ -127,6 +121,23 @@ class ManagedPublicationWorker:
                     type(error).__name__,
                 )
                 await asyncio.sleep(self._poll_interval)
+
+    async def _run_once(self) -> bool:
+        async with self._execution_gate.hold():
+            status = await self._controller.status()
+            if (
+                status.state is not ManagedBrowserState.RUNNING
+                or not status.owned_by_current_process
+            ):
+                return False
+            claim = await self._execution.claim(
+                self._worker_id,
+                target_driver=BrowserDriver.MANAGED,
+            )
+            if claim is None:
+                return False
+            await self._execute(claim)
+            return True
 
     async def _execute(self, claim: PublicationClaim) -> None:
         current: PublicationTask | None = None

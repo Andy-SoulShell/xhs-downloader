@@ -84,6 +84,7 @@ class ChromiumController(ManagedBrowserController):
                 self._state,
                 self._port,
                 self._message,
+                owned_by_current_process=True,
             )
         external_port = await self._external_running_port()
         if external_port:
@@ -93,6 +94,7 @@ class ChromiumController(ManagedBrowserController):
                 ManagedBrowserState.RUNNING,
                 external_port,
                 "受管浏览器正由另一个服务实例管理",
+                owned_by_current_process=False,
             )
         return self._snapshot(
             True,
@@ -148,6 +150,7 @@ class ChromiumController(ManagedBrowserController):
                     self._state,
                     self._port,
                     self._message,
+                    owned_by_current_process=True,
                 )
             except Exception as error:
                 await self._cleanup_failed_start()
@@ -265,12 +268,15 @@ class ChromiumController(ManagedBrowserController):
         state: ManagedBrowserState,
         port: int | None,
         message: str,
+        *,
+        owned_by_current_process: bool = False,
     ) -> ManagedBrowserStatus:
         return ManagedBrowserStatus(
             installed=installed,
             state=state,
             executable_name=executable_name,
             cdp_port=port,
+            owned_by_current_process=owned_by_current_process,
             message=message,
         )
 

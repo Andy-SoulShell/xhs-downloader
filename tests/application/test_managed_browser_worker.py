@@ -7,6 +7,7 @@ from xhs_adapters.sqlite import SqliteBrowserTaskRepository
 from xhs_core.application import (
     BrowserExecutionService,
     BrowserTaskService,
+    ManagedBrowserExecutionGate,
     ManagedBrowserWorker,
 )
 from xhs_core.domain import (
@@ -34,6 +35,7 @@ class _Controller:
             state=self.state,
             executable_name="Synthetic Chromium",
             cdp_port=9222 if self.state is ManagedBrowserState.RUNNING else None,
+            owned_by_current_process=True,
         )
 
 
@@ -112,6 +114,7 @@ async def test_worker_only_claims_managed_tasks_while_browser_runs(tmp_path) -> 
         controller,
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
     )
 
@@ -161,6 +164,7 @@ async def test_worker_maps_executor_exceptions_by_effect_safety(tmp_path) -> Non
         controller,
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
     )
 
@@ -212,6 +216,7 @@ async def test_worker_preserves_executor_confirmed_failure(tmp_path) -> None:
         controller,
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
     )
 
@@ -253,6 +258,7 @@ async def test_worker_start_and_close_are_idempotent_and_cancel_execution(
         controller,
         execution,
         executor,
+        ManagedBrowserExecutionGate(),
         poll_interval=0.01,
     )
 
@@ -269,4 +275,10 @@ async def test_worker_start_and_close_are_idempotent_and_cancel_execution(
     with pytest.raises(RuntimeError, match="已关闭"):
         await worker.start()
     with pytest.raises(ValueError, match="轮询间隔"):
-        ManagedBrowserWorker(controller, execution, executor, poll_interval=0)
+        ManagedBrowserWorker(
+            controller,
+            execution,
+            executor,
+            ManagedBrowserExecutionGate(),
+            poll_interval=0,
+        )

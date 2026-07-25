@@ -57,12 +57,14 @@ def _managed_status(
     *,
     installed: bool = True,
     state: ManagedBrowserState = ManagedBrowserState.RUNNING,
+    owned: bool = True,
 ) -> ManagedBrowserStatus:
     return ManagedBrowserStatus(
         installed=installed,
         state=state,
         executable_name="synthetic-chromium" if installed else None,
         cdp_port=19222 if state is ManagedBrowserState.RUNNING else None,
+        owned_by_current_process=owned,
         message="合成状态",
     )
 
@@ -131,6 +133,10 @@ async def test_recent_extension_presence_is_available(seen_at: datetime) -> None
         ),
         (
             _Controller(_managed_status(state=ManagedBrowserState.STOPPED)),
+            ProviderFailureCode.UNAVAILABLE,
+        ),
+        (
+            _Controller(_managed_status(owned=False)),
             ProviderFailureCode.UNAVAILABLE,
         ),
         (

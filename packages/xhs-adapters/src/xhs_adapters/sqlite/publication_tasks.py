@@ -11,6 +11,7 @@ from .publication_task_storage import (
     initialize_publication_task_storage,
     parse_publication_task,
     publication_claim_query,
+    save_publication_task_if_snapshot,
 )
 
 _TERMINAL = {
@@ -88,34 +89,28 @@ class SqlitePublicationTaskRepository:
         self,
         task: PublicationTask,
         expected: PublicationTaskStatus,
+        expected_updated_at: datetime | None = None,
+        clear_lease: bool = False,
     ) -> bool:
-        """按预期状态原子更新任务。
+        """按预期状态和可选版本时间原子更新任务。
 
         Args:
             task: 新任务快照。
             expected: 数据库中必须匹配的旧状态。
+            expected_updated_at: 可选的旧快照更新时间。
+            clear_lease: 是否在同一原子更新中清除旧租约。
 
         Returns:
-            成功更新一条记录时返回真。
+            状态及指定版本匹配并成功更新一条记录时返回真。
         """
         await self._initialize()
-        async with connect(self._database) as database:
-            cursor = await database.execute(
-                """
-                UPDATE publication_task SET
-                    status = ?, payload = ?, updated_at = ?
-                WHERE task_id = ? AND status = ?
-                """,
-                (
-                    task.status.value,
-                    task.model_dump_json(),
-                    task.updated_at.isoformat(),
-                    task.task_id,
-                    expected.value,
-                ),
-            )
-            await database.commit()
-        return cursor.rowcount == 1
+        return await save_publication_task_if_snapshot(
+            self._database,
+            task,
+            expected,
+            expected_updated_at,
+            clear_lease,
+        )
 
     async def list_tasks(self, limit: int) -> list[PublicationTask]:
         """列出最近发布任务。

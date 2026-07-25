@@ -149,9 +149,9 @@ class PublicationTaskService:
             if not await self._repository.save_task_if_status(
                 updated,
                 task.status,
+                clear_lease=True,
             ):
                 raise PublicationError("发布任务状态已经变化，请刷新后重试")
-            await self._repository.clear_lease(task_id)
             return updated
 
     async def review(
@@ -199,9 +199,9 @@ class PublicationTaskService:
             if not await self._repository.save_task_if_status(
                 updated,
                 PublicationTaskStatus.NEEDS_REVIEW,
+                clear_lease=True,
             ):
                 raise PublicationError("发布任务状态已经变化，请刷新后重试")
-            await self._repository.clear_lease(task_id)
             return updated
 
     async def cancel(self, task_id: str) -> PublicationTask:

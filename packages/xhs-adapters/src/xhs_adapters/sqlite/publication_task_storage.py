@@ -1,5 +1,6 @@
 """发布任务 SQLite 存储的底层辅助函数。"""
 
+from datetime import datetime
 from pathlib import Path
 
 from aiosqlite import connect
@@ -87,6 +88,53 @@ def parse_publication_task(payload: str) -> PublicationTask | None:
     except ValidationError as error:
         logger.warning("忽略无效发布任务：{}", error)
         return None
+
+
+async def save_publication_task_if_snapshot(
+    database_path: Path,
+    task: PublicationTask,
+    expected: PublicationTaskStatus,
+    expected_updated_at: datetime | None,
+    clear_lease: bool,
+) -> bool:
+    """按状态和可选更新时间比较交换任务快照。
+
+    Args:
+        database_path: 状态数据库路径。
+        task: 待保存的新任务快照。
+        expected: 数据库必须匹配的旧状态。
+        expected_updated_at: 可选的旧快照更新时间。
+        clear_lease: 是否随状态更新原子清除旧租约。
+
+    Returns:
+        完整匹配预期快照并更新一条记录时返回真。
+    """
+    version_clause = " AND updated_at = ?" if expected_updated_at is not None else ""
+    lease_clause = ", lease_hash = NULL" if clear_lease else ""
+    parameters = (
+        task.status.value,
+        task.model_dump_json(),
+        task.updated_at.isoformat(),
+        task.task_id,
+        expected.value,
+        *(
+            (expected_updated_at.isoformat(),)
+            if expected_updated_at is not None
+            else ()
+        ),
+    )
+    async with connect(database_path) as database:
+        cursor = await database.execute(
+            f"""
+            UPDATE publication_task SET
+                status = ?, payload = ?, updated_at = ? {lease_clause}
+            WHERE task_id = ? AND status = ?
+            {version_clause}
+            """,
+            parameters,
+        )
+        await database.commit()
+    return cursor.rowcount == 1
 
 
 def publication_claim_query(

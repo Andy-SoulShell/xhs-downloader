@@ -83,15 +83,19 @@ class PublicationTaskRepository(Protocol):
         self,
         task: PublicationTask,
         expected: PublicationTaskStatus,
+        expected_updated_at: datetime | None = None,
+        clear_lease: bool = False,
     ) -> bool:
-        """按预期状态原子更新任务。
+        """按预期状态和可选版本时间原子更新任务。
 
         Args:
             task: 新任务快照。
             expected: 数据库中必须匹配的旧状态。
+            expected_updated_at: 可选的旧快照更新时间。
+            clear_lease: 是否在同一原子更新中清除旧租约。
 
         Returns:
-            成功更新一条记录时返回真。
+            状态及指定版本匹配并成功更新一条记录时返回真。
         """
         ...
 

@@ -59,6 +59,7 @@ class FakeManagedBrowser:
             state=self.state,
             executable_name="synthetic-chromium",
             cdp_port=port,
+            owned_by_current_process=self.state is ManagedBrowserState.RUNNING,
             message="合成受管浏览器状态",
         )
 
