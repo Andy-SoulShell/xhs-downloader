@@ -1,9 +1,11 @@
 """桌面路径与同源 WebUI 测试。"""
 
+import json
 from pathlib import Path
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from xhs_adapters.config import AppSettings
 from xhs_api.desktop_paths import prepare_desktop_paths
 from xhs_api.webui import mount_webui
 
@@ -47,8 +49,11 @@ def test_desktop_paths_survive_application_replacement(tmp_path: Path) -> None:
 
     assert paths == second
     assert paths.config_file.read_text(encoding="utf-8") == (
-        f'XHS_WORK_PATH="{data}"\nXHS_SERVER_HOST="127.0.0.1"\nXHS_SERVER_PORT=5556\n'
+        f"XHS_WORK_PATH={json.dumps(str(data))}\n"
+        'XHS_SERVER_HOST="127.0.0.1"\n'
+        "XHS_SERVER_PORT=5556\n"
     )
+    assert AppSettings.from_env(paths.config_file).output_root == data
     assert paths.data_dir == data
 
 

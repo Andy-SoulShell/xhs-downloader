@@ -27,7 +27,7 @@ def show_startup_error(message: str) -> None:
             environment,
         )
         return
-    if os.name == "nt":
+    if sys.platform == "win32":
         import ctypes
 
         ctypes.windll.user32.MessageBoxW(

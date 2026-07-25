@@ -67,7 +67,8 @@ def _is_page_navigation(path: str, scope: Scope) -> bool:
 def _with_cache_policy(response, path: str):
     if response.status_code >= 400:
         return response
-    if PurePosixPath(path).parts[:1] == ("assets",):
+    normalized = PurePosixPath(path.replace("\\", "/").lstrip("/"))
+    if normalized.parts[:1] == ("assets",):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     else:
         response.headers["Cache-Control"] = "no-cache"
