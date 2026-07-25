@@ -6,6 +6,9 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
+        "src/account-challenge-runner.ts",
+        "src/account-challenge-service.ts",
+        "src/account-proof.ts",
         "src/parser.ts",
         "src/mode.ts",
         "src/service.ts",

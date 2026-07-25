@@ -33,6 +33,7 @@ describe("受管浏览器页面适配器", () => {
     );
     expect(installed?.version).toBe(MANAGED_PAGE_ADAPTER_VERSION);
     expect(installManagedPageAdapter(scope)).toBe(installed);
+    expect(typeof installed?.proveAccount).toBe("function");
     expect(typeof installed?.execute).toBe("function");
     expect(typeof installed?.diagnostics).toBe("function");
   });

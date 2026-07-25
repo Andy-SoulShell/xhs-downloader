@@ -9,4 +9,6 @@ def test_managed_page_adapter_asset_is_packaged_and_loadable() -> None:
 
     assert source.strip()
     assert "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__" in source
+    assert 'MANAGED_PAGE_ADAPTER_VERSION = "3"' in source
+    assert "proveAccount" in source
     assert "由 apps/extension/build.mjs 生成" in source

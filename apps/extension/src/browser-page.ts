@@ -3,6 +3,11 @@ import {
   isBrowserPageTaskRequest,
   type BrowserPageTaskResponse,
 } from "./browser-page-runner";
+import {
+  isBrowserAccountChallengeRequest,
+  proveBrowserAccount,
+  type BrowserAccountProof,
+} from "./account-proof";
 import { UncertainBrowserActionError } from "./browser-action-errors";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
 import { requestBrowserInteraction } from "./browser-interaction-input";
@@ -11,8 +16,16 @@ chrome.runtime.onMessage.addListener(
   (
     message: { type?: string },
     _sender,
-    sendResponse: (response: BrowserPageTaskResponse) => void,
+    sendResponse: (
+      response: BrowserPageTaskResponse | BrowserAccountProof,
+    ) => void,
   ) => {
+    if (isBrowserAccountChallengeRequest(message)) {
+      void proveBrowserAccount(document, message.challenge)
+        .then(sendResponse)
+        .catch(() => sendResponse({ status: "unverified" }));
+      return true;
+    }
     if (!isBrowserPageTaskRequest(message)) return;
     void executeBrowserPageTask(message.task, document, location.href, {
       activateInteraction: requestBrowserInteraction,

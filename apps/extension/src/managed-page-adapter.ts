@@ -3,6 +3,11 @@ import type {
   JsonValue,
 } from "@xhs-downloader/contracts";
 
+import {
+  proveBrowserAccount,
+  type BrowserAccountChallenge,
+  type BrowserAccountProof,
+} from "./account-proof";
 import { UncertainBrowserActionError } from "./browser-action-errors";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
 import {
@@ -21,7 +26,7 @@ export const MANAGED_PAGE_ADAPTER_GLOBAL =
   "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
 
 /** 受管浏览器页面适配器协议版本。 */
-export const MANAGED_PAGE_ADAPTER_VERSION = "2";
+export const MANAGED_PAGE_ADAPTER_VERSION = "3";
 
 /** 受管浏览器完成互动所需的同页可信输入。 */
 export interface ManagedInteractionAction {
@@ -41,6 +46,7 @@ export interface ManagedInteractionPreparationResponse
 /** 受管浏览器通过 CDP 调用的页面能力入口。 */
 export interface ManagedPageAdapter {
   version: string;
+  proveAccount(challenge: BrowserAccountChallenge): Promise<BrowserAccountProof>;
   execute(task: BrowserTask): Promise<BrowserPageTaskResponse>;
   prepareInteraction(
     task: BrowserTask,
@@ -63,6 +69,7 @@ export function installManagedPageAdapter(
   installBrowserStateBridge(scope);
   const adapter: ManagedPageAdapter = {
     version: MANAGED_PAGE_ADAPTER_VERSION,
+    proveAccount: (challenge) => proveBrowserAccount(scope.document, challenge),
     execute: (task) => executeSafely(task, scope),
     prepareInteraction: (task) => prepareInteractionSafely(task, scope),
     verifyInteraction: (task) => verifyInteractionSafely(task, scope),

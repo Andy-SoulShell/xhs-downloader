@@ -2,6 +2,7 @@ import {
   buildDownloadFilename,
   resolveDownloadMode,
 } from "./mode";
+import { installAccountChallengeAutomation } from "./account-challenge-runner";
 import { installBrowserTaskAutomation } from "./browser-task-runner";
 import {
   handleBrowserInteractionRequest,
@@ -103,6 +104,7 @@ async function handleRequest(
 
 installPublicationAutomation();
 installBrowserTaskAutomation();
+installAccountChallengeAutomation();
 
 async function getState(): Promise<ExtensionResponse> {
   const settings = await loadSettings();

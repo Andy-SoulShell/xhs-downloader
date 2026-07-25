@@ -1,6 +1,223 @@
 /* 由 apps/extension/build.mjs 生成，请勿手工修改。 */
 "use strict";
 (() => {
+  // src/browser-state-bridge.ts
+  var REQUEST_EVENT = "xhd-browser-state-request";
+  var RESPONSE_EVENT = "xhd-browser-state-response";
+  function readLiveInitialState(page, timeoutMilliseconds = 1e3) {
+    const scope = page.defaultView;
+    if (!scope) return Promise.reject(new Error("\u5F53\u524D\u9875\u9762\u6CA1\u6709\u53EF\u7528\u7A97\u53E3"));
+    const requestId = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      const timeout = scope.setTimeout(() => {
+        scope.removeEventListener(RESPONSE_EVENT, onResponse);
+        reject(new Error("\u8BFB\u53D6\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u8D85\u65F6"));
+      }, timeoutMilliseconds);
+      const onResponse = (event) => {
+        const response = parseResponse(event.detail);
+        if (!response || response.requestId !== requestId) return;
+        scope.clearTimeout(timeout);
+        scope.removeEventListener(RESPONSE_EVENT, onResponse);
+        if (!response.ok || !response.data) {
+          reject(new Error(response.message || "\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u4E0D\u53EF\u7528"));
+          return;
+        }
+        try {
+          resolve(JSON.parse(response.data));
+        } catch {
+          reject(new Error("\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u683C\u5F0F\u65E0\u6548"));
+        }
+      };
+      scope.addEventListener(RESPONSE_EVENT, onResponse);
+      scope.dispatchEvent(
+        new CustomEvent(REQUEST_EVENT, {
+          detail: JSON.stringify({ requestId })
+        })
+      );
+    });
+  }
+  function browserStateEvents() {
+    return { request: REQUEST_EVENT, response: RESPONSE_EVENT };
+  }
+  function parseResponse(value) {
+    if (typeof value !== "string") return null;
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed.requestId === "string" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // src/parser.ts
+  function parseInitialStateValue(script) {
+    const separator = script.indexOf("=");
+    if (separator < 0) throw new Error("\u5E16\u5B50\u521D\u59CB\u72B6\u6001\u683C\u5F0F\u65E0\u6548");
+    const raw = script.slice(separator + 1).trim().replace(/;$/, "");
+    let state;
+    try {
+      state = JSON.parse(normalizeJavaScriptValue(raw));
+    } catch {
+      throw new Error("\u5E16\u5B50\u521D\u59CB\u72B6\u6001\u65E0\u6CD5\u89E3\u6790");
+    }
+    return state;
+  }
+  function normalizeJavaScriptValue(value) {
+    let result = "";
+    let quote = "";
+    let escaped = false;
+    for (let index = 0; index < value.length; index += 1) {
+      const character = value[index];
+      if (quote) {
+        result += character;
+        if (escaped) escaped = false;
+        else if (character === "\\") escaped = true;
+        else if (character === quote) quote = "";
+        continue;
+      }
+      if (character === '"' || character === "'") {
+        quote = character;
+        result += character;
+        continue;
+      }
+      const token = value.slice(index, index + 9);
+      if (token === "undefined" && isBoundary(value[index - 1]) && isBoundary(value[index + 9])) {
+        result += "null";
+        index += 8;
+        continue;
+      }
+      result += character;
+    }
+    return result;
+  }
+  function isBoundary(value) {
+    return !value || !/[A-Za-z0-9_$]/.test(value);
+  }
+
+  // src/page-data.ts
+  var INITIAL_STATE_PREFIX = "window.__INITIAL_STATE__";
+  function latestInitialState(page) {
+    const scripts = [...page.scripts].map((script) => script.textContent?.trim() ?? "").filter((value) => value.startsWith(INITIAL_STATE_PREFIX)).reverse();
+    for (const script of scripts) {
+      try {
+        return parseInitialStateValue(script);
+      } catch {
+      }
+    }
+    throw new Error("\u5F53\u524D\u9875\u9762\u6CA1\u6709\u53EF\u89E3\u6790\u7684\u5C0F\u7EA2\u4E66\u72B6\u6001\u6570\u636E");
+  }
+  function dataRecord(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+  function dataList(value) {
+    return Array.isArray(value) ? value : [];
+  }
+  function unwrapState(value) {
+    const object2 = dataRecord(value);
+    if ("value" in object2) return object2.value;
+    if ("_value" in object2) return object2._value;
+    return value;
+  }
+  function dataText(value) {
+    return typeof value === "string" || typeof value === "number" ? String(value) : "";
+  }
+  function dataInteger(value) {
+    const result = Number(value);
+    return Number.isFinite(result) && result >= 0 ? Math.trunc(result) : null;
+  }
+  function dataBoolean(value, fallback = false) {
+    return typeof value === "boolean" ? value : fallback;
+  }
+  function dataUrl(value) {
+    const raw = dataText(value);
+    try {
+      const url = new URL(raw);
+      return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // src/account-proof.ts
+  var PROOF_CONTEXT = "xhs-account-challenge/v1\0";
+  var CURRENT_USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
+  var PROFILE_PATH = /^\/user\/profile\/([^/?#]+)\/?$/;
+  async function proveBrowserAccount(page, challenge) {
+    if (!/^[0-9a-f]{32}$/.test(challenge.challengeId)) {
+      return { status: "unverified" };
+    }
+    let state = {};
+    try {
+      state = await readLiveInitialState(page);
+    } catch {
+    }
+    const user = dataRecord(state.user);
+    const info = dataRecord(unwrapState(user.userInfo));
+    if (info.guest === true) return { status: "logged_out" };
+    const stateAccountId = dataText(info.userId ?? info.user_id);
+    const accountId = info.guest === false && validAccountId(stateAccountId) ? stateAccountId : currentUserNavigationId(page);
+    if (!accountId) {
+      return { status: "unverified" };
+    }
+    try {
+      return {
+        status: "proved",
+        proof: await hmacProof(challenge, accountId)
+      };
+    } catch {
+      return { status: "unverified" };
+    }
+  }
+  function currentUserNavigationId(page) {
+    const channel = page.querySelector(CURRENT_USER_CHANNEL_SELECTOR);
+    const link = channel?.closest("a[href]");
+    const rawHref = link?.getAttribute("href");
+    if (!rawHref) return "";
+    try {
+      const url = new URL(rawHref, page.baseURI);
+      if (url.protocol !== "https:" || url.hostname !== "www.xiaohongshu.com") {
+        return "";
+      }
+      const match = PROFILE_PATH.exec(url.pathname);
+      if (!match) return "";
+      const accountId = decodeURIComponent(match[1]);
+      return validAccountId(accountId) ? accountId : "";
+    } catch {
+      return "";
+    }
+  }
+  function validAccountId(value) {
+    return value.length >= 1 && value.length <= 128;
+  }
+  async function hmacProof(challenge, accountId) {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      decodeBase64Url(challenge.challengeKey),
+      { hash: "SHA-256", name: "HMAC" },
+      false,
+      ["sign"]
+    );
+    const message = new TextEncoder().encode(
+      `${PROOF_CONTEXT}${challenge.challengeId}\0${accountId}`
+    );
+    const digest = await crypto.subtle.sign("HMAC", key, message);
+    return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+  }
+  function decodeBase64Url(value) {
+    const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = normalized.padEnd(
+      normalized.length + (4 - normalized.length % 4) % 4,
+      "="
+    );
+    const decoded = atob(padded);
+    const buffer = new ArrayBuffer(decoded.length);
+    const bytes = new Uint8Array(buffer);
+    for (let index = 0; index < decoded.length; index += 1) {
+      bytes[index] = decoded.charCodeAt(index);
+    }
+    return buffer;
+  }
+
   // src/browser-action-errors.ts
   var UncertainBrowserActionError = class extends Error {
     constructor(message) {
@@ -76,55 +293,10 @@
     );
   }
 
-  // src/parser.ts
-  function parseInitialStateValue(script) {
-    const separator = script.indexOf("=");
-    if (separator < 0) throw new Error("\u5E16\u5B50\u521D\u59CB\u72B6\u6001\u683C\u5F0F\u65E0\u6548");
-    const raw = script.slice(separator + 1).trim().replace(/;$/, "");
-    let state;
-    try {
-      state = JSON.parse(normalizeJavaScriptValue(raw));
-    } catch {
-      throw new Error("\u5E16\u5B50\u521D\u59CB\u72B6\u6001\u65E0\u6CD5\u89E3\u6790");
-    }
-    return state;
-  }
-  function normalizeJavaScriptValue(value) {
-    let result = "";
-    let quote = "";
-    let escaped = false;
-    for (let index = 0; index < value.length; index += 1) {
-      const character = value[index];
-      if (quote) {
-        result += character;
-        if (escaped) escaped = false;
-        else if (character === "\\") escaped = true;
-        else if (character === quote) quote = "";
-        continue;
-      }
-      if (character === '"' || character === "'") {
-        quote = character;
-        result += character;
-        continue;
-      }
-      const token = value.slice(index, index + 9);
-      if (token === "undefined" && isBoundary(value[index - 1]) && isBoundary(value[index + 9])) {
-        result += "null";
-        index += 8;
-        continue;
-      }
-      result += character;
-    }
-    return result;
-  }
-  function isBoundary(value) {
-    return !value || !/[A-Za-z0-9_$]/.test(value);
-  }
-
   // src/login-state.ts
   var USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
   var LOGIN_SELECTOR = ".login-container, [class*='login-container']";
-  var INITIAL_STATE_PREFIX = "window.__INITIAL_STATE__";
+  var INITIAL_STATE_PREFIX2 = "window.__INITIAL_STATE__";
   function detectLoginState(page, pageUrl) {
     const user = readCurrentUser(page);
     const hasUserChannel = Boolean(page.querySelector(USER_CHANNEL_SELECTOR));
@@ -137,7 +309,7 @@
     };
   }
   function readCurrentUser(page) {
-    const scripts = [...page.scripts].map((script) => script.textContent?.trim() ?? "").filter((value) => value.startsWith(INITIAL_STATE_PREFIX)).reverse();
+    const scripts = [...page.scripts].map((script) => script.textContent?.trim() ?? "").filter((value) => value.startsWith(INITIAL_STATE_PREFIX2)).reverse();
     for (const script of scripts) {
       try {
         const state = object(parseInitialStateValue(script));
@@ -206,54 +378,6 @@
   }
   function delay(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
-  }
-
-  // src/browser-state-bridge.ts
-  var REQUEST_EVENT = "xhd-browser-state-request";
-  var RESPONSE_EVENT = "xhd-browser-state-response";
-  function readLiveInitialState(page, timeoutMilliseconds = 1e3) {
-    const scope = page.defaultView;
-    if (!scope) return Promise.reject(new Error("\u5F53\u524D\u9875\u9762\u6CA1\u6709\u53EF\u7528\u7A97\u53E3"));
-    const requestId = crypto.randomUUID();
-    return new Promise((resolve, reject) => {
-      const timeout = scope.setTimeout(() => {
-        scope.removeEventListener(RESPONSE_EVENT, onResponse);
-        reject(new Error("\u8BFB\u53D6\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u8D85\u65F6"));
-      }, timeoutMilliseconds);
-      const onResponse = (event) => {
-        const response = parseResponse(event.detail);
-        if (!response || response.requestId !== requestId) return;
-        scope.clearTimeout(timeout);
-        scope.removeEventListener(RESPONSE_EVENT, onResponse);
-        if (!response.ok || !response.data) {
-          reject(new Error(response.message || "\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u4E0D\u53EF\u7528"));
-          return;
-        }
-        try {
-          resolve(JSON.parse(response.data));
-        } catch {
-          reject(new Error("\u5C0F\u7EA2\u4E66\u5B9E\u65F6\u72B6\u6001\u683C\u5F0F\u65E0\u6548"));
-        }
-      };
-      scope.addEventListener(RESPONSE_EVENT, onResponse);
-      scope.dispatchEvent(
-        new CustomEvent(REQUEST_EVENT, {
-          detail: JSON.stringify({ requestId })
-        })
-      );
-    });
-  }
-  function browserStateEvents() {
-    return { request: REQUEST_EVENT, response: RESPONSE_EVENT };
-  }
-  function parseResponse(value) {
-    if (typeof value !== "string") return null;
-    try {
-      const parsed = JSON.parse(value);
-      return typeof parsed.requestId === "string" ? parsed : null;
-    } catch {
-      return null;
-    }
   }
 
   // src/comment-loader.ts
@@ -460,50 +584,6 @@
   }
   function delay3(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
-  }
-
-  // src/page-data.ts
-  var INITIAL_STATE_PREFIX2 = "window.__INITIAL_STATE__";
-  function latestInitialState(page) {
-    const scripts = [...page.scripts].map((script) => script.textContent?.trim() ?? "").filter((value) => value.startsWith(INITIAL_STATE_PREFIX2)).reverse();
-    for (const script of scripts) {
-      try {
-        return parseInitialStateValue(script);
-      } catch {
-      }
-    }
-    throw new Error("\u5F53\u524D\u9875\u9762\u6CA1\u6709\u53EF\u89E3\u6790\u7684\u5C0F\u7EA2\u4E66\u72B6\u6001\u6570\u636E");
-  }
-  function dataRecord(value) {
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  }
-  function dataList(value) {
-    return Array.isArray(value) ? value : [];
-  }
-  function unwrapState(value) {
-    const object2 = dataRecord(value);
-    if ("value" in object2) return object2.value;
-    if ("_value" in object2) return object2._value;
-    return value;
-  }
-  function dataText(value) {
-    return typeof value === "string" || typeof value === "number" ? String(value) : "";
-  }
-  function dataInteger(value) {
-    const result = Number(value);
-    return Number.isFinite(result) && result >= 0 ? Math.trunc(result) : null;
-  }
-  function dataBoolean(value, fallback = false) {
-    return typeof value === "boolean" ? value : fallback;
-  }
-  function dataUrl(value) {
-    const raw = dataText(value);
-    try {
-      const url = new URL(raw);
-      return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
-    } catch {
-      return null;
-    }
   }
 
   // src/feed-parser.ts
@@ -1093,13 +1173,14 @@
 
   // src/managed-page-adapter.ts
   var MANAGED_PAGE_ADAPTER_GLOBAL = "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
-  var MANAGED_PAGE_ADAPTER_VERSION = "2";
+  var MANAGED_PAGE_ADAPTER_VERSION = "3";
   function installManagedPageAdapter(scope = window) {
     const current = scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
     if (current?.version === MANAGED_PAGE_ADAPTER_VERSION) return current;
     installBrowserStateBridge(scope);
     const adapter = {
       version: MANAGED_PAGE_ADAPTER_VERSION,
+      proveAccount: (challenge) => proveBrowserAccount(scope.document, challenge),
       execute: (task) => executeSafely(task, scope),
       prepareInteraction: (task) => prepareInteractionSafely(task, scope),
       verifyInteraction: (task) => verifyInteractionSafely(task, scope),
