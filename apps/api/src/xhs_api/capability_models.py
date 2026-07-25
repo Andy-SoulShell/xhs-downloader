@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict
 from xhs_core.domain import (
+    AccountConsistencyStatus,
     BrowserDriver,
     ProviderFailureCode,
     ProviderKind,
@@ -30,6 +31,7 @@ class RouteTraceResponse(BaseModel):
     fallback_used: bool
     fallback_reason: ProviderFailureResponse | None
     attempted_providers: list[ProviderKind]
+    account_consistency: AccountConsistencyStatus | None
 
 
 class RoutedReadResponse[ResultT](BaseModel):

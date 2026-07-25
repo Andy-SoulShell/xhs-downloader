@@ -7,6 +7,7 @@ from xhs_adapters.config import AppSettings
 from xhs_api.capability_runtime import ReadCapabilityRuntime
 from xhs_core.application import BrowserReadProvider
 from xhs_core.domain import (
+    AccountConsistencyStatus,
     FeedAuthor,
     FeedDetailResult,
     FeedListResult,
@@ -68,6 +69,18 @@ class _Browser:
         return FeedListResult(source="search", keyword=keyword)
 
 
+class _MatchingGuard:
+    """始终确认合成 HTTP 与浏览器账号一致。"""
+
+    async def verify(self) -> AccountConsistencyStatus:
+        """返回允许受保护回退的固定结论。
+
+        Returns:
+            合成账号一致结论。
+        """
+        return AccountConsistencyStatus.MATCHED
+
+
 async def test_http_only_routes_all_reads_to_http_provider() -> None:
     """确保新增推荐、搜索和主页与既有详情共用 HTTP Provider。"""
     http = _Http()
@@ -75,6 +88,7 @@ async def test_http_only_routes_all_reads_to_http_provider() -> None:
         AppSettings(route_strategy=RouteStrategy.HTTP_ONLY),
         cast(HttpReadProvider, http),
         cast(BrowserReadProvider, _Browser()),
+        _MatchingGuard(),
     )
     filters = SearchFilters()
 
@@ -117,6 +131,7 @@ async def test_unsupported_http_filter_falls_back_to_fixed_browser() -> None:
         AppSettings(route_strategy=RouteStrategy.HTTP_FIRST),
         cast(HttpReadProvider, http),
         cast(BrowserReadProvider, browser),
+        _MatchingGuard(),
     )
     filters = SearchFilters(sort_by="最新")
 
@@ -130,4 +145,5 @@ async def test_unsupported_http_filter_falls_back_to_fixed_browser() -> None:
     assert routed.fallback_used is True
     assert routed.fallback_reason is not None
     assert routed.fallback_reason.code is ProviderFailureCode.UNSUPPORTED
+    assert routed.account_consistency is AccountConsistencyStatus.MATCHED
     assert browser.search_calls == [("合成关键词", filters, "synthetic-request")]

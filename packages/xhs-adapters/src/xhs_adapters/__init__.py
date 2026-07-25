@@ -10,6 +10,7 @@ from .factory import (
 )
 from .http_feed_detail import HttpFeedDetailProvider
 from .http_read_provider import HttpReadProvider
+from .managed_account_proof import ManagedAccountProofProvider
 from .managed_browser import ChromiumController
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     "ChromiumController",
     "HttpFeedDetailProvider",
     "HttpReadProvider",
+    "ManagedAccountProofProvider",
     "PublicationRuntime",
     "create_browser_runtime",
     "create_download_service",

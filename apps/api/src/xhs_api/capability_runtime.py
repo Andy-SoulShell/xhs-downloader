@@ -10,16 +10,23 @@ from xhs_core.application import (
     BrowserReadinessService,
     BrowserReadProvider,
     CapabilityRouter,
+    OneTimeAccountConsistencyGuard,
 )
 from xhs_core.domain import (
+    AccountConsistencyGuard,
+    BrowserDriver,
     FeedDetailResult,
     FeedListResult,
+    ReadAccountScope,
     RoutedCapabilityResult,
     UserProfileResult,
 )
 from xhs_core.domain.browser_requests import SearchFilters
 
+from .account_proof_runtime import ExtensionAccountProofProvider
+
 _BROWSER_READ_TIMEOUT_SECONDS = 60.0
+_ACCOUNT_GUARD_TIMEOUT_SECONDS = 60.0
 
 
 class ReadCapabilityRuntime:
@@ -32,6 +39,7 @@ class ReadCapabilityRuntime:
         settings: 本运行时采用的已验证配置。
         http: Cookie HTTP 统一只读 Provider。
         browser: 固定浏览器驱动的只读 Provider。
+        account_guard: 跨提供方回退前的一次性账号一致性门禁。
     """
 
     def __init__(
@@ -39,11 +47,13 @@ class ReadCapabilityRuntime:
         settings: AppSettings,
         http: HttpReadProvider,
         browser: BrowserReadProvider,
+        account_guard: AccountConsistencyGuard,
     ) -> None:
         self.strategy = settings.route_strategy
         self.browser_driver = settings.browser_driver
         self._http = http
         self._browser = browser
+        self._account_guard = account_guard
         self._router = CapabilityRouter()
 
     async def close(self) -> None:
@@ -69,6 +79,8 @@ class ReadCapabilityRuntime:
             self.strategy,
             http=self._http.list_feeds,
             browser=lambda: self._browser.list_feeds(request_id),
+            account_scope=ReadAccountScope.ACCOUNT_SCOPED,
+            account_guard=self._account_guard,
         )
 
     async def search_feeds(
@@ -98,6 +110,8 @@ class ReadCapabilityRuntime:
                 filters,
                 request_id,
             ),
+            account_scope=ReadAccountScope.ACCOUNT_SCOPED,
+            account_guard=self._account_guard,
         )
 
     async def get_feed_detail(
@@ -144,6 +158,8 @@ class ReadCapabilityRuntime:
                 request_id=request_id,
                 **options,
             ),
+            account_scope=ReadAccountScope.ACCOUNT_SCOPED,
+            account_guard=self._account_guard,
         )
 
     async def get_user_profile(
@@ -173,6 +189,8 @@ class ReadCapabilityRuntime:
                 xsec_token,
                 request_id,
             ),
+            account_scope=ReadAccountScope.ACCOUNT_SCOPED,
+            account_guard=self._account_guard,
         )
 
     async def get_my_profile(
@@ -194,6 +212,8 @@ class ReadCapabilityRuntime:
             self.strategy,
             http=self._http.get_my_profile,
             browser=lambda: self._browser.get_my_profile(request_id),
+            account_scope=ReadAccountScope.ACCOUNT_SCOPED,
+            account_guard=self._account_guard,
         )
 
 
@@ -216,9 +236,18 @@ def create_read_capability_runtime(
         publication.credentials,
         browser.managed,
     )
+    http = HttpReadProvider(settings)
+    browser_proof = (
+        browser.managed_account_proof
+        if settings.browser_driver is BrowserDriver.MANAGED
+        else ExtensionAccountProofProvider(
+            browser.account_challenges,
+            publication.credentials,
+        )
+    )
     return ReadCapabilityRuntime(
         settings,
-        HttpReadProvider(settings),
+        http,
         BrowserReadProvider(
             browser.tasks,
             readiness,
@@ -227,5 +256,10 @@ def create_read_capability_runtime(
                 settings.timeout,
                 _BROWSER_READ_TIMEOUT_SECONDS,
             ),
+        ),
+        OneTimeAccountConsistencyGuard(
+            http,
+            browser_proof,
+            timeout_seconds=_ACCOUNT_GUARD_TIMEOUT_SECONDS,
         ),
     )

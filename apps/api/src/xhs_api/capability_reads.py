@@ -142,5 +142,6 @@ def _response[ResultT](
                 else None
             ),
             attempted_providers=list(result.attempted_providers),
+            account_consistency=result.account_consistency,
         ),
     )

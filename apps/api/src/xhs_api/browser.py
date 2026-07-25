@@ -1,18 +1,22 @@
 """本机管理端与浏览器扩展协作的通用任务 API。"""
 
+from base64 import urlsafe_b64encode
 from datetime import UTC, datetime, timedelta
 from ipaddress import ip_address
 from urllib.parse import urlsplit
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from xhs_core.application import (
     BrowserExecutionService,
     BrowserTaskService,
+    ExtensionAccountChallengeChannel,
     ExtensionCredentialService,
 )
-from xhs_core.domain import BrowserDriver, BrowserTask, BrowserTaskClaim
+from xhs_core.domain import AccountProof, BrowserDriver, BrowserTask, BrowserTaskClaim
 
 from .browser_models import (
+    BrowserAccountChallengeAnswerRequest,
+    BrowserAccountChallengeClaimResponse,
     BrowserExtensionRegisterRequest,
     BrowserExtensionStatus,
     BrowserExtensionTokenResponse,
@@ -34,6 +38,7 @@ def create_browser_router(
     tasks: BrowserTaskService,
     execution: BrowserExecutionService,
     credentials: ExtensionCredentialService,
+    account_challenges: ExtensionAccountChallengeChannel,
     management_access: SettingsAccessPolicy,
 ) -> APIRouter:
     """创建浏览器任务管理与扩展执行路由。
@@ -42,6 +47,7 @@ def create_browser_router(
         tasks: 浏览器任务提交与管理用例。
         execution: 扩展领取和状态回传用例。
         credentials: 扩展能力凭据用例。
+        account_challenges: 不经过任务仓储的一次性账号证明通道。
         management_access: 本机管理端访问判定策略。
 
     Returns:
@@ -124,6 +130,48 @@ def create_browser_router(
         )
 
     @router.post(
+        "/extension/account-challenges/claim",
+        response_model=BrowserAccountChallengeClaimResponse | None,
+    )
+    async def claim_account_challenge(
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=30),
+    ) -> BrowserAccountChallengeClaimResponse | None:
+        extension_id = await _require_extension(request, credentials)
+        claim = await account_challenges.claim(extension_id, wait_seconds)
+        if claim is None:
+            return None
+        return BrowserAccountChallengeClaimResponse(
+            challenge_id=claim.challenge_id,
+            challenge_key=urlsafe_b64encode(claim.challenge_key)
+            .decode("ascii")
+            .rstrip("="),
+            expires_at=claim.expires_at,
+            lease_token=claim.lease_token,
+        )
+
+    @router.post(
+        "/extension/account-challenges/{challenge_id}/answer",
+        status_code=204,
+    )
+    async def answer_account_challenge(
+        challenge_id: str,
+        payload: BrowserAccountChallengeAnswerRequest,
+        request: Request,
+    ) -> Response:
+        extension_id = await _require_extension(request, credentials)
+        proof = _account_proof(payload)
+        accepted = await account_challenges.answer(
+            challenge_id,
+            extension_id,
+            _account_challenge_lease(request),
+            proof,
+        )
+        if not accepted:
+            raise HTTPException(status_code=409, detail="账号挑战已经失效")
+        return Response(status_code=204)
+
+    @router.post(
         "/extension/tasks/{task_id}/status",
         response_model=BrowserTask,
     )
@@ -198,6 +246,21 @@ def _lease_token(request: Request) -> str:
     if not token:
         raise HTTPException(status_code=401, detail="缺少浏览器任务租约")
     return token
+
+
+def _account_challenge_lease(request: Request) -> str:
+    token = request.headers.get("x-account-challenge-lease", "")
+    if not token:
+        raise HTTPException(status_code=401, detail="缺少账号挑战租约")
+    return token
+
+
+def _account_proof(payload: BrowserAccountChallengeAnswerRequest) -> AccountProof:
+    if payload.status == "logged_out":
+        return AccountProof.logged_out()
+    if payload.status != "proved" or payload.proof is None:
+        return AccountProof.unverified()
+    return AccountProof.proved(bytes.fromhex(payload.proof))
 
 
 def _is_loopback(host: str) -> bool:

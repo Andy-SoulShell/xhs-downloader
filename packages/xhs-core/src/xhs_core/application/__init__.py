@@ -1,5 +1,6 @@
 """可由不同交付应用复用的应用用例。"""
 
+from .account_consistency import OneTimeAccountConsistencyGuard
 from .atomic_client import (
     AsyncCloseable,
     AtomicClientSlot,
@@ -13,6 +14,10 @@ from .capability_router import CapabilityRouter
 from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
+from .extension_account_challenges import (
+    ExtensionAccountChallengeChannel,
+    ExtensionAccountChallengeClaim,
+)
 from .managed_browser_gate import ManagedBrowserExecutionGate
 from .managed_browser_worker import ManagedBrowserWorker
 from .managed_publication_worker import ManagedPublicationWorker
@@ -35,10 +40,13 @@ __all__ = [
     "CollectionService",
     "DownloadService",
     "DownloadTaskCoordinator",
+    "ExtensionAccountChallengeChannel",
+    "ExtensionAccountChallengeClaim",
     "ExtensionCredentialService",
     "ManagedBrowserExecutionGate",
     "ManagedBrowserWorker",
     "ManagedPublicationWorker",
+    "OneTimeAccountConsistencyGuard",
     "PublicationDraftService",
     "PublicationExecutionService",
     "PublicationScheduler",

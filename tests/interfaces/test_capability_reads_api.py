@@ -1,8 +1,9 @@
 """统一只读能力 HTTP API 测试。"""
 
+import json
 from typing import cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
@@ -10,6 +11,8 @@ from xhs_api.capability_reads import create_capability_read_router
 from xhs_api.capability_runtime import ReadCapabilityRuntime
 from xhs_core.application import AtomicClientSlot
 from xhs_core.domain import (
+    AccountConsistencyError,
+    AccountConsistencyStatus,
     BrowserDriver,
     FeedAuthor,
     FeedDetailResult,
@@ -74,6 +77,7 @@ class _FakeRuntime:
                 message="HTTP 合成能力暂不支持",
             ),
             attempted_providers=(ProviderKind.HTTP, ProviderKind.BROWSER),
+            account_consistency=AccountConsistencyStatus.MATCHED,
         )
 
 
@@ -115,6 +119,7 @@ async def test_read_routes_return_data_and_actual_route_trace() -> None:
             "message": "HTTP 合成能力暂不支持",
         },
         "attempted_providers": ["http", "browser"],
+        "account_consistency": "matched",
     }
     assert detail.json()["data"]["feed_id"] == "synthetic-feed"
     assert mine.json()["data"]["user_id"] == "synthetic-self"
@@ -148,6 +153,31 @@ async def test_http_only_without_cookie_returns_typed_error(tmp_path) -> None:
         "message": "HTTP 模式尚未配置 Cookie",
         "provider": "http",
         "code": "not_configured",
+    }
+
+
+async def test_api_returns_fixed_account_consistency_conflict(tmp_path) -> None:
+    """确保账号门禁错误只返回固定结论和安全文案。
+
+    Args:
+        tmp_path: Pytest 提供的临时工作目录。
+    """
+    api = create_api(
+        AppSettings(work_path=tmp_path),
+        lambda _: FakeService(),
+    )
+    handler = api.exception_handlers[AccountConsistencyError]
+
+    response = await handler(
+        cast(Request, object()),
+        AccountConsistencyError(AccountConsistencyStatus.DIFFERENT),
+    )
+
+    assert response.status_code == 409
+    assert json.loads(response.body) == {
+        "code": "account_consistency_failed",
+        "account_consistency": "different",
+        "message": "HTTP Cookie 与当前浏览器不是同一账号，已停止个性化读取回退",
     }
 
 

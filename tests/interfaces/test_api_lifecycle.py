@@ -50,6 +50,7 @@ class _Lifecycle:
 def _dependencies(events: list[str], *, fail_publication: bool = False) -> Any:
     capabilities = _Lifecycle("capabilities", events)
     browser = SimpleNamespace(
+        account_challenges=_Lifecycle("account-challenges", events),
         tasks=object(),
         execution=object(),
         managed=_Lifecycle("managed", events),
@@ -121,6 +122,7 @@ async def test_api_starts_recovery_before_workers_and_closes_in_safe_order(
         "publication:start",
         "browser:start",
         "app:running",
+        "account-challenges:close",
         "capabilities:close",
         "publication:close",
         "browser:close",
@@ -155,6 +157,7 @@ async def test_api_closes_all_registered_resources_after_startup_failure(
         "download:start",
         "scheduler:start",
         "publication:start",
+        "account-challenges:close",
         "capabilities:close",
         "publication:close",
         "browser:close",

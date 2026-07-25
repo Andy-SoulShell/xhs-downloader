@@ -1,5 +1,15 @@
 """领域模型、端口和纯业务规则。"""
 
+from .account_consistency import (
+    AccountConsistencyError,
+    AccountConsistencyGuard,
+    AccountConsistencyStatus,
+    AccountProof,
+    AccountProofProvider,
+    AccountProofState,
+    OneTimeAccountChallenge,
+    ReadAccountScope,
+)
 from .browser_diagnostics import (
     sanitize_browser_page_diagnostics,
     sanitize_browser_task_message,
@@ -84,6 +94,12 @@ from .publication import (
 )
 
 __all__ = [
+    "AccountConsistencyError",
+    "AccountConsistencyGuard",
+    "AccountConsistencyStatus",
+    "AccountProof",
+    "AccountProofProvider",
+    "AccountProofState",
     "Author",
     "BrowserAccount",
     "BrowserCookieDeletionResult",
@@ -124,6 +140,7 @@ __all__ = [
     "ManagedPublicationProgressReporter",
     "MediaKind",
     "MediaResource",
+    "OneTimeAccountChallenge",
     "ParseError",
     "ProfileMetric",
     "ProviderError",
@@ -138,6 +155,7 @@ __all__ = [
     "PublicationTask",
     "PublicationTaskStatus",
     "PublicationVisibility",
+    "ReadAccountScope",
     "RoutePolicyError",
     "RouteStrategy",
     "RoutedCapabilityResult",

@@ -6,6 +6,7 @@ from xhs_core.application import (
     BrowserExecutionService,
     BrowserTaskService,
     DownloadService,
+    ExtensionAccountChallengeChannel,
     ExtensionCredentialService,
     ManagedBrowserExecutionGate,
     ManagedBrowserWorker,
@@ -20,6 +21,7 @@ from xhs_core.domain.browser_ports import ManagedBrowserController
 from .config import AppSettings
 from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
+from .managed_account_proof import ManagedAccountProofProvider
 from .managed_browser import ChromiumController
 from .managed_publication_executor import PlaywrightManagedPublicationExecutor
 from .managed_task_executor import PlaywrightManagedTaskExecutor
@@ -37,10 +39,12 @@ from .sqlite import (
 class BrowserRuntime:
     """浏览器任务、扩展执行和受管 Chromium 生命周期。"""
 
+    account_challenges: ExtensionAccountChallengeChannel
     tasks: BrowserTaskService
     execution: BrowserExecutionService
     execution_gate: ManagedBrowserExecutionGate
     managed: ManagedBrowserController
+    managed_account_proof: ManagedAccountProofProvider
     worker: ManagedBrowserWorker
 
 
@@ -97,10 +101,15 @@ def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
     managed = ChromiumController(settings)
     execution_gate = ManagedBrowserExecutionGate()
     return BrowserRuntime(
+        account_challenges=ExtensionAccountChallengeChannel(),
         tasks=tasks,
         execution=execution,
         execution_gate=execution_gate,
         managed=managed,
+        managed_account_proof=ManagedAccountProofProvider(
+            managed,
+            execution_gate,
+        ),
         worker=ManagedBrowserWorker(
             managed,
             execution,

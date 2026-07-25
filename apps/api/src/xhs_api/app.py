@@ -16,7 +16,12 @@ from xhs_core.application import (
     DownloadService,
     DownloadTaskCoordinator,
 )
-from xhs_core.domain import BrowserTaskLeaseConflictError, ProviderError, XhsError
+from xhs_core.domain import (
+    AccountConsistencyError,
+    BrowserTaskLeaseConflictError,
+    ProviderError,
+    XhsError,
+)
 from xhs_core.version import VERSION
 
 from .bootstrap import create_api_dependencies
@@ -88,6 +93,9 @@ def create_api(
                 lifecycle.push_async_callback(dependencies.browser.worker.close)
                 lifecycle.push_async_callback(dependencies.publication.worker.close)
                 lifecycle.push_async_callback(dependencies.capabilities.close)
+                lifecycle.push_async_callback(
+                    dependencies.browser.account_challenges.close
+                )
                 await tasks.start()
                 await dependencies.publication.scheduler.start()
                 await dependencies.publication.worker.start()
@@ -111,6 +119,7 @@ def create_api(
             "Range",
             "X-Extension-Id",
             "X-Browser-Lease",
+            "X-Account-Challenge-Lease",
             "X-Publish-Lease",
         ],
         expose_headers=[
@@ -124,6 +133,7 @@ def create_api(
             dependencies.browser.tasks,
             dependencies.browser.execution,
             dependencies.publication.credentials,
+            dependencies.browser.account_challenges,
             settings_access_policy,
         )
     )
@@ -207,6 +217,29 @@ def create_api(
             不包含租约令牌的冲突响应。
         """
         return JSONResponse(status_code=409, content={"message": str(error)})
+
+    @api.exception_handler(AccountConsistencyError)
+    async def handle_account_consistency_error(
+        _: Request,
+        error: AccountConsistencyError,
+    ) -> JSONResponse:
+        """返回不含账号和证明材料的固定路由阻止结果。
+
+        Args:
+            _: 当前 HTTP 请求。
+            error: 账号一致性门禁的脱敏结论。
+
+        Returns:
+            供 WebUI 与 MCP 稳定识别的冲突响应。
+        """
+        return JSONResponse(
+            status_code=409,
+            content={
+                "code": "account_consistency_failed",
+                "account_consistency": error.status.value,
+                "message": str(error),
+            },
+        )
 
     @api.exception_handler(XhsError)
     async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:

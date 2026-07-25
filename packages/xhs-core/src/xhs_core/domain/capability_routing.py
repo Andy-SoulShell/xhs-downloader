@@ -2,8 +2,12 @@
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from .errors import XhsError
+
+if TYPE_CHECKING:
+    from .account_consistency import AccountConsistencyStatus
 
 
 class RouteStrategy(StrEnum):
@@ -120,6 +124,7 @@ class RoutedCapabilityResult[T]:
         fallback_used: 是否在首选提供方失败后发生回退。
         fallback_reason: 首选提供方触发安全回退的原因。
         attempted_providers: 按调用顺序记录的提供方。
+        account_consistency: 本次回退的一次性账号比较结论。
     """
 
     value: T
@@ -128,3 +133,4 @@ class RoutedCapabilityResult[T]:
     fallback_used: bool
     fallback_reason: ProviderFailure | None
     attempted_providers: tuple[ProviderKind, ...]
+    account_consistency: "AccountConsistencyStatus | None" = None

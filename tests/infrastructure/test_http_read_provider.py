@@ -120,20 +120,24 @@ async def test_search_encodes_keyword_and_accepts_only_default_filters(
     }
 
 
-async def test_custom_search_filters_are_rejected_without_request(
+async def test_custom_search_filters_check_session_before_browser_fallback(
     tmp_path: Path,
 ) -> None:
-    """确保需 DOM 交互的筛选明确回退浏览器且不发送请求。
+    """确保需 DOM 交互的筛选先确认 Cookie 会话仍然有效。
 
     Args:
         tmp_path: Pytest 提供的临时目录。
     """
-    called = False
+    requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal called
-        called = True
-        return httpx.Response(200)
+        requests.append(request)
+        state = {
+            "user": {
+                "userInfo": {"value": {"guest": False, "userId": "synthetic-current"}}
+            }
+        }
+        return httpx.Response(200, text=_html(state))
 
     async with _provider(tmp_path, handler) as provider:
         with pytest.raises(ProviderError) as captured:
@@ -142,7 +146,7 @@ async def test_custom_search_filters_are_rejected_without_request(
                 SearchFilters(sort_by="最新"),
             )
 
-    assert called is False
+    assert [request.url.path for request in requests] == ["/explore/"]
     assert captured.value.provider is ProviderKind.HTTP
     assert captured.value.code is ProviderFailureCode.UNSUPPORTED
 
@@ -273,7 +277,7 @@ async def test_missing_cookie_prevents_all_new_requests(
 
 
 async def test_guest_state_maps_to_expired_cookie(tmp_path: Path) -> None:
-    """确保新增能力统一把明确访客状态映射为登录过期。
+    """确保高级筛选回退前把明确访客状态映射为登录过期。
 
     Args:
         tmp_path: Pytest 提供的临时目录。
@@ -285,6 +289,9 @@ async def test_guest_state_maps_to_expired_cookie(tmp_path: Path) -> None:
 
     async with _provider(tmp_path, handler) as provider:
         with pytest.raises(ProviderError) as captured:
-            await provider.list_feeds()
+            await provider.search_feeds(
+                "合成关键词",
+                SearchFilters(sort_by="最新"),
+            )
 
     assert captured.value.code is ProviderFailureCode.AUTHENTICATION_EXPIRED

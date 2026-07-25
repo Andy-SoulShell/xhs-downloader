@@ -2,8 +2,10 @@
 
 from httpx import AsyncBaseTransport
 from xhs_core.domain import (
+    AccountProof,
     FeedDetailResult,
     FeedListResult,
+    OneTimeAccountChallenge,
     ProviderError,
     ProviderFailureCode,
     ProviderKind,
@@ -89,6 +91,33 @@ class HttpReadProvider:
         """关闭 HTTP 连接池。"""
         await self._client.close()
 
+    async def prove_account(
+        self,
+        challenge: OneTimeAccountChallenge,
+    ) -> AccountProof:
+        """在 HTTP 会话内部生成一次性账号证明。
+
+        稳定账号标识只存在于本方法局部变量，不会作为返回值、日志或
+        诊断数据离开 Provider。
+
+        Args:
+            challenge: 本轮跨提供方比较的一次性挑战。
+
+        Returns:
+            HMAC 证明、明确未登录或无法可靠识别状态。
+
+        Raises:
+            ProviderError: Cookie 未配置或页面请求失败。
+        """
+        self._ensure_configured()
+        page = await self._client.load(EXPLORE_URL)
+        if initial_state_is_guest(page):
+            return AccountProof.logged_out()
+        account_id = parse_current_account_id(page)
+        if account_id is None:
+            return AccountProof.unverified()
+        return AccountProof.proved(challenge.prove(account_id))
+
     async def list_feeds(self) -> FeedListResult:
         """读取推荐页当前初始 Feed。
 
@@ -121,6 +150,7 @@ class HttpReadProvider:
         self._ensure_configured()
         payload = validate_search_payload(keyword, filters)
         if payload.filters != _DEFAULT_SEARCH_FILTERS:
+            await self._load(EXPLORE_URL)
             raise _error(
                 ProviderFailureCode.UNSUPPORTED,
                 "HTTP 搜索仅支持默认筛选，请改用浏览器模式",
