@@ -2,9 +2,11 @@ import { CalendarClock, ExternalLink, Send, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicationMode } from "../lib/publication";
+import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 
 interface PublicationSubmitControlsProps {
+  browserDriver: BrowserDriver;
   busy: string;
   onScheduledAtChange: (value: string) => void;
   onSubmit: (mode: PublicationMode) => Promise<void>;
@@ -20,6 +22,7 @@ const LABELS: Record<PublicationMode, string> = {
 
 /** 提供三种发布方式，并在执行前显示不可跳过的二次确认。 */
 export function PublicationSubmitControls({
+  browserDriver,
   busy,
   onScheduledAtChange,
   onSubmit,
@@ -68,12 +71,19 @@ export function PublicationSubmitControls({
         >
           <Send aria-hidden size={15} />
           立即发布
-          <ExternalLink aria-hidden size={13} />
+          {browserDriver === "extension" && (
+            <ExternalLink aria-hidden size={13} />
+          )}
         </ActionButton>
       </div>
       <div className="mt-3 space-y-1 text-[11px] leading-5 text-stone-500">
-        <p>本地定时：到点后才要求本机服务、浏览器和扩展在线。</p>
-        <p>官方定时：现在打开创作页，提交给平台在 1 小时至 14 天内发布。</p>
+        <p>
+          本地定时：到点后需本机服务和{driverLabel(browserDriver)}在线。
+        </p>
+        <p>
+          官方定时：现在由{driverLabel(browserDriver)}
+          打开创作页，提交给平台在 1 小时至 14 天内发布。
+        </p>
       </div>
 
       {pending && (
@@ -91,7 +101,10 @@ export function PublicationSubmitControls({
               <p className="font-semibold">
                 确认执行“{LABELS[pending]}”吗？
               </p>
-              <p>扩展将使用当前登录账号操作小红书创作平台。</p>
+              <p>
+                {driverLabel(browserDriver)}
+                将使用当前选定浏览器中的登录账号操作小红书创作平台。
+              </p>
               {products.length > 0 && (
                 <p className="mt-2 break-words">
                   将绑定商品：{products.join("、")}
@@ -125,4 +138,8 @@ function minimumSchedule(): string {
   value.setSeconds(0, 0);
   const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
   return local.toISOString().slice(0, 16);
+}
+
+function driverLabel(driver: BrowserDriver): string {
+  return driver === "managed" ? "受管浏览器" : "浏览器扩展";
 }

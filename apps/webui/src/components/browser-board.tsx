@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
-import type { BrowserDriver, FeedSummary } from "../lib/types";
+import type { FeedSummary } from "../lib/types";
+import { isBrowserDriver } from "../lib/types";
 import { capabilityRouteSource } from "../lib/browser-route";
 import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { useManagedBrowser } from "../lib/use-managed-browser";
@@ -25,11 +26,14 @@ import { PageHeading } from "./page-heading";
 export function BrowserBoard({
   browserDriver = null,
 }: {
-  browserDriver?: BrowserDriver | null;
+  browserDriver?: unknown;
 }) {
   const explorer = useBrowserExplorer();
   const managedBrowser = useManagedBrowser();
   const [keyword, setKeyword] = useState("");
+  const confirmedDriver = isBrowserDriver(browserDriver)
+    ? browserDriver
+    : null;
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -57,7 +61,7 @@ export function BrowserBoard({
       />
 
       <BrowserLoginActions
-        browserDriver={browserDriver}
+        browserDriver={confirmedDriver}
         busy={explorer.busy}
         managedStatus={managedBrowser.status}
         message={explorer.sessionMessage}
@@ -127,12 +131,17 @@ export function BrowserBoard({
               {explorer.route.fallback_used ? " · 已回退" : ""}
             </Badge>
           )}
+          {!confirmedDriver && (
+            <Badge icon={CircleAlert} tone="warning">
+              浏览器执行器尚未确认，登录与写操作已停用
+            </Badge>
+          )}
         </div>
       </div>
 
       <BrowserMonitor
         account={explorer.account}
-        browserDriver={browserDriver}
+        browserDriver={confirmedDriver}
         managedBrowser={managedBrowser}
       />
 
@@ -149,6 +158,7 @@ export function BrowserBoard({
             explorer.setInteraction("favorite", active)
           }
           onSetLike={(active) => explorer.setInteraction("like", active)}
+          writeEnabled={confirmedDriver !== null}
         />
       )}
 

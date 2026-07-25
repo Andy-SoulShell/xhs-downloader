@@ -29,8 +29,9 @@ export function BrowserLoginActions({
   onGetQrCode,
 }: BrowserLoginActionsProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const managedReady =
-    browserDriver !== "managed" || managedStatus?.state === "running";
+  const driverReady =
+    browserDriver === "extension" ||
+    (browserDriver === "managed" && managedStatus?.state === "running");
 
   const confirmDelete = async () => {
     await onDeleteCookies();
@@ -56,7 +57,7 @@ export function BrowserLoginActions({
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton
-            disabled={busy || !managedReady}
+            disabled={busy || !driverReady}
             onClick={() => void onCheckLogin()}
             variant="outline"
           >
@@ -64,7 +65,7 @@ export function BrowserLoginActions({
             检查登录
           </ActionButton>
           <ActionButton
-            disabled={busy || !managedReady}
+            disabled={busy || !driverReady}
             onClick={() => void onGetQrCode()}
             variant="outline"
           >
@@ -72,7 +73,7 @@ export function BrowserLoginActions({
             获取登录二维码
           </ActionButton>
           <ActionButton
-            disabled={busy || !managedReady}
+            disabled={busy || !driverReady}
             onClick={() => setConfirmingDelete(true)}
             variant="ghost"
           >
@@ -167,5 +168,5 @@ function loginGuidance(
     }
     return "请先在下方启动受管浏览器，再获取二维码完成首次登录。";
   }
-  return "扫码会在设置中选定的真实浏览器页面完成，不会向 WebUI 返回 Cookie。";
+  return "浏览器执行器配置尚未确认，登录、扫码和清理操作已停用。";
 }

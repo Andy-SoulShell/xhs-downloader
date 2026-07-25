@@ -52,6 +52,22 @@ describe("配置状态管理", () => {
     expect(result.current.error).toBe("");
   });
 
+  it("已有配置刷新失败时清空执行器快照", async () => {
+    const settings = makeSettingsResponse();
+    vi.mocked(getSettings)
+      .mockResolvedValueOnce(settings)
+      .mockRejectedValueOnce(new Error("配置响应无效"));
+    const { result } = renderHook(() => useSettings());
+    await waitFor(() => expect(result.current.settings).toEqual(settings));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.settings).toBeNull();
+    expect(result.current.error).toBe("配置响应无效");
+  });
+
   it("保存失败时保留可展示的错误状态", async () => {
     const settings = makeSettingsResponse();
     vi.mocked(getSettings).mockResolvedValue(settings);
@@ -66,6 +82,7 @@ describe("配置状态管理", () => {
     });
 
     expect(result.current.error).toBe("配置保存失败");
+    expect(result.current.settings).toBeNull();
     expect(result.current.saving).toBe(false);
   });
 });

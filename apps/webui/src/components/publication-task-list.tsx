@@ -9,10 +9,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import type {
-  PublicationTask,
-  PublicationTaskStatus,
-} from "../lib/publication";
+import type { PublicationTask } from "../lib/publication";
+import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
@@ -89,7 +87,10 @@ function TaskRow({
   const [reviewDecision, setReviewDecision] = useState<boolean | null>(null);
   const cancelable = ["scheduled", "ready"].includes(task.status);
   const retryable = task.status === "failed";
-  const manualReady = task.mode === "manual" && task.status === "ready";
+  const extensionReady =
+    task.mode !== "scheduled" &&
+    task.status === "ready" &&
+    task.target_driver === "extension";
   return (
     <article className="rounded-2xl border border-stone-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -102,12 +103,13 @@ function TaskRow({
             {formatTime(task.scheduled_at)}
           </p>
         </div>
-        <TaskBadge status={task.status} />
+        <TaskBadge task={task} />
       </div>
       <p className="mt-3 text-xs leading-5 text-stone-500">{task.message}</p>
-      {task.status === "awaiting_verification" && (
-        <PublicationVerificationResume onResume={onResumeVerification} />
-      )}
+      {task.status === "awaiting_verification" &&
+        task.target_driver === "managed" && (
+          <PublicationVerificationResume onResume={onResumeVerification} />
+        )}
       {task.status === "needs_review" && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] leading-5 text-amber-900">
@@ -156,7 +158,8 @@ function TaskRow({
       )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[11px] text-stone-400">
-          尝试 {task.attempts} 次
+          {driverLabel(task.target_driver)} · 尝试 {task.attempts} 次
+          {task.publish_attempted ? " · 已尝试提交" : ""}
         </span>
         <div className="flex items-center gap-1">
           {task.result_url && (
@@ -170,10 +173,10 @@ function TaskRow({
               <ExternalLink aria-hidden size={13} />
             </a>
           )}
-          {manualReady && (
+          {extensionReady && (
             <a
               className="inline-flex h-9 items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 hover:border-stone-400"
-              href={creatorUrl(task.task_id)}
+              href={creatorUrl(task)}
               rel="noreferrer"
               target="_blank"
             >
@@ -199,10 +202,14 @@ function TaskRow({
   );
 }
 
-function TaskBadge({ status }: { status: PublicationTaskStatus }) {
+function TaskBadge({ task }: { task: PublicationTask }) {
   const values = {
     scheduled: ["已排期", "warning", CalendarClock],
-    ready: ["等待扩展", "warning", CalendarClock],
+    ready: [
+      task.target_driver === "managed" ? "等待受管浏览器" : "等待扩展",
+      "warning",
+      CalendarClock,
+    ],
     claimed: ["已领取", "accent", CalendarClock],
     filling: ["正在填写", "accent", RotateCcw],
     publishing: ["正在发布", "accent", RotateCcw],
@@ -212,12 +219,12 @@ function TaskBadge({ status }: { status: PublicationTaskStatus }) {
     failed: ["失败", "danger", CircleAlert],
     canceled: ["已取消", "neutral", X],
   } as const;
-  const [label, tone, Icon] = values[status];
+  const [label, tone, Icon] = values[task.status];
   return (
     <Badge
       icon={Icon}
       size="regular"
-      spinning={["filling", "publishing"].includes(status)}
+      spinning={["filling", "publishing"].includes(task.status)}
       tone={tone}
     >
       {label}
@@ -238,8 +245,15 @@ function modeLabel(mode: PublicationTask["mode"]): string {
   return "立即发布";
 }
 
-function creatorUrl(taskId: string): string {
+function driverLabel(driver: BrowserDriver): string {
+  return driver === "managed" ? "受管浏览器" : "浏览器扩展";
+}
+
+function creatorUrl(task: PublicationTask): string {
   const url = new URL("https://creator.xiaohongshu.com/publish/publish");
-  url.searchParams.set("xhd_task", taskId);
+  url.searchParams.set("xhd_task", task.task_id);
+  if (task.package.assets[0]?.media_type.startsWith("video/")) {
+    url.searchParams.set("target", "video");
+  }
   return url.toString();
 }

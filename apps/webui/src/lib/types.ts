@@ -114,6 +114,11 @@ export type RouteStrategy =
   | "http_first"
   | "browser_first";
 
+/** 判断不可信配置值是否为当前 WebUI 支持的浏览器执行器。 */
+export function isBrowserDriver(value: unknown): value is BrowserDriverValue {
+  return value === "extension" || value === "managed";
+}
+
 /** 管理后台可以读取和编辑的非敏感配置。 */
 export interface SettingsValues {
   work_path: string | null;
@@ -143,6 +148,7 @@ export interface SettingsValues {
   browser_task_lease_seconds: number;
   route_strategy: RouteStrategy;
   browser_driver: BrowserDriverValue;
+  /** 受管 Chromium 可执行文件完整路径；为空时由服务自动检测。 */
   managed_browser_executable: string | null;
   managed_browser_headless: boolean;
   managed_browser_startup_timeout: number;

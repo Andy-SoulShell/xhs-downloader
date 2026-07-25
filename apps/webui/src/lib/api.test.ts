@@ -185,4 +185,26 @@ describe("API 客户端", () => {
 
     await expect(getSettings()).rejects.toThrow("仅允许本机访问");
   });
+
+  it("拒绝服务端返回的未知浏览器执行器", async () => {
+    const settings = makeSettingsResponse();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            ...settings,
+            values: {
+              ...settings.values,
+              browser_driver: "future-browser-driver",
+            },
+          }),
+        ),
+      ),
+    );
+
+    await expect(getSettings()).rejects.toThrow(
+      "本地服务返回了不支持的浏览器执行器",
+    );
+  });
 });

@@ -9,6 +9,7 @@ import type {
   TaskRequest,
   WorkDetail,
 } from "./types";
+import { isBrowserDriver } from "./types";
 
 import { API_BASE, parseResponse } from "./http";
 
@@ -76,11 +77,13 @@ export async function listClientRecords(): Promise<ClientDownloadRecord[]> {
   return parseResponse<ClientDownloadRecord[]>(response);
 }
 
+/** 读取并验证本地服务的可管理配置。 */
 export async function getSettings(): Promise<SettingsResponse> {
   const response = await fetch(`${API_BASE}/settings`);
-  return parseResponse<SettingsResponse>(response);
+  return requireSettingsResponse(await parseResponse<unknown>(response));
 }
 
+/** 保存配置，并验证原子切换后返回的新配置快照。 */
 export async function updateSettings(
   values: SettingsUpdate,
 ): Promise<SettingsResponse> {
@@ -89,5 +92,21 @@ export async function updateSettings(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(values),
   });
-  return parseResponse<SettingsResponse>(response);
+  return requireSettingsResponse(await parseResponse<unknown>(response));
+}
+
+function requireSettingsResponse(value: unknown): SettingsResponse {
+  if (!value || typeof value !== "object" || !("values" in value)) {
+    throw new Error("本地服务返回的配置结构无效");
+  }
+  const values = value.values;
+  if (
+    !values ||
+    typeof values !== "object" ||
+    !("browser_driver" in values) ||
+    !isBrowserDriver(values.browser_driver)
+  ) {
+    throw new Error("本地服务返回了不支持的浏览器执行器");
+  }
+  return value as SettingsResponse;
 }

@@ -29,6 +29,7 @@ const extension: BrowserExtensionStatus = {
 function browserTask(
   status: BrowserTask["status"],
   kind: BrowserTask["kind"],
+  targetDriver: BrowserTask["target_driver"] = "extension",
 ): BrowserTask {
   return {
     task_id: `${kind}-${status}`,
@@ -36,8 +37,19 @@ function browserTask(
     kind,
     payload: { content: "不应展示的合成正文" },
     status,
-    result: null,
-    target_driver: "extension",
+    result:
+      status === "failed"
+        ? {
+            adapter_version: "xhs-web-2026.07",
+            selector_profile: "semantic-dom-v1",
+            page_kind: "feed_detail",
+            matched_anchors: ["main_container"],
+            missing_anchors: ["detail_container"],
+            request_url:
+              "https://example.invalid/note?token=synthetic-secret",
+          }
+        : null,
+    target_driver: targetDriver,
     executor_id: "synthetic-extension",
     extension_id: "synthetic-extension",
     lease_expires_at: null,
@@ -53,7 +65,7 @@ describe("浏览器状态与操作记录", () => {
     vi.mocked(listBrowserExtensions).mockResolvedValue([extension]);
     vi.mocked(listBrowserTasks).mockResolvedValue([
       browserTask("succeeded", "list_feeds"),
-      browserTask("failed", "get_feed_detail"),
+      browserTask("failed", "get_feed_detail", "managed"),
       browserTask("needs_review", "post_comment"),
       browserTask("queued", "search_feeds"),
     ]);
@@ -76,6 +88,12 @@ describe("浏览器状态与操作记录", () => {
     expect(screen.getByText("合成账号")).toBeInTheDocument();
     expect(screen.getByText("读取推荐")).toBeInTheDocument();
     expect(screen.getByText("需要确认")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("执行器：浏览器扩展"),
+    ).not.toHaveLength(0);
+    expect(screen.getByText("执行器：受管浏览器")).toBeInTheDocument();
+    expect(screen.getByText("帖子详情页")).toBeInTheDocument();
+    expect(screen.queryByText(/synthetic-secret/)).not.toBeInTheDocument();
     expect(
       screen.getByText("结果可能已写入小红书，请人工核对，禁止直接重试。"),
     ).toBeInTheDocument();

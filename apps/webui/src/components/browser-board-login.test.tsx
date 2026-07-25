@@ -74,7 +74,7 @@ describe("浏览器登录与会话操作", () => {
   });
 
   it("展示一次性二维码并二次确认 Cookie 清理", async () => {
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(
       screen.getByRole("button", { name: "获取登录二维码" }),
@@ -124,7 +124,7 @@ describe("浏览器登录与会话操作", () => {
       task: { ...qrTask, result: { ...loggedIn } },
       data: loggedIn,
     });
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(
       screen.getByRole("button", { name: "获取登录二维码" }),
@@ -144,7 +144,7 @@ describe("浏览器登录与会话操作", () => {
       task: { ...qrTask, result: { ...withoutExpiry } },
       data: withoutExpiry,
     });
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(
       screen.getByRole("button", { name: "获取登录二维码" }),
@@ -158,7 +158,7 @@ describe("浏览器登录与会话操作", () => {
 
   it("展示 Cookie 清理错误并保留确认入口", async () => {
     vi.mocked(deleteCookies).mockRejectedValueOnce(new Error("站点数据清理失败"));
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(
       screen.getByRole("button", { name: "清除浏览器 Cookie" }),

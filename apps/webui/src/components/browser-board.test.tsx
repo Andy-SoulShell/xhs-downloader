@@ -2,17 +2,22 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrowserTask } from "../lib/types";
 import {
   executeBrowserOperation,
   executeReadCapability,
-  type CapabilityRoute,
 } from "../lib/browser-api";
 import {
   listBrowserExtensions,
   listBrowserTasks,
 } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
+import {
+  browserDetailFixture,
+  browserFeedFixture,
+  browserReadRouteFixture,
+  makeBrowserFeedList,
+  makeCompletedBrowserTask,
+} from "../test/browser-explorer-fixtures";
 import { makeManagedBrowserControl } from "../test/managed-browser";
 import { BrowserBoard } from "./browser-board";
 
@@ -30,62 +35,6 @@ vi.mock("../lib/use-managed-browser", () => ({
   useManagedBrowser: vi.fn(),
 }));
 
-const feed = {
-  feed_id: "synthetic-feed",
-  xsec_token: "synthetic-token",
-  title: "合成浏览帖子",
-  note_type: "image" as const,
-  author: {
-    user_id: "synthetic-author",
-    nickname: "合成作者",
-    avatar_url: null,
-  },
-  metrics: {
-    liked: false,
-    liked_count: "12",
-    collected: false,
-    collected_count: "3",
-    comment_count: "4",
-    shared_count: "1",
-  },
-  cover_url: "https://example.invalid/cover.png",
-  cover_width: 1080,
-  cover_height: 1440,
-  video_duration: null,
-};
-
-const readRoute = {
-  provider: "browser",
-  strategy: "http_first",
-  browser_driver: "managed",
-  fallback_used: true,
-  fallback_reason: {
-    provider: "http",
-    code: "not_configured",
-    message: "Cookie HTTP 尚未配置",
-  },
-  attempted_providers: ["http", "browser"],
-} satisfies CapabilityRoute;
-
-function completedTask(result: Record<string, JsonValue>): BrowserTask {
-  return {
-    task_id: "synthetic-browser-task",
-    request_id: "synthetic-request",
-    kind: "list_feeds",
-    payload: {},
-    status: "succeeded",
-    result,
-    target_driver: "extension",
-    executor_id: "synthetic-extension",
-    extension_id: "synthetic-extension",
-    lease_expires_at: null,
-    attempts: 1,
-    message: "合成任务完成",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  };
-}
-
 describe("浏览器探索工作台", () => {
   beforeEach(() => {
     vi.mocked(useManagedBrowser).mockReturnValue(
@@ -102,46 +51,19 @@ describe("浏览器探索工作台", () => {
               nickname: "合成账号",
             }
           : {};
-      return { task: completedTask(data), data } as never;
+      return { task: makeCompletedBrowserTask(data), data } as never;
     });
     vi.mocked(executeReadCapability).mockImplementation(async (path) => {
-      const data = (
+      const data =
         path === "/xhs/feeds/detail"
-          ? {
-              feed_id: feed.feed_id,
-              xsec_token: feed.xsec_token,
-              title: "合成详情",
-              body: "仅用于自动化测试",
-              note_type: "image",
-              author: feed.author,
-              metrics: feed.metrics,
-              image_urls: [],
-              published_at: null,
-              ip_location: "合成地点",
-              comments: [
-                {
-                  comment_id: "synthetic-comment",
-                  content: "合成评论",
-                  author: feed.author,
-                  liked: false,
-                  like_count: "0",
-                  created_at: null,
-                  ip_location: "",
-                  reply_count: "0",
-                  replies: [],
-                },
-              ],
-              comments_has_more: false,
-              comments_cursor: "",
-            }
-          : { items: [feed], source: "home", keyword: null }
-      ) as Record<string, JsonValue>;
-      return { data, route: readRoute } as never;
+          ? browserDetailFixture
+          : makeBrowserFeedList();
+      return { data, route: browserReadRouteFixture } as never;
     });
   });
 
   it("检查登录、读取推荐、搜索并打开详情", async () => {
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("已登录 · 合成账号")).toBeInTheDocument();
@@ -237,7 +159,7 @@ describe("浏览器探索工作台", () => {
     vi.mocked(executeReadCapability).mockRejectedValueOnce(
       new Error("浏览器扩展未连接"),
     );
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     expect(screen.getByRole("button", { name: "搜索" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
@@ -250,7 +172,7 @@ describe("浏览器探索工作台", () => {
   it("处理未登录、无封面和非标准异常", async () => {
     vi.mocked(executeBrowserOperation)
       .mockResolvedValueOnce({
-        task: completedTask({
+        task: makeCompletedBrowserTask({
           logged_in: false,
           user_id: null,
           nickname: null,
@@ -259,14 +181,14 @@ describe("浏览器探索工作台", () => {
       })
       .mockRejectedValueOnce("非标准异常");
     vi.mocked(executeReadCapability).mockResolvedValueOnce({
-      route: readRoute,
+      route: browserReadRouteFixture,
       data: {
         items: [
           {
-            ...feed,
+            ...browserFeedFixture,
             xsec_token: "",
             title: "",
-            author: { ...feed.author, nickname: "" },
+            author: { ...browserFeedFixture.author, nickname: "" },
             cover_url: null,
           },
         ],
@@ -274,7 +196,7 @@ describe("浏览器探索工作台", () => {
         keyword: null,
       },
     });
-    render(<BrowserBoard />);
+    render(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("尚未登录")).toBeInTheDocument();
@@ -285,5 +207,35 @@ describe("浏览器探索工作台", () => {
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("能力请求执行失败")).toBeInTheDocument();
+  });
+
+  it("执行器未确认时只允许读取并禁用会话与写操作", async () => {
+    render(<BrowserBoard />);
+
+    expect(
+      screen.getByText("浏览器执行器尚未确认，登录与写操作已停用"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "检查登录" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "获取登录二维码" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
+    ).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "读取帖子详情：合成浏览帖子",
+      }),
+    );
+
+    expect(await screen.findByRole("button", { name: "点赞" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "收藏" })).toBeDisabled();
+    expect(screen.getByLabelText("发表评论")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "评论" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "回复" })).toBeDisabled();
   });
 });

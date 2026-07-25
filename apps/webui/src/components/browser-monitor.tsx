@@ -5,15 +5,11 @@ import {
   History,
   MonitorCheck,
   RefreshCw,
-  RotateCcw,
   UserRound,
 } from "lucide-react";
 import type {
   BrowserDriver,
   BrowserLoginState,
-  BrowserTask,
-  BrowserTaskKind,
-  BrowserTaskStatus,
 } from "@xhs-downloader/contracts";
 
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
@@ -23,36 +19,13 @@ import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
 import { ExtensionInstallGuide } from "./extension-install-guide";
 import { ManagedBrowserPanel } from "./managed-browser-panel";
+import { BrowserTaskRecord } from "./browser-task-record";
 
 interface BrowserMonitorProps {
   account: BrowserLoginState | null;
   browserDriver: BrowserDriver | null;
   managedBrowser: ManagedBrowserControl;
 }
-
-const KIND_LABELS: Record<BrowserTaskKind, string> = {
-  check_login_status: "检查登录",
-  get_login_qrcode: "获取登录二维码",
-  delete_cookies: "清除 Cookie",
-  list_feeds: "读取推荐",
-  search_feeds: "搜索帖子",
-  get_feed_detail: "读取详情",
-  get_user_profile: "读取用户主页",
-  get_my_profile: "读取当前账号",
-  set_like: "设置点赞",
-  set_favorite: "设置收藏",
-  post_comment: "发表评论",
-  reply_comment: "回复评论",
-};
-
-const STATUS_LABELS: Record<BrowserTaskStatus, string> = {
-  queued: "排队中",
-  claimed: "已领取",
-  running: "执行中",
-  succeeded: "已完成",
-  failed: "失败",
-  needs_review: "需要确认",
-};
 
 /** 展示浏览器执行器状态、登录账号和任务审计记录。 */
 export function BrowserMonitor({
@@ -208,76 +181,6 @@ function StatusCard({
       </div>
     </article>
   );
-}
-
-function BrowserTaskRecord({
-  onRetry,
-  retrying,
-  task,
-}: {
-  onRetry: () => void;
-  retrying: boolean;
-  task: BrowserTask;
-}) {
-  return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-center">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-900">
-            {KIND_LABELS[task.kind]}
-          </h3>
-          <TaskStatusBadge status={task.status} />
-          <span className="text-[11px] text-stone-400">
-            #{task.task_id.slice(0, 8)}
-          </span>
-        </div>
-        <p className="mt-1 line-clamp-2 text-xs leading-5 text-stone-500">
-          {task.message}
-        </p>
-        <p className="mt-2 text-[11px] text-stone-400">
-          {formatTime(task.updated_at)} · 已领取 {task.attempts} 次
-        </p>
-        {task.status === "needs_review" && (
-          <p className="mt-2 text-xs font-medium text-amber-700">
-            结果可能已写入小红书，请人工核对，禁止直接重试。
-          </p>
-        )}
-      </div>
-      {task.status === "failed" && (
-        <ActionButton
-          disabled={retrying}
-          onClick={onRetry}
-          variant="outline"
-        >
-          <RotateCcw
-            aria-hidden
-            className={retrying ? "animate-spin" : ""}
-            size={14}
-          />
-          重试
-        </ActionButton>
-      )}
-    </article>
-  );
-}
-
-function TaskStatusBadge({ status }: { status: BrowserTaskStatus }) {
-  const tone =
-    status === "succeeded"
-      ? "success"
-      : status === "failed"
-        ? "danger"
-        : status === "needs_review"
-          ? "warning"
-          : "neutral";
-  return <Badge tone={tone}>{STATUS_LABELS[status]}</Badge>;
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 function formatRelativeTime(value: string): string {

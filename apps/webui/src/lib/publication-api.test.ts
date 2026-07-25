@@ -174,4 +174,25 @@ describe("发布中心 API 客户端", () => {
       "草稿存在活跃任务",
     );
   });
+
+  it("拒绝发布任务中的未知冻结执行器", async () => {
+    const invalid = {
+      ...makePublicationTask(),
+      target_driver: "future-browser-driver",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify(invalid)))
+        .mockResolvedValueOnce(new Response(JSON.stringify([invalid]))),
+    );
+
+    await expect(
+      submitPublicationTask("synthetic-draft", "manual"),
+    ).rejects.toThrow("发布任务返回了不支持的浏览器执行器");
+    await expect(listPublicationTasks()).rejects.toThrow(
+      "发布任务返回了不支持的浏览器执行器",
+    );
+  });
 });

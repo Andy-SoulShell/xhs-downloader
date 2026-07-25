@@ -8,12 +8,24 @@ import type {
   PublicationTask,
   PublicationVisibility,
 } from "../lib/publication";
+import {
+  normalizePublicationProducts,
+  normalizePublicationTags,
+  preparePublicationSubmission,
+  publicationCreatorUrl,
+  publicationDriverLabel,
+  requirePublicationDriver,
+  validatePublicationDraft,
+  validatePublicationSchedule,
+} from "../lib/publication-editor-rules";
+import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { PublicationAssets } from "./publication-assets";
 import { PublicationOptionsForm } from "./publication-options-form";
 import { PublicationSubmitControls } from "./publication-submit-controls";
 
 interface PublicationEditorProps {
+  browserDriver: BrowserDriver;
   draft: PublicationDraft;
   onDelete: () => Promise<void>;
   onNotify: (message: string) => void;
@@ -29,6 +41,7 @@ interface PublicationEditorProps {
 
 /** 编辑本地发布草稿，并以二次确认提交三种发布任务。 */
 export function PublicationEditor({
+  browserDriver,
   draft,
   onDelete,
   onNotify,
@@ -42,9 +55,8 @@ export function PublicationEditor({
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
   const [tags, setTags] = useState(draft.tags.join(" "));
-  const [visibility, setVisibility] = useState<PublicationVisibility>(
-    draft.visibility,
-  );
+  const [visibility, setVisibility] =
+    useState<PublicationVisibility>(draft.visibility);
   const [isOriginal, setIsOriginal] = useState(draft.is_original);
   const [products, setProducts] = useState(draft.products.join("\n"));
   const [scheduledAt, setScheduledAt] = useState("");
@@ -56,13 +68,23 @@ export function PublicationEditor({
   const input = (assetOrder?: string[]): PublicationDraftInput => ({
     title: title.trim(),
     body: body.trim(),
-    tags: parseTags(tags),
+    tags: normalizePublicationTags(tags),
     visibility,
     is_original: hasVideo ? false : isOriginal,
-    products: parseProducts(products),
+    products: normalizePublicationProducts(products),
     ...(assetOrder ? { asset_order: assetOrder } : {}),
   });
   const save = async (assetOrder?: string[]) => onSave(input(assetOrder));
+  const submissionInput = () =>
+    preparePublicationSubmission(input(), browserDriver);
+  const saveSubmission = async () => {
+    const saved = await onSave(submissionInput());
+    if (browserDriver === "managed") {
+      setVisibility("private");
+      setProducts("");
+    }
+    return saved;
+  };
   const run = async (label: string, operation: () => Promise<void>) => {
     setBusy(label);
     try {
@@ -75,28 +97,41 @@ export function PublicationEditor({
   };
   const submitBrowserTask = (mode: "manual" | "platform_scheduled") =>
     run(mode, async () => {
-      validateDraft(input(), draft);
+      validatePublicationDraft(submissionInput(), draft);
       const platformSchedule =
         mode === "platform_scheduled"
-          ? validateSchedule(scheduledAt, mode)
+          ? validatePublicationSchedule(scheduledAt, mode)
           : undefined;
-      const popup = window.open("about:blank", "_blank");
+      const popup =
+        browserDriver === "extension"
+          ? window.open("about:blank", "_blank")
+          : null;
       if (popup) popup.opener = null;
       try {
-        await save();
+        await saveSubmission();
         const task =
           mode === "manual"
             ? await onSubmitManual()
             : await onSubmitPlatformScheduled(platformSchedule!);
-        if (popup) {
-          popup.location.href = creatorUrl(task);
+        const targetDriver = requirePublicationDriver(task.target_driver);
+        if (targetDriver === "managed") {
+          popup?.close();
           onNotify(
             mode === "manual"
-              ? "发布任务已交给浏览器扩展"
-              : "官方定时任务已交给扩展设置",
+              ? "发布任务已交给受管浏览器"
+              : "官方定时任务已交给受管浏览器设置",
           );
         } else {
-          onNotify("任务已就绪，但浏览器阻止了创作页弹窗");
+          if (popup) {
+            popup.location.href = publicationCreatorUrl(task);
+            onNotify(
+              mode === "manual"
+                ? "发布任务已交给浏览器扩展"
+                : "官方定时任务已交给扩展设置",
+            );
+          } else {
+            onNotify("扩展任务已就绪，请从任务列表打开创作页");
+          }
         }
       } catch (error) {
         popup?.close();
@@ -105,11 +140,13 @@ export function PublicationEditor({
     });
   const submitLocalSchedule = () =>
     run("scheduled", async () => {
-      validateDraft(input(), draft);
-      const schedule = validateSchedule(scheduledAt, "scheduled");
-      await save();
-      await onSubmitScheduled(schedule);
-      onNotify("本地定时任务已保存，届时由浏览器扩展执行");
+      validatePublicationDraft(submissionInput(), draft);
+      const schedule = validatePublicationSchedule(scheduledAt, "scheduled");
+      await saveSubmission();
+      const task = await onSubmitScheduled(schedule);
+      onNotify(
+        `本地定时任务已保存，届时由${publicationDriverLabel(task.target_driver)}执行`,
+      );
     });
   const submit = (mode: PublicationMode) => {
     if (mode === "scheduled") return submitLocalSchedule();
@@ -163,6 +200,7 @@ export function PublicationEditor({
       />
 
       <PublicationOptionsForm
+        browserDriver={browserDriver}
         hasVideo={hasVideo}
         isOriginal={isOriginal}
         onOriginalChange={setIsOriginal}
@@ -173,10 +211,15 @@ export function PublicationEditor({
       />
 
       <PublicationSubmitControls
+        browserDriver={browserDriver}
         busy={busy}
         onScheduledAtChange={setScheduledAt}
         onSubmit={submit}
-        products={parseProducts(products)}
+        products={
+          browserDriver === "managed"
+            ? []
+            : normalizePublicationProducts(products)
+        }
         scheduledAt={scheduledAt}
       />
 
@@ -211,52 +254,4 @@ export function PublicationEditor({
       </div>
     </form>
   );
-}
-
-function parseTags(value: string): string[] {
-  return [...new Set(value.split(/[\s,#，]+/).map((item) => item.trim()))]
-    .filter(Boolean)
-    .slice(0, 20);
-}
-
-function parseProducts(value: string): string[] {
-  return [...new Set(value.split(/[\n,，]+/).map((item) => item.trim()))]
-    .filter(Boolean)
-    .slice(0, 20);
-}
-
-function validateDraft(
-  input: PublicationDraftInput,
-  draft: PublicationDraft,
-): void {
-  if (!input.title && !input.body) throw new Error("标题和正文不能同时为空");
-  if (!draft.assets.length) throw new Error("请至少添加一个发布素材");
-}
-
-function creatorUrl(task: PublicationTask): string {
-  const url = new URL("https://creator.xiaohongshu.com/publish/publish");
-  url.searchParams.set("xhd_task", task.task_id);
-  if (task.package.assets[0]?.media_type.startsWith("video/")) {
-    url.searchParams.set("target", "video");
-  }
-  return url.toString();
-}
-
-function validateSchedule(
-  value: string,
-  mode: Exclude<PublicationMode, "manual">,
-): string {
-  const instant = new Date(value);
-  if (!value || !Number.isFinite(instant.getTime())) {
-    throw new Error("请选择有效的计划发布时间");
-  }
-  const delay = instant.getTime() - Date.now();
-  if (delay <= 0) throw new Error("计划发布时间必须晚于当前时间");
-  if (mode === "platform_scheduled" && delay < 60 * 60_000) {
-    throw new Error("官方定时发布时间必须至少在 1 小时后");
-  }
-  if (mode === "platform_scheduled" && delay > 14 * 24 * 60 * 60_000) {
-    throw new Error("官方定时发布时间不能超过 14 天");
-  }
-  return instant.toISOString();
 }

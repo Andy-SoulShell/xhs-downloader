@@ -286,4 +286,8 @@ const settingLabels: Record<string, string> = {
   browser_task_lease_seconds: "浏览器任务租约",
   route_strategy: "只读路由策略",
   browser_driver: "浏览器执行器",
+  managed_browser_executable: "受管 Chromium 可执行文件",
+  managed_browser_headless: "受管浏览器无头模式",
+  managed_browser_startup_timeout: "受管浏览器启动超时",
+  managed_browser_shutdown_timeout: "受管浏览器关闭超时",
 };

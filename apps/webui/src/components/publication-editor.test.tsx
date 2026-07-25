@@ -19,6 +19,7 @@ function renderEditor(
   overrides: Partial<Parameters<typeof PublicationEditor>[0]> = {},
 ) {
   const properties = {
+    browserDriver: "extension" as const,
     draft: makePublicationDraft(),
     onDelete: vi.fn().mockResolvedValue(undefined),
     onNotify: vi.fn(),
@@ -118,7 +119,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
     await waitFor(() =>
       expect(blocked.onNotify).toHaveBeenCalledWith(
-        "任务已就绪，但浏览器阻止了创作页弹窗",
+        "扩展任务已就绪，请从任务列表打开创作页",
       ),
     );
   });
@@ -184,6 +185,52 @@ describe("发布草稿编辑器", () => {
     expect(popup.location.href).toContain("xhd_task=");
     expect(properties.onNotify).toHaveBeenCalledWith(
       "官方定时任务已交给扩展设置",
+    );
+  });
+
+  it("受管模式不打开日常浏览器并前置限制发布选项", async () => {
+    const open = vi.spyOn(window, "open");
+    const properties = renderEditor({
+      browserDriver: "managed",
+      draft: makePublicationDraft({
+        visibility: "public",
+        products: ["合成商品"],
+      }),
+      onSubmitManual: vi.fn().mockResolvedValue(
+        makePublicationTask({ target_driver: "managed" }),
+      ),
+    });
+
+    expect(screen.getByLabelText("可见范围")).toBeDisabled();
+    expect(screen.getByLabelText("可见范围")).toHaveValue("private");
+    expect(screen.getByLabelText("绑定商品")).toBeDisabled();
+    expect(
+      screen.getByText("受管浏览器首期固定为仅自己可见且不绑定商品。"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "保存草稿" }));
+    await waitFor(() => expect(properties.onSave).toHaveBeenCalled());
+    expect(properties.onSave).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        visibility: "public",
+        products: ["合成商品"],
+      }),
+    );
+    vi.clearAllMocks();
+
+    fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
+    expect(
+      screen.getByText(/受管浏览器将使用当前选定浏览器中的登录账号/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
+
+    await waitFor(() => expect(properties.onSubmitManual).toHaveBeenCalled());
+    expect(properties.onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ visibility: "private", products: [] }),
+    );
+    expect(open).not.toHaveBeenCalled();
+    expect(properties.onNotify).toHaveBeenCalledWith(
+      "发布任务已交给受管浏览器",
     );
   });
 

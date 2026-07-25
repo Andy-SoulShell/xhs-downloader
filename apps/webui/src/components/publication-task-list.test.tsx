@@ -90,4 +90,58 @@ describe("发布任务列表", () => {
 
     expect(screen.getByText("还没有发布任务")).toBeInTheDocument();
   });
+
+  it("受管任务不提供日常浏览器创作页并显示冻结执行器", () => {
+    render(
+      <PublicationTaskList
+        onCancel={vi.fn()}
+        onResumeVerification={vi.fn()}
+        onReview={vi.fn()}
+        onRetry={vi.fn()}
+        tasks={[
+          makePublicationTask({
+            target_driver: "managed",
+            publish_attempted: true,
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("等待受管浏览器")).toBeInTheDocument();
+    expect(
+      screen.getByText("受管浏览器 · 尝试 0 次 · 已尝试提交"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /打开创作页/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("为被拦截或重试后的扩展官方定时任务保留创作页入口", () => {
+    const videoDraft = makePublicationTask().package;
+    videoDraft.assets[0] = {
+      ...videoDraft.assets[0],
+      media_type: "video/mp4",
+    };
+    render(
+      <PublicationTaskList
+        onCancel={vi.fn()}
+        onResumeVerification={vi.fn()}
+        onReview={vi.fn()}
+        onRetry={vi.fn()}
+        tasks={[
+          makePublicationTask({
+            mode: "platform_scheduled",
+            package: videoDraft,
+          }),
+        ]}
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: /打开创作页/ });
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining("xhd_task=synthetic-publication-task"),
+    );
+    expect(link).toHaveAttribute("href", expect.stringContaining("target=video"));
+  });
 });

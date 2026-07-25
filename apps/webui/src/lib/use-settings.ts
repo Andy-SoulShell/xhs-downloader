@@ -15,6 +15,7 @@ export function useSettings() {
       setSettings(await getSettings());
       setError("");
     } catch (cause) {
+      setSettings(null);
       setError(cause instanceof Error ? cause.message : "配置读取失败");
     } finally {
       setLoading(false);
@@ -32,6 +33,7 @@ export function useSettings() {
       })
       .catch((cause) => {
         if (active) {
+          setSettings(null);
           setError(cause instanceof Error ? cause.message : "配置读取失败");
         }
       })
@@ -52,6 +54,7 @@ export function useSettings() {
       return next;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "配置保存失败";
+      setSettings(null);
       setError(message);
       throw cause;
     } finally {

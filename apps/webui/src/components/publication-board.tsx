@@ -1,6 +1,7 @@
 import { FilePlus2, Send } from "lucide-react";
 import { useState } from "react";
 
+import { isBrowserDriver } from "../lib/types";
 import { usePublicationCenter } from "../lib/use-publication-center";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
@@ -11,13 +12,18 @@ import { PublicationTaskList } from "./publication-task-list";
 
 /** 组合发布草稿编辑、任务状态和需要用户确认的安全操作。 */
 export function PublicationBoard({
+  browserDriver,
   onNotify,
 }: {
+  browserDriver?: unknown;
   onNotify: (message: string) => void;
 }) {
   const center = usePublicationCenter();
   const [selectedId, setSelectedId] = useState("");
   const [creating, setCreating] = useState(false);
+  const confirmedDriver = isBrowserDriver(browserDriver)
+    ? browserDriver
+    : null;
 
   const resolvedId = center.drafts.some(
     (draft) => draft.draft_id === selectedId,
@@ -59,6 +65,46 @@ export function PublicationBoard({
       throw error;
     }
   };
+  const taskList = (
+    <PublicationTaskList
+      onCancel={(taskId) =>
+        taskAction(() => center.cancelTask(taskId), "发布任务已取消")
+      }
+      onResumeVerification={resumeVerification}
+      onRetry={(taskId) =>
+        taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")
+      }
+      onReview={(taskId, published) =>
+        taskAction(
+          () => center.reviewTask(taskId, published),
+          published
+            ? "已确认作品发布成功"
+            : "已确认作品未发布，现在可以重试",
+        )
+      }
+      tasks={center.tasks}
+    />
+  );
+
+  if (!confirmedDriver) {
+    return (
+      <section aria-label="发布中心" className="mt-8 min-w-0">
+        <PageHeading
+          description="发布任务必须先确认使用浏览器扩展还是受管浏览器。"
+          meta="等待配置"
+          title="发布中心"
+        />
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.7fr)]">
+          <EmptyState
+            description="暂时无法确认发布执行器，新建和提交已停用；已有任务仍可核对或恢复。"
+            icon={Send}
+            title="尚未确认浏览器模式"
+          />
+          {taskList}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-label="发布中心" className="mt-8 min-w-0">
@@ -73,7 +119,11 @@ export function PublicationBoard({
             {creating ? "正在创建…" : "新建草稿"}
           </ActionButton>
         }
-        description="由本地服务保存草稿和排期，浏览器扩展使用普通账号的已登录创作中心完成发布。"
+        description={
+          confirmedDriver === "managed"
+            ? "由本地服务保存草稿和排期，受管浏览器使用专用用户目录完成私密发布。"
+            : "由本地服务保存草稿和排期，浏览器扩展使用日常浏览器的已登录创作中心完成发布。"
+        }
         meta={`${center.drafts.length} 份草稿 · ${center.tasks.length} 项任务`}
         title="发布中心"
       />
@@ -122,8 +172,9 @@ export function PublicationBoard({
             </label>
             {selected && (
               <PublicationEditor
+                browserDriver={confirmedDriver}
                 draft={selected}
-                key={selected.draft_id}
+                key={`${selected.draft_id}:${confirmedDriver}`}
                 onDelete={() => center.deleteDraft(selected.draft_id)}
                 onNotify={onNotify}
                 onRemoveAsset={async (assetId) => {
@@ -155,24 +206,7 @@ export function PublicationBoard({
               />
             )}
           </section>
-          <PublicationTaskList
-            onCancel={(taskId) =>
-              taskAction(() => center.cancelTask(taskId), "发布任务已取消")
-            }
-            onResumeVerification={resumeVerification}
-            onRetry={(taskId) =>
-              taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")
-            }
-            onReview={(taskId, published) =>
-              taskAction(
-                () => center.reviewTask(taskId, published),
-                published
-                  ? "已确认作品发布成功"
-                  : "已确认作品未发布，现在可以重试",
-              )
-            }
-            tasks={center.tasks}
-          />
+          {taskList}
         </div>
       )}
     </section>

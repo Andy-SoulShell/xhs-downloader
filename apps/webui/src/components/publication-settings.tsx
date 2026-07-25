@@ -14,7 +14,7 @@ export function PublicationSettings({
 }) {
   return (
     <SettingsSection
-      description="限制待发布素材占用，并控制浏览器扩展中断后的安全恢复时间。"
+      description="限制待发布素材占用，并控制浏览器执行中断后的安全恢复时间。"
       title="内容发布"
     >
       <NumberSetting
@@ -26,7 +26,7 @@ export function PublicationSettings({
         value={values.publish_max_asset_size}
       />
       <NumberSetting
-        help="扩展无状态回传后重新排队或转为待确认的时间，范围 60–1800 秒。"
+        help="浏览器执行器无状态回传后重新排队或转为待确认的时间，范围 60–1800 秒。"
         label="发布任务租约（秒）"
         max={1800}
         min={60}

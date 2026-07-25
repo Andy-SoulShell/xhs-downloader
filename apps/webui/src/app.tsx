@@ -255,7 +255,7 @@ export default function App() {
             )}
             {view === "browser" && <BrowserBoard browserDriver={settings?.values.browser_driver} />}
             {view === "publication" && (
-              <PublicationBoard onNotify={notify} />
+              <PublicationBoard browserDriver={settings?.values.browser_driver} onNotify={notify} />
             )}
             {view === "records" && <RecordBoard records={records} />}
             {view === "settings" && (

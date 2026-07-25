@@ -94,6 +94,40 @@ describe("服务配置界面", () => {
     );
   });
 
+  it("保存受管 Chromium 路径并允许清空恢复自动检测", async () => {
+    const onSave = vi.fn().mockResolvedValue(
+      makeSettingsResponse({ restart_required: true }),
+    );
+    render(
+      <SettingsBoard
+        error=""
+        loading={false}
+        onRefresh={vi.fn()}
+        onSave={onSave}
+        onSaved={vi.fn()}
+        saving={false}
+        settings={makeSettingsResponse({
+          values: {
+            ...makeSettingsResponse().values,
+            managed_browser_executable: "/synthetic/chromium",
+          },
+        })}
+      />,
+    );
+
+    fireEvent.change(
+      screen.getByLabelText("受管 Chromium 可执行文件"),
+      { target: { value: "" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ managed_browser_executable: null }),
+      ),
+    );
+  });
+
   it("提供加载失败与重试状态", () => {
     const onRefresh = vi.fn();
     const { rerender } = render(

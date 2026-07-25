@@ -14,6 +14,7 @@ interface BrowserDetailProps {
   onReply: (commentId: string, content: string) => Promise<void>;
   onSetFavorite: (active: boolean) => Promise<void>;
   onSetLike: (active: boolean) => Promise<void>;
+  writeEnabled?: boolean;
 }
 
 /** 展示帖子详情、已加载评论和需要二次确认的互动操作。 */
@@ -25,6 +26,7 @@ export function BrowserDetail({
   onReply,
   onSetFavorite,
   onSetLike,
+  writeEnabled = true,
 }: BrowserDetailProps) {
   const [draft, setDraft] = useState("");
   const [replyTarget, setReplyTarget] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export function BrowserDetail({
         />
         <div className="ml-auto flex flex-wrap gap-2">
           <ActionButton
-            disabled={busy}
+            disabled={busy || !writeEnabled}
             onClick={() =>
               queue(
                 detail.metrics.liked ? "取消点赞" : "点赞",
@@ -103,7 +105,7 @@ export function BrowserDetail({
             {detail.metrics.liked ? "取消点赞" : "点赞"}
           </ActionButton>
           <ActionButton
-            disabled={busy}
+            disabled={busy || !writeEnabled}
             onClick={() =>
               queue(
                 detail.metrics.collected ? "取消收藏" : "收藏",
@@ -137,7 +139,10 @@ export function BrowserDetail({
             >
               取消
             </ActionButton>
-            <ActionButton disabled={busy} onClick={() => void confirm()}>
+            <ActionButton
+              disabled={busy || !writeEnabled}
+              onClick={() => void confirm()}
+            >
               确认执行
             </ActionButton>
           </div>
@@ -145,6 +150,11 @@ export function BrowserDetail({
       )}
 
       <div className="mt-5 rounded-2xl border border-stone-200 bg-white p-4">
+        {!writeEnabled && (
+          <p className="mb-3 text-xs leading-5 text-amber-700">
+            浏览器执行器尚未确认，互动、评论和回复已停用。
+          </p>
+        )}
         <label
           className="text-sm font-semibold text-stone-900"
           htmlFor="browser-comment"
@@ -154,6 +164,7 @@ export function BrowserDetail({
         <textarea
           className="mt-3 min-h-24 w-full resize-y rounded-xl border border-stone-200 p-3 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-100"
           id="browser-comment"
+          disabled={!writeEnabled}
           maxLength={1000}
           onChange={(event) => setDraft(event.target.value)}
           placeholder={replyTarget ? "输入回复内容" : "输入评论内容"}
@@ -172,7 +183,7 @@ export function BrowserDetail({
             <span className="text-xs text-stone-400">{draft.length}/1000</span>
           )}
           <ActionButton
-            disabled={busy || !draft.trim()}
+            disabled={busy || !writeEnabled || !draft.trim()}
             onClick={() => {
               const content = draft.trim();
               queue(replyTarget ? "提交回复" : "发表评论", async () => {
@@ -207,6 +218,7 @@ export function BrowserDetail({
               </p>
               <button
                 className="mt-2 text-xs font-medium text-red-600 hover:text-red-700"
+                disabled={!writeEnabled}
                 onClick={() => {
                   setReplyTarget(comment.comment_id);
                   setDraft("");

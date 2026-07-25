@@ -1,3 +1,5 @@
+import type { BrowserDriver } from "./types";
+
 /** 发布执行方式：立即、本地到期执行或创作平台官方定时。 */
 export type PublicationMode = "manual" | "scheduled" | "platform_scheduled";
 /** 小红书作品的目标可见范围。 */
@@ -37,18 +39,22 @@ export interface PublicationDraft {
   updated_at: string;
 }
 
+/** 后端冻结执行驱动并持久化的发布任务快照。 */
 export interface PublicationTask {
   task_id: string;
   package: PublicationDraft;
   package_fingerprint: string;
   mode: PublicationMode;
+  target_driver: BrowserDriver;
   status: PublicationTaskStatus;
   scheduled_at: string;
+  executor_id?: string | null;
   extension_id?: string | null;
   lease_expires_at?: string | null;
   attempts: number;
   message: string;
   result_url?: string | null;
+  publish_attempted: boolean;
   created_at: string;
   updated_at: string;
 }

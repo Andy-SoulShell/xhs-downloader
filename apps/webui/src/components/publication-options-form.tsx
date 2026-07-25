@@ -1,6 +1,8 @@
 import type { PublicationVisibility } from "../lib/publication";
+import type { BrowserDriver } from "../lib/types";
 
 interface PublicationOptionsFormProps {
+  browserDriver: BrowserDriver;
   hasVideo: boolean;
   isOriginal: boolean;
   onOriginalChange: (value: boolean) => void;
@@ -12,6 +14,7 @@ interface PublicationOptionsFormProps {
 
 /** 编辑可见范围、原创声明和待确认商品。 */
 export function PublicationOptionsForm({
+  browserDriver,
   hasVideo,
   isOriginal,
   onOriginalChange,
@@ -20,6 +23,7 @@ export function PublicationOptionsForm({
   products,
   visibility,
 }: PublicationOptionsFormProps) {
+  const managed = browserDriver === "managed";
   return (
     <fieldset className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
       <legend className="px-1 text-xs font-semibold text-stone-700">
@@ -30,10 +34,11 @@ export function PublicationOptionsForm({
           可见范围
           <select
             className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
+            disabled={managed}
             onChange={(event) =>
               onVisibilityChange(event.target.value as PublicationVisibility)
             }
-            value={visibility}
+            value={managed ? "private" : visibility}
           >
             <option value="public">公开可见</option>
             <option value="private">仅自己可见</option>
@@ -60,13 +65,20 @@ export function PublicationOptionsForm({
         绑定商品
         <textarea
           className="mt-2 min-h-20 w-full resize-y rounded-xl border border-stone-200 bg-white p-3 text-sm font-normal text-stone-900 outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
+          disabled={managed}
           onChange={(event) => onProductsChange(event.target.value)}
-          placeholder="每行一个商品名称或商品 ID；发布前会再次确认"
-          value={products}
+          placeholder={
+            managed
+              ? "受管浏览器首期不支持绑定商品"
+              : "每行一个商品名称或商品 ID；发布前会再次确认"
+          }
+          value={managed ? "" : products}
         />
       </label>
       <p className="mt-2 text-[11px] leading-5 text-stone-500">
-        商品搜索只有一个明确匹配时才会绑定；零个或多个匹配都会中止发布。
+        {managed
+          ? "受管浏览器首期固定为仅自己可见且不绑定商品。"
+          : "商品搜索只有一个明确匹配时才会绑定；零个或多个匹配都会中止发布。"}
       </p>
     </fieldset>
   );

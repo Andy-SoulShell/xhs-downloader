@@ -6,6 +6,7 @@ import type {
   PublicationTask,
   PublicationVerificationResumeResult,
 } from "./publication";
+import { isBrowserDriver } from "./types";
 
 export async function listPublicationDrafts(): Promise<PublicationDraft[]> {
   const response = await fetch(`${API_BASE}/publication/drafts`);
@@ -82,14 +83,18 @@ export async function submitPublicationTask(
       }),
     },
   );
-  return parseResponse<PublicationTask>(response);
+  return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
+/** 读取发布任务并拒绝未知的冻结浏览器执行器。 */
 export async function listPublicationTasks(): Promise<PublicationTask[]> {
   const response = await fetch(`${API_BASE}/publication/tasks`);
-  return parseResponse<PublicationTask[]>(response);
+  const value = await parseResponse<unknown>(response);
+  if (!Array.isArray(value)) throw new Error("发布任务列表结构无效");
+  return value.map(requirePublicationTask);
 }
 
+/** 显式重试明确失败且允许重试的发布任务。 */
 export async function retryPublicationTask(
   taskId: string,
 ): Promise<PublicationTask> {
@@ -97,7 +102,7 @@ export async function retryPublicationTask(
     `${API_BASE}/publication/tasks/${taskId}/retry`,
     { method: "POST" },
   );
-  return parseResponse<PublicationTask>(response);
+  return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
 /** 显式确认验证已完成，并恢复同一受管浏览器页面中的发布任务。 */
@@ -130,9 +135,10 @@ export async function reviewPublicationTask(
       }),
     },
   );
-  return parseResponse<PublicationTask>(response);
+  return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
+/** 取消尚未产生平台写入的发布任务。 */
 export async function cancelPublicationTask(
   taskId: string,
 ): Promise<PublicationTask> {
@@ -140,5 +146,17 @@ export async function cancelPublicationTask(
     `${API_BASE}/publication/tasks/${taskId}/cancel`,
     { method: "POST" },
   );
-  return parseResponse<PublicationTask>(response);
+  return requirePublicationTask(await parseResponse<unknown>(response));
+}
+
+function requirePublicationTask(value: unknown): PublicationTask {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("target_driver" in value) ||
+    !isBrowserDriver(value.target_driver)
+  ) {
+    throw new Error("发布任务返回了不支持的浏览器执行器");
+  }
+  return value as PublicationTask;
 }
