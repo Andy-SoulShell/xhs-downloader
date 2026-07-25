@@ -122,6 +122,59 @@ describe("浏览器探索工作台", () => {
     );
     expect(await screen.findByText("合成详情")).toBeInTheDocument();
     expect(screen.getByText("合成评论")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "点赞" }));
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("确认要点赞吗");
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    fireEvent.click(screen.getByRole("button", { name: "点赞" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
+    await waitFor(() =>
+      expect(executeBrowserOperation).toHaveBeenCalledWith(
+        "/xhs/feeds/like",
+        expect.objectContaining({ active: true }),
+        expect.any(AbortSignal),
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "收藏" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
+    await waitFor(() =>
+      expect(executeBrowserOperation).toHaveBeenCalledWith(
+        "/xhs/feeds/favorite",
+        expect.objectContaining({ active: true }),
+        expect.any(AbortSignal),
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText("发表评论"), {
+      target: { value: " 合成新评论 " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "评论" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
+    await waitFor(() =>
+      expect(executeBrowserOperation).toHaveBeenCalledWith(
+        "/xhs/feeds/comment",
+        expect.objectContaining({ content: "合成新评论" }),
+        expect.any(AbortSignal),
+      ),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "回复" }));
+    fireEvent.change(screen.getByLabelText("回复评论"), {
+      target: { value: "合成新回复" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: "回复" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
+    await waitFor(() =>
+      expect(executeBrowserOperation).toHaveBeenCalledWith(
+        "/xhs/feeds/comment/reply",
+        expect.objectContaining({
+          comment_id: "synthetic-comment",
+          content: "合成新回复",
+        }),
+        expect.any(AbortSignal),
+      ),
+    );
+
     fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
     await waitFor(() =>
       expect(executeBrowserOperation).toHaveBeenLastCalledWith(
@@ -206,7 +259,17 @@ describe("浏览器帖子详情", () => {
       comments_cursor: "",
     };
 
-    render(<BrowserDetail detail={detail} onClose={onClose} />);
+    render(
+      <BrowserDetail
+        busy={false}
+        detail={detail}
+        onClose={onClose}
+        onComment={vi.fn()}
+        onReply={vi.fn()}
+        onSetFavorite={vi.fn()}
+        onSetLike={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText("未知作者")).toBeInTheDocument();
     expect(screen.getByText("位置未知")).toBeInTheDocument();

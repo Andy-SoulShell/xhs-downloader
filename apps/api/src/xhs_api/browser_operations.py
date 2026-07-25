@@ -7,7 +7,10 @@ from xhs_core.domain import BrowserTask, BrowserTaskKind
 
 from .browser_operation_models import (
     BrowserOperationRequest,
+    CommentRequest,
+    DesiredStateRequest,
     FeedDetailRequest,
+    ReplyCommentRequest,
     SearchFeedsRequest,
     UserProfileRequest,
 )
@@ -125,6 +128,70 @@ def create_browser_operation_router(
         return await submit(
             BrowserTaskKind.GET_MY_PROFILE,
             {},
+            payload.request_id,
+            wait_seconds,
+        )
+
+    @router.post("/feeds/like", response_model=BrowserTask, status_code=202)
+    async def set_like(
+        payload: DesiredStateRequest,
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=60),
+    ) -> BrowserTask:
+        require_management(request)
+        data = payload.model_dump(mode="json", exclude={"request_id"})
+        return await submit(
+            BrowserTaskKind.SET_LIKE,
+            data,
+            payload.request_id,
+            wait_seconds,
+        )
+
+    @router.post("/feeds/favorite", response_model=BrowserTask, status_code=202)
+    async def set_favorite(
+        payload: DesiredStateRequest,
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=60),
+    ) -> BrowserTask:
+        require_management(request)
+        data = payload.model_dump(mode="json", exclude={"request_id"})
+        return await submit(
+            BrowserTaskKind.SET_FAVORITE,
+            data,
+            payload.request_id,
+            wait_seconds,
+        )
+
+    @router.post("/feeds/comment", response_model=BrowserTask, status_code=202)
+    async def post_comment(
+        payload: CommentRequest,
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=60),
+    ) -> BrowserTask:
+        require_management(request)
+        data = payload.model_dump(mode="json", exclude={"request_id"})
+        return await submit(
+            BrowserTaskKind.POST_COMMENT,
+            data,
+            payload.request_id,
+            wait_seconds,
+        )
+
+    @router.post(
+        "/feeds/comment/reply",
+        response_model=BrowserTask,
+        status_code=202,
+    )
+    async def reply_comment(
+        payload: ReplyCommentRequest,
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=60),
+    ) -> BrowserTask:
+        require_management(request)
+        data = payload.model_dump(mode="json", exclude={"request_id"})
+        return await submit(
+            BrowserTaskKind.REPLY_COMMENT,
+            data,
             payload.request_id,
             wait_seconds,
         )

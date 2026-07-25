@@ -3,6 +3,8 @@ export type {
   BrowserLoginState,
   BrowserTask,
   ClientDownloadRecord,
+  CommentResult,
+  DesiredStateResult,
   FeedDetailResult,
   FeedListResult,
   FeedSummary,

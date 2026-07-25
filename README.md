@@ -228,6 +228,7 @@ uv run xhs-api
 - 下载任务：`POST /tasks`
 - 浏览器登录状态：`POST /xhs/login/status`
 - 推荐、搜索与详情：`POST /xhs/feeds/list|search|detail`
+- 点赞、收藏与评论：`POST /xhs/feeds/like|favorite|comment`
 - 用户资料：`POST /xhs/user/profile`、`POST /xhs/user/me`
 - 浏览器任务：`GET/POST /browser/tasks`
 - 任务列表：`GET /tasks`
@@ -276,6 +277,8 @@ Streamable HTTP 地址：`http://127.0.0.1:5557/mcp`。可通过 `--api-url`
 - `list_feeds`、`search_feeds`：读取推荐和搜索结果。
 - `get_feed_detail`：读取帖子详情和已加载评论。
 - `user_profile`、`get_my_profile`：读取指定用户或当前账号资料。
+- `like_feed`、`favorite_feed`：设置并核验点赞或收藏目标状态。
+- `post_comment_to_feed`、`reply_comment_in_feed`：提交并核验评论或回复。
 
 浏览器能力的迁移边界与后续步骤见
 [xiaohongshu-mcp 能力迁移方案](docs/browser-capability-migration.md)。

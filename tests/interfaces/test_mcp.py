@@ -66,6 +66,42 @@ async def test_mcp_browser_tools_delegate_to_local_api() -> None:
                 "xsec_token": "synthetic-token",
             },
         )
+        liked = await client.call_tool(
+            "like_feed",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "request_id": "synthetic-like-request",
+                "unlike": True,
+            },
+        )
+        await client.call_tool(
+            "favorite_feed",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "request_id": "synthetic-favorite-request",
+            },
+        )
+        await client.call_tool(
+            "post_comment_to_feed",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成评论",
+                "request_id": "synthetic-comment-request",
+            },
+        )
+        await client.call_tool(
+            "reply_comment_in_feed",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成回复",
+                "comment_id": "synthetic-comment",
+                "request_id": "synthetic-reply-request",
+            },
+        )
 
     names = [tool.name for tool in tools]
     assert names == [
@@ -77,9 +113,14 @@ async def test_mcp_browser_tools_delegate_to_local_api() -> None:
         "get_feed_detail",
         "user_profile",
         "get_my_profile",
+        "like_feed",
+        "favorite_feed",
+        "post_comment_to_feed",
+        "reply_comment_in_feed",
     ]
     assert search.data["task_id"] == "synthetic-browser-task"
     assert profile.data["data"] == {"items": []}
+    assert liked.data["message"] == "合成浏览结果"
     assert browser.calls == [
         (
             "/xhs/feeds/search",
@@ -101,4 +142,60 @@ async def test_mcp_browser_tools_delegate_to_local_api() -> None:
                 "xsec_token": "synthetic-token",
             },
         ),
+        (
+            "/xhs/feeds/like",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "active": False,
+                "request_id": "synthetic-like-request",
+            },
+        ),
+        (
+            "/xhs/feeds/favorite",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "active": True,
+                "request_id": "synthetic-favorite-request",
+            },
+        ),
+        (
+            "/xhs/feeds/comment",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成评论",
+                "request_id": "synthetic-comment-request",
+            },
+        ),
+        (
+            "/xhs/feeds/comment/reply",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成回复",
+                "comment_id": "synthetic-comment",
+                "user_id": None,
+                "request_id": "synthetic-reply-request",
+            },
+        ),
     ]
+
+
+async def test_mcp_reply_requires_a_target() -> None:
+    """确保 MCP 在提交任务前拒绝没有目标的回复。"""
+    mcp = create_mcp(FakeService(), _FakeBrowserClient())
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "reply_comment_in_feed",
+            {
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成回复",
+                "request_id": "synthetic-reply-request",
+            },
+            raise_on_error=False,
+        )
+
+    assert result.is_error is True

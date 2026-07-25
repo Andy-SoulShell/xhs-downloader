@@ -18,7 +18,7 @@ import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
 import { PageHeading } from "./page-heading";
 
-/** 浏览器登录态、推荐流、搜索和详情的统一只读工作台。 */
+/** 浏览器登录态、内容探索和互动操作的统一工作台。 */
 export function BrowserBoard() {
   const explorer = useBrowserExplorer();
   const [keyword, setKeyword] = useState("");
@@ -32,8 +32,10 @@ export function BrowserBoard() {
   return (
     <section>
       <PageHeading
-        description="由浏览器扩展使用当前小红书登录态读取；Cookie 始终留在浏览器内。"
-        meta={explorer.task ? `任务 ${explorer.task.task_id.slice(0, 8)}` : "只读"}
+        description="由浏览器扩展使用当前小红书登录态读取与交互；Cookie 始终留在浏览器内。"
+        meta={
+          explorer.task ? `任务 ${explorer.task.task_id.slice(0, 8)}` : "浏览能力"
+        }
         title="浏览器探索"
         actions={
           <div className="flex flex-wrap gap-2">
@@ -112,8 +114,17 @@ export function BrowserBoard() {
 
       {explorer.detail && (
         <BrowserDetail
+          busy={explorer.busy}
           detail={explorer.detail}
+          onComment={(content) => explorer.postComment(content)}
           onClose={() => void explorer.loadFeeds()}
+          onReply={(commentId, content) =>
+            explorer.replyComment(commentId, content)
+          }
+          onSetFavorite={(active) =>
+            explorer.setInteraction("favorite", active)
+          }
+          onSetLike={(active) => explorer.setInteraction("like", active)}
         />
       )}
 

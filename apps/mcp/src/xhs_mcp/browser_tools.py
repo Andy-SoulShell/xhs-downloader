@@ -37,7 +37,7 @@ def register_browser_tools(
 
     @mcp.tool(
         name="search_feeds",
-        description="按关键词搜索帖子；扩展尚未接入时会明确拒绝非默认筛选。",
+        description="按关键词和可选筛选条件搜索小红书帖子。",
         annotations=_read_annotations("搜索帖子"),
     )
     async def search_feeds(
@@ -133,11 +133,123 @@ def register_browser_tools(
     async def get_my_profile() -> dict:
         return await client.execute("/xhs/user/me", {})
 
+    @mcp.tool(
+        name="like_feed",
+        description="将帖子调整为已点赞或未点赞，并在页面状态中核验。",
+        annotations=_write_annotations("设置点赞状态"),
+    )
+    async def like_feed(
+        feed_id: Annotated[str, Field(description="帖子 ID")],
+        xsec_token: Annotated[str, Field(description="帖子访问令牌")],
+        request_id: Annotated[str, Field(description="调用方生成的幂等请求标识")],
+        unlike: Annotated[
+            bool,
+            Field(default=False, description="为真时取消点赞，否则点赞"),
+        ] = False,
+    ) -> dict:
+        return await client.execute(
+            "/xhs/feeds/like",
+            {
+                "feed_id": feed_id,
+                "xsec_token": xsec_token,
+                "active": not unlike,
+                "request_id": request_id,
+            },
+        )
+
+    @mcp.tool(
+        name="favorite_feed",
+        description="将帖子调整为已收藏或未收藏，并在页面状态中核验。",
+        annotations=_write_annotations("设置收藏状态"),
+    )
+    async def favorite_feed(
+        feed_id: Annotated[str, Field(description="帖子 ID")],
+        xsec_token: Annotated[str, Field(description="帖子访问令牌")],
+        request_id: Annotated[str, Field(description="调用方生成的幂等请求标识")],
+        unfavorite: Annotated[
+            bool,
+            Field(default=False, description="为真时取消收藏，否则收藏"),
+        ] = False,
+    ) -> dict:
+        return await client.execute(
+            "/xhs/feeds/favorite",
+            {
+                "feed_id": feed_id,
+                "xsec_token": xsec_token,
+                "active": not unfavorite,
+                "request_id": request_id,
+            },
+        )
+
+    @mcp.tool(
+        name="post_comment_to_feed",
+        description="发表评论并确认评论区出现新增结果。",
+        annotations=_write_annotations("发表评论"),
+    )
+    async def post_comment_to_feed(
+        feed_id: Annotated[str, Field(description="帖子 ID")],
+        xsec_token: Annotated[str, Field(description="帖子访问令牌")],
+        content: Annotated[str, Field(min_length=1, max_length=1000)],
+        request_id: Annotated[str, Field(description="调用方生成的幂等请求标识")],
+    ) -> dict:
+        return await client.execute(
+            "/xhs/feeds/comment",
+            {
+                "feed_id": feed_id,
+                "xsec_token": xsec_token,
+                "content": content,
+                "request_id": request_id,
+            },
+        )
+
+    @mcp.tool(
+        name="reply_comment_in_feed",
+        description="回复指定评论并确认评论区出现新增结果。",
+        annotations=_write_annotations("回复评论"),
+    )
+    async def reply_comment_in_feed(
+        feed_id: Annotated[str, Field(description="帖子 ID")],
+        xsec_token: Annotated[str, Field(description="帖子访问令牌")],
+        content: Annotated[str, Field(min_length=1, max_length=1000)],
+        request_id: Annotated[str, Field(description="调用方生成的幂等请求标识")],
+        comment_id: Annotated[
+            str | None,
+            Field(default=None, description="目标评论 ID"),
+        ] = None,
+        user_id: Annotated[
+            str | None,
+            Field(default=None, description="目标评论用户 ID"),
+        ] = None,
+    ) -> dict:
+        if not comment_id and not user_id:
+            raise ValueError("回复评论必须提供 comment_id 或 user_id")
+        return await client.execute(
+            "/xhs/feeds/comment/reply",
+            {
+                "feed_id": feed_id,
+                "xsec_token": xsec_token,
+                "content": content,
+                "comment_id": comment_id,
+                "user_id": user_id,
+                "request_id": request_id,
+            },
+        )
+
 
 def _read_annotations(title: str) -> dict[str, object]:
     return {
         "title": title,
         "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    }
+
+
+def _write_annotations(title: str) -> dict[str, object]:
+    return {
+        "title": title,
+        "readOnlyHint": False,
         "destructiveHint": False,
         "idempotentHint": True,
         "openWorldHint": True,
