@@ -4,6 +4,7 @@ import type {
   BrowserPageTaskRequest,
   BrowserPageTaskResponse,
 } from "./browser-page-runner";
+import { executeBrowserTaskClaim } from "./browser-task-claim-execution";
 import { captureRedactedFailure } from "./browser-failure-artifacts";
 import { authorizeBrowserTaskInteraction } from "./browser-interaction-input";
 import {
@@ -11,8 +12,6 @@ import {
   BrowserTaskUnauthorizedError,
   claimBrowserTask,
   registerBrowserExtension,
-  reportBrowserTaskResult,
-  reportBrowserTaskRunning,
   supportsBrowserTasks,
 } from "./browser-task-service";
 import { executeBrowserSessionTask } from "./browser-session-runner";
@@ -78,44 +77,24 @@ async function executeClaim(
   baseUrl: string,
   claim: BrowserTaskClaim,
 ): Promise<void> {
-  const taskId = claim.task.task_id;
-  const lease = claim.lease_token;
-  await withCredential((credential) =>
-    reportBrowserTaskRunning(baseUrl, credential, taskId, lease),
+  await executeBrowserTaskClaim(
+    baseUrl,
+    claim,
+    (assertLeaseActive) => executeInXhsTab(claim, assertLeaseActive),
+    withCredential,
   );
-  try {
-    const response = await executeInXhsTab(claim);
-    await withCredential((credential) =>
-      reportBrowserTaskResult(
-        baseUrl,
-        credential,
-        taskId,
-        lease,
-        response.status ?? (response.ok ? "succeeded" : "failed"),
-        response.message,
-        response.result,
-      ),
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "浏览器任务执行失败";
-    await withCredential((credential) =>
-      reportBrowserTaskResult(
-        baseUrl,
-        credential,
-        taskId,
-        lease,
-        isWriteTask(claim.task.kind) ? "needs_review" : "failed",
-        message,
-      ),
-    );
-  }
 }
 
 async function executeInXhsTab(
   claim: BrowserTaskClaim,
+  assertLeaseActive: () => void,
 ): Promise<BrowserPageTaskResponse> {
+  assertLeaseActive();
   const sessionResponse = await executeBrowserSessionTask(claim.task);
-  if (sessionResponse) return sessionResponse;
+  if (sessionResponse) {
+    assertLeaseActive();
+    return sessionResponse;
+  }
   const request: BrowserPageTaskRequest = {
     type: "browser-page-task",
     task: claim.task,
@@ -126,23 +105,30 @@ async function executeInXhsTab(
       .sort((left, right) => Number(right.active) - Number(left.active));
     for (const tab of tabs) {
       try {
-        return await sendToTab(tab.id as number, request);
+        assertLeaseActive();
+        const response = await sendToTab(tab.id as number, request);
+        assertLeaseActive();
+        return response;
       } catch {
         // 只有已注入小红书内容脚本的标签页会响应。
+        assertLeaseActive();
       }
     }
   }
-  return executeInNewTab(request);
+  return executeInNewTab(request, assertLeaseActive);
 }
 
 async function executeInNewTab(
   request: BrowserPageTaskRequest,
+  assertLeaseActive: () => void,
 ): Promise<BrowserPageTaskResponse> {
+  assertLeaseActive();
   const targetUrl = taskTargetUrl(request.task);
   const tab = await chrome.tabs.create({
     url: targetUrl,
     active: request.task.kind === "get_login_qrcode",
   });
+  assertLeaseActive();
   if (tab.id === undefined) throw new Error("无法创建小红书任务页面");
   const revokeInteraction = authorizeBrowserTaskInteraction(
     tab.id,
@@ -151,26 +137,29 @@ async function executeInNewTab(
   );
   let keepOpen = false;
   try {
-    let response = await sendWhenReady(tab.id, request);
+    let response = await sendWhenReady(tab.id, request, assertLeaseActive);
     for (
       let navigationCount = 0;
       response.navigateUrl && navigationCount < 2;
       navigationCount += 1
     ) {
+      assertLeaseActive();
       const navigateUrl = safeXhsUrl(response.navigateUrl);
       await chrome.tabs.update(tab.id, { url: navigateUrl });
       await delay(1_000);
-      response = await sendWhenReady(tab.id, request);
+      response = await sendWhenReady(tab.id, request, assertLeaseActive);
     }
     if (response.navigateUrl) {
       throw new Error("小红书站内页面重复要求导航");
     }
     if (!response.ok) {
+      assertLeaseActive();
       const artifact = await captureRedactedFailure(
         tab.id,
         request.task.task_id,
         response.result,
       );
+      assertLeaseActive();
       if (artifact) {
         response.result = { ...(response.result ?? {}), ...artifact };
       }
@@ -199,14 +188,18 @@ async function sendToTab(
 async function sendWhenReady(
   tabId: number,
   request: BrowserPageTaskRequest,
+  assertLeaseActive: () => void,
 ): Promise<BrowserPageTaskResponse> {
   let lastError: unknown;
   for (let attempt = 0; attempt < PAGE_READY_ATTEMPTS; attempt += 1) {
     try {
-      return await chrome.tabs.sendMessage<
+      assertLeaseActive();
+      const response = await chrome.tabs.sendMessage<
         BrowserPageTaskRequest,
         BrowserPageTaskResponse
       >(tabId, request);
+      assertLeaseActive();
+      return response;
     } catch (error) {
       lastError = error;
       await delay(250);
@@ -247,12 +240,6 @@ function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
   }
   if (task.kind === "get_my_profile") return EXPLORE_URL;
   throw new Error(`当前扩展版本尚未接入任务 ${task.kind}`);
-}
-
-function isWriteTask(kind: BrowserTaskClaim["task"]["kind"]): boolean {
-  return ["set_like", "set_favorite", "post_comment", "reply_comment"].includes(
-    kind,
-  );
 }
 
 function taskPayloadText(

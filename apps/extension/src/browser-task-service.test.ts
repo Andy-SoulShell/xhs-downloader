@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  BrowserTaskLeaseLostError,
   BrowserTaskUnauthorizedError,
   claimBrowserTask,
   registerBrowserExtension,
@@ -122,6 +123,45 @@ describe("浏览器任务服务客户端", () => {
     await expect(
       claimBrowserTask("http://service", credential),
     ).rejects.toThrow("合成错误");
+  });
+
+  it("只把租约冲突识别为租约丢失，不吞掉结果校验错误", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "任务租约已经过期" }), {
+          status: 409,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "任务结果结构无效" }), {
+          status: 400,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      reportBrowserTaskRunning(
+        "http://service",
+        credential,
+        "task",
+        "stale-lease",
+      ),
+    ).rejects.toBeInstanceOf(BrowserTaskLeaseLostError);
+    const validationError = await reportBrowserTaskResult(
+      "http://service",
+      credential,
+      "task",
+      "valid-lease",
+      "succeeded",
+      "检查完成",
+      { logged_in: "invalid" },
+    ).catch((error: unknown) => error);
+    expect(validationError).toBeInstanceOf(Error);
+    expect((validationError as Error).message).toContain("任务结果结构无效");
+    expect(validationError).not.toBeInstanceOf(
+      BrowserTaskLeaseLostError,
+    );
   });
 
   it.each([-0.01, 30.01, Number.NaN])(

@@ -9,9 +9,14 @@ import type { ExtensionCredential } from "./publication-types";
 
 /** 扩展首个任务领取请求的默认长轮询秒数。 */
 export const BROWSER_TASK_CLAIM_WAIT_SECONDS = 25;
+/** 扩展向本机服务登记能力令牌的最长等待毫秒数。 */
+export const BROWSER_TASK_REGISTER_TIMEOUT_MS = 5_000;
 const CLAIM_REQUEST_TIMEOUT_PADDING_MS = 5_000;
 
 export class BrowserTaskUnauthorizedError extends Error {}
+
+/** 服务端已拒绝当前任务租约，调用方不得继续回传普通结果。 */
+export class BrowserTaskLeaseLostError extends Error {}
 
 /** 检查本地服务是否支持通用浏览器任务协议。 */
 export async function supportsBrowserTasks(baseUrl: string): Promise<boolean> {
@@ -49,6 +54,7 @@ export async function registerBrowserExtension(
       method: "POST",
       body: JSON.stringify({ extension_id: extensionId }),
       headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(BROWSER_TASK_REGISTER_TIMEOUT_MS),
     },
   );
   if (!payload.token) throw new Error("本地服务没有返回扩展能力令牌");
@@ -86,6 +92,7 @@ export async function reportBrowserTaskRunning(
   credential: ExtensionCredential,
   taskId: string,
   leaseToken: string,
+  signal?: AbortSignal,
 ): Promise<BrowserTask> {
   return requestJson<BrowserTask>(
     `${normalizeBase(baseUrl)}/browser/extension/tasks/${taskId}/status`,
@@ -96,6 +103,7 @@ export async function reportBrowserTaskRunning(
         message: "浏览器扩展正在执行任务",
       }),
       headers: leasedHeaders(credential, leaseToken),
+      signal,
     },
   );
 }
@@ -112,6 +120,7 @@ export async function reportBrowserTaskResult(
   >,
   message: string,
   result?: Record<string, JsonValue>,
+  signal?: AbortSignal,
 ): Promise<BrowserTask> {
   return requestJson<BrowserTask>(
     `${normalizeBase(baseUrl)}/browser/extension/tasks/${taskId}/result`,
@@ -119,6 +128,7 @@ export async function reportBrowserTaskResult(
       method: "POST",
       body: JSON.stringify({ status, message, result: result ?? null }),
       headers: leasedHeaders(credential, leaseToken),
+      signal,
     },
   );
 }
@@ -149,10 +159,11 @@ async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   if (response.status === 401) throw new BrowserTaskUnauthorizedError();
   const payload = (await response.json().catch(() => null)) as T | null;
   if (!response.ok) {
-    throw new Error(
+    const message =
       messageFromPayload(payload) ||
-        `本地浏览器任务服务错误（HTTP ${response.status}）`,
-    );
+      `本地浏览器任务服务错误（HTTP ${response.status}）`;
+    if (response.status === 409) throw new BrowserTaskLeaseLostError(message);
+    throw new Error(message);
   }
   return payload as T;
 }

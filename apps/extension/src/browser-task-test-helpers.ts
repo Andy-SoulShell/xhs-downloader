@@ -33,5 +33,6 @@ export function makeBrowserTaskClaim(
       updated_at: "2026-01-01T00:00:00Z",
     },
     lease_token: "synthetic-lease-token-with-enough-length",
+    lease_seconds: 30,
   };
 }
