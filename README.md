@@ -46,6 +46,11 @@ uv run xhs-downloader --help
 uv run python main.py --help
 ```
 
+面向普通用户的一体化桌面包会同时启动本机 API 与 WebUI，配置和数据在升级时保留。
+构建、平台要求、签名、公证与升级步骤见
+[桌面安装包与升级](docs/desktop-distribution.md)。未签名或未公证的本地构建只作为
+开发验收包，不作为正式公开安装包。
+
 ## 工作区结构
 
 ```text
