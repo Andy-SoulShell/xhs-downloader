@@ -29,9 +29,11 @@ export function parseFeedListDocument(
     throw new Error(source === "home" ? "推荐流尚未加载" : "搜索结果尚未加载");
   }
   return {
-    items: parseFeedSummaries(unwrapState(container.feeds)),
+    items: parseFeedSummaries(unwrapState(container.feeds)).slice(0, 200),
     source,
     keyword: source === "search" ? keyword : null,
+    has_more: dataBoolean(container.hasMore ?? container.has_more),
+    cursor: dataText(container.cursor).slice(0, 2048),
   };
 }
 
@@ -49,7 +51,7 @@ export function parseFeedAuthor(value: unknown): FeedAuthor | null {
   if (!userId) return null;
   return {
     user_id: userId,
-    nickname: dataText(user.nickname ?? user.nickName),
+    nickname: dataText(user.nickname ?? user.nickName).slice(0, 200),
     avatar_url: dataUrl(user.avatar ?? user.image),
   };
 }
@@ -79,7 +81,7 @@ function parseFeedSummary(value: unknown): FeedSummary | null {
   return {
     feed_id: feedId,
     xsec_token: dataText(feed.xsecToken ?? note.xsecToken),
-    title: dataText(note.displayTitle ?? note.title),
+    title: dataText(note.displayTitle ?? note.title).slice(0, 500),
     note_type: noteType(note.type),
     author,
     metrics: parseFeedMetrics(note.interactInfo),

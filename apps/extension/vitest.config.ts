@@ -11,6 +11,8 @@ export default defineConfig({
         "src/service.ts",
         "src/storage.ts",
         "src/browser-page-runner.ts",
+        "src/browser-page-diagnostics.ts",
+        "src/browser-failure-artifacts.ts",
         "src/browser-state-bridge.ts",
         "src/browser-state-main.ts",
         "src/browser-task-runner.ts",

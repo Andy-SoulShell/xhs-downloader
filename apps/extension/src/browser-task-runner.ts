@@ -4,6 +4,7 @@ import type {
   BrowserPageTaskRequest,
   BrowserPageTaskResponse,
 } from "./browser-page-runner";
+import { captureRedactedFailure } from "./browser-failure-artifacts";
 import {
   BrowserTaskUnauthorizedError,
   claimBrowserTask,
@@ -136,6 +137,16 @@ async function executeInNewTab(
       const navigateUrl = safeXhsUrl(response.navigateUrl);
       await chrome.tabs.update(tab.id, { url: navigateUrl });
       response = await sendWhenReady(tab.id, request);
+    }
+    if (!response.ok) {
+      const artifact = await captureRedactedFailure(
+        tab.id,
+        request.task.task_id,
+        response.result,
+      );
+      if (artifact) {
+        response.result = { ...(response.result ?? {}), ...artifact };
+      }
     }
     return response;
   } finally {

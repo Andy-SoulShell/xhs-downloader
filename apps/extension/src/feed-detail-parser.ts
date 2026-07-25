@@ -42,8 +42,8 @@ export function parseFeedDetailDocument(
   return {
     feed_id: options.feedId,
     xsec_token: dataText(note.xsecToken) || options.xsecToken,
-    title: dataText(note.title),
-    body: dataText(note.desc),
+    title: dataText(note.title).slice(0, 500),
+    body: dataText(note.desc).slice(0, 20_000),
     note_type: noteType(note.type),
     author,
     metrics: parseFeedMetrics(note.interactInfo),
@@ -52,9 +52,10 @@ export function parseFeedDetailDocument(
         const image = dataRecord(item);
         return dataUrl(image.urlDefault ?? image.urlPre ?? image.url);
       })
-      .filter((url): url is string => url !== null),
+      .filter((url): url is string => url !== null)
+      .slice(0, 100),
     published_at: dataInteger(note.time),
-    ip_location: dataText(note.ipLocation),
+    ip_location: dataText(note.ipLocation).slice(0, 200),
     comments: dataList(unwrapState(comments.list))
       .slice(0, options.commentLimit)
       .map((item) =>
@@ -62,7 +63,7 @@ export function parseFeedDetailDocument(
       )
       .filter((item): item is FeedComment => item !== null),
     comments_has_more: dataBoolean(comments.hasMore),
-    comments_cursor: dataText(comments.cursor),
+    comments_cursor: dataText(comments.cursor).slice(0, 2048),
   };
 }
 
@@ -96,12 +97,12 @@ function parseComment(
     : [];
   return {
     comment_id: commentId,
-    content: dataText(comment.content),
+    content: dataText(comment.content).slice(0, 5000),
     author,
     liked: dataBoolean(comment.liked),
     like_count: dataText(comment.likeCount) || "0",
     created_at: dataInteger(comment.createTime),
-    ip_location: dataText(comment.ipLocation),
+    ip_location: dataText(comment.ipLocation).slice(0, 200),
     reply_count: dataText(comment.subCommentCount) || String(replies.length),
     replies,
   };

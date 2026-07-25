@@ -122,6 +122,8 @@ export interface FeedListResult {
   items: FeedSummary[];
   source: "home" | "search";
   keyword: string | null;
+  has_more: boolean;
+  cursor: string;
 }
 
 /** 帖子详情中的评论或回复。 */

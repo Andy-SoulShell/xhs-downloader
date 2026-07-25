@@ -47,7 +47,13 @@ function feed(overrides: Record<string, unknown> = {}) {
 describe("浏览结果解析器", () => {
   it("解析推荐流、搜索结果与嵌套帖子数组", () => {
     const home = parseFeedListDocument(
-      pageWithState({ feed: { feeds: { value: [feed()] } } }),
+      pageWithState({
+        feed: {
+          feeds: { value: [feed()] },
+          hasMore: true,
+          cursor: "synthetic-cursor",
+        },
+      }),
       "home",
     );
     const search = parseFeedListDocument(
@@ -66,11 +72,34 @@ describe("浏览结果解析器", () => {
       metrics: { liked: true, liked_count: "12" },
       cover_width: 1080,
     });
+    expect(home).toMatchObject({
+      has_more: true,
+      cursor: "synthetic-cursor",
+    });
     expect(search).toMatchObject({
       keyword: "合成关键词",
       source: "search",
       items: [{ feed_id: "search-feed" }],
     });
+  });
+
+  it("截断超长内容和过量帖子，保持结果契约可验证", () => {
+    const manyFeeds = Array.from({ length: 205 }, (_, index) =>
+      feed({
+        id: `synthetic-${index}`,
+        noteCard: {
+          ...feed().noteCard,
+          displayTitle: "标题".repeat(300),
+        },
+      }),
+    );
+    const list = parseFeedListDocument(
+      pageWithState({ feed: { feeds: { value: manyFeeds } } }),
+      "home",
+    );
+
+    expect(list.items).toHaveLength(200);
+    expect(list.items[0].title.length).toBe(500);
   });
 
   it("解析帖子正文、图片、互动状态和回复", () => {

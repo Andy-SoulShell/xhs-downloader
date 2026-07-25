@@ -2,7 +2,7 @@
 
 ## 目标
 
-将 `xiaohongshu-mcp` 依赖独立浏览器进程完成的浏览、互动能力迁入
+将 `xiaohongshu-mcp` 依赖独立浏览器进程完成的浏览、互动和发布能力迁入
 `xhs-downloader`，复用现有 FastAPI、WebUI、MCP、SQLite 和浏览器扩展。
 迁移能力，不复制原项目的 Go/Rod 实现。
 
@@ -35,6 +35,10 @@ queued → claimed → running → succeeded | failed | needs_review
 只读任务租约过期后可回队列；可能产生外部副作用的任务一旦开始执行，
 租约过期后必须转为 `needs_review`。
 
+发布继续使用独立的草稿与发布任务状态机。草稿在提交时冻结内容指纹和
+素材 SHA-256；发布结果不确定时同样进入 `needs_review`，必须先人工标记
+“已发布”或“未发布”，不得直接重试。
+
 ## 能力分组
 
 | 原能力 | 目标入口 | 状态 | 迁移策略 |
@@ -53,7 +57,15 @@ queued → claimed → running → succeeded | failed | needs_review
 | 回复评论 | API、MCP、WebUI | 已完成 | 评论 ID 或用户 ID 定位、有界滚动和提交后核验 |
 | 扩展在线状态 | API、WebUI | 已完成 | 持久化登记与最近认证心跳，按轮询周期判断在线 |
 | 操作审计记录 | API、WebUI | 已完成 | 展示脱敏任务状态、尝试次数与人工核对提示 |
-| 图文/视频发布 | WebUI、扩展 | 已有能力 | 继续使用现有草稿、素材、排期和发布租约 |
+| 图文/视频发布 | API、MCP、WebUI、扩展 | 已完成 | 草稿、素材指纹、租约、结果核验和显式确认 |
+| 原创声明 | API、MCP、WebUI、扩展 | 已完成 | 只支持图文，设置目标状态后重新读取核验 |
+| 可见范围 | API、MCP、WebUI、扩展 | 已完成 | 支持公开、仅自己和仅互关好友 |
+| 商品绑定 | API、MCP、WebUI、扩展 | 已完成 | 只选择唯一匹配；歧义、缺失或不可确认时中止 |
+| 官方定时发布 | API、MCP、WebUI、扩展 | 已完成 | 与本地排期分离，限制为 1 小时至 14 天 |
+| 视频处理状态 | 扩展 | 已完成 | 等待上传和转码结束，识别失败与超时后中止 |
+| 页面兼容性诊断 | 扩展、SQLite | 已完成 | 记录适配器版本、页面类型和语义锚点，不记录原文 |
+| 失败截图 | 扩展本地 | 已完成 | 隐藏文本与媒体后截图，只保留最近两份且不上传 |
+| 长内容与分页元数据 | API、扩展 | 已完成 | 有界截断、结果上限、游标和 `has_more` |
 | 二维码登录 | 不迁移 | 明确排除 | 直接在真实浏览器页面登录，避免转存凭据 |
 | 删除 Cookie | 不迁移 | 明确排除 | 由浏览器站点数据设置负责 |
 
@@ -72,6 +84,21 @@ queued → claimed → running → succeeded | failed | needs_review
 - `POST /xhs/feeds/comment`
 - `POST /xhs/feeds/comment/reply`
 
+发布管理：
+
+- `POST /publication/drafts`
+- `PUT /publication/drafts/{draft_id}`
+- `POST /publication/drafts/{draft_id}/assets`
+- `POST /publication/drafts/{draft_id}/submit`
+- `POST /publication/tasks/{task_id}/review`
+- `POST /publication/tasks/{task_id}/retry`
+
+`submit` 的模式含义：
+
+- `manual`：立即打开创作页并发布。
+- `scheduled`：本机到期后才由扩展执行，届时本机服务和浏览器必须在线。
+- `platform_scheduled`：现在由扩展填写创作页，把时间交给小红书官方排期。
+
 这些接口接收可选幂等标识，并通过 `wait_seconds` 选择立即返回任务或等待终态。
 通用任务查询、重试和扩展执行仍位于 `/browser/*`；本机管理界面通过
 `GET /browser/extensions` 读取扩展登记和最近心跳。
@@ -85,13 +112,22 @@ queued → claimed → running → succeeded | failed | needs_review
 - 扩展不申请 Cookie 权限；小红书页面权限由内容脚本匹配范围限定。
 - 心跳只保存扩展标识和认证时间，不包含浏览历史、账号信息或页面内容。
 - 管理接口只允许本机调用；扩展接口要求来源匹配、能力令牌和任务租约。
+- MCP 发布只接受用户明确提供的普通文件绝对路径，素材仍由 FastAPI 校验。
+- `publish_content` 和 `publish_video` 必须传入 `confirmed=true`；工具声明为
+  非幂等的外部写操作，MCP 客户端不能绕过确认。
+- 发布商品会在最终确认区逐项展示；扩展不会自动选择“第一个结果”。
+- 失败诊断只包含固定语义锚点；脱敏截图仅存在扩展本地存储，不上传 API。
 
-## 后续实施顺序
+## 实施批次
 
-1. 使用真实登录浏览器验收选择器、长评论区和页面加载时序。
-2. 根据真实页面变化维护合成契约夹具，不提交真实内容或凭据。
-3. 为扩展增加可观察的选择器兼容性诊断，但不记录用户原文。
-4. 评估把现有发布中心映射为 MCP 草稿与提交工具，继续复用发布租约。
+1. P0：通用任务、扩展租约、登录、推荐、搜索、详情、评论和主页。
+2. P1：点赞、收藏、评论、回复、目标状态核验、审计与人工确认。
+3. P2：发布选项、视频处理、官方定时、MCP 发布和 WebUI 二次确认。
+4. P3：协议版本、选择器兼容诊断、脱敏失败证据、断线恢复和结果上限。
+
+真实页面变化不属于可静态锁定的完成项。后续维护以脱敏诊断中的适配器版本、
+页面类型和缺失锚点为依据更新合成契约夹具；不得提交真实帖子、Cookie、
+截图或用户原文。
 
 ## 验收标准
 
@@ -100,3 +136,5 @@ queued → claimed → running → succeeded | failed | needs_review
 - 扩展通过 TypeScript、测试、生产构建和清洁配置文件安装验收。
 - 任务重启后可恢复，重复请求不会产生重复写操作。
 - 失败、超时和不确定结果对用户可见，不得以空结果伪装成功。
+- 发布、评论和回复必须覆盖成功、明确失败与结果不确定三条状态路径。
+- WebUI 的立即发布、本地定时、官方定时和人工核对均需二次确认。

@@ -63,6 +63,8 @@ class FeedListResult(BaseModel):
     items: list[FeedSummary] = Field(default_factory=list, max_length=200)
     source: Literal["home", "search"]
     keyword: str | None = Field(default=None, max_length=200)
+    has_more: bool = False
+    cursor: str = Field(default="", max_length=2048)
 
 
 class FeedComment(BaseModel):

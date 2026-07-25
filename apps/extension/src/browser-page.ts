@@ -4,6 +4,7 @@ import {
   type BrowserPageTaskResponse,
 } from "./browser-page-runner";
 import { UncertainBrowserActionError } from "./browser-action-errors";
+import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
 
 chrome.runtime.onMessage.addListener(
   (
@@ -22,6 +23,7 @@ chrome.runtime.onMessage.addListener(
             error instanceof UncertainBrowserActionError
               ? "needs_review"
               : "failed",
+          result: buildPageCompatibilityDiagnostics(document, location.href),
         }),
       );
     return true;

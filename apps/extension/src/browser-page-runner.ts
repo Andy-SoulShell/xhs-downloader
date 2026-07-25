@@ -19,6 +19,7 @@ import {
   applySearchFilters,
   hasCustomSearchFilters,
 } from "./search-filters";
+import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
 
 /** 后台发送给小红书内容脚本的浏览器任务消息。 */
 export interface BrowserPageTaskRequest {
@@ -154,6 +155,7 @@ export async function executeBrowserPageTask(
   return {
     ok: false,
     message: `当前扩展版本尚不支持任务 ${task.kind}`,
+    result: buildPageCompatibilityDiagnostics(page, pageUrl),
   };
 }
 

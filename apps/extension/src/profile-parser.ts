@@ -28,15 +28,15 @@ export function parseUserProfileDocument(
   return {
     user_id:
       dataText(basic.userId ?? basic.user_id) || requestedUserId || null,
-    nickname: dataText(basic.nickname),
-    red_id: dataText(basic.redId),
-    description: dataText(basic.desc),
+    nickname: dataText(basic.nickname).slice(0, 200),
+    red_id: dataText(basic.redId).slice(0, 200),
+    description: dataText(basic.desc).slice(0, 5000),
     avatar_url: dataUrl(basic.imageb ?? basic.images),
-    ip_location: dataText(basic.ipLocation),
+    ip_location: dataText(basic.ipLocation).slice(0, 200),
     metrics: dataList(pageData.interactions)
       .map(parseMetric)
       .filter((item): item is ProfileMetric => item !== null),
-    feeds,
+    feeds: feeds.slice(0, 500),
   };
 }
 
@@ -45,8 +45,8 @@ function parseMetric(value: unknown): ProfileMetric | null {
   const name = dataText(metric.name);
   if (!name) return null;
   return {
-    name,
-    count: dataText(metric.count) || "0",
-    metric_type: dataText(metric.type),
+    name: name.slice(0, 100),
+    count: (dataText(metric.count) || "0").slice(0, 100),
+    metric_type: dataText(metric.type).slice(0, 100),
   };
 }
