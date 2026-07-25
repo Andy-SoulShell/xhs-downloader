@@ -94,6 +94,8 @@ cp .env.example .env
 | `XHS_RECORD_DATA` | `false` | 保存结构化作品元数据 |
 | `XHS_PUBLISH_MAX_ASSET_SIZE` | `1073741824` | 单个发布素材上限，单位为字节 |
 | `XHS_PUBLISH_LEASE_SECONDS` | `300` | 扩展执行发布任务的租约秒数 |
+| `XHS_ROUTE_STRATEGY` | `browser_only` | `http_only/browser_only/http_first/browser_first` |
+| `XHS_BROWSER_DRIVER` | `extension` | `extension/managed` 浏览器执行器 |
 | `XHS_SERVER_HOST` | `0.0.0.0` | API 监听地址；MCP 默认沿用 |
 | `XHS_SERVER_PORT` | `5556` | API 端口；MCP 默认使用下一个端口 |
 
@@ -151,10 +153,12 @@ pnpm --filter xhs-downloader-webui build
 
 构建产物位于 `apps/webui/dist/`，不提交到仓库。WebUI 的“服务配置”页面可集中维护
 `.env`；Cookie 与代理只允许覆盖或清除，服务端不会返回原文，WebUI 也不会将其
-写入浏览器存储。配置端点只接受本机回环地址发起的请求，保存后需重启服务生效。
+写入浏览器存储。配置端点只接受本机回环地址发起的请求。Cookie、代理、HTTP
+参数、访问路由与浏览器驱动会等待当前请求结束后原子热替换；目录、监听地址和
+并发等其余配置仍会明确提示重启。
 
-管理后台包含帖子列表、浏览器扫码与会话管理、内容探索、扩展心跳与操作记录、
-发布中心、持久化下载任务、扩展独立下载记录和服务配置。
+管理后台包含帖子列表、浏览器扫码与会话管理、内容探索、扩展心跳、受管浏览器
+安装检测与启停、操作记录、发布中心、持久化下载任务、扩展独立下载记录和服务配置。
 关闭 WebUI 不会中断已经提交的后台任务；重新打开后会从服务端恢复任务和完成状态。
 帖子详情解析成功后会立即写入本地 SQLite，即使尚未下载，刷新或重启 WebUI 也会
 恢复到帖子列表；从列表移除时会同步删除这条采集记录。
