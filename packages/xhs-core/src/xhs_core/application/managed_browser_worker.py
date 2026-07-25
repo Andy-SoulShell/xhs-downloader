@@ -21,6 +21,7 @@ from .browser_execution import BrowserExecutionService
 from .managed_browser_gate import ManagedBrowserExecutionGate
 
 _MAX_HEARTBEAT_INTERVAL_SECONDS = 15
+_MAX_HEARTBEAT_UPDATE_TIMEOUT_SECONDS = 5
 
 
 class ManagedBrowserWorker:
@@ -188,9 +189,13 @@ class ManagedBrowserWorker:
             _MAX_HEARTBEAT_INTERVAL_SECONDS,
             claim.lease_seconds / 3,
         )
+        update_timeout = min(
+            _MAX_HEARTBEAT_UPDATE_TIMEOUT_SECONDS,
+            claim.lease_seconds - interval,
+        )
         while True:
             await asyncio.sleep(interval)
-            async with asyncio.timeout(interval):
+            async with asyncio.timeout(update_timeout):
                 await self._execution.update(
                     claim.task.task_id,
                     claim.lease_token,

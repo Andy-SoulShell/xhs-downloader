@@ -20,6 +20,8 @@ from xhs_core.domain import (
     ProviderKind,
 )
 
+_RUNNING_TASK_TIMEOUT_SECONDS = 0.5
+
 
 class _Ready:
     async def ensure_available(self, driver: BrowserDriver) -> None:
@@ -133,7 +135,10 @@ async def test_timeout_does_not_requeue_already_running_read(tmp_path) -> None:
     Args:
         tmp_path: Pytest 提供的临时目录。
     """
-    repository, _, execution, provider = _runtime(tmp_path)
+    repository, _, execution, provider = _runtime(
+        tmp_path,
+        timeout_seconds=_RUNNING_TASK_TIMEOUT_SECONDS,
+    )
     operation = asyncio.create_task(provider.list_feeds("synthetic-running-timeout"))
     task = await _wait_for_task(repository)
     claim = await execution.claim("synthetic-extension")
