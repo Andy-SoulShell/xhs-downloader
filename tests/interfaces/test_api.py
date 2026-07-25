@@ -244,6 +244,8 @@ async def test_api_manages_settings_without_returning_secrets(tmp_path) -> None:
                 "folder_name": "media",
                 "cookie": "session=synthetic",
                 "proxy": "http://user:secret@127.0.0.1:7890",
+                "route_strategy": "http_first",
+                "browser_driver": "managed",
             },
         )
         loaded = await client.get("/settings")
@@ -253,10 +255,15 @@ async def test_api_manages_settings_without_returning_secrets(tmp_path) -> None:
     assert updated.json()["proxy_configured"] is True
     assert updated.json()["restart_required"] is True
     assert updated.json()["values"]["timeout"] == 30
+    assert updated.json()["values"]["route_strategy"] == "http_first"
+    assert updated.json()["values"]["browser_driver"] == "managed"
     assert loaded.json()["values"]["folder_name"] == "media"
     assert "session=synthetic" not in updated.text
     assert "user:secret" not in updated.text
-    assert "session=synthetic" in env_file.read_text(encoding="utf-8")
+    saved = env_file.read_text(encoding="utf-8")
+    assert "session=synthetic" in saved
+    assert 'XHS_ROUTE_STRATEGY="http_first"' in saved
+    assert 'XHS_BROWSER_DRIVER="managed"' in saved
 
 
 async def test_api_restricts_settings_to_local_web_origins(tmp_path) -> None:

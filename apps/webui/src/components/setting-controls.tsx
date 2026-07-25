@@ -178,13 +178,16 @@ export function NumberSetting({
   );
 }
 
+/** 渲染带说明文字的单选下拉配置项。 */
 export function SelectSetting({
+  disabled = false,
   help,
   label,
   onChange,
   options,
   value,
 }: {
+  disabled?: boolean;
   help: string;
   label: string;
   onChange: (value: string) => void;
@@ -196,7 +199,8 @@ export function SelectSetting({
     <FieldShell help={help} id={id} label={label}>
       <select
         aria-label={label}
-        className={fieldClass}
+        className={`${fieldClass} disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400`}
+        disabled={disabled}
         id={id}
         onChange={(event) => onChange(event.target.value)}
         value={value}

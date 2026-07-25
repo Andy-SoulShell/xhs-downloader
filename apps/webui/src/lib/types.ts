@@ -1,3 +1,5 @@
+import type { BrowserDriver as BrowserDriverValue } from "@xhs-downloader/contracts";
+
 /** 浏览器客户端与本机服务共享的稳定数据类型。 */
 export type {
   BrowserDriver,
@@ -105,6 +107,14 @@ export type ImageFormat =
   | "avif";
 export type VideoPreference = "resolution" | "bitrate" | "size";
 
+/** 只读能力的 HTTP 与浏览器调用顺序。 */
+export type RouteStrategy =
+  | "http_only"
+  | "browser_only"
+  | "http_first"
+  | "browser_first";
+
+/** 管理后台可以读取和编辑的非敏感配置。 */
 export interface SettingsValues {
   work_path: string | null;
   folder_name: string;
@@ -131,6 +141,8 @@ export interface SettingsValues {
   publish_max_asset_size: number;
   publish_lease_seconds: number;
   browser_task_lease_seconds: number;
+  route_strategy: RouteStrategy;
+  browser_driver: BrowserDriverValue;
   managed_browser_executable: string | null;
   managed_browser_headless: boolean;
   managed_browser_startup_timeout: number;
@@ -146,6 +158,7 @@ export interface SettingsResponse {
   proxy_configured: boolean;
 }
 
+/** 保存配置时可附加只写不回显的敏感字段。 */
 export type SettingsUpdate = SettingsValues & {
   cookie?: string | null;
   proxy?: string | null;

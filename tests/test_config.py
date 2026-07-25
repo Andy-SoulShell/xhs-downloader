@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from xhs_adapters.config import DEFAULT_USER_AGENT, AppSettings, ImageFormat
+from xhs_core.domain import BrowserDriver, RouteStrategy
 
 
 def test_environment_overrides_dotenv(
@@ -55,3 +56,24 @@ def test_folder_name_cannot_escape_output_root() -> None:
     """确保媒体目录配置不能包含父目录跳转。"""
     with pytest.raises(ValidationError, match="媒体目录必须是单段有效名称"):
         AppSettings(folder_name="../outside")
+
+
+def test_access_mode_defaults_and_environment_values(tmp_path: Path) -> None:
+    """确保访问模式保持兼容默认值并可由 dotenv 配置。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    defaults = AppSettings()
+    env_file = tmp_path.joinpath(".env")
+    env_file.write_text(
+        "XHS_ROUTE_STRATEGY=http_first\nXHS_BROWSER_DRIVER=managed\n",
+        encoding="utf-8",
+    )
+
+    configured = AppSettings.from_env(env_file)
+
+    assert defaults.route_strategy is RouteStrategy.BROWSER_ONLY
+    assert defaults.browser_driver is BrowserDriver.EXTENSION
+    assert configured.route_strategy is RouteStrategy.HTTP_FIRST
+    assert configured.browser_driver is BrowserDriver.MANAGED

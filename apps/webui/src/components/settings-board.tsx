@@ -7,6 +7,7 @@ import type {
   SettingsUpdate,
 } from "../lib/types";
 import { ActionButton } from "./action-button";
+import { AccessModeSettings } from "./access-mode-settings";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
@@ -177,6 +178,7 @@ function SettingsForm({
       )}
 
       <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+        <AccessModeSettings onChange={change} values={draft} />
         <StorageSettings
           mappingText={mappingText}
           onChange={change}
@@ -269,4 +271,6 @@ const settingLabels: Record<string, string> = {
   publish_max_asset_size: "发布素材上限",
   publish_lease_seconds: "发布任务租约",
   browser_task_lease_seconds: "浏览器任务租约",
+  route_strategy: "只读路由策略",
+  browser_driver: "浏览器执行器",
 };

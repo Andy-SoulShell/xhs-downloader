@@ -110,6 +110,8 @@ export function makeSettingsResponse(
       publish_max_asset_size: 1073741824,
       publish_lease_seconds: 300,
       browser_task_lease_seconds: 120,
+      route_strategy: "browser_only",
+      browser_driver: "extension",
       managed_browser_executable: null,
       managed_browser_headless: false,
       managed_browser_startup_timeout: 15,

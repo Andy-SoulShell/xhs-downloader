@@ -3,9 +3,11 @@
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from xhs_adapters.config import ImageFormat, VideoPreference
 from xhs_core.domain import (
+    BrowserDriver,
     ClientDownloadRecord,
     DownloadArtifact,
     DownloadMode,
+    RouteStrategy,
 )
 from xhs_core.version import VERSION
 
@@ -102,6 +104,8 @@ class SettingsValues(BaseModel):
     publish_max_asset_size: int
     publish_lease_seconds: int
     browser_task_lease_seconds: int
+    route_strategy: RouteStrategy
+    browser_driver: BrowserDriver
     managed_browser_executable: str | None
     managed_browser_headless: bool
     managed_browser_startup_timeout: float
@@ -152,6 +156,8 @@ class SettingsUpdate(BaseModel):
         ge=30,
         le=1800,
     )
+    route_strategy: RouteStrategy | None = None
+    browser_driver: BrowserDriver | None = None
     managed_browser_executable: str | None = None
     managed_browser_headless: bool | None = None
     managed_browser_startup_timeout: float | None = Field(

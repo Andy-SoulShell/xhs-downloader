@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from xhs_core.domain import BrowserDriver, RouteStrategy
 
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -44,6 +45,8 @@ class AppSettings(BaseSettings):
         folder_name: 媒体文件目录名称。
         cookie: 小红书网页版 Cookie，日志与模型输出会自动隐藏。
         download_record: 是否启用带指纹校验的下载记录。
+        route_strategy: 只读能力的 HTTP 与浏览器调用顺序。
+        browser_driver: 浏览器能力使用扩展还是受管浏览器执行。
         managed_browser_executable: 受管 Chromium 可执行文件；为空时自动检测。
         managed_browser_headless: 是否隐藏受管浏览器窗口。
     """
@@ -87,6 +90,8 @@ class AppSettings(BaseSettings):
     )
     publish_lease_seconds: int = Field(default=300, ge=60, le=1800)
     browser_task_lease_seconds: int = Field(default=120, ge=30, le=1800)
+    route_strategy: RouteStrategy = RouteStrategy.BROWSER_ONLY
+    browser_driver: BrowserDriver = BrowserDriver.EXTENSION
     managed_browser_executable: Path | None = None
     managed_browser_headless: bool = False
     managed_browser_startup_timeout: float = Field(default=15, gt=0, le=120)
