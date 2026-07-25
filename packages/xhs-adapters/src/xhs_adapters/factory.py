@@ -9,6 +9,7 @@ from xhs_core.application import (
     ExtensionCredentialService,
     ManagedBrowserExecutionGate,
     ManagedBrowserWorker,
+    ManagedPublicationWorker,
     PublicationDraftService,
     PublicationExecutionService,
     PublicationScheduler,
@@ -20,6 +21,7 @@ from .config import AppSettings
 from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
 from .managed_browser import ChromiumController
+from .managed_publication_executor import PlaywrightManagedPublicationExecutor
 from .managed_task_executor import PlaywrightManagedTaskExecutor
 from .parsing import InitialStateParser
 from .sqlite import (
@@ -51,6 +53,7 @@ class PublicationRuntime:
     execution: PublicationExecutionService
     credentials: ExtensionCredentialService
     scheduler: PublicationScheduler
+    worker: ManagedPublicationWorker
 
 
 def create_download_service(settings: AppSettings) -> DownloadService:
@@ -107,11 +110,17 @@ def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
     )
 
 
-def create_publication_runtime(settings: AppSettings) -> PublicationRuntime:
+def create_publication_runtime(
+    settings: AppSettings,
+    managed: ManagedBrowserController,
+    execution_gate: ManagedBrowserExecutionGate,
+) -> PublicationRuntime:
     """使用生产适配器创建内容发布运行时。
 
     Args:
         settings: 已验证的运行配置。
+        managed: 与通用任务共享的受管 Chromium 控制器。
+        execution_gate: 两类受管 Worker 共享的独占执行闸门。
 
     Returns:
         尚未启动调度器的发布运行时。
@@ -120,6 +129,12 @@ def create_publication_runtime(settings: AppSettings) -> PublicationRuntime:
     task_repository = SqlitePublicationTaskRepository(database_path)
     asset_store = FilePublicationAssetStore(settings.publication_dir)
     scheduler = PublicationScheduler(task_repository)
+    execution = PublicationExecutionService(
+        task_repository,
+        asset_store,
+        scheduler,
+        settings.publish_lease_seconds,
+    )
     return PublicationRuntime(
         drafts=PublicationDraftService(
             SqlitePublicationDraftRepository(database_path),
@@ -128,14 +143,15 @@ def create_publication_runtime(settings: AppSettings) -> PublicationRuntime:
             settings.publish_max_asset_size,
         ),
         tasks=PublicationTaskService(task_repository, scheduler),
-        execution=PublicationExecutionService(
-            task_repository,
-            asset_store,
-            scheduler,
-            settings.publish_lease_seconds,
-        ),
+        execution=execution,
         credentials=ExtensionCredentialService(
             SqliteExtensionCredentialRepository(database_path)
         ),
         scheduler=scheduler,
+        worker=ManagedPublicationWorker(
+            managed,
+            execution,
+            PlaywrightManagedPublicationExecutor(managed),
+            execution_gate,
+        ),
     )

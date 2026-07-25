@@ -1,7 +1,7 @@
 """FastAPI 接口。"""
 
 from collections.abc import AsyncIterator, Callable
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -80,17 +80,18 @@ def create_api(
             app.state.service = service
             app.state.tasks = tasks
             app.state.collection = CollectionService(service, dependencies.posts)
-            await tasks.start()
-            await dependencies.publication.scheduler.start()
-            await dependencies.browser.worker.start()
-            try:
+            async with AsyncExitStack() as lifecycle:
+                lifecycle.push_async_callback(tasks.close)
+                lifecycle.push_async_callback(dependencies.publication.scheduler.close)
+                lifecycle.push_async_callback(dependencies.browser.managed.close)
+                lifecycle.push_async_callback(dependencies.browser.worker.close)
+                lifecycle.push_async_callback(dependencies.publication.worker.close)
+                lifecycle.push_async_callback(dependencies.capabilities.close)
+                await tasks.start()
+                await dependencies.publication.scheduler.start()
+                await dependencies.publication.worker.start()
+                await dependencies.browser.worker.start()
                 yield
-            finally:
-                await dependencies.capabilities.close()
-                await dependencies.browser.worker.close()
-                await dependencies.browser.managed.close()
-                await dependencies.publication.scheduler.close()
-                await tasks.close()
 
     api = FastAPI(
         title="xhs-downloader",

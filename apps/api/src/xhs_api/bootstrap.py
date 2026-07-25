@@ -61,7 +61,11 @@ def create_api_dependencies(
     """
     database = settings.state_dir.joinpath("downloads.db")
     browser = create_browser_runtime(settings)
-    publication = create_publication_runtime(settings)
+    publication = create_publication_runtime(
+        settings,
+        browser.managed,
+        browser.execution_gate,
+    )
     capabilities = AtomicClientSlot(
         create_read_capability_runtime(settings, browser, publication)
     )
