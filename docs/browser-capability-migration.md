@@ -104,10 +104,11 @@ queued → claimed → running → succeeded | failed | needs_review
 - Cookie、代理和路由字段会排空当前请求后原子热替换；写任务在提交时冻结所选
   浏览器驱动，禁止跨模式自动重试。
 - HTTP 统一读取 Provider 已支持推荐、默认筛选搜索、详情、指定主页和严格身份
-  确认后的当前主页；非默认筛选在发出请求前明确拒绝，不扩展到写操作。
+  确认后的当前主页；非默认筛选会先验证 Cookie 会话，再明确回退浏览器，避免把
+  已过期 Cookie 误归为无法验证，不扩展到写操作。
 - 扩展五项读取、受管匿名 Profile 的推荐/详情/指定主页，以及未配置 Cookie 时
-  HTTP→受管浏览器安全回退已真实通过；配置 Cookie 后的 HTTP 成功路径和扫码后的
-  账号能力仍待现场确认。
+  HTTP→受管浏览器安全回退已真实通过；当前过期 Cookie→扩展的安全回退也已通过，
+  更新 Cookie 后的 HTTP 成功路径和扫码后的账号能力仍待现场确认。
 - 受管 Chromium 被强制终止后能准确报告异常，重新启动会取得新的回环 CDP 端口并
   恢复真实读取，不影响用户日常 Chrome。
 - 受管点赞和收藏已实现目标状态预检、可信点击、严格回读和
@@ -119,8 +120,13 @@ queued → claimed → running → succeeded | failed | needs_review
 - WebUI 已按冻结驱动区分扩展与受管发布；受管模式不会打开日常浏览器创作页，并在
   提交前禁用非私密可见范围和商品绑定。浏览器失败记录只展示和复制严格白名单中的
   脱敏页面诊断。
-- 混合路由中的 Provider 账号自动一致性门禁尚未实现；当前只有扩展与 HTTP 的一次
-  人工脱敏比对，受管 Profile 仍待扫码后加入比较。
+- 混合路由已接入一次性账号一致性门禁：HTTP 在 Provider 内计算 HMAC，协议 5
+  扩展通过独立内存 Claim/Answer 通道计算，受管浏览器通过同一 Profile 的 CDP
+  旁路计算。只有 `matched` 允许跨 Provider 回退；挑战不进入浏览器任务、SQLite、
+  浏览器存储、日志或诊断。协议 5 挑战通道构建已真实重载并完成响应；随后补充的
+  页面水合后 DOM 账号识别兜底已构建、待再次重载。当前 HTTP Cookie 已过期、
+  受管 Profile 未登录，刷新 Cookie 和扫码后的 `matched/different` 现场矩阵仍待
+  复验。
 
 ## 类型化 API
 
@@ -163,6 +169,14 @@ queued → claimed → running → succeeded | failed | needs_review
 `/xhs/*` 类型化能力接口提供；扩展的任务领取入口也支持独立的有界等待。本机管理
 界面通过 `GET /browser/extensions` 读取扩展登记和最近心跳。
 
+协议 5 扩展还使用两个独立的进程内账号证明入口：
+
+- `POST /browser/extension/account-challenges/claim`
+- `POST /browser/extension/account-challenges/{challenge_id}/answer`
+
+它们复用扩展 Bearer Token 和来源校验，回答额外要求一次性挑战租约；成功响应不会
+返回账号是否一致，该结论只由服务端路由器计算。
+
 本机通用任务接口可通过 `target_driver=extension|managed` 冻结执行驱动；
 普通读取接口由服务端统一路由，调用方不能自行重试写操作或实现跨驱动回退。
 
@@ -192,6 +206,7 @@ queued → claimed → running → succeeded | failed | needs_review
 4. P3：协议版本、选择器兼容诊断、脱敏失败证据、断线恢复和结果上限。
 5. P4：二维码登录、一次性交付和浏览器/HTTP 双会话清理。
 6. P5：受管 Chromium 生命周期、统一读取路由、互动、私密发布和验证恢复。
+7. P6：跨 Provider 一次性账号证明、协议 5 内存通道和脱敏路由结论。
 
 真实页面变化不属于可静态锁定的完成项。后续维护以脱敏诊断中的适配器版本、
 页面类型和缺失锚点为依据更新合成契约夹具；不得提交真实帖子、Cookie、
