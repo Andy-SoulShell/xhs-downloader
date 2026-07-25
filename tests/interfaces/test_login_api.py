@@ -43,9 +43,7 @@ async def test_login_routes_create_browser_tasks_and_require_confirmation(
                 "request_id": "synthetic-delete-request",
             },
         )
-        deleted_task = await client.get(
-            f"/browser/tasks/{deleted.json()['task_id']}"
-        )
+        deleted_task = await client.get(f"/browser/tasks/{deleted.json()['task_id']}")
         rejected = await client.post(
             "/xhs/login/cookies/delete",
             json={"target": "browser", "confirmed": False},
