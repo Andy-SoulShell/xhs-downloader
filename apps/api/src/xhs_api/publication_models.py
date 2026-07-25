@@ -72,6 +72,23 @@ class TaskReviewRequest(BaseModel):
         return self
 
 
+class ManagedVerificationResumeRequest(BaseModel):
+    """显式确认已在受管创作页完成安全验证。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    confirmed: Literal[True]
+
+
+class ManagedVerificationResumeResponse(BaseModel):
+    """受管创作页验证恢复受理结果。"""
+
+    task_id: str
+    resumed: Literal[True] = True
+    publish_attempted: bool
+    message: str
+
+
 class ExtensionRegisterRequest(BaseModel):
     """扩展能力登记请求。"""
 

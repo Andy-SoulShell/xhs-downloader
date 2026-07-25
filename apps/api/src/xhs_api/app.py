@@ -26,6 +26,7 @@ from .capability_reads import create_capability_read_router
 from .extension import create_extension_router
 from .login import create_login_router
 from .managed_browser import create_managed_browser_router
+from .managed_publication import create_managed_publication_router
 from .posts import create_post_router
 from .publication import create_publication_router
 from .settings import (
@@ -167,6 +168,13 @@ def create_api(
             dependencies.publication.credentials,
             settings_access_policy,
             lambda: dependencies.settings.current.browser_driver,
+        )
+    )
+    api.include_router(
+        create_managed_publication_router(
+            dependencies.publication.tasks,
+            dependencies.publication.worker,
+            settings_access_policy,
         )
     )
 
