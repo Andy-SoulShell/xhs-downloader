@@ -27,8 +27,9 @@ interface DetailOptions {
 export function parseFeedDetailDocument(
   page: Document,
   options: DetailOptions,
+  currentState?: Record<string, unknown>,
 ): FeedDetailResult {
-  const state = latestInitialState(page);
+  const state = currentState ?? latestInitialState(page);
   const noteState = dataRecord(state.note);
   const detailMap = dataRecord(noteState.noteDetailMap);
   const wrapper = findDetail(detailMap, options.feedId);

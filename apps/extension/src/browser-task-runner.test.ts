@@ -7,6 +7,12 @@ import { runBrowserTaskPoll } from "./browser-task-runner";
 let values: Record<string, unknown>;
 let tabs: Array<{ id?: number; active?: boolean }>;
 let pageResponse: unknown;
+const WRITE_PAYLOAD = {
+  feed_id: "synthetic-feed",
+  xsec_token: "synthetic-token",
+};
+const WRITE_URL =
+  "https://www.xiaohongshu.com/explore/synthetic-feed?xsec_token=synthetic-token&xsec_source=pc_feed";
 
 function claim(
   kind: BrowserTaskClaim["task"]["kind"] = "check_login_status",
@@ -185,7 +191,38 @@ describe("浏览器任务后台执行器", () => {
       {},
       "https://www.xiaohongshu.com/explore/",
     ],
+    [
+      "set_like" as const,
+      { ...WRITE_PAYLOAD, active: true },
+      WRITE_URL,
+    ],
+    [
+      "set_favorite" as const,
+      { ...WRITE_PAYLOAD, active: false },
+      WRITE_URL,
+    ],
+    [
+      "post_comment" as const,
+      { ...WRITE_PAYLOAD, content: "合成评论" },
+      WRITE_URL,
+    ],
+    [
+      "reply_comment" as const,
+      {
+        ...WRITE_PAYLOAD,
+        content: "合成回复",
+        comment_id: "synthetic-comment",
+      },
+      WRITE_URL,
+    ],
   ])("为 %s 创建隔离的后台任务页面", async (kind, payload, url) => {
+    if (kind === "set_like") {
+      pageResponse = {
+        ok: false,
+        status: "needs_review",
+        message: "点赞结果需要人工核对",
+      };
+    }
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -209,6 +246,9 @@ describe("浏览器任务后台执行器", () => {
 
     expect(chrome.tabs.create).toHaveBeenCalledWith({ url, active: false });
     expect(chrome.tabs.remove).toHaveBeenCalledWith(8);
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body).status).toBe(
+      kind === "set_like" ? "needs_review" : "succeeded",
+    );
   });
 
   it("跟随页面返回的站内地址后重新读取当前账号主页", async () => {

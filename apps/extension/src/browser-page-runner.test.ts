@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { BrowserTask } from "@xhs-downloader/contracts";
 
@@ -6,6 +6,7 @@ import {
   executeBrowserPageTask,
   isBrowserPageTaskRequest,
 } from "./browser-page-runner";
+import { installBrowserStateBridge } from "./browser-state-main";
 
 function task(
   kind: BrowserTask["kind"],
@@ -84,16 +85,16 @@ describe("内容脚本浏览器任务执行器", () => {
     });
   });
 
-  it("明确拒绝尚未接入的写任务类型", async () => {
+  it("明确拒绝未知任务类型", async () => {
     const page = document.implementation.createHTMLDocument();
     const response = await executeBrowserPageTask(
-      task("set_like"),
+      task("unknown" as BrowserTask["kind"]),
       page,
       "https://www.xiaohongshu.com/explore",
     );
 
     expect(response.ok).toBe(false);
-    expect(response.message).toContain("set_like");
+    expect(response.message).toContain("unknown");
     expect(isBrowserPageTaskRequest({ type: "browser-page-task" })).toBe(true);
     expect(isBrowserPageTaskRequest({ type: "download" })).toBe(false);
   });
@@ -203,18 +204,49 @@ describe("内容脚本浏览器任务执行器", () => {
     expect(response.navigateUrl).toContain("/user/profile/synthetic-user");
   });
 
-  it("拒绝未接入筛选、缺失参数和缺失主页入口", async () => {
-    const page = statePage({ search: { feeds: { value: [] } } });
-    await expect(
-      executeBrowserPageTask(
+  it("操作搜索筛选并读取主世界中的最新结果", async () => {
+    document.body.innerHTML = `
+      <div class="filter">筛选</div>
+      <div class="filter-panel">
+        <div class="filters">
+          <div class="tags">综合</div>
+          <div class="tags" id="latest-filter">最新</div>
+        </div>
+      </div>
+    `;
+    const clicked = vi.fn();
+    document.querySelector("#latest-filter")?.addEventListener("click", clicked);
+    const scope = window as Window & { __INITIAL_STATE__?: unknown };
+    scope.__INITIAL_STATE__ = {
+      search: { feeds: { value: [feedState()] } },
+    };
+    const uninstall = installBrowserStateBridge(scope);
+    vi.useFakeTimers();
+    try {
+      const operation = executeBrowserPageTask(
         task("search_feeds", {
           keyword: "合成关键词",
           filters: { sort_by: "最新" },
         }),
-        page,
+        document,
         "https://www.xiaohongshu.com/search_result",
-      ),
-    ).rejects.toThrow("尚未接入搜索筛选交互");
+      );
+      await vi.runAllTimersAsync();
+      const response = await operation;
+
+      expect(clicked).toHaveBeenCalledOnce();
+      expect(response.result).toMatchObject({
+        items: [{ feed_id: "synthetic-feed" }],
+      });
+    } finally {
+      vi.useRealTimers();
+      uninstall();
+      delete scope.__INITIAL_STATE__;
+    }
+  });
+
+  it("拒绝缺失参数和缺失主页入口", async () => {
+    const page = statePage({ search: { feeds: { value: [] } } });
     await expect(
       executeBrowserPageTask(
         task("search_feeds"),

@@ -17,8 +17,9 @@ import {
 export function parseUserProfileDocument(
   page: Document,
   requestedUserId: string | null,
+  currentState?: Record<string, unknown>,
 ): UserProfileResult {
-  const state = latestInitialState(page);
+  const state = currentState ?? latestInitialState(page);
   const userState = dataRecord(state.user);
   const pageData = dataRecord(unwrapState(userState.userPageData));
   const basic = dataRecord(pageData.basicInfo);

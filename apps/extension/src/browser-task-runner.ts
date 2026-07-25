@@ -82,7 +82,7 @@ async function executeClaim(
         credential,
         taskId,
         lease,
-        response.ok ? "succeeded" : "failed",
+        response.status ?? (response.ok ? "succeeded" : "failed"),
         response.message,
         response.result,
       ),
@@ -95,7 +95,7 @@ async function executeClaim(
         credential,
         taskId,
         lease,
-        "failed",
+        isWriteTask(claim.task.kind) ? "needs_review" : "failed",
         message,
       ),
     );
@@ -187,13 +187,25 @@ function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
     const token = taskPayloadText(task.payload, "xsec_token");
     return `https://www.xiaohongshu.com/user/profile/${encodeURIComponent(userId)}?xsec_token=${encodeURIComponent(token)}&xsec_source=pc_note`;
   }
-  if (task.kind === "get_feed_detail") {
+  if (
+    task.kind === "get_feed_detail" ||
+    task.kind === "set_like" ||
+    task.kind === "set_favorite" ||
+    task.kind === "post_comment" ||
+    task.kind === "reply_comment"
+  ) {
     const feedId = taskPayloadText(task.payload, "feed_id");
     const token = taskPayloadText(task.payload, "xsec_token");
     return `https://www.xiaohongshu.com/explore/${encodeURIComponent(feedId)}?xsec_token=${encodeURIComponent(token)}&xsec_source=pc_feed`;
   }
   if (task.kind === "get_my_profile") return EXPLORE_URL;
   throw new Error(`当前扩展版本尚未接入任务 ${task.kind}`);
+}
+
+function isWriteTask(kind: BrowserTaskClaim["task"]["kind"]): boolean {
+  return ["set_like", "set_favorite", "post_comment", "reply_comment"].includes(
+    kind,
+  );
 }
 
 function taskPayloadText(

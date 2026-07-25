@@ -36,6 +36,12 @@
     },
     {
       "matches": ["https://www.xiaohongshu.com/*"],
+      "js": ["browser-page-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.xiaohongshu.com/*"],
       "js": ["browser-page.js"],
       "run_at": "document_idle"
     }

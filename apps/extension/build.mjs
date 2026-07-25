@@ -10,6 +10,7 @@ await build({
   entryPoints: {
     background: "src/background.ts",
     "browser-page": "src/browser-page.ts",
+    "browser-page-main": "src/browser-page-main.ts",
     content: "src/content.ts",
     publisher: "src/publisher.ts",
     "publisher-main": "src/publisher-main.ts",

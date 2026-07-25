@@ -29,8 +29,8 @@ def test_extension_uses_minimum_permissions() -> None:
     assert all("<all_urls>" not in value for value in host_permissions)
 
 
-def test_extension_only_runs_on_supported_post_pages() -> None:
-    """确保内容脚本只注入受支持的小红书帖子页面。"""
+def test_extension_only_runs_on_supported_xhs_pages() -> None:
+    """确保下载脚本窄匹配，浏览任务脚本只覆盖小红书主站。"""
     manifest = loads(MANIFEST.read_text(encoding="utf-8"))
     content_scripts = manifest["content_scripts"]
     matches = content_scripts[0]["matches"]
@@ -41,6 +41,12 @@ def test_extension_only_runs_on_supported_post_pages() -> None:
     ]
     assert content_scripts[1]["matches"] == ["https://creator.xiaohongshu.com/*"]
     assert content_scripts[3] == {
+        "matches": ["https://www.xiaohongshu.com/*"],
+        "js": ["browser-page-main.js"],
+        "run_at": "document_start",
+        "world": "MAIN",
+    }
+    assert content_scripts[4] == {
         "matches": ["https://www.xiaohongshu.com/*"],
         "js": ["browser-page.js"],
         "run_at": "document_idle",

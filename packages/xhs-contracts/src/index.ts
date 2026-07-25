@@ -164,3 +164,18 @@ export interface UserProfileResult {
   metrics: ProfileMetric[];
   feeds: FeedSummary[];
 }
+
+/** 点赞或收藏达到目标状态后的核验结果。 */
+export interface DesiredStateResult {
+  feed_id: string;
+  active: boolean;
+  changed: boolean;
+  verified: true;
+}
+
+/** 评论或回复提交后的核验结果。 */
+export interface CommentResult {
+  feed_id: string;
+  comment_id: string | null;
+  verified: true;
+}

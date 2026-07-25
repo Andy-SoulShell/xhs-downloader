@@ -21,8 +21,9 @@ export function parseFeedListDocument(
   page: Document,
   source: FeedListResult["source"],
   keyword: string | null = null,
+  currentState?: Record<string, unknown>,
 ): FeedListResult {
-  const state = latestInitialState(page);
+  const state = currentState ?? latestInitialState(page);
   const container = dataRecord(state[source === "home" ? "feed" : "search"]);
   if (!("feeds" in container)) {
     throw new Error(source === "home" ? "推荐流尚未加载" : "搜索结果尚未加载");

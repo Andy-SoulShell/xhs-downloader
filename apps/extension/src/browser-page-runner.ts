@@ -5,9 +5,20 @@ import type {
 } from "@xhs-downloader/contracts";
 
 import { detectLoginState } from "./login-state";
+import { readLiveInitialState } from "./browser-state-bridge";
+import {
+  loadComments,
+  needsCommentLoading,
+} from "./comment-loader";
+import { postComment, replyComment } from "./comment-runner";
 import { parseFeedDetailDocument } from "./feed-detail-parser";
 import { parseFeedListDocument } from "./feed-parser";
+import { setDesiredInteraction } from "./interaction-runner";
 import { parseUserProfileDocument } from "./profile-parser";
+import {
+  applySearchFilters,
+  hasCustomSearchFilters,
+} from "./search-filters";
 
 /** 后台发送给小红书内容脚本的浏览器任务消息。 */
 export interface BrowserPageTaskRequest {
@@ -21,6 +32,7 @@ export interface BrowserPageTaskResponse {
   message: string;
   result?: Record<string, JsonValue>;
   navigateUrl?: string;
+  status?: "succeeded" | "failed" | "needs_review";
 }
 
 /** 判断消息是否为内容脚本浏览器任务。 */
@@ -49,22 +61,33 @@ export async function executeBrowserPageTask(
   }
   if (task.kind === "search_feeds") {
     const keyword = payloadText(task, "keyword");
-    assertDefaultSearchFilters(task);
+    const filters = payloadRecord(task, "filters");
+    let currentState: Record<string, unknown> | undefined;
+    if (hasCustomSearchFilters(filters)) {
+      await applySearchFilters(page, filters);
+      currentState = await readLiveInitialState(page);
+    }
     return success(
       "搜索结果读取完成",
-      parseFeedListDocument(page, "search", keyword),
+      parseFeedListDocument(page, "search", keyword, currentState),
     );
   }
   if (task.kind === "get_feed_detail") {
+    const options = {
+      feedId: payloadText(task, "feed_id"),
+      xsecToken: payloadText(task, "xsec_token"),
+      commentLimit: payloadNumber(task, "comment_limit"),
+      includeReplies: task.payload.include_replies === true,
+      replyLimit: payloadNumber(task, "reply_limit"),
+    };
+    let currentState: Record<string, unknown> | undefined;
+    if (needsCommentLoading(options)) {
+      await loadComments(page, options);
+      currentState = await readLiveInitialState(page);
+    }
     return success(
       "帖子详情读取完成",
-      parseFeedDetailDocument(page, {
-        feedId: payloadText(task, "feed_id"),
-        xsecToken: payloadText(task, "xsec_token"),
-        commentLimit: payloadNumber(task, "comment_limit"),
-        includeReplies: task.payload.include_replies === true,
-        replyLimit: payloadNumber(task, "reply_limit"),
-      }),
+      parseFeedDetailDocument(page, options, currentState),
     );
   }
   if (task.kind === "get_user_profile") {
@@ -92,6 +115,42 @@ export async function executeBrowserPageTask(
     }
     throw new Error("当前页面没有已登录账号的主页入口");
   }
+  if (task.kind === "set_like" || task.kind === "set_favorite") {
+    const active = payloadBoolean(task, "active");
+    return success(
+      active ? "互动状态已启用" : "互动状态已取消",
+      await setDesiredInteraction(
+        page,
+        payloadText(task, "feed_id"),
+        task.kind === "set_like" ? "like" : "favorite",
+        active,
+      ),
+    );
+  }
+  if (task.kind === "post_comment") {
+    return success(
+      "评论已提交并确认",
+      await postComment(
+        page,
+        payloadText(task, "feed_id"),
+        payloadText(task, "content"),
+      ),
+    );
+  }
+  if (task.kind === "reply_comment") {
+    return success(
+      "回复已提交并确认",
+      await replyComment(
+        page,
+        payloadText(task, "feed_id"),
+        payloadText(task, "content"),
+        {
+          commentId: payloadOptionalText(task, "comment_id"),
+          userId: payloadOptionalText(task, "user_id"),
+        },
+      ),
+    );
+  }
   return {
     ok: false,
     message: `当前扩展版本尚不支持任务 ${task.kind}`,
@@ -109,25 +168,6 @@ function success(
   };
 }
 
-function assertDefaultSearchFilters(task: BrowserTask): void {
-  const filters = task.payload.filters;
-  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return;
-  const defaults: Record<string, string> = {
-    sort_by: "综合",
-    note_type: "不限",
-    publish_time: "不限",
-    search_scope: "不限",
-    location: "不限",
-  };
-  if (
-    Object.entries(defaults).some(
-      ([field, value]) => filters[field] !== value,
-    )
-  ) {
-    throw new Error("当前扩展版本尚未接入搜索筛选交互");
-  }
-}
-
 function payloadText(task: BrowserTask, field: string): string {
   const value = task.payload[field];
   if (typeof value !== "string" || !value) {
@@ -136,10 +176,36 @@ function payloadText(task: BrowserTask, field: string): string {
   return value;
 }
 
+function payloadRecord(
+  task: BrowserTask,
+  field: string,
+): Record<string, JsonValue> {
+  const value = task.payload[field];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : {};
+}
+
 function payloadNumber(task: BrowserTask, field: string): number {
   const value = task.payload[field];
   if (typeof value !== "number" || !Number.isInteger(value)) {
     throw new Error(`浏览器任务参数 ${field} 无效`);
   }
   return value;
+}
+
+function payloadBoolean(task: BrowserTask, field: string): boolean {
+  const value = task.payload[field];
+  if (typeof value !== "boolean") {
+    throw new Error(`浏览器任务参数 ${field} 无效`);
+  }
+  return value;
+}
+
+function payloadOptionalText(
+  task: BrowserTask,
+  field: string,
+): string | null {
+  const value = task.payload[field];
+  return typeof value === "string" && value ? value : null;
 }
