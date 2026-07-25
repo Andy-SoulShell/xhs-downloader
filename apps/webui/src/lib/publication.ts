@@ -1,4 +1,7 @@
-export type PublicationMode = "manual" | "scheduled";
+/** 发布执行方式：立即、本地到期执行或创作平台官方定时。 */
+export type PublicationMode = "manual" | "scheduled" | "platform_scheduled";
+/** 小红书作品的目标可见范围。 */
+export type PublicationVisibility = "public" | "private" | "mutual";
 export type PublicationTaskStatus =
   | "scheduled"
   | "ready"
@@ -24,6 +27,9 @@ export interface PublicationDraft {
   title: string;
   body: string;
   tags: string[];
+  visibility: PublicationVisibility;
+  is_original: boolean;
+  products: string[];
   assets: PublicationAsset[];
   created_at: string;
   updated_at: string;
@@ -49,5 +55,8 @@ export interface PublicationDraftInput {
   title: string;
   body: string;
   tags: string[];
+  visibility: PublicationVisibility;
+  is_original: boolean;
+  products: string[];
   asset_order?: string[];
 }

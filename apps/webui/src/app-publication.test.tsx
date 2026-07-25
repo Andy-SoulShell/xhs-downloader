@@ -37,6 +37,7 @@ vi.mock("./lib/publication-api", () => ({
   listPublicationDrafts: vi.fn(),
   listPublicationTasks: vi.fn(),
   removePublicationAsset: vi.fn(),
+  reviewPublicationTask: vi.fn(),
   retryPublicationTask: vi.fn(),
   submitPublicationTask: vi.fn(),
   updatePublicationDraft: vi.fn(),

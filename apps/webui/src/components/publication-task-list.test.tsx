@@ -7,6 +7,7 @@ import { PublicationTaskList } from "./publication-task-list";
 describe("发布任务列表", () => {
   it("展示全部状态并提供取消、重试和结果入口", () => {
     const onCancel = vi.fn().mockResolvedValue(undefined);
+    const onReview = vi.fn().mockResolvedValue(undefined);
     const onRetry = vi.fn().mockResolvedValue(undefined);
     const statuses = [
       "scheduled",
@@ -22,6 +23,7 @@ describe("发布任务列表", () => {
     render(
       <PublicationTaskList
         onCancel={onCancel}
+        onReview={onReview}
         onRetry={onRetry}
         tasks={statuses.map((status) =>
           makePublicationTask({
@@ -50,9 +52,18 @@ describe("发布任务列表", () => {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
     fireEvent.click(screen.getAllByRole("button", { name: "取消" })[0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "重试" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    fireEvent.click(screen.getByRole("button", { name: "标记未发布" }));
+    expect(onReview).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "确认未发布" }));
+    fireEvent.click(screen.getByRole("button", { name: "标记已发布" }));
+    fireEvent.click(screen.getByRole("button", { name: "返回" }));
+    fireEvent.click(screen.getByRole("button", { name: "标记已发布" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认已发布" }));
     expect(onCancel).toHaveBeenCalledWith("scheduled");
-    expect(onRetry).toHaveBeenCalledWith("needs_review");
+    expect(onRetry).toHaveBeenCalledWith("failed");
+    expect(onReview).toHaveBeenCalledWith("needs_review", false);
+    expect(onReview).toHaveBeenCalledWith("needs_review", true);
     expect(screen.getByRole("link", { name: /查看/ })).toHaveAttribute(
       "href",
       "https://example.invalid/published",
@@ -66,6 +77,7 @@ describe("发布任务列表", () => {
     render(
       <PublicationTaskList
         onCancel={vi.fn()}
+        onReview={vi.fn()}
         onRetry={vi.fn()}
         tasks={[]}
       />,

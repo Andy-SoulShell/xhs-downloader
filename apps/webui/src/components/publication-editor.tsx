@@ -1,19 +1,17 @@
-import {
-  CalendarClock,
-  ExternalLink,
-  Save,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import type {
   PublicationDraft,
   PublicationDraftInput,
+  PublicationMode,
   PublicationTask,
+  PublicationVisibility,
 } from "../lib/publication";
 import { ActionButton } from "./action-button";
 import { PublicationAssets } from "./publication-assets";
+import { PublicationOptionsForm } from "./publication-options-form";
+import { PublicationSubmitControls } from "./publication-submit-controls";
 
 interface PublicationEditorProps {
   draft: PublicationDraft;
@@ -22,10 +20,14 @@ interface PublicationEditorProps {
   onRemoveAsset: (assetId: string) => Promise<void>;
   onSave: (input: PublicationDraftInput) => Promise<PublicationDraft>;
   onSubmitManual: () => Promise<PublicationTask>;
+  onSubmitPlatformScheduled: (
+    scheduledAt: string,
+  ) => Promise<PublicationTask>;
   onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onUpload: (files: File[]) => Promise<void>;
 }
 
+/** 编辑本地发布草稿，并以二次确认提交三种发布任务。 */
 export function PublicationEditor({
   draft,
   onDelete,
@@ -33,19 +35,31 @@ export function PublicationEditor({
   onRemoveAsset,
   onSave,
   onSubmitManual,
+  onSubmitPlatformScheduled,
   onSubmitScheduled,
   onUpload,
 }: PublicationEditorProps) {
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
   const [tags, setTags] = useState(draft.tags.join(" "));
+  const [visibility, setVisibility] = useState<PublicationVisibility>(
+    draft.visibility,
+  );
+  const [isOriginal, setIsOriginal] = useState(draft.is_original);
+  const [products, setProducts] = useState(draft.products.join("\n"));
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState("");
+  const hasVideo = draft.assets.some((asset) =>
+    asset.media_type.startsWith("video/"),
+  );
 
   const input = (assetOrder?: string[]): PublicationDraftInput => ({
     title: title.trim(),
     body: body.trim(),
     tags: parseTags(tags),
+    visibility,
+    is_original: hasVideo ? false : isOriginal,
+    products: parseProducts(products),
     ...(assetOrder ? { asset_order: assetOrder } : {}),
   });
   const save = async (assetOrder?: string[]) => onSave(input(assetOrder));
@@ -59,17 +73,28 @@ export function PublicationEditor({
       setBusy("");
     }
   };
-  const submitManual = () =>
-    run("manual", async () => {
+  const submitBrowserTask = (mode: "manual" | "platform_scheduled") =>
+    run(mode, async () => {
       validateDraft(input(), draft);
+      const platformSchedule =
+        mode === "platform_scheduled"
+          ? validateSchedule(scheduledAt, mode)
+          : undefined;
       const popup = window.open("about:blank", "_blank");
       if (popup) popup.opener = null;
       try {
         await save();
-        const task = await onSubmitManual();
+        const task =
+          mode === "manual"
+            ? await onSubmitManual()
+            : await onSubmitPlatformScheduled(platformSchedule!);
         if (popup) {
           popup.location.href = creatorUrl(task);
-          onNotify("发布任务已交给浏览器扩展");
+          onNotify(
+            mode === "manual"
+              ? "发布任务已交给浏览器扩展"
+              : "官方定时任务已交给扩展设置",
+          );
         } else {
           onNotify("任务已就绪，但浏览器阻止了创作页弹窗");
         }
@@ -78,20 +103,18 @@ export function PublicationEditor({
         throw error;
       }
     });
-  const submitScheduled = () =>
+  const submitLocalSchedule = () =>
     run("scheduled", async () => {
       validateDraft(input(), draft);
-      const instant = new Date(scheduledAt);
-      if (!scheduledAt || !Number.isFinite(instant.getTime())) {
-        throw new Error("请选择有效的计划发布时间");
-      }
-      if (instant.getTime() <= Date.now()) {
-        throw new Error("计划发布时间必须晚于当前时间");
-      }
+      const schedule = validateSchedule(scheduledAt, "scheduled");
       await save();
-      await onSubmitScheduled(instant.toISOString());
-      onNotify("定时发布任务已保存，届时由浏览器扩展执行");
+      await onSubmitScheduled(schedule);
+      onNotify("本地定时任务已保存，届时由浏览器扩展执行");
     });
+  const submit = (mode: PublicationMode) => {
+    if (mode === "scheduled") return submitLocalSchedule();
+    return submitBrowserTask(mode);
+  };
 
   return (
     <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
@@ -139,41 +162,23 @@ export function PublicationEditor({
         }
       />
 
-      <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          <label className="min-w-0 flex-1 text-xs font-semibold text-stone-700">
-            计划发布时间
-            <input
-              className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none"
-              min={minimumSchedule()}
-              onChange={(event) => setScheduledAt(event.target.value)}
-              type="datetime-local"
-              value={scheduledAt}
-            />
-          </label>
-          <ActionButton
-            disabled={Boolean(busy)}
-            onClick={() => void submitScheduled()}
-            size="large"
-            variant="outline"
-          >
-            <CalendarClock aria-hidden size={16} />
-            {busy === "scheduled" ? "正在排期…" : "定时发布"}
-          </ActionButton>
-          <ActionButton
-            disabled={Boolean(busy)}
-            onClick={() => void submitManual()}
-            size="large"
-          >
-            <Send aria-hidden size={16} />
-            {busy === "manual" ? "正在打开…" : "一键发布"}
-            <ExternalLink aria-hidden size={14} />
-          </ActionButton>
-        </div>
-        <p className="mt-3 text-[11px] leading-5 text-stone-500">
-          一键发布会打开创作中心；定时发布要求本机服务、浏览器与扩展届时保持运行。
-        </p>
-      </div>
+      <PublicationOptionsForm
+        hasVideo={hasVideo}
+        isOriginal={isOriginal}
+        onOriginalChange={setIsOriginal}
+        onProductsChange={setProducts}
+        onVisibilityChange={setVisibility}
+        products={products}
+        visibility={visibility}
+      />
+
+      <PublicationSubmitControls
+        busy={busy}
+        onScheduledAtChange={setScheduledAt}
+        onSubmit={submit}
+        products={parseProducts(products)}
+        scheduledAt={scheduledAt}
+      />
 
       <div className="flex flex-wrap justify-between gap-3 border-t border-stone-200 pt-4">
         <ActionButton
@@ -214,6 +219,12 @@ function parseTags(value: string): string[] {
     .slice(0, 20);
 }
 
+function parseProducts(value: string): string[] {
+  return [...new Set(value.split(/[\n,，]+/).map((item) => item.trim()))]
+    .filter(Boolean)
+    .slice(0, 20);
+}
+
 function validateDraft(
   input: PublicationDraftInput,
   draft: PublicationDraft,
@@ -231,9 +242,21 @@ function creatorUrl(task: PublicationTask): string {
   return url.toString();
 }
 
-function minimumSchedule(): string {
-  const value = new Date(Date.now() + 60_000);
-  value.setSeconds(0, 0);
-  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
+function validateSchedule(
+  value: string,
+  mode: Exclude<PublicationMode, "manual">,
+): string {
+  const instant = new Date(value);
+  if (!value || !Number.isFinite(instant.getTime())) {
+    throw new Error("请选择有效的计划发布时间");
+  }
+  const delay = instant.getTime() - Date.now();
+  if (delay <= 0) throw new Error("计划发布时间必须晚于当前时间");
+  if (mode === "platform_scheduled" && delay < 60 * 60_000) {
+    throw new Error("官方定时发布时间必须至少在 1 小时后");
+  }
+  if (mode === "platform_scheduled" && delay > 14 * 24 * 60 * 60_000) {
+    throw new Error("官方定时发布时间不能超过 14 天");
+  }
+  return instant.toISOString();
 }

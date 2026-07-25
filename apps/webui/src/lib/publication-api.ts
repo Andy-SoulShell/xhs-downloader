@@ -99,6 +99,24 @@ export async function retryPublicationTask(
   return parseResponse<PublicationTask>(response);
 }
 
+/** 提交人工核对结论，使不确定发布任务进入明确终态。 */
+export async function reviewPublicationTask(
+  taskId: string,
+  published: boolean,
+): Promise<PublicationTask> {
+  const response = await fetch(
+    `${API_BASE}/publication/tasks/${taskId}/review`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        decision: published ? "published" : "not_published",
+      }),
+    },
+  );
+  return parseResponse<PublicationTask>(response);
+}
+
 export async function cancelPublicationTask(
   taskId: string,
 ): Promise<PublicationTask> {

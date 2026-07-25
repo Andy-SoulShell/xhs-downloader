@@ -14,6 +14,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
   updatePublicationDraft,
@@ -129,6 +130,12 @@ export function usePublicationCenter() {
     return task;
   }, []);
 
+  const reviewTask = useCallback(async (taskId: string, published: boolean) => {
+    const task = await reviewPublicationTask(taskId, published);
+    replaceTask(setTasks, task);
+    return task;
+  }, []);
+
   const cancelTask = useCallback(async (taskId: string) => {
     const task = await cancelPublicationTask(taskId);
     replaceTask(setTasks, task);
@@ -144,6 +151,7 @@ export function usePublicationCenter() {
     loading,
     refreshTasks,
     removeAsset,
+    reviewTask,
     retryTask,
     saveDraft,
     submitTask,

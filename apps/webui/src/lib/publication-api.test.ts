@@ -7,6 +7,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
   updatePublicationDraft,
@@ -37,6 +38,9 @@ describe("发布中心 API 客户端", () => {
         title: "新标题",
         body: "正文",
         tags: ["标签"],
+        visibility: "public",
+        is_original: false,
+        products: [],
       }),
     ).resolves.toEqual(draft);
     await expect(deletePublicationDraft(draft.draft_id)).resolves.toBeUndefined();
@@ -75,12 +79,14 @@ describe("发布中心 API 客户端", () => {
     );
   });
 
-  it("提交、读取、重试和取消发布任务", async () => {
+  it("提交、读取、核对、重试和取消发布任务", async () => {
     const task = makePublicationTask();
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(task)))
       .mockResolvedValueOnce(new Response(JSON.stringify([task])))
+      .mockResolvedValueOnce(new Response(JSON.stringify(task)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(task)))
       .mockResolvedValueOnce(new Response(JSON.stringify(task)))
       .mockResolvedValueOnce(new Response(JSON.stringify(task)));
     vi.stubGlobal("fetch", fetchMock);
@@ -94,11 +100,23 @@ describe("发布中心 API 客户端", () => {
     ).resolves.toEqual(task);
     await expect(listPublicationTasks()).resolves.toEqual([task]);
     await expect(retryPublicationTask(task.task_id)).resolves.toEqual(task);
+    await expect(
+      reviewPublicationTask(task.task_id, false),
+    ).resolves.toEqual(task);
+    await expect(
+      reviewPublicationTask(task.task_id, true),
+    ).resolves.toEqual(task);
     await expect(cancelPublicationTask(task.task_id)).resolves.toEqual(task);
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       mode: "scheduled",
       scheduled_at: "2026-01-02T00:00:00Z",
+    });
+    expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual({
+      decision: "not_published",
+    });
+    expect(JSON.parse(fetchMock.mock.calls[4][1].body)).toEqual({
+      decision: "published",
     });
   });
 

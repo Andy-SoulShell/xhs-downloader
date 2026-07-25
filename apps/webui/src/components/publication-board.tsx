@@ -123,6 +123,13 @@ export function PublicationBoard({
                 onSubmitManual={() =>
                   center.submitTask(selected.draft_id, "manual")
                 }
+                onSubmitPlatformScheduled={(scheduledAt) =>
+                  center.submitTask(
+                    selected.draft_id,
+                    "platform_scheduled",
+                    scheduledAt,
+                  )
+                }
                 onSubmitScheduled={(scheduledAt) =>
                   center.submitTask(
                     selected.draft_id,
@@ -144,6 +151,14 @@ export function PublicationBoard({
             }
             onRetry={(taskId) =>
               taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")
+            }
+            onReview={(taskId, published) =>
+              taskAction(
+                () => center.reviewTask(taskId, published),
+                published
+                  ? "已确认作品发布成功"
+                  : "已确认作品未发布，现在可以重试",
+              )
             }
             tasks={center.tasks}
           />

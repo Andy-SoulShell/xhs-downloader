@@ -128,6 +128,9 @@ export function makePublicationDraft(
     title: "合成发布标题",
     body: "合成发布正文",
     tags: ["合成", "测试"],
+    visibility: "public",
+    is_original: false,
+    products: [],
     assets: [
       {
         asset_id: "synthetic-asset",

@@ -8,6 +8,7 @@ import {
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
+  reviewPublicationTask,
   retryPublicationTask,
   submitPublicationTask,
   updatePublicationDraft,
@@ -26,6 +27,7 @@ vi.mock("./publication-api", () => ({
   listPublicationDrafts: vi.fn(),
   listPublicationTasks: vi.fn(),
   removePublicationAsset: vi.fn(),
+  reviewPublicationTask: vi.fn(),
   retryPublicationTask: vi.fn(),
   submitPublicationTask: vi.fn(),
   updatePublicationDraft: vi.fn(),
@@ -67,6 +69,10 @@ describe("发布中心状态管理", () => {
       ...task,
       status: "ready",
     });
+    vi.mocked(reviewPublicationTask).mockResolvedValue({
+      ...task,
+      status: "published",
+    });
     vi.mocked(cancelPublicationTask).mockResolvedValue({
       ...task,
       status: "canceled",
@@ -80,6 +86,9 @@ describe("发布中心状态管理", () => {
         title: "已保存",
         body: "正文",
         tags: [],
+        visibility: "public",
+        is_original: false,
+        products: [],
       });
       await result.current.uploadAsset(
         initial.draft_id,
@@ -88,6 +97,7 @@ describe("发布中心状态管理", () => {
       await result.current.removeAsset(initial.draft_id, "second");
       await result.current.submitTask(initial.draft_id, "manual");
       await result.current.retryTask(task.task_id);
+      await result.current.reviewTask(task.task_id, true);
       await result.current.cancelTask(task.task_id);
       await result.current.deleteDraft(created.draft_id);
     });
@@ -99,6 +109,7 @@ describe("发布中心状态管理", () => {
       "manual",
       undefined,
     );
+    expect(reviewPublicationTask).toHaveBeenCalledWith(task.task_id, true);
   });
 
   it("轮询活动任务并允许手动刷新", async () => {
