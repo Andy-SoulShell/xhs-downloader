@@ -1,5 +1,6 @@
 """扩展领取发布任务与状态回传用例。"""
 
+from asyncio import to_thread
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
@@ -119,6 +120,7 @@ class PublicationExecutionService:
         status: PublicationTaskStatus,
         message: str,
         result_url: str | None = None,
+        publish_attempted: bool | None = None,
     ) -> PublicationTask:
         """按状态机推进扩展任务。
 
@@ -128,6 +130,7 @@ class PublicationExecutionService:
             status: 目标状态。
             message: 用户可见的执行说明。
             result_url: 发布成功后的作品地址。
+            publish_attempted: 是否在本次更新中冻结发布点击已经开始。
 
         Returns:
             更新后的任务。
@@ -138,12 +141,22 @@ class PublicationExecutionService:
         task = await self._require_lease(task_id, lease_token)
         if status not in _ALLOWED_TRANSITIONS.get(task.status, set()):
             raise PublicationError(f"不能从 {task.status.value} 转换到 {status.value}")
+        if task.publish_attempted and publish_attempted is False:
+            raise PublicationError("已经尝试发布的任务不能清除安全标记")
+        if publish_attempted is True and status not in {
+            PublicationTaskStatus.PUBLISHING,
+            PublicationTaskStatus.AWAITING_VERIFICATION,
+        }:
+            raise PublicationError("发布尝试标记只能用于发布或验证阶段")
         now = datetime.now(UTC)
         updated = task.model_copy(
             update={
                 "status": status,
                 "message": message[:1000],
                 "result_url": result_url or task.result_url,
+                "publish_attempted": (
+                    task.publish_attempted or publish_attempted is True
+                ),
                 "lease_expires_at": (
                     None
                     if status in _TERMINAL
@@ -157,6 +170,39 @@ class PublicationExecutionService:
         if status in _TERMINAL:
             await self._repository.clear_lease(task_id)
         return updated
+
+    async def asset_paths(
+        self,
+        task_id: str,
+        lease_token: str,
+    ) -> tuple[Path, ...]:
+        """返回按位置排序且通过大小和摘要复核的受控素材路径。
+
+        Args:
+            task_id: 任务唯一标识。
+            lease_token: 短期租约令牌。
+
+        Returns:
+            严格属于冻结发布包的素材绝对路径。
+
+        Raises:
+            PublicationError: 租约、文件大小或 SHA-256 不匹配。
+        """
+        task = await self._require_lease(task_id, lease_token)
+        ordered = sorted(task.package.assets, key=lambda asset: asset.position)
+        paths: list[Path] = []
+        for asset in ordered:
+            path = self._assets.path_for(task.package.draft_id, asset)
+            valid = await to_thread(
+                _matches_asset,
+                path,
+                asset.size,
+                asset.sha256,
+            )
+            if not valid:
+                raise PublicationError("发布素材缺失或内容指纹校验失败")
+            paths.append(path)
+        return tuple(paths)
 
     async def asset_path(
         self,
@@ -227,3 +273,16 @@ class PublicationExecutionService:
 
 def _token_hash(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()
+
+
+def _matches_asset(path: Path, expected_size: int, expected_sha256: str) -> bool:
+    try:
+        if not path.is_file() or path.stat().st_size != expected_size:
+            return False
+        digest = sha256()
+        with path.open("rb") as stream:
+            while chunk := stream.read(1024 * 1024):
+                digest.update(chunk)
+        return digest.hexdigest() == expected_sha256
+    except OSError:
+        return False

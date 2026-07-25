@@ -36,7 +36,5 @@ def validate_publication_package(
         return
     if draft.visibility is not PublicationVisibility.PRIVATE:
         raise PublicationError("受管浏览器首批发布只支持仅自己可见")
-    if draft.is_original:
-        raise PublicationError("受管浏览器首批发布暂不支持原创声明")
     if draft.products:
         raise PublicationError("受管浏览器首批发布暂不支持绑定商品")

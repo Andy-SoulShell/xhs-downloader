@@ -14,6 +14,7 @@ from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
 from .managed_browser_worker import ManagedBrowserWorker
+from .managed_publication_worker import ManagedPublicationWorker
 from .publication_auth import ExtensionCredentialService
 from .publication_drafts import PublicationDraftService
 from .publication_execution import PublicationExecutionService
@@ -35,6 +36,7 @@ __all__ = [
     "DownloadTaskCoordinator",
     "ExtensionCredentialService",
     "ManagedBrowserWorker",
+    "ManagedPublicationWorker",
     "PublicationDraftService",
     "PublicationExecutionService",
     "PublicationScheduler",

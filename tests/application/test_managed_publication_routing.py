@@ -65,7 +65,7 @@ async def test_submit_freezes_driver_and_deduplicates_per_driver(tmp_path) -> No
 
 
 async def test_managed_submit_accepts_video_and_platform_schedule(tmp_path) -> None:
-    """确保受管首批任务覆盖单视频和平台官方定时模式。
+    """确保受管任务覆盖单视频、图片原创和平台官方定时模式。
 
     Args:
         tmp_path: Pytest 提供的临时目录。
@@ -97,17 +97,29 @@ async def test_managed_submit_accepts_video_and_platform_schedule(tmp_path) -> N
         datetime.now(UTC) + timedelta(hours=2),
         BrowserDriver.MANAGED,
     )
+    original_image = draft.model_copy(
+        update={
+            "visibility": PublicationVisibility.PRIVATE,
+            "is_original": True,
+        }
+    )
+    original = await tasks.submit(
+        original_image,
+        PublicationMode.MANUAL,
+        None,
+        BrowserDriver.MANAGED,
+    )
 
     assert immediate.package.assets[0].media_type == "video/mp4"
     assert scheduled.mode is PublicationMode.PLATFORM_SCHEDULED
     assert scheduled.target_driver is BrowserDriver.MANAGED
+    assert original.package.is_original is True
 
 
 @pytest.mark.parametrize(
     ("updates", "message"),
     [
         ({"visibility": PublicationVisibility.PUBLIC}, "仅自己可见"),
-        ({"is_original": True}, "原创声明"),
         ({"products": ["合成商品"]}, "绑定商品"),
     ],
 )

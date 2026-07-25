@@ -46,6 +46,12 @@ from .feeds import (
     UserProfileResult,
 )
 from .managed_browser import ManagedBrowserState, ManagedBrowserStatus
+from .managed_publication import (
+    ManagedPublicationExecutor,
+    ManagedPublicationOutcome,
+    ManagedPublicationProgress,
+    ManagedPublicationProgressReporter,
+)
 from .models import (
     Author,
     ClientDownloadRecord,
@@ -105,6 +111,10 @@ __all__ = [
     "ManagedBrowserError",
     "ManagedBrowserState",
     "ManagedBrowserStatus",
+    "ManagedPublicationExecutor",
+    "ManagedPublicationOutcome",
+    "ManagedPublicationProgress",
+    "ManagedPublicationProgressReporter",
     "MediaKind",
     "MediaResource",
     "ParseError",
