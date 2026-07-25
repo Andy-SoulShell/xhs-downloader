@@ -13,8 +13,8 @@ HTTP API、MCP、Python 客户端和浏览器扩展。
 - 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
 - 应用、Uvicorn 与 FastMCP 日志统一接入 Loguru，并抑制敏感请求 URL。
 - WebUI 使用 React、Vite、Tailwind CSS 与 Radix UI，敏感配置仅保留在服务端。
-- 浏览器扩展只读取当前帖子页面已有数据，不申请 Cookie 权限；本地服务离线时也
-  能使用浏览器下载。
+- 浏览器扩展使用当前登录态执行推荐、搜索、详情和资料读取，不申请 Cookie 权限；
+  本地服务离线时也能使用浏览器下载。
 - 发布草稿、素材、排期和执行状态由本地服务持久化；普通账号的登录态只留在浏览器
   创作中心，扩展不会读取或传输 Cookie。
 - 后台下载先写入 SQLite 任务队列再执行，支持幂等提交、进程重启恢复和失败重试。
@@ -94,8 +94,8 @@ cp .env.example .env
 | `XHS_RECORD_DATA` | `false` | 保存结构化作品元数据 |
 | `XHS_PUBLISH_MAX_ASSET_SIZE` | `1073741824` | 单个发布素材上限，单位为字节 |
 | `XHS_PUBLISH_LEASE_SECONDS` | `300` | 扩展执行发布任务的租约秒数 |
-| `XHS_SERVER_HOST` | `0.0.0.0` | API/MCP 监听地址 |
-| `XHS_SERVER_PORT` | `5556` | API/MCP 监听端口 |
+| `XHS_SERVER_HOST` | `0.0.0.0` | API 监听地址；MCP 默认沿用 |
+| `XHS_SERVER_PORT` | `5556` | API 端口；MCP 默认使用下一个端口 |
 
 完整配置见 [.env.example](.env.example)。
 
@@ -226,6 +226,10 @@ uv run xhs-api
 - 扩展记录：`GET/POST /extension/records`
 - 采集帖子：`GET /posts`、`DELETE /posts/{work_id}`
 - 下载任务：`POST /tasks`
+- 浏览器登录状态：`POST /xhs/login/status`
+- 推荐、搜索与详情：`POST /xhs/feeds/list|search|detail`
+- 用户资料：`POST /xhs/user/profile`、`POST /xhs/user/me`
+- 浏览器任务：`GET/POST /browser/tasks`
 - 任务列表：`GET /tasks`
 - 任务详情：`GET /tasks/{task_id}`
 - 失败重试：`POST /tasks/{task_id}/retry`
@@ -254,16 +258,27 @@ Cookie 和代理统一从 `.env` 读取；如需仅覆盖本次 API 请求的 Co
 
 ## MCP
 
+先启动 FastAPI，再启动 MCP：
+
 ```shell
+uv run xhs-api
 uv run xhs-mcp
 ```
 
-Streamable HTTP 地址：`http://127.0.0.1:5556/mcp`
+Streamable HTTP 地址：`http://127.0.0.1:5557/mcp`。可通过 `--api-url`
+指定 FastAPI 地址，通过 `--port` 修改 MCP 监听端口。
 
 工具：
 
 - `get_detail_data`：只解析作品详情。
 - `download_detail`：下载媒体，可指定图片序号和强制下载。
+- `check_login_status`：检查浏览器登录状态。
+- `list_feeds`、`search_feeds`：读取推荐和搜索结果。
+- `get_feed_detail`：读取帖子详情和已加载评论。
+- `user_profile`、`get_my_profile`：读取指定用户或当前账号资料。
+
+浏览器能力的迁移边界与后续步骤见
+[xiaohongshu-mcp 能力迁移方案](docs/browser-capability-migration.md)。
 
 ## Python
 

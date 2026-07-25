@@ -8,6 +8,7 @@ export type PostStatus = "ready" | "downloading" | "done" | "error";
 export type Filter = "all" | "ready" | "done";
 export type WorkspaceView =
   | "posts"
+  | "browser"
   | "publication"
   | "tasks"
   | "records"

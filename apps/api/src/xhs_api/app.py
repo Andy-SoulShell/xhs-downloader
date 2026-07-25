@@ -21,6 +21,7 @@ from xhs_core.version import VERSION
 
 from .bootstrap import create_api_dependencies
 from .browser import create_browser_router
+from .browser_operations import create_browser_operation_router
 from .extension import create_extension_router
 from .posts import create_post_router
 from .publication import create_publication_router
@@ -114,6 +115,12 @@ def create_api(
             dependencies.browser.tasks,
             dependencies.browser.execution,
             dependencies.publication.credentials,
+            settings_access_policy,
+        )
+    )
+    api.include_router(
+        create_browser_operation_router(
+            dependencies.browser.tasks,
             settings_access_policy,
         )
     )

@@ -16,21 +16,31 @@ def _run(
         typer.Option("--env-file", help="dotenv 配置文件"),
     ] = None,
     host: Annotated[str | None, typer.Option("--host", help="监听地址")] = None,
-    port: Annotated[int | None, typer.Option("--port", help="监听端口")] = None,
+    port: Annotated[
+        int | None,
+        typer.Option("--port", help="MCP 监听端口，默认使用 API 端口加一"),
+    ] = None,
+    api_url: Annotated[
+        str | None,
+        typer.Option("--api-url", help="本机 FastAPI 地址"),
+    ] = None,
 ) -> None:
     """启动 Streamable HTTP MCP 服务。
 
     Args:
         env_file: dotenv 配置文件。
         host: 覆盖监听地址。
-        port: 覆盖监听端口。
+        port: 覆盖 MCP 监听端口。
+        api_url: 覆盖本机 FastAPI 地址。
     """
-    overrides = {
-        key: value
-        for key, value in {"server_host": host, "server_port": port}.items()
-        if value is not None
-    }
-    asyncio.run(run_mcp(AppSettings.from_env(env_file, **overrides)))
+    asyncio.run(
+        run_mcp(
+            AppSettings.from_env(env_file),
+            api_base_url=api_url,
+            host=host,
+            port=port,
+        )
+    )
 
 
 def main() -> None:

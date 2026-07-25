@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   CircleDashed,
+  Compass,
   GalleryVerticalEnd,
   History,
   ListTodo,
@@ -52,6 +53,12 @@ export const workspaceViewItems: WorkspaceViewItem[] = [
     label: "帖子",
     sidebarLabel: "全部帖子",
     view: "posts",
+  },
+  {
+    icon: Compass,
+    label: "探索",
+    sidebarLabel: "浏览器探索",
+    view: "browser",
   },
   {
     icon: Send,

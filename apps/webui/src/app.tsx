@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Toast } from "radix-ui";
 
 import { LinkComposer } from "./components/link-composer";
+import { BrowserBoard } from "./components/browser-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
 import { PostLibrary } from "./components/post-library";
 import { ProductBrand } from "./components/product-brand";
@@ -252,6 +253,7 @@ export default function App() {
                 tasks={tasks}
               />
             )}
+            {view === "browser" && <BrowserBoard />}
             {view === "publication" && (
               <PublicationBoard onNotify={notify} />
             )}

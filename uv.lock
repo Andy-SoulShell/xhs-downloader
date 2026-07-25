@@ -1846,6 +1846,7 @@ version = "3.0.0"
 source = { editable = "apps/mcp" }
 dependencies = [
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "typer" },
     { name = "xhs-adapters" },
     { name = "xhs-core" },
@@ -1854,6 +1855,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.4.4" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "typer", specifier = ">=0.21.0" },
     { name = "xhs-adapters", editable = "packages/xhs-adapters" },
     { name = "xhs-core", editable = "packages/xhs-core" },

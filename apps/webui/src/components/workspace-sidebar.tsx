@@ -88,7 +88,7 @@ export function WorkspaceSidebar({
           <StatusPill online={online} />
         </div>
         <p className="mt-3 text-[11px] leading-5 text-stone-500">
-          Cookie、代理与保存目录均由服务端配置管理。
+          浏览能力使用浏览器登录态，服务端不会读取浏览器 Cookie。
         </p>
       </div>
     </aside>

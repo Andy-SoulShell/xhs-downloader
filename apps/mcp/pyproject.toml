@@ -5,6 +5,7 @@ description = "xhs-downloader MCP 应用"
 requires-python = ">=3.12"
 dependencies = [
     "fastmcp>=3.4.4",
+    "httpx>=0.28.0",
     "typer>=0.21.0",
     "xhs-adapters",
     "xhs-core",

@@ -1,5 +1,13 @@
-/** 浏览器扩展同步到服务端的下载记录。 */
-export type { ClientDownloadRecord } from "@xhs-downloader/contracts";
+/** 浏览器扩展与本机服务共享的稳定数据类型。 */
+export type {
+  BrowserLoginState,
+  BrowserTask,
+  ClientDownloadRecord,
+  FeedDetailResult,
+  FeedListResult,
+  FeedSummary,
+  UserProfileResult,
+} from "@xhs-downloader/contracts";
 
 export type MediaKind = "视频" | "图片" | "动态图片";
 
