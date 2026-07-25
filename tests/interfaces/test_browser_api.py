@@ -1,5 +1,7 @@
 """通用浏览器任务 HTTP API 测试。"""
 
+import asyncio
+
 from httpx import ASGITransport, AsyncClient
 from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
@@ -176,7 +178,7 @@ async def test_browser_api_freezes_managed_driver_before_queueing(tmp_path) -> N
         )
         headers = await _register(client)
         extension_claim = await client.post(
-            "/browser/extension/tasks/claim",
+            "/browser/extension/tasks/claim?wait_seconds=0",
             headers=headers,
         )
 
@@ -184,3 +186,55 @@ async def test_browser_api_freezes_managed_driver_before_queueing(tmp_path) -> N
     assert submitted.json()["target_driver"] == "managed"
     assert extension_claim.status_code == 200
     assert extension_claim.json() is None
+
+
+async def test_browser_api_long_poll_wakes_and_validates_wait_range(
+    tmp_path,
+) -> None:
+    """确保扩展长轮询被新任务唤醒且等待范围由接口严格校验。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        headers = await _register(client)
+        waiting = asyncio.create_task(
+            client.post(
+                "/browser/extension/tasks/claim?wait_seconds=1",
+                headers=headers,
+            )
+        )
+        await asyncio.sleep(0.02)
+        assert not waiting.done()
+
+        submitted = await client.post(
+            "/browser/tasks",
+            json={"kind": "check_login_status", "payload": {}},
+        )
+        claimed = await asyncio.wait_for(waiting, 0.5)
+        immediate = await client.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+        too_short = await client.post(
+            "/browser/extension/tasks/claim?wait_seconds=-0.01",
+            headers=headers,
+        )
+        too_long = await client.post(
+            "/browser/extension/tasks/claim?wait_seconds=30.01",
+            headers=headers,
+        )
+
+    assert claimed.status_code == 200
+    assert claimed.json()["task"]["task_id"] == submitted.json()["task_id"]
+    assert immediate.status_code == 200
+    assert immediate.json() is None
+    assert too_short.status_code == 422
+    assert too_long.status_code == 422

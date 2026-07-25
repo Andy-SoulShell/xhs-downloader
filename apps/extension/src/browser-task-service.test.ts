@@ -50,7 +50,10 @@ describe("浏览器任务服务客户端", () => {
   });
 
   it("登记、领取并回传任务状态与结果", async () => {
-    const claim = { task: { task_id: "task" }, lease_token: "lease" };
+    const claim = {
+      task: { task_id: "task", target_driver: "extension" },
+      lease_token: "lease",
+    };
     const task = { task_id: "task", status: "running" };
     const done = { task_id: "task", status: "succeeded" };
     const fetchMock = vi
@@ -72,6 +75,9 @@ describe("浏览器任务服务客户端", () => {
     await expect(
       claimBrowserTask("http://service", credential),
     ).resolves.toEqual(claim);
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      "http://service/browser/extension/tasks/claim?wait_seconds=25",
+    );
     await expect(
       reportBrowserTaskRunning(
         "http://service",
@@ -116,5 +122,36 @@ describe("浏览器任务服务客户端", () => {
     await expect(
       claimBrowserTask("http://service", credential),
     ).rejects.toThrow("合成错误");
+  });
+
+  it.each([-0.01, 30.01, Number.NaN])(
+    "拒绝越界的领取等待时间 %s",
+    async (waitSeconds) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(
+        claimBrowserTask("http://service", credential, waitSeconds),
+      ).rejects.toThrow("必须在 0 到 30 秒之间");
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("拒绝执行服务端误发的受管浏览器任务", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            task: { task_id: "task", target_driver: "managed" },
+            lease_token: "lease",
+          }),
+        ),
+      ),
+    );
+
+    await expect(
+      claimBrowserTask("http://service", credential),
+    ).rejects.toThrow("不属于扩展");
   });
 });

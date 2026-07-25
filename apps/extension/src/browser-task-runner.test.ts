@@ -95,6 +95,7 @@ describe("浏览器任务后台执行器", () => {
       7,
       expect.objectContaining({ type: "browser-page-task" }),
     );
+    expect(fetchMock.mock.calls[1][0]).toContain("wait_seconds=25");
     expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toMatchObject({
       status: "succeeded",
       result: { logged_in: false },

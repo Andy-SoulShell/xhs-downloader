@@ -7,6 +7,7 @@ import type {
 import { captureRedactedFailure } from "./browser-failure-artifacts";
 import { authorizeBrowserTaskInteraction } from "./browser-interaction-input";
 import {
+  BROWSER_TASK_CLAIM_WAIT_SECONDS,
   BrowserTaskUnauthorizedError,
   claimBrowserTask,
   registerBrowserExtension,
@@ -25,6 +26,7 @@ import { loadSettings } from "./storage";
 const POLL_ALARM = "browser-task-poll";
 const EXPLORE_URL = "https://www.xiaohongshu.com/explore/";
 const PAGE_READY_ATTEMPTS = 20;
+const MAX_TASKS_PER_POLL = 4;
 
 let pollOperation: Promise<void> | undefined;
 
@@ -40,7 +42,7 @@ export function installBrowserTaskAutomation(): void {
 
 async function configurePolling(): Promise<void> {
   await chrome.alarms.create(POLL_ALARM, {
-    delayInMinutes: 0.1,
+    delayInMinutes: 0.5,
     periodInMinutes: 0.5,
   });
   await runBrowserTaskPoll();
@@ -59,10 +61,14 @@ async function performPoll(): Promise<void> {
   try {
     const settings = await loadSettings();
     if (!(await supportsBrowserTasks(settings.serviceUrl))) return;
-    const claim = await withCredential((credential) =>
-      claimBrowserTask(settings.serviceUrl, credential),
-    );
-    if (claim) await executeClaim(settings.serviceUrl, claim);
+    for (let index = 0; index < MAX_TASKS_PER_POLL; index += 1) {
+      const wait = index ? 0 : BROWSER_TASK_CLAIM_WAIT_SECONDS;
+      const claim = await withCredential((credential) =>
+        claimBrowserTask(settings.serviceUrl, credential, wait),
+      );
+      if (!claim) return;
+      await executeClaim(settings.serviceUrl, claim);
+    }
   } catch {
     // 服务离线、暂时无权限或页面未就绪时保留服务端任务等待下次轮询。
   }

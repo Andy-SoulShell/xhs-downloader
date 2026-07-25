@@ -10,7 +10,7 @@ from xhs_core.application import (
     BrowserTaskService,
     ExtensionCredentialService,
 )
-from xhs_core.domain import BrowserTask, BrowserTaskClaim
+from xhs_core.domain import BrowserDriver, BrowserTask, BrowserTaskClaim
 
 from .browser_models import (
     BrowserExtensionRegisterRequest,
@@ -113,9 +113,15 @@ def create_browser_router(
         "/extension/tasks/claim",
         response_model=BrowserTaskClaim | None,
     )
-    async def claim_task(request: Request) -> BrowserTaskClaim | None:
+    async def claim_task(
+        request: Request,
+        wait_seconds: float = Query(default=0, ge=0, le=30),
+    ) -> BrowserTaskClaim | None:
         extension_id = await _require_extension(request, credentials)
-        return await execution.claim(extension_id)
+        return await tasks.wait_for_claim(
+            lambda: execution.claim(extension_id, BrowserDriver.EXTENSION),
+            wait_seconds,
+        )
 
     @router.post(
         "/extension/tasks/{task_id}/status",

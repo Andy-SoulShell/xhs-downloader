@@ -1,6 +1,7 @@
 """通用浏览器任务提交与管理用例。"""
 
 from asyncio import Lock, get_running_loop, sleep
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -17,6 +18,8 @@ from xhs_core.domain import (
 from xhs_core.domain.browser_ports import BrowserTaskRepository
 from xhs_core.domain.browser_requests import validate_browser_task_payload
 
+from .browser_task_claiming import _BrowserTaskClaimWaiter
+
 
 class BrowserTaskService:
     """管理浏览器任务的幂等提交、查询与显式重试。
@@ -28,6 +31,7 @@ class BrowserTaskService:
     def __init__(self, repository: BrowserTaskRepository) -> None:
         self._repository = repository
         self._submit_lock = Lock()
+        self._claim_waiter = _BrowserTaskClaimWaiter()
 
     async def submit(
         self,
@@ -61,6 +65,11 @@ class BrowserTaskService:
                         or existing.target_driver is not target_driver
                     ):
                         raise BrowserTaskError("请求标识已被另一项浏览器任务使用")
+                    if (
+                        existing.target_driver is BrowserDriver.EXTENSION
+                        and existing.status is BrowserTaskStatus.QUEUED
+                    ):
+                        self._claim_waiter.notify()
                     return existing
             now = datetime.now(UTC)
             task = BrowserTask(
@@ -73,7 +82,34 @@ class BrowserTaskService:
                 updated_at=now,
             )
             await self._repository.save(task)
+            if target_driver is BrowserDriver.EXTENSION:
+                self._claim_waiter.notify()
             return task
+
+    async def wait_for_claim[ClaimT](
+        self,
+        operation: Callable[[], Awaitable[ClaimT | None]],
+        wait_seconds: float,
+        recheck_seconds: float = 1,
+    ) -> ClaimT | None:
+        """有界等待扩展任务出现并调用原子领取操作。
+
+        Args:
+            operation: 每次检查时调用的原子领取操作。
+            wait_seconds: 最长等待秒数，必须在零到三十秒之间。
+            recheck_seconds: 覆盖进程外提交的周期检查间隔。
+
+        Returns:
+            已领取任务；等待超时且仍无任务时返回 ``None``。
+
+        Raises:
+            BrowserTaskError: 等待参数无效。
+        """
+        return await self._claim_waiter.wait_for_claim(
+            operation,
+            wait_seconds,
+            recheck_seconds,
+        )
 
     async def require(self, task_id: str) -> BrowserTask:
         """读取任务，不存在时抛出领域错误。
@@ -215,6 +251,8 @@ class BrowserTaskService:
         ):
             raise BrowserTaskError("浏览器任务状态已经变化，请刷新后重试")
         await self._repository.clear_lease(task_id)
+        if queued.target_driver is BrowserDriver.EXTENSION:
+            self._claim_waiter.notify()
         return queued
 
     async def consume_login_qrcode(self, task_id: str) -> None:

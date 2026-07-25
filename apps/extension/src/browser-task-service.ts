@@ -7,6 +7,10 @@ import type {
 
 import type { ExtensionCredential } from "./publication-types";
 
+/** 扩展首个任务领取请求的默认长轮询秒数。 */
+export const BROWSER_TASK_CLAIM_WAIT_SECONDS = 25;
+const CLAIM_REQUEST_TIMEOUT_PADDING_MS = 5_000;
+
 export class BrowserTaskUnauthorizedError extends Error {}
 
 /** 检查本地服务是否支持通用浏览器任务协议。 */
@@ -51,18 +55,29 @@ export async function registerBrowserExtension(
   return { extensionId, token: payload.token };
 }
 
-/** 领取最早排队的浏览器任务。 */
+/** 长轮询领取最早排队的浏览器任务，默认最多等待二十五秒。 */
 export async function claimBrowserTask(
   baseUrl: string,
   credential: ExtensionCredential,
+  waitSeconds = BROWSER_TASK_CLAIM_WAIT_SECONDS,
 ): Promise<BrowserTaskClaim | null> {
-  return requestJson<BrowserTaskClaim | null>(
-    `${normalizeBase(baseUrl)}/browser/extension/tasks/claim`,
+  if (!Number.isFinite(waitSeconds) || waitSeconds < 0 || waitSeconds > 30) {
+    throw new Error("任务领取等待时间必须在 0 到 30 秒之间");
+  }
+  const claim = await requestJson<BrowserTaskClaim | null>(
+    `${normalizeBase(baseUrl)}/browser/extension/tasks/claim?wait_seconds=${waitSeconds}`,
     {
       method: "POST",
       headers: extensionHeaders(credential, true),
+      signal: AbortSignal.timeout(
+        waitSeconds * 1000 + CLAIM_REQUEST_TIMEOUT_PADDING_MS,
+      ),
     },
   );
+  if (claim && claim.task?.target_driver !== "extension") {
+    throw new Error("本地服务返回了不属于扩展的浏览器任务");
+  }
+  return claim;
 }
 
 /** 回传浏览器任务运行状态并续租。 */
