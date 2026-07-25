@@ -1,23 +1,28 @@
 """Cookie HTTP 详情页初始状态解析器。"""
 
-import math
 from typing import Any
 
-from pydantic import HttpUrl, TypeAdapter, ValidationError
+from pydantic import ValidationError
 from xhs_core.domain import (
-    FeedAuthor,
     FeedComment,
     FeedDetailResult,
-    FeedMetrics,
     ProviderError,
     ProviderFailureCode,
     ProviderKind,
 )
 
+from ._feed_data import (
+    boolean,
+    integer,
+    parse_feed_author,
+    parse_feed_metrics,
+    record,
+    text,
+    unwrap,
+    url,
+    values,
+)
 from ._initial_state import load_latest_initial_state
-
-_MISSING = object()
-_HTTP_URL = TypeAdapter(HttpUrl)
 
 
 class FeedDetailStateParser:
@@ -53,47 +58,47 @@ class FeedDetailStateParser:
         if state is None:
             raise _page_incompatible("HTTP 详情页没有可解析的初始状态")
         wrapper = _select_wrapper(state, feed_id)
-        note = _record(wrapper.get("note"))
+        note = record(wrapper.get("note"))
         try:
-            author = _parse_author(note.get("user"))
-            if author is None or _text(note.get("noteId")) != feed_id:
+            author = parse_feed_author(note.get("user"))
+            if author is None or text(note.get("noteId")) != feed_id:
                 raise _invalid_result("HTTP 详情页返回的帖子数据不完整或不一致")
-            comments = _record(_unwrap(wrapper.get("comments")))
+            comments = record(unwrap(wrapper.get("comments")))
             return FeedDetailResult(
                 feed_id=feed_id,
-                xsec_token=_text(note.get("xsecToken")) or xsec_token,
-                title=_text(note.get("title"))[:500],
-                body=_text(note.get("desc"))[:20_000],
+                xsec_token=text(note.get("xsecToken")) or xsec_token,
+                title=text(note.get("title"))[:500],
+                body=text(note.get("desc"))[:20_000],
                 note_type=_note_type(note.get("type")),
                 author=author,
-                metrics=_parse_metrics(note.get("interactInfo")),
+                metrics=parse_feed_metrics(note.get("interactInfo")),
                 image_urls=_parse_image_urls(note.get("imageList")),
-                published_at=_integer(note.get("time", _MISSING)),
-                ip_location=_text(note.get("ipLocation"))[:200],
+                published_at=integer(note.get("time")) if "time" in note else None,
+                ip_location=text(note.get("ipLocation"))[:200],
                 comments=_parse_comments(
-                    _unwrap(comments.get("list")),
+                    unwrap(comments.get("list")),
                     comment_limit,
                     include_replies,
                     reply_limit,
                 ),
-                comments_has_more=_boolean(comments.get("hasMore")),
-                comments_cursor=_text(comments.get("cursor"))[:2048],
+                comments_has_more=boolean(comments.get("hasMore")),
+                comments_cursor=text(comments.get("cursor"))[:2048],
             )
         except ValidationError:
             raise _invalid_result("HTTP 详情页结果结构无效") from None
 
 
 def _select_wrapper(state: dict[str, Any], feed_id: str) -> dict[str, Any]:
-    note_state = _record(state.get("note"))
-    detail_map = _record(note_state.get("noteDetailMap"))
+    note_state = record(state.get("note"))
+    detail_map = record(note_state.get("noteDetailMap"))
     if not detail_map:
         raise _page_incompatible("HTTP 页面尚未提供详情状态")
-    direct = _record(detail_map.get(feed_id))
+    direct = record(detail_map.get(feed_id))
     if direct:
         return direct
     for value in detail_map.values():
-        wrapper = _record(value)
-        if _text(_record(wrapper.get("note")).get("noteId")) == feed_id:
+        wrapper = record(value)
+        if text(record(wrapper.get("note")).get("noteId")) == feed_id:
             return wrapper
     raise _invalid_result("HTTP 详情页没有返回请求的帖子")
 
@@ -105,7 +110,7 @@ def _parse_comments(
     reply_limit: int,
 ) -> list[FeedComment]:
     comments: list[FeedComment] = []
-    for item in _list(value)[:limit]:
+    for item in values(value)[:limit]:
         parsed = _parse_comment(item, include_replies, reply_limit)
         if parsed is not None:
             comments.append(parsed)
@@ -117,15 +122,15 @@ def _parse_comment(
     include_replies: bool,
     reply_limit: int,
 ) -> FeedComment | None:
-    comment = _record(value)
-    author = _parse_author(comment.get("userInfo"))
-    comment_id = _text(comment.get("id"))
+    comment = record(value)
+    author = parse_feed_author(comment.get("userInfo"))
+    comment_id = text(comment.get("id"))
     if not comment_id or author is None:
         return None
     replies = (
         [
             parsed
-            for item in _list(_unwrap(comment.get("subComments")))[:reply_limit]
+            for item in values(unwrap(comment.get("subComments")))[:reply_limit]
             if (parsed := _parse_comment(item, False, 0)) is not None
         ]
         if include_replies
@@ -133,113 +138,41 @@ def _parse_comment(
     )
     return FeedComment(
         comment_id=comment_id,
-        content=_text(comment.get("content"))[:5000],
+        content=text(comment.get("content"))[:5000],
         author=author,
-        liked=_boolean(comment.get("liked")),
-        like_count=_text(comment.get("likeCount")) or "0",
-        created_at=_integer(comment.get("createTime", _MISSING)),
-        ip_location=_text(comment.get("ipLocation"))[:200],
-        reply_count=_text(comment.get("subCommentCount")) or str(len(replies)),
+        liked=boolean(comment.get("liked")),
+        like_count=text(comment.get("likeCount")) or "0",
+        created_at=(
+            integer(comment.get("createTime")) if "createTime" in comment else None
+        ),
+        ip_location=text(comment.get("ipLocation"))[:200],
+        reply_count=text(comment.get("subCommentCount")) or str(len(replies)),
         replies=replies,
-    )
-
-
-def _parse_author(value: Any) -> FeedAuthor | None:
-    user = _record(value)
-    user_id = _text(_coalesce(user.get("userId"), user.get("user_id")))
-    if not user_id:
-        return None
-    avatar = _url(_coalesce(user.get("avatar"), user.get("image")))
-    return FeedAuthor(
-        user_id=user_id,
-        nickname=_text(_coalesce(user.get("nickname"), user.get("nickName")))[:200],
-        avatar_url=avatar,
-    )
-
-
-def _parse_metrics(value: Any) -> FeedMetrics:
-    metrics = _record(value)
-    return FeedMetrics(
-        liked=_boolean(metrics.get("liked")),
-        liked_count=_text(metrics.get("likedCount")) or "0",
-        collected=_boolean(metrics.get("collected")),
-        collected_count=_text(metrics.get("collectedCount")) or "0",
-        comment_count=_text(metrics.get("commentCount")) or "0",
-        shared_count=_text(metrics.get("sharedCount")) or "0",
     )
 
 
 def _parse_image_urls(value: Any) -> list[str]:
     urls: list[str] = []
-    for item in _list(value):
-        image = _record(item)
-        url = _url(
+    for item in values(value):
+        image = record(item)
+        parsed_url = url(
             _coalesce(
                 image.get("urlDefault"),
                 image.get("urlPre"),
                 image.get("url"),
             )
         )
-        if url is not None:
-            urls.append(url)
+        if parsed_url is not None:
+            urls.append(parsed_url)
     return urls[:100]
-
-
-def _record(value: Any) -> dict[str, Any]:
-    return value if isinstance(value, dict) else {}
-
-
-def _list(value: Any) -> list[Any]:
-    return value if isinstance(value, list) else []
-
-
-def _unwrap(value: Any) -> Any:
-    wrapped = _record(value)
-    if "value" in wrapped:
-        return wrapped["value"]
-    if "_value" in wrapped:
-        return wrapped["_value"]
-    return value
 
 
 def _coalesce(*values: Any) -> Any:
     return next((value for value in values if value is not None), None)
 
 
-def _text(value: Any) -> str:
-    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
-        return ""
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
-    return str(value)
-
-
-def _integer(value: Any) -> int | None:
-    if value is _MISSING:
-        return None
-    if value is None or (isinstance(value, str) and not value.strip()):
-        return 0
-    try:
-        number = float(value)
-    except (OverflowError, TypeError, ValueError):
-        return None
-    return math.trunc(number) if math.isfinite(number) and number >= 0 else None
-
-
-def _boolean(value: Any) -> bool:
-    return value if isinstance(value, bool) else False
-
-
-def _url(value: Any) -> str | None:
-    raw = _text(value)
-    try:
-        return str(_HTTP_URL.validate_python(raw))
-    except ValidationError:
-        return None
-
-
 def _note_type(value: Any) -> str:
-    kind = _text(value).lower()
+    kind = text(value).lower()
     if kind == "video":
         return "video"
     return "image" if kind in {"normal", "image"} else "unknown"

@@ -9,6 +9,7 @@ from .factory import (
     create_publication_runtime,
 )
 from .http_feed_detail import HttpFeedDetailProvider
+from .http_read_provider import HttpReadProvider
 from .managed_browser import ChromiumController
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "BrowserRuntime",
     "ChromiumController",
     "HttpFeedDetailProvider",
+    "HttpReadProvider",
     "PublicationRuntime",
     "create_browser_runtime",
     "create_download_service",

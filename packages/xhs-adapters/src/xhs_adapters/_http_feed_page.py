@@ -1,4 +1,4 @@
-"""HTTP 详情页的同源请求与安全响应读取。"""
+"""HTTP 页面同源请求与安全响应读取。"""
 
 import re
 from asyncio import sleep
@@ -87,7 +87,7 @@ class _SameOriginPageClient:
                 if current in visited:
                     raise _error(
                         ProviderFailureCode.PAGE_INCOMPATIBLE,
-                        "HTTP 详情页发生循环重定向",
+                        "HTTP 页面发生循环重定向",
                     )
                 visited.add(current)
                 request = self._client.build_request(
@@ -113,19 +113,19 @@ class _SameOriginPageClient:
                     await response.aclose()
             raise _error(
                 ProviderFailureCode.PAGE_INCOMPATIBLE,
-                "HTTP 详情页重定向次数过多",
+                "HTTP 页面重定向次数过多",
             )
         except ProviderError:
             raise
         except TimeoutException:
             raise _retryable_error(
                 ProviderFailureCode.TIMEOUT_BEFORE_EFFECT,
-                "HTTP 详情请求超时",
+                "HTTP 页面请求超时",
             ) from None
         except RequestError:
             raise _retryable_error(
                 ProviderFailureCode.UNAVAILABLE,
-                "HTTP 详情服务暂不可用",
+                "HTTP 页面服务暂不可用",
             ) from None
         except (TypeError, ValueError):
             raise _error(
@@ -156,7 +156,7 @@ def _redirect_target(current: str, response: Response) -> str:
     if not location:
         raise _error(
             ProviderFailureCode.PAGE_INCOMPATIBLE,
-            "HTTP 详情页重定向缺少目标地址",
+            "HTTP 页面重定向缺少目标地址",
         )
     target = urljoin(current, location)
     _ensure_allowed_url(target)
@@ -191,17 +191,17 @@ def _raise_for_status(status: int) -> None:
     if status == 408:
         raise _retryable_error(
             ProviderFailureCode.TIMEOUT_BEFORE_EFFECT,
-            "HTTP 详情请求超时",
+            "HTTP 页面请求超时",
         )
     if status == 429 or status >= 500:
         raise _retryable_error(
             ProviderFailureCode.UNAVAILABLE,
-            "HTTP 详情服务暂不可用",
+            "HTTP 页面服务暂不可用",
         )
     if not 200 <= status < 300:
         raise _error(
             ProviderFailureCode.UNAVAILABLE,
-            "HTTP 详情服务暂不可用",
+            "HTTP 页面服务暂不可用",
         )
 
 
@@ -220,14 +220,14 @@ def _authentication_expired() -> ProviderError:
 def _unsafe_redirect() -> ProviderError:
     return _error(
         ProviderFailureCode.PAGE_INCOMPATIBLE,
-        "HTTP 详情页尝试跳转到不受信任的地址",
+        "HTTP 页面尝试跳转到不受信任的地址",
     )
 
 
 def _page_too_large() -> ProviderError:
     return _error(
         ProviderFailureCode.PAGE_INCOMPATIBLE,
-        "HTTP 详情页响应超过安全大小限制",
+        "HTTP 页面响应超过安全大小限制",
     )
 
 
