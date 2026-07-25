@@ -169,6 +169,24 @@ describe("浏览器探索工作台", () => {
     ).toBeInTheDocument();
   });
 
+  it("只展示脱敏账号一致性结论", async () => {
+    vi.mocked(executeReadCapability).mockResolvedValueOnce({
+      data: makeBrowserFeedList(),
+      route: {
+        ...browserReadRouteFixture,
+        account_consistency: "matched",
+      },
+    });
+    render(<BrowserBoard browserDriver="extension" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+
+    expect(
+      await screen.findByText("账号一致性已确认"),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("synthetic-user");
+  });
+
   it("处理未登录、无封面和非标准异常", async () => {
     vi.mocked(executeBrowserOperation)
       .mockResolvedValueOnce({

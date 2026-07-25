@@ -20,6 +20,8 @@ from .publication_client import (
 )
 from .publication_tools import register_publication_tools
 
+_MIN_LOCAL_API_TIMEOUT_SECONDS = 190
+
 
 def create_mcp(
     service: DownloadService,
@@ -125,9 +127,13 @@ async def run_mcp(
     """
     configure_logging(settings.log_level)
     resolved_api_url = api_base_url or f"http://127.0.0.1:{settings.server_port}"
+    api_timeout = max(
+        _MIN_LOCAL_API_TIMEOUT_SECONDS,
+        settings.timeout * 2 + 70,
+    )
     async with (
         create_download_service(settings) as service,
-        AsyncClient(base_url=resolved_api_url, timeout=65) as api_client,
+        AsyncClient(base_url=resolved_api_url, timeout=api_timeout) as api_client,
     ):
         mcp = create_mcp(
             service,

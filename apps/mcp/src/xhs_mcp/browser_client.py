@@ -2,7 +2,7 @@
 
 from typing import Literal, Protocol
 
-from httpx import AsyncClient, HTTPError
+from httpx import AsyncClient, HTTPError, Response
 from pydantic import BaseModel, ConfigDict, JsonValue
 from xhs_core.domain import BrowserTask, BrowserTaskError, BrowserTaskStatus
 
@@ -14,6 +14,12 @@ type _RouteStrategy = Literal[
     "browser_first",
 ]
 type _BrowserDriver = Literal["extension", "managed"]
+type _AccountConsistency = Literal[
+    "matched",
+    "different",
+    "logged_out",
+    "unverified",
+]
 type _FailureCode = Literal[
     "unavailable",
     "not_configured",
@@ -47,6 +53,17 @@ class _CapabilityRoute(BaseModel):
     fallback_used: bool
     fallback_reason: _RouteFallbackReason | None
     attempted_providers: list[_ProviderKind]
+    account_consistency: _AccountConsistency | None
+
+
+class _AccountConsistencyFailure(BaseModel):
+    """服务端阻止跨账号回退时的固定脱敏响应。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    code: Literal["account_consistency_failed"]
+    account_consistency: Literal["different", "logged_out", "unverified"]
+    message: str
 
 
 class _RoutedCapabilityResponse(BaseModel):
@@ -150,6 +167,7 @@ class HttpBrowserCapabilityClient:
                 params={"wait_seconds": self._wait_seconds},
                 json=payload,
             )
+            _raise_account_consistency_failure(response)
             response.raise_for_status()
             payload_data = response.json()
             if _is_routed_response(payload_data):
@@ -219,3 +237,13 @@ class HttpBrowserCapabilityClient:
 
 def _is_routed_response(value: object) -> bool:
     return isinstance(value, dict) and "data" in value and "route" in value
+
+
+def _raise_account_consistency_failure(response: Response) -> None:
+    if response.status_code != 409:
+        return
+    try:
+        failure = _AccountConsistencyFailure.model_validate(response.json())
+    except ValueError:
+        return
+    raise BrowserTaskError(failure.message)

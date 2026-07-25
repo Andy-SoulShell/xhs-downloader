@@ -64,6 +64,7 @@ async def test_mcp_browser_client_returns_routed_read_without_fake_task() -> Non
                         "message": "Cookie HTTP 尚未配置",
                     },
                     "attempted_providers": ["http", "browser"],
+                    "account_consistency": None,
                 },
             },
         )
@@ -81,6 +82,27 @@ async def test_mcp_browser_client_returns_routed_read_without_fake_task() -> Non
     assert result["route"]["provider"] == "browser"
     assert result["route"]["fallback_reason"]["code"] == "not_configured"
     assert "task_id" not in result
+
+
+async def test_mcp_browser_client_preserves_account_guard_error() -> None:
+    """确保账号门禁错误不会退化为无法调用 API 的泛化提示。"""
+    response = Response(
+        409,
+        json={
+            "code": "account_consistency_failed",
+            "account_consistency": "different",
+            "message": "HTTP Cookie 与当前浏览器不是同一账号，已停止个性化读取回退",
+        },
+    )
+    async with AsyncClient(
+        transport=MockTransport(lambda _: response),
+        base_url="http://127.0.0.1:5556",
+    ) as client:
+        with pytest.raises(BrowserTaskError, match="不是同一账号"):
+            await HttpBrowserCapabilityClient(client).execute(
+                "/xhs/feeds/list",
+                {},
+            )
 
 
 @pytest.mark.parametrize(

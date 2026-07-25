@@ -42,6 +42,7 @@ describe("浏览器能力 API 客户端", () => {
             fallback_used: false,
             fallback_reason: null,
             attempted_providers: ["http"],
+            account_consistency: null,
           },
         }),
       ),

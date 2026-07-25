@@ -131,6 +131,9 @@ export function BrowserBoard({
               {explorer.route.fallback_used ? " · 已回退" : ""}
             </Badge>
           )}
+          {explorer.route?.account_consistency === "matched" && (
+            <Badge tone="success">账号一致性已确认</Badge>
+          )}
           {!confirmedDriver && (
             <Badge icon={CircleAlert} tone="warning">
               浏览器执行器尚未确认，登录与写操作已停用

@@ -11,6 +11,13 @@ import { API_BASE, parseResponse } from "./http";
 /** 统一只读能力实际使用的提供方。 */
 export type CapabilityProvider = "http" | "browser";
 
+/** 跨提供方回退前的脱敏账号比较结论。 */
+export type AccountConsistencyStatus =
+  | "matched"
+  | "different"
+  | "logged_out"
+  | "unverified";
+
 /** 首选提供方安全回退前的结构化失败。 */
 export interface RouteFallbackReason {
   provider: CapabilityProvider;
@@ -34,6 +41,7 @@ export interface CapabilityRoute {
   fallback_used: boolean;
   fallback_reason: RouteFallbackReason | null;
   attempted_providers: CapabilityProvider[];
+  account_consistency: AccountConsistencyStatus | null;
 }
 
 /** 统一只读能力返回的数据和路由轨迹。 */

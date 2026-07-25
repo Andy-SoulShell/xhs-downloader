@@ -45,6 +45,7 @@ export const browserReadRouteFixture: CapabilityRoute = {
     message: "Cookie HTTP 尚未配置",
   },
   attempted_providers: ["http", "browser"],
+  account_consistency: null,
 };
 
 /** 浏览器探索测试使用的完全合成帖子详情。 */
