@@ -216,6 +216,11 @@ class PlaywrightManagedTaskExecutor:
                     "status": "failed",
                 }
             latest = value
+            if _is_settling_login_status(task, value):
+                if attempt + 1 < _PAGE_READY_ATTEMPTS:
+                    await _wait_for_page(page)
+                    continue
+                return value
             if (
                 value.get("ok") is True
                 or value.get("navigateUrl")
@@ -225,10 +230,7 @@ class PlaywrightManagedTaskExecutor:
             if not _is_transient_message(value.get("message")):
                 return value
             if attempt + 1 < _PAGE_READY_ATTEMPTS:
-                await page.evaluate(
-                    f"() => new Promise((resolve) => setTimeout(resolve, "
-                    f"{_PAGE_READY_INTERVAL_MILLISECONDS}))"
-                )
+                await _wait_for_page(page)
         return latest
 
     async def _safe_diagnostics(
@@ -248,6 +250,27 @@ async def _navigate(page: ManagedPage, url: str) -> None:
         url,
         wait_until="domcontentloaded",
         timeout=_PAGE_NAVIGATION_TIMEOUT_MILLISECONDS,
+    )
+
+
+async def _wait_for_page(page: ManagedPage) -> None:
+    await page.evaluate(
+        f"() => new Promise((resolve) => setTimeout(resolve, "
+        f"{_PAGE_READY_INTERVAL_MILLISECONDS}))"
+    )
+
+
+def _is_settling_login_status(
+    task: BrowserTask,
+    value: dict[str, Any],
+) -> bool:
+    if task.kind is not BrowserTaskKind.CHECK_LOGIN_STATUS:
+        return False
+    result = value.get("result")
+    return (
+        value.get("ok") is True
+        and isinstance(result, dict)
+        and result.get("logged_in") is False
     )
 
 

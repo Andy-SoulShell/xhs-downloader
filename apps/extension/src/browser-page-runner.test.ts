@@ -17,8 +17,17 @@ import {
 describe("内容脚本浏览器任务执行器", () => {
   it("执行登录状态任务并返回结构化结果", async () => {
     const page = document.implementation.createHTMLDocument();
-    page.body.innerHTML =
-      '<div class="main-container"><div class="user"><a class="link-wrapper"><i class="channel"></i></a></div></div>';
+    page.head.innerHTML =
+      '<base href="https://www.xiaohongshu.com/explore">';
+    page.body.innerHTML = `
+      <div class="main-container">
+        <div class="user">
+          <a class="link-wrapper" href="/user/profile/synthetic-user">
+            <i class="channel"></i>
+          </a>
+        </div>
+      </div>
+    `;
 
     const response = await executeBrowserPageTask(
       task("check_login_status"),
@@ -29,7 +38,7 @@ describe("内容脚本浏览器任务执行器", () => {
     expect(response.ok).toBe(true);
     expect(response.result).toEqual({
       logged_in: true,
-      user_id: null,
+      user_id: "synthetic-user",
       nickname: null,
     });
   });

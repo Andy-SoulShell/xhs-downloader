@@ -1,10 +1,11 @@
 import { readLiveInitialState } from "./browser-state-bridge";
+import {
+  isValidAccountId,
+  readCurrentNavigationAccountId,
+} from "./current-account-navigation";
 import { dataRecord, dataText, unwrapState } from "./page-data";
 
 const PROOF_CONTEXT = "xhs-account-challenge/v1\0";
-const CURRENT_USER_CHANNEL_SELECTOR =
-  ".main-container .user .link-wrapper .channel";
-const PROFILE_PATH = /^\/user\/profile\/([^/?#]+)\/?$/;
 
 /** 浏览器隔离环境接收的一次性账号挑战。 */
 export interface BrowserAccountChallenge {
@@ -50,9 +51,9 @@ export async function proveBrowserAccount(
   if (info.guest === true) return { status: "logged_out" };
   const stateAccountId = dataText(info.userId ?? info.user_id);
   const accountId =
-    info.guest === false && validAccountId(stateAccountId)
+    info.guest === false && isValidAccountId(stateAccountId)
       ? stateAccountId
-      : currentUserNavigationId(page);
+      : readCurrentNavigationAccountId(page);
   if (!accountId) {
     return { status: "unverified" };
   }
@@ -64,32 +65,6 @@ export async function proveBrowserAccount(
   } catch {
     return { status: "unverified" };
   }
-}
-
-function currentUserNavigationId(page: Document): string {
-  const channel = page.querySelector(CURRENT_USER_CHANNEL_SELECTOR);
-  const link = channel?.closest<HTMLAnchorElement>("a[href]");
-  const rawHref = link?.getAttribute("href");
-  if (!rawHref) return "";
-  try {
-    const url = new URL(rawHref, page.baseURI);
-    if (
-      url.protocol !== "https:" ||
-      url.hostname !== "www.xiaohongshu.com"
-    ) {
-      return "";
-    }
-    const match = PROFILE_PATH.exec(url.pathname);
-    if (!match) return "";
-    const accountId = decodeURIComponent(match[1]);
-    return validAccountId(accountId) ? accountId : "";
-  } catch {
-    return "";
-  }
-}
-
-function validAccountId(value: string): boolean {
-  return value.length >= 1 && value.length <= 128;
 }
 
 async function hmacProof(

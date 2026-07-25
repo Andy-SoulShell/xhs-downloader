@@ -1,8 +1,11 @@
 import type { BrowserLoginState } from "@xhs-downloader/contracts";
 
+import {
+  isValidAccountId,
+  readCurrentNavigationAccountId,
+} from "./current-account-navigation";
 import { parseInitialStateValue } from "./parser";
 
-const USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
 const LOGIN_SELECTOR = ".login-container, [class*='login-container']";
 const INITIAL_STATE_PREFIX = "window.__INITIAL_STATE__";
 
@@ -12,14 +15,18 @@ export function detectLoginState(
   pageUrl: string,
 ): BrowserLoginState {
   const user = readCurrentUser(page);
-  const hasUserChannel = Boolean(page.querySelector(USER_CHANNEL_SELECTOR));
+  const stateAccountId = text(user?.userId ?? user?.user_id);
+  const stateLoggedIn =
+    user?.guest === false && isValidAccountId(stateAccountId);
+  const navigationAccountId = readCurrentNavigationAccountId(page);
   const loginVisible =
     new URL(pageUrl).pathname.includes("login") ||
     Boolean(page.querySelector(LOGIN_SELECTOR));
-  const loggedIn = Boolean(user && !user.guest) || hasUserChannel;
+  const accountId = stateLoggedIn ? stateAccountId : navigationAccountId;
+  const loggedIn = Boolean(accountId) && !loginVisible;
   return {
-    logged_in: loggedIn && !loginVisible,
-    user_id: loggedIn ? text(user?.userId ?? user?.user_id) || null : null,
+    logged_in: loggedIn,
+    user_id: loggedIn ? accountId : null,
     nickname: loggedIn ? text(user?.nickname ?? user?.nickName) || null : null,
   };
 }

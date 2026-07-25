@@ -49,6 +49,31 @@
     }
   }
 
+  // src/current-account-navigation.ts
+  var CURRENT_USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
+  var PROFILE_PATH = /^\/user\/profile\/([^/?#]+)\/?$/;
+  function isValidAccountId(value) {
+    return value.length >= 1 && value.length <= 128;
+  }
+  function readCurrentNavigationAccountId(page) {
+    const channel = page.querySelector(CURRENT_USER_CHANNEL_SELECTOR);
+    const link = channel?.closest("a[href]");
+    const rawHref = link?.getAttribute("href");
+    if (!rawHref) return "";
+    try {
+      const url = new URL(rawHref, page.baseURI);
+      if (url.protocol !== "https:" || url.hostname !== "www.xiaohongshu.com" || !["", "443"].includes(url.port)) {
+        return "";
+      }
+      const match = PROFILE_PATH.exec(url.pathname);
+      if (!match) return "";
+      const accountId = decodeURIComponent(match[1]);
+      return isValidAccountId(accountId) ? accountId : "";
+    } catch {
+      return "";
+    }
+  }
+
   // src/parser.ts
   function parseInitialStateValue(script) {
     const separator = script.indexOf("=");
@@ -140,8 +165,6 @@
 
   // src/account-proof.ts
   var PROOF_CONTEXT = "xhs-account-challenge/v1\0";
-  var CURRENT_USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
-  var PROFILE_PATH = /^\/user\/profile\/([^/?#]+)\/?$/;
   async function proveBrowserAccount(page, challenge) {
     if (!/^[0-9a-f]{32}$/.test(challenge.challengeId)) {
       return { status: "unverified" };
@@ -155,7 +178,7 @@
     const info = dataRecord(unwrapState(user.userInfo));
     if (info.guest === true) return { status: "logged_out" };
     const stateAccountId = dataText(info.userId ?? info.user_id);
-    const accountId = info.guest === false && validAccountId(stateAccountId) ? stateAccountId : currentUserNavigationId(page);
+    const accountId = info.guest === false && isValidAccountId(stateAccountId) ? stateAccountId : readCurrentNavigationAccountId(page);
     if (!accountId) {
       return { status: "unverified" };
     }
@@ -167,27 +190,6 @@
     } catch {
       return { status: "unverified" };
     }
-  }
-  function currentUserNavigationId(page) {
-    const channel = page.querySelector(CURRENT_USER_CHANNEL_SELECTOR);
-    const link = channel?.closest("a[href]");
-    const rawHref = link?.getAttribute("href");
-    if (!rawHref) return "";
-    try {
-      const url = new URL(rawHref, page.baseURI);
-      if (url.protocol !== "https:" || url.hostname !== "www.xiaohongshu.com") {
-        return "";
-      }
-      const match = PROFILE_PATH.exec(url.pathname);
-      if (!match) return "";
-      const accountId = decodeURIComponent(match[1]);
-      return validAccountId(accountId) ? accountId : "";
-    } catch {
-      return "";
-    }
-  }
-  function validAccountId(value) {
-    return value.length >= 1 && value.length <= 128;
   }
   async function hmacProof(challenge, accountId) {
     const key = await crypto.subtle.importKey(
@@ -294,17 +296,19 @@
   }
 
   // src/login-state.ts
-  var USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
   var LOGIN_SELECTOR = ".login-container, [class*='login-container']";
   var INITIAL_STATE_PREFIX2 = "window.__INITIAL_STATE__";
   function detectLoginState(page, pageUrl) {
     const user = readCurrentUser(page);
-    const hasUserChannel = Boolean(page.querySelector(USER_CHANNEL_SELECTOR));
+    const stateAccountId = text(user?.userId ?? user?.user_id);
+    const stateLoggedIn = user?.guest === false && isValidAccountId(stateAccountId);
+    const navigationAccountId = readCurrentNavigationAccountId(page);
     const loginVisible = new URL(pageUrl).pathname.includes("login") || Boolean(page.querySelector(LOGIN_SELECTOR));
-    const loggedIn = Boolean(user && !user.guest) || hasUserChannel;
+    const accountId = stateLoggedIn ? stateAccountId : navigationAccountId;
+    const loggedIn = Boolean(accountId) && !loginVisible;
     return {
-      logged_in: loggedIn && !loginVisible,
-      user_id: loggedIn ? text(user?.userId ?? user?.user_id) || null : null,
+      logged_in: loggedIn,
+      user_id: loggedIn ? accountId : null,
       nickname: loggedIn ? text(user?.nickname ?? user?.nickName) || null : null
     };
   }

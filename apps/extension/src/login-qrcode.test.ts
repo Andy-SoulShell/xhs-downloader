@@ -32,8 +32,10 @@ describe("登录二维码读取", () => {
 
   it("已登录时不返回二维码", () => {
     const page = document.implementation.createHTMLDocument();
+    page.head.innerHTML =
+      '<base href="https://www.xiaohongshu.com/explore">';
     page.body.innerHTML =
-      '<div class="main-container"><div class="user"><a class="link-wrapper"><i class="channel"></i></a></div></div>';
+      '<div class="main-container"><div class="user"><a class="link-wrapper" href="/user/profile/synthetic-account"><i class="channel"></i></a></div></div>';
 
     expect(
       readLoginQrCode(page, "https://www.xiaohongshu.com/explore"),

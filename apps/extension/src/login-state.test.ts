@@ -47,11 +47,17 @@ describe("浏览器登录状态解析", () => {
     });
   });
 
-  it("初始状态缺失时使用已登录导航元素作为降级证据", () => {
+  it("初始状态缺失时使用同源账号主页导航作为降级证据", () => {
     const page = document.implementation.createHTMLDocument();
+    page.head.innerHTML =
+      '<base href="https://www.xiaohongshu.com/explore">';
     page.body.innerHTML = `
       <main class="main-container">
-        <div class="user"><a class="link-wrapper"><span class="channel"></span></a></div>
+        <div class="user">
+          <a class="link-wrapper" href="/user/profile/synthetic-navigation-user">
+            <span class="channel"></span>
+          </a>
+        </div>
       </main>
     `;
 
@@ -59,6 +65,27 @@ describe("浏览器登录状态解析", () => {
       detectLoginState(page, "https://www.xiaohongshu.com/explore"),
     ).toEqual({
       logged_in: true,
+      user_id: "synthetic-navigation-user",
+      nickname: null,
+    });
+  });
+
+  it("拒绝把无主页地址的导航图标当作登录证据", () => {
+    const page = pageWithState(
+      { value: { userId: "transient-user" } },
+      `
+        <main class="main-container">
+          <div class="user">
+            <a class="link-wrapper"><span class="channel"></span></a>
+          </div>
+        </main>
+      `,
+    );
+
+    expect(
+      detectLoginState(page, "https://www.xiaohongshu.com/explore"),
+    ).toEqual({
+      logged_in: false,
       user_id: null,
       nickname: null,
     });
