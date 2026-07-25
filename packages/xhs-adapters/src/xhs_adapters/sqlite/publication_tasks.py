@@ -5,7 +5,7 @@ from pathlib import Path
 from secrets import compare_digest
 
 from aiosqlite import connect
-from xhs_core.domain import PublicationTask, PublicationTaskStatus
+from xhs_core.domain import BrowserDriver, PublicationTask, PublicationTaskStatus
 
 from .publication_task_storage import (
     initialize_publication_task_storage,
@@ -43,11 +43,12 @@ class SqlitePublicationTaskRepository:
             await database.execute(
                 """
                 INSERT INTO publication_task (
-                    task_id, draft_id, mode, status, scheduled_at, payload,
-                    lease_hash, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
+                    task_id, draft_id, mode, target_driver, status,
+                    scheduled_at, payload, lease_hash, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)
                 ON CONFLICT(task_id) DO UPDATE SET
                     mode = excluded.mode,
+                    target_driver = excluded.target_driver,
                     status = excluded.status,
                     scheduled_at = excluded.scheduled_at,
                     payload = excluded.payload,
@@ -57,6 +58,7 @@ class SqlitePublicationTaskRepository:
                     task.task_id,
                     task.package.draft_id,
                     task.mode.value,
+                    task.target_driver.value,
                     task.status.value,
                     task.scheduled_at.isoformat(),
                     task.model_dump_json(),
@@ -152,20 +154,22 @@ class SqlitePublicationTaskRepository:
 
     async def claim_ready(
         self,
-        extension_id: str,
+        executor_id: str,
         now: datetime,
         lease_expires_at: datetime,
         lease_hash: str,
         preferred_task_id: str | None,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> PublicationTask | None:
         """原子领取一个已就绪任务。
 
         Args:
-            extension_id: 扩展实例标识。
+            executor_id: 扩展或受管 Worker 实例标识。
             now: 领取时间。
             lease_expires_at: 租约到期时间。
             lease_hash: 租约凭据摘要。
             preferred_task_id: 手动发布指定的任务。
+            target_driver: 只领取该驱动的就绪任务。
 
         Returns:
             已领取任务；没有任务时返回 ``None``。
@@ -173,7 +177,10 @@ class SqlitePublicationTaskRepository:
         await self._initialize()
         async with connect(self._database) as database:
             await database.execute("BEGIN IMMEDIATE")
-            query, parameters = publication_claim_query(preferred_task_id)
+            query, parameters = publication_claim_query(
+                preferred_task_id,
+                target_driver,
+            )
             cursor = await database.execute(query, parameters)
             row = await cursor.fetchone()
             task = parse_publication_task(row[0]) if row else None
@@ -183,10 +190,15 @@ class SqlitePublicationTaskRepository:
             claimed = task.model_copy(
                 update={
                     "status": PublicationTaskStatus.CLAIMED,
-                    "extension_id": extension_id,
+                    "executor_id": executor_id,
+                    "extension_id": executor_id
+                    if target_driver is BrowserDriver.EXTENSION
+                    else None,
                     "lease_expires_at": lease_expires_at,
                     "attempts": task.attempts + 1,
-                    "message": "扩展已领取任务",
+                    "message": "扩展已领取任务"
+                    if target_driver is BrowserDriver.EXTENSION
+                    else "受管浏览器已领取任务",
                     "updated_at": now,
                 }
             )

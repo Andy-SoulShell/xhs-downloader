@@ -5,7 +5,7 @@ from pathlib import Path
 from aiosqlite import connect
 from loguru import logger
 from pydantic import ValidationError
-from xhs_core.domain import PublicationTask, PublicationTaskStatus
+from xhs_core.domain import BrowserDriver, PublicationTask, PublicationTaskStatus
 
 
 async def initialize_publication_task_storage(database_path: Path) -> None:
@@ -22,6 +22,7 @@ async def initialize_publication_task_storage(database_path: Path) -> None:
                 task_id TEXT PRIMARY KEY,
                 draft_id TEXT NOT NULL,
                 mode TEXT NOT NULL,
+                target_driver TEXT NOT NULL DEFAULT 'extension',
                 status TEXT NOT NULL,
                 scheduled_at TEXT NOT NULL,
                 payload TEXT NOT NULL,
@@ -56,6 +57,19 @@ async def initialize_publication_task_storage(database_path: Path) -> None:
                         "UPDATE publication_task SET mode = ? WHERE task_id = ?",
                         (task.mode.value, task_id),
                     )
+        if "target_driver" not in columns:
+            await database.execute(
+                """
+                ALTER TABLE publication_task
+                ADD COLUMN target_driver TEXT NOT NULL DEFAULT 'extension'
+                """
+            )
+        await database.execute(
+            """
+            CREATE INDEX IF NOT EXISTS publication_task_driver_status
+            ON publication_task(target_driver, status, scheduled_at)
+            """
+        )
         await database.commit()
 
 
@@ -77,11 +91,13 @@ def parse_publication_task(payload: str) -> PublicationTask | None:
 
 def publication_claim_query(
     preferred_task_id: str | None,
+    target_driver: BrowserDriver,
 ) -> tuple[str, tuple[str, ...]]:
     """构造领取指定任务或最早任务的查询。
 
     Args:
         preferred_task_id: 手动发布指定的任务标识。
+        target_driver: 本次只允许领取的浏览器驱动。
 
     Returns:
         参数化 SQL 与参数元组。
@@ -90,17 +106,32 @@ def publication_claim_query(
         return (
             """
             SELECT payload FROM publication_task
-            WHERE task_id = ? AND status = ?
+            WHERE task_id = ? AND status = ? AND target_driver = ?
             """,
-            (preferred_task_id, PublicationTaskStatus.READY.value),
+            (
+                preferred_task_id,
+                PublicationTaskStatus.READY.value,
+                target_driver.value,
+            ),
+        )
+    if target_driver is BrowserDriver.MANAGED:
+        return (
+            """
+            SELECT payload FROM publication_task
+            WHERE status = ? AND target_driver = ?
+            ORDER BY scheduled_at LIMIT 1
+            """,
+            (PublicationTaskStatus.READY.value, target_driver.value),
         )
     return (
         """
         SELECT payload FROM publication_task
-        WHERE status = ? AND mode = ? ORDER BY scheduled_at LIMIT 1
+        WHERE status = ? AND target_driver = ? AND mode = ?
+        ORDER BY scheduled_at LIMIT 1
         """,
         (
             PublicationTaskStatus.READY.value,
+            target_driver.value,
             "scheduled",
         ),
     )

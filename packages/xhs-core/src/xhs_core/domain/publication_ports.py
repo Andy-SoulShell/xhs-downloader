@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
+from .browser_tasks import BrowserDriver
 from .extension_presence import ExtensionPresence
 from .publication import (
     PublicationAsset,
@@ -115,20 +116,22 @@ class PublicationTaskRepository(Protocol):
 
     async def claim_ready(
         self,
-        extension_id: str,
+        executor_id: str,
         now: datetime,
         lease_expires_at: datetime,
         lease_hash: str,
         preferred_task_id: str | None,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> PublicationTask | None:
         """原子领取一个已就绪任务。
 
         Args:
-            extension_id: 扩展实例标识。
+            executor_id: 扩展或受管 Worker 实例标识。
             now: 领取时间。
             lease_expires_at: 租约到期时间。
             lease_hash: 不可逆的租约凭据摘要。
             preferred_task_id: 手动发布指定的任务。
+            target_driver: 只领取该驱动的就绪任务。
 
         Returns:
             已领取任务；没有可执行任务时返回 ``None``。

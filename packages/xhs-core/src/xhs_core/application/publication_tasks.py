@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from xhs_core.domain import (
+    BrowserDriver,
     PublicationDraft,
     PublicationError,
     PublicationMode,
@@ -14,6 +15,7 @@ from xhs_core.domain import (
 from xhs_core.domain.publication_ports import PublicationTaskRepository
 
 from .publication_scheduler import PublicationScheduler
+from .publication_validation import validate_publication_package
 
 _RETRYABLE = {PublicationTaskStatus.FAILED}
 _PLATFORM_SCHEDULE_MIN = timedelta(hours=1)
@@ -42,6 +44,7 @@ class PublicationTaskService:
         draft: PublicationDraft,
         mode: PublicationMode,
         scheduled_at: datetime | None,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> PublicationTask:
         """把草稿冻结为发布任务。
 
@@ -49,6 +52,7 @@ class PublicationTaskService:
             draft: 待发布草稿。
             mode: 手动立即发布或自动定时发布。
             scheduled_at: 自动模式的计划时间。
+            target_driver: 提交时冻结的浏览器执行驱动。
 
         Returns:
             新建或内容相同的活跃任务。
@@ -56,7 +60,7 @@ class PublicationTaskService:
         Raises:
             PublicationError: 草稿内容、素材或计划时间无效。
         """
-        _validate_package(draft)
+        validate_publication_package(draft, target_driver)
         now = datetime.now(UTC)
         schedule = _as_utc(scheduled_at) if scheduled_at else now
         if mode is not PublicationMode.MANUAL and schedule <= now:
@@ -73,6 +77,7 @@ class PublicationTaskService:
                 if (
                     task.package_fingerprint == fingerprint
                     and task.mode is mode
+                    and task.target_driver is target_driver
                     and (
                         mode is PublicationMode.MANUAL or task.scheduled_at == schedule
                     )
@@ -88,15 +93,16 @@ class PublicationTaskService:
                 package=draft.model_copy(deep=True),
                 package_fingerprint=fingerprint,
                 mode=mode,
+                target_driver=target_driver,
                 status=status,
                 scheduled_at=schedule,
                 message=(
-                    "等待扩展立即发布"
+                    _ready_message(target_driver, "立即发布")
                     if mode is PublicationMode.MANUAL
                     else (
                         "等待本地计划发布时间"
                         if mode is PublicationMode.SCHEDULED
-                        else "等待扩展设置官方定时发布"
+                        else _ready_message(target_driver, "设置官方定时发布")
                     )
                 ),
                 created_at=now,
@@ -131,10 +137,12 @@ class PublicationTaskService:
             updated = task.model_copy(
                 update={
                     "status": PublicationTaskStatus.READY,
+                    "executor_id": None,
                     "extension_id": None,
                     "lease_expires_at": None,
-                    "message": "等待扩展重试发布",
+                    "message": _ready_message(task.target_driver, "重试发布"),
                     "result_url": None,
+                    "publish_attempted": False,
                     "updated_at": datetime.now(UTC),
                 }
             )
@@ -182,6 +190,7 @@ class PublicationTaskService:
                         else "已人工确认作品未发布，可以显式重试"
                     ),
                     "result_url": result_url if published else None,
+                    "executor_id": None,
                     "extension_id": None,
                     "lease_expires_at": None,
                     "updated_at": datetime.now(UTC),
@@ -258,21 +267,12 @@ class PublicationTaskService:
         return await self._repository.list_tasks(limit)
 
 
-def _validate_package(draft: PublicationDraft) -> None:
-    if not draft.assets:
-        raise PublicationError("发布草稿至少需要一个素材")
-    videos = [asset for asset in draft.assets if asset.media_type.startswith("video/")]
-    if videos and (len(videos) != 1 or len(draft.assets) != 1):
-        raise PublicationError("视频笔记只能包含一个视频，不能混合图片")
-    if videos and draft.is_original:
-        raise PublicationError("当前原创声明只支持图文笔记")
-    if not videos and len(draft.assets) > 18:
-        raise PublicationError("图文笔记最多包含 18 张图片")
-    if not draft.title and not draft.body:
-        raise PublicationError("发布标题和正文不能同时为空")
-
-
 def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         raise PublicationError("计划发布时间必须包含时区")
     return value.astimezone(UTC)
+
+
+def _ready_message(driver: BrowserDriver, action: str) -> str:
+    actor = "扩展" if driver is BrowserDriver.EXTENSION else "受管浏览器"
+    return f"等待{actor}{action}"

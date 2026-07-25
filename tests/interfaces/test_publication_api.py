@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from httpx import ASGITransport, AsyncClient
 from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
+from xhs_core.domain import BrowserDriver
 
 from tests.interfaces.helpers import FakeService
 
@@ -151,6 +152,69 @@ async def test_publication_api_manages_schedule_retry_and_cleanup(tmp_path) -> N
     assert fetched.status_code == 200
     assert deleted.status_code == 204
     assert missing.status_code == 400
+
+
+async def test_publication_api_freezes_managed_driver_and_private_scope(
+    tmp_path,
+) -> None:
+    """确保管理端按当前配置冻结受管驱动并拒绝扩展领取。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    settings = AppSettings(
+        work_path=tmp_path,
+        browser_driver=BrowserDriver.MANAGED,
+    )
+    api = create_api(settings, lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        private = await client.post(
+            "/publication/drafts",
+            json={
+                "title": "合成私密标题",
+                "visibility": "private",
+            },
+        )
+        private_id = private.json()["draft_id"]
+        await client.post(
+            f"/publication/drafts/{private_id}/assets",
+            files={"upload": ("synthetic.png", b"png-data", "image/png")},
+        )
+        submitted = await client.post(
+            f"/publication/drafts/{private_id}/submit",
+            json={"mode": "manual"},
+        )
+        extension_headers = await _register(client)
+        extension_claim = await client.post(
+            "/publication/extension/claim",
+            json={"preferred_task_id": submitted.json()["task_id"]},
+            headers=extension_headers,
+        )
+        public = await client.post(
+            "/publication/drafts",
+            json={"title": "合成公开标题", "visibility": "public"},
+        )
+        public_id = public.json()["draft_id"]
+        await client.post(
+            f"/publication/drafts/{public_id}/assets",
+            files={"upload": ("synthetic.png", b"png-data", "image/png")},
+        )
+        rejected = await client.post(
+            f"/publication/drafts/{public_id}/submit",
+            json={"mode": "manual"},
+        )
+
+    assert submitted.status_code == 202
+    assert submitted.json()["target_driver"] == "managed"
+    assert extension_claim.json() is None
+    assert rejected.status_code == 400
+    assert "仅自己可见" in rejected.json()["message"]
 
 
 async def test_publication_api_enforces_management_and_extension_boundaries(

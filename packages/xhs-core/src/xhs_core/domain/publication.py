@@ -7,6 +7,8 @@ from json import dumps
 
 from pydantic import BaseModel, Field, field_validator
 
+from .browser_tasks import BrowserDriver
+
 
 class PublicationMode(StrEnum):
     """发布触发方式。"""
@@ -32,6 +34,7 @@ class PublicationTaskStatus(StrEnum):
     CLAIMED = "claimed"
     FILLING = "filling"
     PUBLISHING = "publishing"
+    AWAITING_VERIFICATION = "awaiting_verification"
     PUBLISHED = "published"
     NEEDS_REVIEW = "needs_review"
     FAILED = "failed"
@@ -135,38 +138,44 @@ class PublicationDraft(BaseModel):
 
 
 class PublicationTask(BaseModel):
-    """由扩展领取并执行的不可变发布任务。
+    """由固定浏览器驱动领取并执行的不可变发布任务。
 
     Attributes:
         task_id: 发布任务唯一标识。
         package: 提交瞬间冻结的发布包。
         mode: 手动立即发布或自动定时发布。
+        target_driver: 提交时冻结的浏览器执行驱动。
         status: 当前执行状态。
         scheduled_at: 最早允许扩展领取的时间。
+        executor_id: 当前持有租约的执行器实例。
         extension_id: 当前持有租约的扩展实例。
         lease_expires_at: 当前租约失效时间。
         attempts: 被扩展领取的次数。
         message: 面向用户的状态说明。
         result_url: 发布成功后的小红书作品地址。
+        publish_attempted: 是否已经进入不可安全重复的发布点击阶段。
     """
 
     task_id: str = Field(min_length=1, max_length=128)
     package: PublicationDraft
     package_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     mode: PublicationMode
+    target_driver: BrowserDriver = BrowserDriver.EXTENSION
     status: PublicationTaskStatus
     scheduled_at: datetime
+    executor_id: str | None = Field(default=None, max_length=128)
     extension_id: str | None = Field(default=None, max_length=128)
     lease_expires_at: datetime | None = None
     attempts: int = Field(default=0, ge=0)
     message: str = Field(default="等待发布", max_length=1000)
     result_url: str | None = None
+    publish_attempted: bool = False
     created_at: datetime
     updated_at: datetime
 
 
 class PublicationClaim(BaseModel):
-    """扩展领取任务后获得的短期执行凭据。"""
+    """浏览器执行器领取任务后获得的短期执行凭据。"""
 
     task: PublicationTask
     lease_token: str = Field(min_length=32, max_length=256)

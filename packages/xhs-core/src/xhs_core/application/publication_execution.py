@@ -6,6 +6,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 
 from xhs_core.domain import (
+    BrowserDriver,
     PublicationClaim,
     PublicationError,
     PublicationTask,
@@ -21,18 +22,28 @@ from .publication_scheduler import PublicationScheduler
 _ALLOWED_TRANSITIONS = {
     PublicationTaskStatus.CLAIMED: {
         PublicationTaskStatus.FILLING,
+        PublicationTaskStatus.AWAITING_VERIFICATION,
         PublicationTaskStatus.FAILED,
         PublicationTaskStatus.NEEDS_REVIEW,
     },
     PublicationTaskStatus.FILLING: {
         PublicationTaskStatus.FILLING,
         PublicationTaskStatus.PUBLISHING,
+        PublicationTaskStatus.AWAITING_VERIFICATION,
         PublicationTaskStatus.FAILED,
         PublicationTaskStatus.NEEDS_REVIEW,
     },
     PublicationTaskStatus.PUBLISHING: {
         PublicationTaskStatus.PUBLISHING,
         PublicationTaskStatus.PUBLISHED,
+        PublicationTaskStatus.AWAITING_VERIFICATION,
+        PublicationTaskStatus.FAILED,
+        PublicationTaskStatus.NEEDS_REVIEW,
+    },
+    PublicationTaskStatus.AWAITING_VERIFICATION: {
+        PublicationTaskStatus.AWAITING_VERIFICATION,
+        PublicationTaskStatus.FILLING,
+        PublicationTaskStatus.PUBLISHING,
         PublicationTaskStatus.FAILED,
         PublicationTaskStatus.NEEDS_REVIEW,
     },
@@ -46,6 +57,7 @@ _LEASED = {
     PublicationTaskStatus.CLAIMED,
     PublicationTaskStatus.FILLING,
     PublicationTaskStatus.PUBLISHING,
+    PublicationTaskStatus.AWAITING_VERIFICATION,
 }
 
 
@@ -73,14 +85,16 @@ class PublicationExecutionService:
 
     async def claim(
         self,
-        extension_id: str,
+        executor_id: str,
         preferred_task_id: str | None = None,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> PublicationClaim | None:
-        """为扩展原子领取一个任务。
+        """为指定浏览器驱动原子领取一个任务。
 
         Args:
-            extension_id: 已登记扩展 ID。
+            executor_id: 已登记扩展或受管 Worker 实例 ID。
             preferred_task_id: 手动一键发布指定的任务。
+            target_driver: 只领取该驱动的就绪任务。
 
         Returns:
             带短期令牌的任务；没有就绪任务时返回 ``None``。
@@ -89,11 +103,12 @@ class PublicationExecutionService:
         now = datetime.now(UTC)
         token = token_urlsafe(32)
         task = await self._repository.claim_ready(
-            extension_id,
+            executor_id,
             now,
             now + timedelta(seconds=self._lease_seconds),
             _token_hash(token),
             preferred_task_id,
+            target_driver,
         )
         return PublicationClaim(task=task, lease_token=token) if task else None
 

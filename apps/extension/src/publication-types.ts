@@ -6,6 +6,7 @@ export type PublicationTaskStatus =
   | "claimed"
   | "filling"
   | "publishing"
+  | "awaiting_verification"
   | "published"
   | "needs_review"
   | "failed"
@@ -38,13 +39,16 @@ export interface PublicationTask {
   package: PublicationDraft;
   package_fingerprint: string;
   mode: PublicationMode;
+  target_driver: "extension" | "managed";
   status: PublicationTaskStatus;
   scheduled_at: string;
+  executor_id?: string;
   extension_id?: string;
   lease_expires_at?: string;
   attempts: number;
   message: string;
   result_url?: string;
+  publish_attempted: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -103,6 +103,24 @@ describe("扩展发布服务客户端", () => {
     });
   });
 
+  it("拒绝服务端误发的受管浏览器发布任务", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            task: { task_id: "task", target_driver: "managed" },
+            lease_token: "lease",
+          }),
+        ),
+      ),
+    );
+
+    await expect(
+      claimPublicationTask("http://service", credential),
+    ).rejects.toThrow("不属于扩展驱动");
+  });
+
   it("读取并验证素材分段", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(Uint8Array.from([1, 2, 3]), {

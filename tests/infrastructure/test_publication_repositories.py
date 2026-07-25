@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
+from json import dumps
 
 from aiosqlite import connect
 from xhs_adapters.sqlite import (
@@ -9,7 +10,12 @@ from xhs_adapters.sqlite import (
     SqlitePublicationDraftRepository,
     SqlitePublicationTaskRepository,
 )
-from xhs_core.domain import PublicationMode, PublicationTask, PublicationTaskStatus
+from xhs_core.domain import (
+    BrowserDriver,
+    PublicationMode,
+    PublicationTask,
+    PublicationTaskStatus,
+)
 
 from tests.helpers import make_publication_draft
 
@@ -199,7 +205,16 @@ async def test_task_repository_migrates_legacy_mode_column(tmp_path) -> None:
                 task.package.draft_id,
                 task.status.value,
                 task.scheduled_at.isoformat(),
-                task.model_dump_json(),
+                dumps(
+                    task.model_dump(
+                        mode="json",
+                        exclude={
+                            "target_driver",
+                            "executor_id",
+                            "publish_attempted",
+                        },
+                    )
+                ),
                 task.created_at.isoformat(),
                 task.updated_at.isoformat(),
             ),
@@ -211,11 +226,11 @@ async def test_task_repository_migrates_legacy_mode_column(tmp_path) -> None:
     async with connect(database) as connection:
         row = await (
             await connection.execute(
-                "SELECT mode FROM publication_task WHERE task_id = ?",
+                "SELECT mode, target_driver FROM publication_task WHERE task_id = ?",
                 (task.task_id,),
             )
         ).fetchone()
-    assert row[0] == "scheduled"
+    assert row == ("scheduled", BrowserDriver.EXTENSION.value)
 
 
 async def test_extension_credentials_rotate_and_validate(tmp_path) -> None:

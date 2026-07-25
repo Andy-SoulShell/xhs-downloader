@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 
 from xhs_core.domain import (
+    BrowserDriver,
     PublicationMode,
     PublicationTask,
     PublicationTaskStatus,
@@ -52,3 +53,5 @@ def test_publication_task_round_trips_as_json() -> None:
 
     assert restored == task
     assert restored.package is not draft
+    assert restored.target_driver is BrowserDriver.EXTENSION
+    assert restored.publish_attempted is False

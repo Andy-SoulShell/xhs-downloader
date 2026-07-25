@@ -55,7 +55,7 @@ export async function claimPublicationTask(
   credential: ExtensionCredential,
   preferredTaskId?: string,
 ): Promise<PublicationClaim | null> {
-  return requestJson<PublicationClaim | null>(
+  const claim = await requestJson<PublicationClaim | null>(
     `${normalizeBase(baseUrl)}/publication/extension/claim`,
     {
       method: "POST",
@@ -65,6 +65,10 @@ export async function claimPublicationTask(
       headers: extensionHeaders(credential, true),
     },
   );
+  if (claim?.task.target_driver === "managed") {
+    throw new Error("本地服务返回了不属于扩展驱动的发布任务");
+  }
+  return claim;
 }
 
 export async function reportPublicationStatus(

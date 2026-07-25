@@ -69,7 +69,18 @@ class PublicationScheduler:
     ) -> None:
         expired = task.lease_expires_at is not None and task.lease_expires_at <= now
         if task.status is PublicationTaskStatus.SCHEDULED and task.scheduled_at <= now:
-            await self._save_ready(task, "已到计划时间，等待扩展")
+            await self._save_ready(task, "已到计划时间，等待浏览器执行")
+            return
+        if task.status is PublicationTaskStatus.AWAITING_VERIFICATION and (
+            recover_all or expired
+        ):
+            if task.publish_attempted:
+                await self._save_needs_review(
+                    task,
+                    "验证期间执行会话中断，发布结果需要人工核对",
+                )
+            else:
+                await self._save_ready(task, "验证期间执行会话中断，任务重新就绪")
             return
         if task.status in {
             PublicationTaskStatus.CLAIMED,
@@ -78,16 +89,7 @@ class PublicationScheduler:
             await self._save_ready(task, "扩展中断，任务重新就绪")
             return
         if task.status is PublicationTaskStatus.PUBLISHING and (recover_all or expired):
-            updated = task.model_copy(
-                update={
-                    "status": PublicationTaskStatus.NEEDS_REVIEW,
-                    "message": "发布结果未能确认，请人工检查",
-                    "lease_expires_at": None,
-                    "updated_at": now,
-                }
-            )
-            if await self._repository.save_task_if_status(updated, task.status):
-                await self._repository.clear_lease(task.task_id)
+            await self._save_needs_review(task, "发布结果未能确认，请人工检查")
 
     async def _save_ready(
         self,
@@ -97,6 +99,7 @@ class PublicationScheduler:
         ready = task.model_copy(
             update={
                 "status": PublicationTaskStatus.READY,
+                "executor_id": None,
                 "extension_id": None,
                 "lease_expires_at": None,
                 "message": message,
@@ -104,4 +107,22 @@ class PublicationScheduler:
             }
         )
         if await self._repository.save_task_if_status(ready, task.status):
+            await self._repository.clear_lease(task.task_id)
+
+    async def _save_needs_review(
+        self,
+        task: PublicationTask,
+        message: str,
+    ) -> None:
+        reviewed = task.model_copy(
+            update={
+                "status": PublicationTaskStatus.NEEDS_REVIEW,
+                "message": message,
+                "executor_id": None,
+                "extension_id": None,
+                "lease_expires_at": None,
+                "updated_at": datetime.now(UTC),
+            }
+        )
+        if await self._repository.save_task_if_status(reviewed, task.status):
             await self._repository.clear_lease(task.task_id)

@@ -165,6 +165,7 @@ def create_api(
             dependencies.publication.execution,
             dependencies.publication.credentials,
             settings_access_policy,
+            lambda: dependencies.settings.current.browser_driver,
         )
     )
 

@@ -1,6 +1,6 @@
 """本机管理端与浏览器扩展协作的内容发布 API。"""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from typing import Annotated
 
 from fastapi import APIRouter, File, Query, Request, UploadFile
@@ -11,7 +11,12 @@ from xhs_core.application import (
     PublicationExecutionService,
     PublicationTaskService,
 )
-from xhs_core.domain import PublicationClaim, PublicationDraft, PublicationTask
+from xhs_core.domain import (
+    BrowserDriver,
+    PublicationClaim,
+    PublicationDraft,
+    PublicationTask,
+)
 
 from .publication_access import (
     require_extension as _require_extension,
@@ -44,6 +49,7 @@ def create_publication_router(
     execution: PublicationExecutionService,
     credentials: ExtensionCredentialService,
     management_access: SettingsAccessPolicy,
+    browser_driver: Callable[[], BrowserDriver] = lambda: BrowserDriver.EXTENSION,
 ) -> APIRouter:
     """创建内容发布路由。
 
@@ -53,6 +59,7 @@ def create_publication_router(
         execution: 扩展领取与执行用例。
         credentials: 扩展能力凭据用例。
         management_access: 本机管理端访问判定策略。
+        browser_driver: 返回提交瞬间使用的浏览器驱动。
 
     Returns:
         可挂载到主应用的发布路由。
@@ -158,7 +165,12 @@ def create_publication_router(
     ) -> PublicationTask:
         _require_management(request, management_access)
         draft = await drafts.require(draft_id)
-        return await tasks.submit(draft, payload.mode, payload.scheduled_at)
+        return await tasks.submit(
+            draft,
+            payload.mode,
+            payload.scheduled_at,
+            browser_driver(),
+        )
 
     @router.get("/tasks", response_model=list[PublicationTask])
     async def list_tasks(
