@@ -69,17 +69,11 @@ async function submitComment(
   content: string,
 ): Promise<CommentResult> {
   const before = matchingComments(page, content).length;
-  const activator = page.querySelector<HTMLElement>(
-    "div.input-box div.content-edit span",
-  );
-  activator?.click();
-  const input = page.querySelector<HTMLElement>(
-    "div.input-box div.content-edit p.content-input, div.input-box [contenteditable='true']",
-  );
+  const input = await waitForCommentInput(page);
   if (!input) throw new Error("页面没有可用的评论输入框");
   fillContentEditable(page, input, content);
-  const submit = page.querySelector<HTMLButtonElement>("div.bottom button.submit");
-  if (!submit || submit.disabled) throw new Error("评论提交按钮当前不可用");
+  const submit = await waitForEnabledSubmit(page);
+  if (!submit) throw new Error("评论提交按钮当前不可用");
   submit.click();
   for (let attempt = 0; attempt < 16; attempt += 1) {
     const matches = matchingComments(page, content);
@@ -95,6 +89,28 @@ async function submitComment(
   throw new UncertainBrowserActionError(
     "评论提交已触发，但未在评论区确认结果，请人工核对",
   );
+}
+
+async function waitForCommentInput(
+  page: Document,
+): Promise<HTMLElement | null> {
+  let activated = false;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const activator = page.querySelector<HTMLElement>(
+      "div.input-box div.content-edit span",
+    );
+    if (activator && !activated) {
+      activator.click();
+      activated = true;
+      await delay(150);
+    }
+    const input = page.querySelector<HTMLElement>(
+      "div.input-box div.content-edit p.content-input, div.input-box [contenteditable='true']",
+    );
+    if (input) return input;
+    await delay(250);
+  }
+  return null;
 }
 
 function findTargetComment(
@@ -121,8 +137,31 @@ function fillContentEditable(
   content: string,
 ): void {
   input.focus();
-  input.textContent = content;
   const scope = page.defaultView;
+  const selection = scope?.getSelection();
+  if (selection) {
+    const range = page.createRange();
+    range.selectNodeContents(input);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  if (
+    typeof page.execCommand === "function" &&
+    page.execCommand("insertText", false, content)
+  ) {
+    return;
+  }
+  const beforeInput = scope
+    ? new scope.InputEvent("beforeinput", {
+        bubbles: true,
+        cancelable: true,
+        inputType: "insertText",
+        data: content,
+      })
+    : new Event("beforeinput", { bubbles: true, cancelable: true });
+  if (!input.dispatchEvent(beforeInput)) return;
+  input.textContent = content;
   const event = scope
     ? new scope.InputEvent("input", {
         bubbles: true,
@@ -131,6 +170,19 @@ function fillContentEditable(
       })
     : new Event("input", { bubbles: true });
   input.dispatchEvent(event);
+}
+
+async function waitForEnabledSubmit(
+  page: Document,
+): Promise<HTMLButtonElement | null> {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const submit = page.querySelector<HTMLButtonElement>(
+      "div.bottom button.submit",
+    );
+    if (submit && !submit.disabled) return submit;
+    await delay(100);
+  }
+  return null;
 }
 
 function matchingComments(page: Document, content: string): HTMLElement[] {

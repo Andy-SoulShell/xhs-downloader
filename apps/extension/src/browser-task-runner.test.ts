@@ -1,41 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrowserTaskClaim } from "@xhs-downloader/contracts";
-
 import { runBrowserTaskPoll } from "./browser-task-runner";
+import {
+  makeBrowserTaskClaim as claim,
+  WRITE_PAYLOAD,
+  WRITE_URL,
+} from "./browser-task-test-helpers";
 
 let values: Record<string, unknown>;
 let tabs: Array<{ id?: number; active?: boolean }>;
 let pageResponse: unknown;
-const WRITE_PAYLOAD = {
-  feed_id: "synthetic-feed",
-  xsec_token: "synthetic-token",
-};
-const WRITE_URL =
-  "https://www.xiaohongshu.com/explore/synthetic-feed?xsec_token=synthetic-token&xsec_source=pc_feed";
-
-function claim(
-  kind: BrowserTaskClaim["task"]["kind"] = "check_login_status",
-  payload: BrowserTaskClaim["task"]["payload"] = {},
-): BrowserTaskClaim {
-  return {
-    task: {
-      task_id: "synthetic-task",
-      request_id: "synthetic-request",
-      kind,
-      payload,
-      status: "claimed",
-      result: null,
-      extension_id: "synthetic-extension",
-      lease_expires_at: "2026-01-01T00:05:00Z",
-      attempts: 1,
-      message: "扩展已领取",
-      created_at: "2026-01-01T00:00:00Z",
-      updated_at: "2026-01-01T00:00:00Z",
-    },
-    lease_token: "synthetic-lease-token-with-enough-length",
-  };
-}
 
 beforeEach(() => {
   values = {
@@ -77,6 +51,11 @@ beforeEach(() => {
       query: vi.fn(async () => tabs),
       create: vi.fn(async () => ({ id: 8, active: false })),
       update: vi.fn(async () => ({ id: 8, active: false })),
+      get: vi.fn(async () => ({
+        id: 8,
+        status: "complete",
+        url: "https://www.xiaohongshu.com/user/profile/synthetic-user/?source=redirect",
+      })),
       remove: vi.fn(async () => undefined),
       sendMessage: vi.fn(async () => pageResponse),
     },

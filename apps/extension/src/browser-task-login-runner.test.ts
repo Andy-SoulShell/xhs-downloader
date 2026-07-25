@@ -72,7 +72,7 @@ afterEach(() => {
 });
 
 describe("登录二维码后台任务", () => {
-  it("返回二维码后保留登录标签完成扫码握手", async () => {
+  it("在前台返回二维码并保留登录标签完成扫码握手", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -96,7 +96,7 @@ describe("登录二维码后台任务", () => {
 
     expect(chrome.tabs.create).toHaveBeenCalledWith({
       url: "https://www.xiaohongshu.com/explore/",
-      active: false,
+      active: true,
     });
     expect(chrome.tabs.remove).not.toHaveBeenCalled();
     expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toMatchObject({

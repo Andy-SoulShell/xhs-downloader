@@ -5,6 +5,7 @@ import type {
   BrowserPageTaskResponse,
 } from "./browser-page-runner";
 import { captureRedactedFailure } from "./browser-failure-artifacts";
+import { authorizeBrowserTaskInteraction } from "./browser-interaction-input";
 import {
   BrowserTaskUnauthorizedError,
   claimBrowserTask,
@@ -132,15 +133,31 @@ async function executeInNewTab(
   request: BrowserPageTaskRequest,
 ): Promise<BrowserPageTaskResponse> {
   const targetUrl = taskTargetUrl(request.task);
-  const tab = await chrome.tabs.create({ url: targetUrl, active: false });
+  const tab = await chrome.tabs.create({
+    url: targetUrl,
+    active: request.task.kind === "get_login_qrcode",
+  });
   if (tab.id === undefined) throw new Error("无法创建小红书任务页面");
+  const revokeInteraction = authorizeBrowserTaskInteraction(
+    tab.id,
+    request.task.task_id,
+    request.task.kind,
+  );
   let keepOpen = false;
   try {
     let response = await sendWhenReady(tab.id, request);
-    if (response.navigateUrl) {
+    for (
+      let navigationCount = 0;
+      response.navigateUrl && navigationCount < 2;
+      navigationCount += 1
+    ) {
       const navigateUrl = safeXhsUrl(response.navigateUrl);
       await chrome.tabs.update(tab.id, { url: navigateUrl });
+      await delay(1_000);
       response = await sendWhenReady(tab.id, request);
+    }
+    if (response.navigateUrl) {
+      throw new Error("小红书站内页面重复要求导航");
     }
     if (!response.ok) {
       const artifact = await captureRedactedFailure(
@@ -158,6 +175,7 @@ async function executeInNewTab(
       response.result?.is_logged_in === false;
     return response;
   } finally {
+    revokeInteraction();
     if (!keepOpen) await chrome.tabs.remove(tab.id);
   }
 }

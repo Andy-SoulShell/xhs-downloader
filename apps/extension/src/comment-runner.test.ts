@@ -18,14 +18,30 @@ function editor(): string {
 afterEach(() => {
   vi.useRealTimers();
   document.body.innerHTML = "";
+  Reflect.deleteProperty(document, "execCommand");
 });
 
 describe("评论与回复执行器", () => {
-  it("提交评论并通过新增 DOM 节点核验", async () => {
+  it("通过浏览器编辑命令提交评论并核验新增 DOM 节点", async () => {
     document.body.innerHTML = `
       <div class="comments-container"><div class="end-container"></div></div>
       ${editor()}
     `;
+    const submit = document.querySelector<HTMLButtonElement>(".submit")!;
+    submit.disabled = true;
+    document.querySelector(".content-input")?.addEventListener("input", () => {
+      submit.disabled = false;
+    });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: vi.fn((_command: string, _showUi: boolean, value: string) => {
+        const active = document.activeElement;
+        if (!(active instanceof HTMLElement)) return false;
+        active.textContent = value;
+        active.dispatchEvent(new InputEvent("input", { bubbles: true }));
+        return true;
+      }),
+    });
     document.querySelector(".submit")?.addEventListener("click", () => {
       const comment = document.createElement("article");
       comment.className = "parent-comment";
@@ -46,6 +62,11 @@ describe("评论与回复执行器", () => {
       comment_id: "new-comment",
       verified: true,
     });
+    expect(document.execCommand).toHaveBeenCalledWith(
+      "insertText",
+      false,
+      "合成评论内容",
+    );
   });
 
   it("按评论 ID 定位并回复", async () => {
@@ -148,23 +169,63 @@ describe("评论与回复执行器", () => {
     vi.useRealTimers();
   });
 
+  it("等待异步渲染的评论输入框", async () => {
+    document.body.innerHTML =
+      '<div class="comments-container"><div class="end-container"></div></div>';
+    vi.useFakeTimers();
+    window.setTimeout(() => {
+      document.body.insertAdjacentHTML("beforeend", editor());
+      document.querySelector(".submit")?.addEventListener("click", () => {
+        const comment = document.createElement("article");
+        comment.className = "parent-comment";
+        comment.textContent =
+          document.querySelector(".content-input")?.textContent ?? "";
+        document.querySelector(".comments-container")?.append(comment);
+      });
+    }, 300);
+
+    const operation = postComment(
+      document,
+      "synthetic-feed",
+      "延迟输入框评论",
+    );
+    await vi.runAllTimersAsync();
+
+    await expect(operation).resolves.toMatchObject({ verified: true });
+  });
+
   it("提交前拒绝缺失输入框或不可用按钮", async () => {
     document.body.innerHTML = `
       <div class="comments-container"></div>
       <div class="bottom"><button class="submit">发送</button></div>
     `;
-    await expect(
-      postComment(document, "synthetic-feed", "合成评论"),
-    ).rejects.toThrow("没有可用的评论输入框");
+    vi.useFakeTimers();
+    const missingInput = postComment(
+      document,
+      "synthetic-feed",
+      "合成评论",
+    );
+    const missingRejection = expect(missingInput).rejects.toThrow(
+      "没有可用的评论输入框",
+    );
+    await vi.runAllTimersAsync();
+    await missingRejection;
 
     document.body.innerHTML = `
       <div class="comments-container"></div>
       ${editor()}
     `;
     document.querySelector<HTMLButtonElement>(".submit")!.disabled = true;
-    await expect(
-      postComment(document, "synthetic-feed", "合成评论"),
-    ).rejects.toThrow("提交按钮当前不可用");
+    const disabledSubmit = postComment(
+      document,
+      "synthetic-feed",
+      "合成评论",
+    );
+    const disabledRejection = expect(disabledSubmit).rejects.toThrow(
+      "提交按钮当前不可用",
+    );
+    await vi.runAllTimersAsync();
+    await disabledRejection;
   });
 
   it("提交后无法核验时要求人工核对", async () => {

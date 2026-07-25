@@ -1,31 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { BrowserTask } from "@xhs-downloader/contracts";
-
 import { executeBrowserPageTask } from "./browser-page-runner";
+import { pageTask as task } from "./browser-page-test-helpers";
 import { installBrowserStateBridge } from "./browser-state-main";
 
 type TestWindow = Window & { __INITIAL_STATE__?: unknown };
-
-function task(
-  kind: BrowserTask["kind"],
-  payload: BrowserTask["payload"],
-): BrowserTask {
-  return {
-    task_id: "synthetic-task",
-    request_id: "synthetic-request",
-    kind,
-    payload,
-    status: "running",
-    result: null,
-    extension_id: "synthetic-extension",
-    lease_expires_at: "2026-01-01T00:00:00Z",
-    attempts: 1,
-    message: "合成任务",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  };
-}
 
 function interactionState(liked: boolean, collected: boolean) {
   return {

@@ -4,6 +4,12 @@ import {
 } from "./mode";
 import { installBrowserTaskAutomation } from "./browser-task-runner";
 import {
+  handleBrowserInteractionRequest,
+  isBrowserInteractionRequest,
+  type BrowserInteractionRequest,
+  type BrowserInteractionResponse,
+} from "./browser-interaction-input";
+import {
   handlePublicationRequest,
   installPublicationAutomation,
 } from "./publication-runner";
@@ -39,9 +45,17 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener(
   (
-    request: ExtensionRequest | PublicationRequest,
+    request:
+      | ExtensionRequest
+      | PublicationRequest
+      | BrowserInteractionRequest,
     sender,
-    sendResponse: (response: ExtensionResponse | PublicationResponse) => void,
+    sendResponse: (
+      response:
+        | ExtensionResponse
+        | PublicationResponse
+        | BrowserInteractionResponse,
+    ) => void,
   ) => {
     void handleRequest(request, sender.tab?.id, sender.url)
       .then(sendResponse)
@@ -56,10 +70,18 @@ chrome.runtime.onMessage.addListener(
 );
 
 async function handleRequest(
-  request: ExtensionRequest | PublicationRequest,
+  request:
+    | ExtensionRequest
+    | PublicationRequest
+    | BrowserInteractionRequest,
   senderTabId?: number,
   senderUrl?: string,
-): Promise<ExtensionResponse | PublicationResponse> {
+): Promise<
+  ExtensionResponse | PublicationResponse | BrowserInteractionResponse
+> {
+  if (isBrowserInteractionRequest(request)) {
+    return handleBrowserInteractionRequest(request, senderTabId, senderUrl);
+  }
   if (isPublicationRequest(request)) {
     return handlePublicationRequest(request, senderTabId, senderUrl);
   }

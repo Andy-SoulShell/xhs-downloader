@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readLoginQrCode } from "./login-qrcode";
+import { readLoginQrCode, waitForLoginQrCode } from "./login-qrcode";
 
 const QR_DATA_URL = "data:image/png;base64,c3ludGhldGljLXFy";
 
@@ -58,5 +58,28 @@ describe("登录二维码读取", () => {
         "https://www.xiaohongshu.com/explore",
       ),
     ).toThrow("没有可安全交付的二维码");
+  });
+
+  it("等待登录页异步生成二维码", async () => {
+    const page = document.implementation.createHTMLDocument();
+    page.body.innerHTML = '<section class="login-container"></section>';
+    const pending = waitForLoginQrCode(
+      page,
+      "https://www.xiaohongshu.com/explore",
+      100,
+      2,
+    );
+
+    setTimeout(() => {
+      const image = page.createElement("img");
+      image.className = "qrcode-img";
+      image.src = QR_DATA_URL;
+      page.querySelector(".login-container")?.append(image);
+    }, 10);
+
+    await expect(pending).resolves.toMatchObject({
+      is_logged_in: false,
+      image_data_url: QR_DATA_URL,
+    });
   });
 });

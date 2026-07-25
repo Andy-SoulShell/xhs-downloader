@@ -11,7 +11,7 @@ export function installBrowserStateBridge(
     const requestId = requestIdFromDetail((event as CustomEvent).detail);
     if (!requestId) return;
     try {
-      const data = JSON.stringify(scope.__INITIAL_STATE__);
+      const data = stringifyPageState(scope.__INITIAL_STATE__);
       if (!data) throw new Error("小红书实时状态尚未加载");
       respond(scope, events.response, { requestId, ok: true, data });
     } catch (error) {
@@ -24,6 +24,22 @@ export function installBrowserStateBridge(
   };
   scope.addEventListener(events.request, onRequest);
   return () => scope.removeEventListener(events.request, onRequest);
+}
+
+function stringifyPageState(value: unknown): string | undefined {
+  const ancestors: object[] = [];
+  return JSON.stringify(value, function (key, current: unknown) {
+    if (isVueInternalField(key)) return undefined;
+    if (!current || typeof current !== "object") return current;
+    while (ancestors.length && ancestors.at(-1) !== this) ancestors.pop();
+    if (ancestors.includes(current)) return undefined;
+    ancestors.push(current);
+    return current;
+  });
+}
+
+function isVueInternalField(key: string): boolean {
+  return key.startsWith("__v_") || key === "dep" || key === "effect";
 }
 
 function requestIdFromDetail(value: unknown): string {

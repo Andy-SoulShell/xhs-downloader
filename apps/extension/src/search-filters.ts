@@ -31,17 +31,24 @@ export async function applySearchFilters(
   page: Document,
   filters: Record<string, JsonValue>,
 ): Promise<void> {
-  const trigger = page.querySelector<HTMLElement>("div.filter");
+  const triggerCandidate =
+    page.querySelector<HTMLElement>(".filter") ??
+    findExactTextElement(page, "筛选");
+  const trigger =
+    triggerCandidate?.closest<HTMLElement>(
+      "button, [role='button'], div.filter, div",
+    ) ?? triggerCandidate;
   if (!trigger) throw new Error("搜索页没有筛选入口");
   trigger.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
   trigger.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
-  const panel = await waitForElement(page, "div.filter-panel");
-  const groups = [...panel.querySelectorAll<HTMLElement>("div.filters")];
-  for (const [index, field] of FILTER_GROUPS.entries()) {
+  const scope = await waitForFilterOptions(page);
+  for (const field of FILTER_GROUPS) {
     const wanted = filters[field];
     if (typeof wanted !== "string" || wanted === DEFAULT_FILTERS[field]) continue;
-    const tags = [...(groups[index]?.querySelectorAll<HTMLElement>("div.tags") ?? [])];
-    const target = tags.find((item) => item.textContent?.trim() === wanted);
+    const target =
+      [...scope.querySelectorAll<HTMLElement>("div.tags")].find(
+        (item) => item.textContent?.trim() === wanted,
+      ) ?? findExactTextElement(scope, wanted);
     if (!target) throw new Error(`搜索页没有筛选选项 ${wanted}`);
     target.click();
     await delay(150);
@@ -49,16 +56,32 @@ export async function applySearchFilters(
   await delay(350);
 }
 
-async function waitForElement(
-  page: Document,
-  selector: string,
-): Promise<HTMLElement> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const element = page.querySelector<HTMLElement>(selector);
-    if (element) return element;
-    await delay(50);
+async function waitForFilterOptions(page: Document): Promise<ParentNode> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const panel = page.querySelector<HTMLElement>(".filter-panel");
+    if (panel) return panel;
+    if (findExactTextElement(page, "最新")) return page;
+    await delay(100);
   }
   throw new Error("搜索筛选面板未能及时打开");
+}
+
+function findExactTextElement(
+  scope: ParentNode,
+  text: string,
+): HTMLElement | null {
+  const candidates = scope.querySelectorAll<HTMLElement>(
+    "button, [role='button'], div, span",
+  );
+  return (
+    [...candidates].find(
+      (element) =>
+        element.textContent?.trim() === text &&
+        ![...element.children].some(
+          (child) => child.textContent?.trim() === text,
+        ),
+    ) ?? null
+  );
 }
 
 function delay(milliseconds: number): Promise<void> {

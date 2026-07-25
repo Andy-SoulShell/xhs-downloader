@@ -1,11 +1,12 @@
 import type {
   BrowserLoginState,
   BrowserTask,
+  FeedListResult,
   JsonValue,
 } from "@xhs-downloader/contracts";
 
 import { detectLoginState } from "./login-state";
-import { readLoginQrCode } from "./login-qrcode";
+import { waitForLoginQrCode } from "./login-qrcode";
 import { readLiveInitialState } from "./browser-state-bridge";
 import {
   loadComments,
@@ -21,6 +22,17 @@ import {
   hasCustomSearchFilters,
 } from "./search-filters";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
+
+const SEARCH_READY_ATTEMPTS = 20;
+const SEARCH_READY_INTERVAL_MS = 250;
+
+/** 内容脚本执行写任务时可调用的浏览器级受控动作。 */
+export interface BrowserPageTaskActions {
+  activateInteraction?: (
+    taskId: string,
+    kind: "like" | "favorite",
+  ) => Promise<void>;
+}
 
 /** 后台发送给小红书内容脚本的浏览器任务消息。 */
 export interface BrowserPageTaskRequest {
@@ -49,6 +61,7 @@ export async function executeBrowserPageTask(
   task: BrowserTask,
   page: Document,
   pageUrl: string,
+  actions: BrowserPageTaskActions = {},
 ): Promise<BrowserPageTaskResponse> {
   if (task.kind === "check_login_status") {
     const state: BrowserLoginState = detectLoginState(page, pageUrl);
@@ -59,9 +72,12 @@ export async function executeBrowserPageTask(
     };
   }
   if (task.kind === "get_login_qrcode") {
+    const result = await waitForLoginQrCode(page, pageUrl);
     return success(
-      "登录二维码已生成，登录页面将保持打开",
-      readLoginQrCode(page, pageUrl),
+      result.is_logged_in
+        ? "浏览器已登录，无需再次扫码"
+        : "登录二维码已生成，登录页面将保持打开",
+      result,
     );
   }
   if (task.kind === "list_feeds") {
@@ -70,14 +86,12 @@ export async function executeBrowserPageTask(
   if (task.kind === "search_feeds") {
     const keyword = payloadText(task, "keyword");
     const filters = payloadRecord(task, "filters");
-    let currentState: Record<string, unknown> | undefined;
     if (hasCustomSearchFilters(filters)) {
       await applySearchFilters(page, filters);
-      currentState = await readLiveInitialState(page);
     }
     return success(
       "搜索结果读取完成",
-      parseFeedListDocument(page, "search", keyword, currentState),
+      await waitForSearchResult(page, keyword),
     );
   }
   if (task.kind === "get_feed_detail") {
@@ -108,13 +122,14 @@ export async function executeBrowserPageTask(
     if (new URL(pageUrl).pathname.includes("/user/profile/")) {
       return success(
         "当前账号主页读取完成",
-        parseUserProfileDocument(page, null),
+        parseUserProfileDocument(page, profileUserId(pageUrl)),
       );
     }
     const profileLink = page.querySelector<HTMLAnchorElement>(
       '.main-container .user a[href*="/user/profile/"]',
     );
     if (profileLink?.href) {
+      profileLink.click();
       return {
         ok: false,
         message: "正在打开当前账号主页",
@@ -132,6 +147,13 @@ export async function executeBrowserPageTask(
         payloadText(task, "feed_id"),
         task.kind === "set_like" ? "like" : "favorite",
         active,
+        actions.activateInteraction
+          ? () =>
+              actions.activateInteraction?.(
+                task.task_id,
+                task.kind === "set_like" ? "like" : "favorite",
+              ) ?? Promise.resolve()
+          : undefined,
       ),
     );
   }
@@ -177,6 +199,30 @@ function success(
   };
 }
 
+async function waitForSearchResult(
+  page: Document,
+  keyword: string,
+): Promise<FeedListResult> {
+  try {
+    const initial = parseFeedListDocument(page, "search", keyword);
+    if (initial.items.length) return initial;
+  } catch {
+    // 初始快照可能尚未创建搜索容器，继续读取主世界实时状态。
+  }
+  let latest: Record<string, unknown> = {};
+  for (let attempt = 0; attempt < SEARCH_READY_ATTEMPTS; attempt += 1) {
+    latest = await readLiveInitialState(page);
+    try {
+      const result = parseFeedListDocument(page, "search", keyword, latest);
+      if (result.items.length) return result;
+    } catch {
+      // 搜索状态可能先创建容器，再异步写入结果，继续在有界窗口内读取。
+    }
+    await delay(SEARCH_READY_INTERVAL_MS);
+  }
+  return parseFeedListDocument(page, "search", keyword, latest);
+}
+
 function payloadText(task: BrowserTask, field: string): string {
   const value = task.payload[field];
   if (typeof value !== "string" || !value) {
@@ -217,4 +263,14 @@ function payloadOptionalText(
 ): string | null {
   const value = task.payload[field];
   return typeof value === "string" && value ? value : null;
+}
+
+function profileUserId(pageUrl: string): string | null {
+  const parts = new URL(pageUrl).pathname.split("/").filter(Boolean);
+  if (parts[0] !== "user" || parts[1] !== "profile" || !parts[2]) return null;
+  return decodeURIComponent(parts[2]);
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

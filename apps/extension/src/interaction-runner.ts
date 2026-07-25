@@ -10,6 +10,8 @@ const SELECTORS: Record<InteractionKind, string> = {
   like: ".interact-container .left .like-lottie",
   favorite: ".interact-container .left .reds-icon.collect-icon",
 };
+const CONTROL_READY_ATTEMPTS = 20;
+const CONTROL_READY_INTERVAL_MS = 250;
 
 /** 将点赞或收藏调整到目标状态，并在页面实时状态中核验。 */
 export async function setDesiredInteraction(
@@ -17,6 +19,7 @@ export async function setDesiredInteraction(
   feedId: string,
   kind: InteractionKind,
   active: boolean,
+  activate?: () => Promise<void>,
 ): Promise<DesiredStateResult> {
   const before = interactionState(
     await readLiveInitialState(page),
@@ -26,11 +29,12 @@ export async function setDesiredInteraction(
   if (before === active) {
     return { feed_id: feedId, active, changed: false, verified: true };
   }
-  const control = page.querySelector<HTMLElement>(SELECTORS[kind]);
+  const control = await waitForInteractionControl(page, kind);
   if (!control) {
     throw new Error(kind === "like" ? "页面没有点赞按钮" : "页面没有收藏按钮");
   }
-  control.click();
+  if (activate) await activate();
+  else clickInteractionControl(page, control);
   for (let attempt = 0; attempt < 16; attempt += 1) {
     try {
       const current = interactionState(
@@ -49,6 +53,37 @@ export async function setDesiredInteraction(
   const action = kind === "like" ? "点赞" : "收藏";
   throw new UncertainBrowserActionError(
     `${action}操作已触发，但未能确认最终状态，请人工核对`,
+  );
+}
+
+async function waitForInteractionControl(
+  page: Document,
+  kind: InteractionKind,
+): Promise<Element | null> {
+  for (let attempt = 0; attempt < CONTROL_READY_ATTEMPTS; attempt += 1) {
+    const control = page.querySelector(SELECTORS[kind]);
+    if (control) return control;
+    await delay(CONTROL_READY_INTERVAL_MS);
+  }
+  return null;
+}
+
+function clickInteractionControl(page: Document, control: Element): void {
+  const clickable = control as Element & { click?: () => void };
+  if (typeof clickable.click === "function") {
+    clickable.click();
+    return;
+  }
+  const MouseEventConstructor = page.defaultView?.MouseEvent;
+  if (!MouseEventConstructor) {
+    throw new Error("当前页面无法触发互动按钮");
+  }
+  control.dispatchEvent(
+    new MouseEventConstructor("click", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+    }),
   );
 }
 

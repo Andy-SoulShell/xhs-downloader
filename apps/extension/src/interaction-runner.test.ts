@@ -52,7 +52,7 @@ describe("点赞与收藏目标状态执行器", () => {
   it("点击后轮询实时状态并确认收藏成功", async () => {
     document.body.innerHTML = `
       <div class="interact-container">
-        <div class="left"><button class="reds-icon collect-icon"></button></div>
+        <div class="left"><svg class="reds-icon collect-icon"></svg></div>
       </div>
     `;
     const scope = window as TestWindow;
@@ -72,6 +72,32 @@ describe("点赞与收藏目标状态执行器", () => {
 
     expect(result.changed).toBe(true);
     expect(result.verified).toBe(true);
+  });
+
+  it("优先使用浏览器级可信输入并核验状态", async () => {
+    document.body.innerHTML = `
+      <div class="interact-container">
+        <div class="left"><svg class="reds-icon collect-icon"></svg></div>
+      </div>
+    `;
+    const scope = window as TestWindow;
+    scope.__INITIAL_STATE__ = state(false, false);
+    const trustedActivate = vi.fn(async () => {
+      scope.__INITIAL_STATE__ = state(false, true);
+    });
+    const uninstall = installBrowserStateBridge(scope);
+
+    const result = await setDesiredInteraction(
+      document,
+      "synthetic-feed",
+      "favorite",
+      true,
+      trustedActivate,
+    );
+    uninstall();
+
+    expect(trustedActivate).toHaveBeenCalledOnce();
+    expect(result).toMatchObject({ active: true, changed: true, verified: true });
   });
 
   it("点击后无法确认时要求人工核对", async () => {
@@ -104,10 +130,17 @@ describe("点赞与收藏目标状态执行器", () => {
     const scope = window as TestWindow;
     scope.__INITIAL_STATE__ = state(false);
     const uninstall = installBrowserStateBridge(scope);
+    vi.useFakeTimers();
 
-    await expect(
-      setDesiredInteraction(document, "synthetic-feed", "like", true),
-    ).rejects.toThrow("没有点赞按钮");
+    const operation = setDesiredInteraction(
+      document,
+      "synthetic-feed",
+      "like",
+      true,
+    );
+    const rejection = expect(operation).rejects.toThrow("没有点赞按钮");
+    await vi.runAllTimersAsync();
+    await rejection;
     uninstall();
   });
 

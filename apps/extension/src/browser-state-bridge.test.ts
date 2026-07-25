@@ -36,18 +36,21 @@ describe("页面实时状态桥接", () => {
     );
   });
 
-  it("拒绝无窗口文档和不可序列化状态", async () => {
+  it("拒绝无窗口文档，并安全移除状态中的循环引用", async () => {
     await expect(
       readLiveInitialState(document.implementation.createHTMLDocument()),
     ).rejects.toThrow("没有可用窗口");
-    const cyclic: Record<string, unknown> = {};
+    const cyclic: Record<string, unknown> = {
+      note: { title: "合成标题" },
+      dep: { shouldBeRemoved: true },
+    };
     cyclic.self = cyclic;
     (window as TestWindow).__INITIAL_STATE__ = cyclic;
     const uninstall = installBrowserStateBridge(window as TestWindow);
 
-    await expect(readLiveInitialState(document)).rejects.toThrow(
-      "circular structure",
-    );
+    await expect(readLiveInitialState(document)).resolves.toEqual({
+      note: { title: "合成标题" },
+    });
     uninstall();
   });
 });

@@ -78,4 +78,26 @@ describe("详情评论加载器", () => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
+
+  it("等待异步渲染的评论容器后再读取", async () => {
+    vi.stubGlobal("scrollBy", vi.fn());
+    vi.useFakeTimers();
+    const operation = loadComments(document, {
+      commentLimit: 1,
+      includeReplies: true,
+      replyLimit: 1,
+    });
+    window.setTimeout(() => {
+      document.body.innerHTML = `
+        <div class="comments-container">
+          <article class="parent-comment"></article>
+        </div>
+      `;
+    }, 500);
+
+    await vi.runAllTimersAsync();
+    await expect(operation).resolves.toBeUndefined();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
 });

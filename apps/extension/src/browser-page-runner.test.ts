@@ -7,63 +7,12 @@ import {
   isBrowserPageTaskRequest,
 } from "./browser-page-runner";
 import { installBrowserStateBridge } from "./browser-state-main";
-
-function task(
-  kind: BrowserTask["kind"],
-  payload: BrowserTask["payload"] = {},
-): BrowserTask {
-  return {
-    task_id: "synthetic-task",
-    request_id: null,
-    kind,
-    payload,
-    status: "claimed",
-    result: null,
-    extension_id: "synthetic-extension",
-    lease_expires_at: "2026-01-01T00:00:00Z",
-    attempts: 1,
-    message: "模拟任务",
-    created_at: "2026-01-01T00:00:00Z",
-    updated_at: "2026-01-01T00:00:00Z",
-  };
-}
-
-function statePage(state: Record<string, unknown>): Document {
-  const page = document.implementation.createHTMLDocument();
-  const script = page.createElement("script");
-  script.textContent = `window.__INITIAL_STATE__=${JSON.stringify(state)};`;
-  page.body.append(script);
-  return page;
-}
-
-function feedState() {
-  return {
-    id: "synthetic-feed",
-    xsecToken: "synthetic-token",
-    noteCard: {
-      type: "normal",
-      displayTitle: "合成帖子",
-      user: { userId: "synthetic-author", nickname: "合成作者" },
-    },
-  };
-}
-
-function profileState() {
-  return {
-    user: {
-      userPageData: {
-        value: {
-          basicInfo: {
-            userId: "synthetic-user",
-            nickname: "合成用户",
-          },
-          interactions: [],
-        },
-      },
-      notes: { value: [] },
-    },
-  };
-}
+import {
+  feedState,
+  pageTask as task,
+  profileState,
+  statePage,
+} from "./browser-page-test-helpers";
 
 describe("内容脚本浏览器任务执行器", () => {
   it("执行登录状态任务并返回结构化结果", async () => {
@@ -201,12 +150,20 @@ describe("内容脚本浏览器任务执行器", () => {
     );
     const mine = await executeBrowserPageTask(
       task("get_my_profile"),
-      statePage(profileState()),
+      statePage({
+        user: {
+          userPageData: {
+            value: { basicInfo: { nickname: "合成用户" }, interactions: [] },
+          },
+          notes: { value: [] },
+        },
+      }),
       "https://www.xiaohongshu.com/user/profile/synthetic-user",
     );
 
     expect(specified.result).toMatchObject({ user_id: "synthetic-user" });
     expect(mine.message).toBe("当前账号主页读取完成");
+    expect(mine.result).toMatchObject({ user_id: "synthetic-user" });
   });
 
   it("从首页请求导航到当前账号主页", async () => {
@@ -214,10 +171,14 @@ describe("内容脚本浏览器任务执行器", () => {
     page.body.innerHTML = `
       <div class="main-container">
         <div class="user">
-          <a href="https://www.xiaohongshu.com/user/profile/synthetic-user"></a>
+          <a id="profile-link" href="https://www.xiaohongshu.com/user/profile/synthetic-user"></a>
         </div>
       </div>
     `;
+    const click = vi.spyOn(
+      page.querySelector("#profile-link") as HTMLAnchorElement,
+      "click",
+    );
 
     const response = await executeBrowserPageTask(
       task("get_my_profile"),
@@ -225,6 +186,7 @@ describe("内容脚本浏览器任务执行器", () => {
       "https://www.xiaohongshu.com/explore",
     );
 
+    expect(click).toHaveBeenCalledOnce();
     expect(response.navigateUrl).toContain("/user/profile/synthetic-user");
   });
 
@@ -261,6 +223,37 @@ describe("内容脚本浏览器任务执行器", () => {
       expect(clicked).toHaveBeenCalledOnce();
       expect(response.result).toMatchObject({
         items: [{ feed_id: "synthetic-feed" }],
+      });
+    } finally {
+      vi.useRealTimers();
+      uninstall();
+      delete scope.__INITIAL_STATE__;
+    }
+  });
+
+  it("等待无筛选搜索的异步结果", async () => {
+    const scope = window as Window & { __INITIAL_STATE__?: unknown };
+    scope.__INITIAL_STATE__ = { search: { feeds: { value: [] } } };
+    const uninstall = installBrowserStateBridge(scope);
+    vi.useFakeTimers();
+    try {
+      setTimeout(() => {
+        scope.__INITIAL_STATE__ = {
+          search: { feeds: { value: [feedState()] } },
+        };
+      }, 500);
+      const operation = executeBrowserPageTask(
+        task("search_feeds", {
+          keyword: "合成关键词",
+          filters: {},
+        }),
+        document,
+        "https://www.xiaohongshu.com/search_result",
+      );
+      await vi.runAllTimersAsync();
+
+      await expect(operation).resolves.toMatchObject({
+        result: { items: [{ feed_id: "synthetic-feed" }] },
       });
     } finally {
       vi.useRealTimers();

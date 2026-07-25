@@ -5,6 +5,7 @@ import {
 } from "./browser-page-runner";
 import { UncertainBrowserActionError } from "./browser-action-errors";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
+import { requestBrowserInteraction } from "./browser-interaction-input";
 
 chrome.runtime.onMessage.addListener(
   (
@@ -13,7 +14,9 @@ chrome.runtime.onMessage.addListener(
     sendResponse: (response: BrowserPageTaskResponse) => void,
   ) => {
     if (!isBrowserPageTaskRequest(message)) return;
-    void executeBrowserPageTask(message.task, document, location.href)
+    void executeBrowserPageTask(message.task, document, location.href, {
+      activateInteraction: requestBrowserInteraction,
+    })
       .then(sendResponse)
       .catch((error: unknown) =>
         sendResponse({
