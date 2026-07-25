@@ -29,7 +29,7 @@ export function AccessModeSettings({
   const browserDisabled = values.route_strategy === "http_only";
   return (
     <SettingsSection
-      description="只读任务可按顺序安全回退；点赞、收藏和发布始终只执行一次，不会跨模式重试。"
+      description="保存后新请求立即采用所选模式；只读任务可安全回退，写操作始终只执行一次。"
       title="访问模式"
     >
       <SelectSetting

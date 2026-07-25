@@ -285,7 +285,9 @@ describe("帖子下载工作台", () => {
       ),
     );
     expect(
-      await screen.findByText("配置已保存，重启本地服务后生效"),
+      await screen.findByText(
+        "配置已保存；可热更新字段已生效，其余配置重启后生效",
+      ),
     ).toBeInTheDocument();
   });
 

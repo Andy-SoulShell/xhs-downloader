@@ -123,7 +123,7 @@ export function NetworkSettings({
 }) {
   return (
     <SettingsSection
-      description="敏感值只允许写入，服务端不会把原文返回到浏览器。"
+      description="保存后会等待当前请求结束并原子替换客户端；敏感原文不会返回浏览器。"
       title="网络与凭据"
     >
       <SensitiveSetting

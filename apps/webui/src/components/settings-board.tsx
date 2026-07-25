@@ -142,8 +142,8 @@ function SettingsForm({
       setFormError("");
       onSaved(
         result.restart_required
-          ? "配置已保存，重启本地服务后生效"
-          : "配置已保存",
+          ? "配置已保存；可热更新字段已生效，其余配置重启后生效"
+          : "配置已保存，新请求已使用更新后的配置",
       );
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : "配置保存失败");
@@ -158,13 +158,14 @@ function SettingsForm({
     <section aria-label="配置管理" className="mt-8 min-w-0">
       <PageHeading
         description="统一维护本地服务配置；Cookie 与代理只写入服务端配置文件，不会回传或保存到浏览器。"
-        meta={settings.restart_required ? "等待重启生效" : "当前配置已生效"}
+        meta={settings.restart_required ? "部分配置等待重启" : "当前配置已生效"}
         title="服务配置"
       />
 
       {settings.restart_required && (
         <Notice tone="warning">
-          已保存的配置与当前进程不同。现有任务继续使用启动时配置，重启服务后新配置才会生效。
+          正在执行的请求会继续使用开始时的配置快照；网络、Cookie
+          与访问模式已用于新请求，其余配置重启服务后生效。
         </Notice>
       )}
       {overridden && (
