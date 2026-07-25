@@ -129,6 +129,9 @@ queued → claimed → running → succeeded | failed | needs_review
 页面类型和缺失锚点为依据更新合成契约夹具；不得提交真实帖子、Cookie、
 截图或用户原文。
 
+Cookie + HTTP、浏览器扩展、受管浏览器和自动路由的后续讨论见
+[普通用户自动化访问模式设计讨论](automation-access-modes.md)。
+
 ## 验收标准
 
 - Python 通过 Ruff、格式检查和 Pytest。
