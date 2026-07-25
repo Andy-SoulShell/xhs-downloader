@@ -125,6 +125,9 @@ describe("配置分组控件", () => {
       screen.getByText(/普通用户优先选择浏览器扩展或受管浏览器/),
     ).toBeInTheDocument();
     expect(
+      screen.getByText(/分别复制 Cookie 和 User-Agent 后面的值/),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(/不要复制 Set-Cookie、整条 cURL 或其他请求头/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Cookie 只保存在本机且不会再次显示/)).toBeInTheDocument();

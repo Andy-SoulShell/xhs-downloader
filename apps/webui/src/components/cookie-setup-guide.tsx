@@ -18,11 +18,12 @@ export function CookieSetupGuide() {
             www.xiaohongshu.com 的请求。
           </li>
           <li>
-            在“请求标头（Request Headers）”中只复制 Cookie
+            在“请求标头（Request Headers）”中分别复制 Cookie 和 User-Agent
             后面的值；不要复制 Set-Cookie、整条 cURL 或其他请求头。
           </li>
           <li>
-            粘贴到上方输入框并保存。混合路由要求它与浏览器模式使用同一账号。
+            将 Cookie 粘贴到上方密码输入框，并把 User-Agent 填入同名设置后保存。
+            混合路由要求它与浏览器模式使用同一账号。
           </li>
         </ol>
         <p className="text-stone-500">
