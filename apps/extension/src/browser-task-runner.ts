@@ -109,22 +109,48 @@ async function executeInXhsTab(
     type: "browser-page-task",
     task: claim.task,
   };
-  const tabs = (await chrome.tabs.query({}))
-    .filter((item) => item.id !== undefined)
-    .sort((left, right) => Number(right.active) - Number(left.active));
-  for (const tab of tabs) {
-    try {
-      return await chrome.tabs.sendMessage<
-        BrowserPageTaskRequest,
-        BrowserPageTaskResponse
-      >(tab.id as number, request);
-    } catch {
-      // 只有已注入小红书内容脚本的标签页会响应。
+  if (claim.task.kind === "check_login_status") {
+    const tabs = (await chrome.tabs.query({}))
+      .filter((item) => item.id !== undefined)
+      .sort((left, right) => Number(right.active) - Number(left.active));
+    for (const tab of tabs) {
+      try {
+        return await sendToTab(tab.id as number, request);
+      } catch {
+        // 只有已注入小红书内容脚本的标签页会响应。
+      }
     }
   }
-  const tab = await chrome.tabs.create({ url: EXPLORE_URL, active: false });
+  return executeInNewTab(request);
+}
+
+async function executeInNewTab(
+  request: BrowserPageTaskRequest,
+): Promise<BrowserPageTaskResponse> {
+  const targetUrl = taskTargetUrl(request.task);
+  const tab = await chrome.tabs.create({ url: targetUrl, active: false });
   if (tab.id === undefined) throw new Error("无法创建小红书任务页面");
-  return sendWhenReady(tab.id, request);
+  try {
+    let response = await sendWhenReady(tab.id, request);
+    if (response.navigateUrl) {
+      const navigateUrl = safeXhsUrl(response.navigateUrl);
+      await chrome.tabs.update(tab.id, { url: navigateUrl });
+      response = await sendWhenReady(tab.id, request);
+    }
+    return response;
+  } finally {
+    await chrome.tabs.remove(tab.id);
+  }
+}
+
+async function sendToTab(
+  tabId: number,
+  request: BrowserPageTaskRequest,
+): Promise<BrowserPageTaskResponse> {
+  return chrome.tabs.sendMessage<
+    BrowserPageTaskRequest,
+    BrowserPageTaskResponse
+  >(tabId, request);
 }
 
 async function sendWhenReady(
@@ -146,6 +172,47 @@ async function sendWhenReady(
   throw lastError instanceof Error
     ? lastError
     : new Error("小红书页面未能及时加载");
+}
+
+function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
+  if (task.kind === "check_login_status" || task.kind === "list_feeds") {
+    return EXPLORE_URL;
+  }
+  if (task.kind === "search_feeds") {
+    const keyword = taskPayloadText(task.payload, "keyword");
+    return `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(keyword)}&source=web_explore_feed`;
+  }
+  if (task.kind === "get_user_profile") {
+    const userId = taskPayloadText(task.payload, "user_id");
+    const token = taskPayloadText(task.payload, "xsec_token");
+    return `https://www.xiaohongshu.com/user/profile/${encodeURIComponent(userId)}?xsec_token=${encodeURIComponent(token)}&xsec_source=pc_note`;
+  }
+  if (task.kind === "get_feed_detail") {
+    const feedId = taskPayloadText(task.payload, "feed_id");
+    const token = taskPayloadText(task.payload, "xsec_token");
+    return `https://www.xiaohongshu.com/explore/${encodeURIComponent(feedId)}?xsec_token=${encodeURIComponent(token)}&xsec_source=pc_feed`;
+  }
+  if (task.kind === "get_my_profile") return EXPLORE_URL;
+  throw new Error(`当前扩展版本尚未接入任务 ${task.kind}`);
+}
+
+function taskPayloadText(
+  payload: BrowserTaskClaim["task"]["payload"],
+  field: string,
+): string {
+  const value = payload[field];
+  if (typeof value !== "string" || !value) {
+    throw new Error(`浏览器任务缺少参数 ${field}`);
+  }
+  return value;
+}
+
+function safeXhsUrl(value: string): string {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.hostname !== "www.xiaohongshu.com") {
+    throw new Error("页面返回了不受支持的导航地址");
+  }
+  return url.toString();
 }
 
 async function withCredential<T>(

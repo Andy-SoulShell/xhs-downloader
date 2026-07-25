@@ -33,6 +33,11 @@
       "matches": ["https://creator.xiaohongshu.com/*"],
       "js": ["publisher.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.xiaohongshu.com/*"],
+      "js": ["browser-page.js"],
+      "run_at": "document_idle"
     }
   ]
 }

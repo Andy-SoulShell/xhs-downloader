@@ -14,6 +14,7 @@ from xhs_core.domain import (
     BrowserTaskStatus,
 )
 from xhs_core.domain.browser_ports import BrowserTaskRepository
+from xhs_core.domain.browser_requests import validate_browser_task_result
 
 _ACTIVE = {BrowserTaskStatus.CLAIMED, BrowserTaskStatus.RUNNING}
 _TERMINAL = {
@@ -98,12 +99,17 @@ class BrowserExecutionService:
             raise BrowserTaskError(f"不能从 {task.status.value} 转换到 {status.value}")
         if status is BrowserTaskStatus.SUCCEEDED and result is None:
             raise BrowserTaskError("成功任务必须返回结构化结果")
+        normalized_result = (
+            validate_browser_task_result(task.kind, result)
+            if status is BrowserTaskStatus.SUCCEEDED and result is not None
+            else result
+        )
         now = datetime.now(UTC)
         terminal = status in _TERMINAL
         updated = task.model_copy(
             update={
                 "status": status,
-                "result": result if terminal else task.result,
+                "result": normalized_result if terminal else task.result,
                 "message": message[:1000],
                 "lease_expires_at": (
                     None if terminal else now + timedelta(seconds=self._lease_seconds)

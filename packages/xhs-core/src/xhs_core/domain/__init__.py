@@ -18,6 +18,17 @@ from .errors import (
     TaskStateError,
     XhsError,
 )
+from .feeds import (
+    BrowserAccount,
+    FeedAuthor,
+    FeedComment,
+    FeedDetailResult,
+    FeedListResult,
+    FeedMetrics,
+    FeedSummary,
+    ProfileMetric,
+    UserProfileResult,
+)
 from .models import (
     Author,
     ClientDownloadRecord,
@@ -44,6 +55,7 @@ from .publication import (
 
 __all__ = [
     "Author",
+    "BrowserAccount",
     "BrowserTask",
     "BrowserTaskClaim",
     "BrowserTaskError",
@@ -58,11 +70,18 @@ __all__ = [
     "DownloadRecord",
     "DownloadTask",
     "DownloadTaskStatus",
+    "FeedAuthor",
+    "FeedComment",
+    "FeedDetailResult",
+    "FeedListResult",
+    "FeedMetrics",
+    "FeedSummary",
     "InvalidLinkError",
     "InvalidPartialContentError",
     "MediaKind",
     "MediaResource",
     "ParseError",
+    "ProfileMetric",
     "PublicationAsset",
     "PublicationClaim",
     "PublicationDraft",
@@ -72,6 +91,7 @@ __all__ = [
     "PublicationTaskStatus",
     "SettingsError",
     "TaskStateError",
+    "UserProfileResult",
     "WorkDetail",
     "WorkType",
     "XhsError",

@@ -9,6 +9,7 @@ await build({
   bundle: true,
   entryPoints: {
     background: "src/background.ts",
+    "browser-page": "src/browser-page.ts",
     content: "src/content.ts",
     publisher: "src/publisher.ts",
     "publisher-main": "src/publisher-main.ts",

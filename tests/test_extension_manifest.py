@@ -40,3 +40,8 @@ def test_extension_only_runs_on_supported_post_pages() -> None:
         "https://www.xiaohongshu.com/discovery/item/*",
     ]
     assert content_scripts[1]["matches"] == ["https://creator.xiaohongshu.com/*"]
+    assert content_scripts[3] == {
+        "matches": ["https://www.xiaohongshu.com/*"],
+        "js": ["browser-page.js"],
+        "run_at": "document_idle",
+    }

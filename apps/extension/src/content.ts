@@ -1,9 +1,4 @@
 import styleText from "./panel.css";
-import {
-  executeBrowserPageTask,
-  isBrowserPageTaskRequest,
-  type BrowserPageTaskResponse,
-} from "./browser-page-runner";
 import { renderPanel } from "./panel";
 import { parseCurrentDocument } from "./parser";
 import type {
@@ -27,21 +22,9 @@ root.append(style, launcher);
 document.documentElement.append(host);
 
 launcher.addEventListener("click", () => void togglePanel());
-chrome.runtime.onMessage.addListener(
-  (
-    message: { type?: string },
-    _sender,
-    sendResponse: (response: BrowserPageTaskResponse) => void,
-  ) => {
-    if (message.type === "toggle-panel") {
-      void togglePanel();
-      return;
-    }
-    if (isBrowserPageTaskRequest(message)) {
-      sendResponse(executeBrowserPageTask(message.task, document, location.href));
-    }
-  },
-);
+chrome.runtime.onMessage.addListener((message: { type?: string }) => {
+  if (message.type === "toggle-panel") void togglePanel();
+});
 
 async function togglePanel(): Promise<void> {
   const existing = root.querySelector(".xhd-panel");

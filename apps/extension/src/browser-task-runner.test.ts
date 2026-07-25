@@ -8,13 +8,16 @@ let values: Record<string, unknown>;
 let tabs: Array<{ id?: number; active?: boolean }>;
 let pageResponse: unknown;
 
-function claim(): BrowserTaskClaim {
+function claim(
+  kind: BrowserTaskClaim["task"]["kind"] = "check_login_status",
+  payload: BrowserTaskClaim["task"]["payload"] = {},
+): BrowserTaskClaim {
   return {
     task: {
       task_id: "synthetic-task",
       request_id: "synthetic-request",
-      kind: "check_login_status",
-      payload: {},
+      kind,
+      payload,
       status: "claimed",
       result: null,
       extension_id: "synthetic-extension",
@@ -67,6 +70,8 @@ beforeEach(() => {
     tabs: {
       query: vi.fn(async () => tabs),
       create: vi.fn(async () => ({ id: 8, active: false })),
+      update: vi.fn(async () => ({ id: 8, active: false })),
+      remove: vi.fn(async () => undefined),
       sendMessage: vi.fn(async () => pageResponse),
     },
   });
@@ -157,5 +162,98 @@ describe("浏览器任务后台执行器", () => {
       active: false,
     });
     expect(JSON.parse(fetchMock.mock.calls[3][1].body).status).toBe("failed");
+  });
+
+  it.each([
+    [
+      "search_feeds" as const,
+      { keyword: "合成 关键词" },
+      "https://www.xiaohongshu.com/search_result?keyword=%E5%90%88%E6%88%90%20%E5%85%B3%E9%94%AE%E8%AF%8D&source=web_explore_feed",
+    ],
+    [
+      "get_user_profile" as const,
+      { user_id: "synthetic/user", xsec_token: "token value" },
+      "https://www.xiaohongshu.com/user/profile/synthetic%2Fuser?xsec_token=token%20value&xsec_source=pc_note",
+    ],
+    [
+      "get_feed_detail" as const,
+      { feed_id: "synthetic/feed", xsec_token: "token value" },
+      "https://www.xiaohongshu.com/explore/synthetic%2Ffeed?xsec_token=token%20value&xsec_source=pc_feed",
+    ],
+    [
+      "get_my_profile" as const,
+      {},
+      "https://www.xiaohongshu.com/explore/",
+    ],
+  ])("为 %s 创建隔离的后台任务页面", async (kind, payload, url) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            protocol_version: 3,
+            features: { browser_tasks: true },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(claim(kind, payload))))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: "running" })),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: "succeeded" })),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runBrowserTaskPoll();
+
+    expect(chrome.tabs.create).toHaveBeenCalledWith({ url, active: false });
+    expect(chrome.tabs.remove).toHaveBeenCalledWith(8);
+  });
+
+  it("跟随页面返回的站内地址后重新读取当前账号主页", async () => {
+    const responses = [
+      {
+        ok: false,
+        message: "正在打开当前账号主页",
+        navigateUrl:
+          "https://www.xiaohongshu.com/user/profile/synthetic-user",
+      },
+      {
+        ok: true,
+        message: "当前账号主页读取完成",
+        result: { user_id: "synthetic-user" },
+      },
+    ];
+    vi.mocked(chrome.tabs.sendMessage).mockImplementation(
+      async () => responses.shift(),
+    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            protocol_version: 3,
+            features: { browser_tasks: true },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(claim("get_my_profile"))),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: "running" })),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: "succeeded" })),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runBrowserTaskPoll();
+
+    expect(chrome.tabs.update).toHaveBeenCalledWith(8, {
+      url: "https://www.xiaohongshu.com/user/profile/synthetic-user",
+    });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledTimes(2);
   });
 });

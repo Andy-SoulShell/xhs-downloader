@@ -77,3 +77,90 @@ export interface BrowserLoginState {
   user_id: string | null;
   nickname: string | null;
 }
+
+/** Feed 卡片、详情和评论共用的作者信息。 */
+export interface FeedAuthor {
+  user_id: string;
+  nickname: string;
+  avatar_url: string | null;
+}
+
+/** 平台展示的互动状态与计数字符串。 */
+export interface FeedMetrics {
+  liked: boolean;
+  liked_count: string;
+  collected: boolean;
+  collected_count: string;
+  comment_count: string;
+  shared_count: string;
+}
+
+/** 推荐、搜索和用户主页中的帖子摘要。 */
+export interface FeedSummary {
+  feed_id: string;
+  xsec_token: string;
+  title: string;
+  note_type: "image" | "video" | "unknown";
+  author: FeedAuthor;
+  metrics: FeedMetrics;
+  cover_url: string | null;
+  cover_width: number | null;
+  cover_height: number | null;
+  video_duration: number | null;
+}
+
+/** 推荐流或搜索结果。 */
+export interface FeedListResult {
+  items: FeedSummary[];
+  source: "home" | "search";
+  keyword: string | null;
+}
+
+/** 帖子详情中的评论或回复。 */
+export interface FeedComment {
+  comment_id: string;
+  content: string;
+  author: FeedAuthor;
+  liked: boolean;
+  like_count: string;
+  created_at: number | null;
+  ip_location: string;
+  reply_count: string;
+  replies: FeedComment[];
+}
+
+/** 帖子详情及当前已加载的评论。 */
+export interface FeedDetailResult {
+  feed_id: string;
+  xsec_token: string;
+  title: string;
+  body: string;
+  note_type: "image" | "video" | "unknown";
+  author: FeedAuthor;
+  metrics: FeedMetrics;
+  image_urls: string[];
+  published_at: number | null;
+  ip_location: string;
+  comments: FeedComment[];
+  comments_has_more: boolean;
+  comments_cursor: string;
+}
+
+/** 用户主页展示的一项统计值。 */
+export interface ProfileMetric {
+  name: string;
+  count: string;
+  metric_type: string;
+}
+
+/** 指定用户或当前账号的主页数据。 */
+export interface UserProfileResult {
+  user_id: string | null;
+  nickname: string;
+  red_id: string;
+  description: string;
+  avatar_url: string | null;
+  ip_location: string;
+  metrics: ProfileMetric[];
+  feeds: FeedSummary[];
+}

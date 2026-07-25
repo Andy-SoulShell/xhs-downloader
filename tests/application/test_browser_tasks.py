@@ -1,5 +1,6 @@
 """通用浏览器任务应用服务测试。"""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -129,6 +130,32 @@ async def test_failed_task_retries_but_uncertain_task_does_not(tmp_path) -> None
         await tasks.retry(uncertain.task_id)
 
 
+async def test_wait_returns_terminal_or_latest_snapshot(tmp_path) -> None:
+    """确保等待用例在任务完成或超时时返回可观察快照。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    repository, tasks, _ = _services(tmp_path)
+    task = await tasks.submit(BrowserTaskKind.LIST_FEEDS, {})
+
+    async def complete() -> None:
+        await asyncio.sleep(0)
+        await repository.save(
+            task.model_copy(update={"status": BrowserTaskStatus.SUCCEEDED})
+        )
+
+    operation = asyncio.create_task(complete())
+    completed = await tasks.wait(task.task_id, 1, poll_interval=0.01)
+    await operation
+    pending = await tasks.submit(BrowserTaskKind.GET_MY_PROFILE, {})
+
+    assert completed.status is BrowserTaskStatus.SUCCEEDED
+    assert (await tasks.wait(pending.task_id, 0)).status is BrowserTaskStatus.QUEUED
+    with pytest.raises(BrowserTaskError, match="等待参数无效"):
+        await tasks.wait(pending.task_id, -1)
+
+
 async def test_expired_leases_follow_operation_safety(tmp_path) -> None:
     """确保安全任务回队列，可能产生评论的任务转为人工核对。
 
@@ -151,7 +178,11 @@ async def test_expired_leases_follow_operation_safety(tmp_path) -> None:
 
     write_task = await tasks.submit(
         BrowserTaskKind.POST_COMMENT,
-        {"feed_id": "synthetic-feed", "content": "合成评论"},
+        {
+            "feed_id": "synthetic-feed",
+            "xsec_token": "synthetic-token",
+            "content": "合成评论",
+        },
     )
     write_claim = await execution.claim("extension")
     running = await execution.update(
