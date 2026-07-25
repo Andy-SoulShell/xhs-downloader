@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PublicationClaim, PublicationTask } from "./publication-types";
+import { makePublicationClaim as makeClaim } from "./publication-test-fixtures";
 
 const mocks = vi.hoisted(() => ({
   claim: vi.fn(),
@@ -50,40 +50,6 @@ import {
   installPublicationAutomation,
 } from "./publication-runner";
 const credential = { extensionId: "extension", token: "token" };
-
-function makeClaim(
-  status: PublicationTask["status"] = "claimed",
-  expiresAt = new Date(Date.now() + 60_000).toISOString(),
-): PublicationClaim {
-  return {
-    task: {
-      task_id: "task",
-      package: {
-        draft_id: "draft",
-        title: "标题",
-        body: "正文",
-        tags: [],
-        visibility: "public",
-        is_original: false,
-        products: [],
-        assets: [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      package_fingerprint: "a".repeat(64),
-      mode: "manual",
-      status,
-      scheduled_at: new Date().toISOString(),
-      extension_id: "extension",
-      lease_expires_at: expiresAt,
-      attempts: 1,
-      message: "合成任务",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    lease_token: "lease",
-  };
-}
 
 beforeEach(() => {
   vi.clearAllMocks();

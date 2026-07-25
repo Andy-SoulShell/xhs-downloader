@@ -1,11 +1,9 @@
 """本机管理端与浏览器扩展协作的内容发布 API。"""
 
 from collections.abc import AsyncIterator
-from ipaddress import ip_address
 from typing import Annotated
-from urllib.parse import urlsplit
 
-from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, File, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 from xhs_core.application import (
     ExtensionCredentialService,
@@ -15,6 +13,18 @@ from xhs_core.application import (
 )
 from xhs_core.domain import PublicationClaim, PublicationDraft, PublicationTask
 
+from .publication_access import (
+    require_extension as _require_extension,
+)
+from .publication_access import (
+    require_extension_origin as _require_extension_origin,
+)
+from .publication_access import (
+    require_lease_token as _lease_token,
+)
+from .publication_access import (
+    require_management as _require_management,
+)
 from .publication_models import (
     DraftCreateRequest,
     DraftUpdateRequest,
@@ -26,12 +36,6 @@ from .publication_models import (
     TaskSubmitRequest,
 )
 from .settings import SettingsAccessPolicy
-
-_EXTENSION_SCHEMES = {
-    "chrome-extension",
-    "moz-extension",
-    "safari-web-extension",
-}
 
 
 def create_publication_router(
@@ -256,52 +260,3 @@ def create_publication_router(
 async def _upload_chunks(upload: UploadFile) -> AsyncIterator[bytes]:
     while chunk := await upload.read(1024 * 1024):
         yield chunk
-
-
-def _require_management(
-    request: Request,
-    access_policy: SettingsAccessPolicy,
-) -> None:
-    if not access_policy(request):
-        raise HTTPException(status_code=403, detail="发布管理仅允许从本机访问")
-
-
-def _require_extension_origin(request: Request, extension_id: str) -> None:
-    if not request.client or not _is_loopback(request.client.host):
-        raise HTTPException(status_code=403, detail="扩展登记仅允许连接本机服务")
-    origin = urlsplit(request.headers.get("origin", ""))
-    if origin.scheme not in _EXTENSION_SCHEMES or origin.netloc != extension_id:
-        raise HTTPException(status_code=403, detail="扩展来源与标识不匹配")
-
-
-async def _require_extension(
-    request: Request,
-    credentials: ExtensionCredentialService,
-) -> str:
-    extension_id = request.headers.get("x-extension-id", "")
-    authorization = request.headers.get("authorization", "")
-    scheme, _, token = authorization.partition(" ")
-    if (
-        not extension_id
-        or scheme.casefold() != "bearer"
-        or not token
-        or not await credentials.validate(extension_id, token)
-    ):
-        raise HTTPException(status_code=401, detail="扩展能力令牌无效")
-    return extension_id
-
-
-def _lease_token(request: Request) -> str:
-    token = request.headers.get("x-publish-lease", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="缺少发布任务租约")
-    return token
-
-
-def _is_loopback(host: str) -> bool:
-    if host.casefold() == "localhost":
-        return True
-    try:
-        return ip_address(host).is_loopback
-    except ValueError:
-        return False
