@@ -112,9 +112,11 @@ async def test_search_encodes_keyword_and_accepts_only_default_filters(
         result = await provider.search_feeds(keyword, SearchFilters())
 
     assert result.keyword == keyword
-    assert len(requests) == 1
-    assert requests[0].url.path == "/search_result"
-    assert parse_qs(requests[0].url.query.decode()) == {
+    assert [request.url.path for request in requests] == [
+        "/explore/",
+        "/search_result/",
+    ]
+    assert parse_qs(requests[1].url.query.decode()) == {
         "keyword": [keyword],
         "source": ["web_explore_feed"],
     }
@@ -171,11 +173,11 @@ async def test_user_profile_encodes_inputs_and_verifies_identity(
         result = await provider.get_user_profile(user_id, token)
 
     assert result.user_id == user_id
-    assert len(requests) == 1
-    assert requests[0].url.raw_path.split(b"?", 1)[0] == (
+    assert len(requests) == 2
+    assert requests[1].url.raw_path.split(b"?", 1)[0] == (
         b"/user/profile/synthetic%2Fuser"
     )
-    assert parse_qs(requests[0].url.query.decode()) == {
+    assert parse_qs(requests[1].url.query.decode()) == {
         "xsec_token": [token],
         "xsec_source": ["pc_note"],
     }

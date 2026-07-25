@@ -155,12 +155,19 @@ class HttpReadProvider:
                 ProviderFailureCode.UNSUPPORTED,
                 "HTTP 搜索仅支持默认筛选，请改用浏览器模式",
             )
-        page = await self._load(build_search_url(payload.keyword))
-        return self._feed_list_parser.parse(
+        await self._load(EXPLORE_URL)
+        page = await self._load_secondary_page(build_search_url(payload.keyword))
+        result = self._feed_list_parser.parse(
             page,
             "search",
             keyword=payload.keyword,
         )
+        if not result.items:
+            raise _error(
+                ProviderFailureCode.UNSUPPORTED,
+                "HTTP 搜索页没有静态结果，请改用浏览器模式",
+            )
+        return result
 
     async def get_feed_detail(
         self,
@@ -223,7 +230,10 @@ class HttpReadProvider:
         """
         self._ensure_configured()
         payload = validate_profile_payload(user_id, xsec_token)
-        page = await self._load(build_profile_url(payload.user_id, payload.xsec_token))
+        await self._load(EXPLORE_URL)
+        page = await self._load_secondary_page(
+            build_profile_url(payload.user_id, payload.xsec_token)
+        )
         return self._profile_parser.parse(page, payload.user_id)
 
     async def get_my_profile(self) -> UserProfileResult:
@@ -242,8 +252,17 @@ class HttpReadProvider:
                 ProviderFailureCode.UNSUPPORTED,
                 "HTTP 推荐页无法可靠识别当前账号，请改用浏览器模式",
             )
-        profile_page = await self._load(build_profile_url(user_id, None))
+        profile_page = await self._load_secondary_page(build_profile_url(user_id, None))
         return self._profile_parser.parse(profile_page, user_id)
+
+    async def _load_secondary_page(self, url: str) -> str:
+        page = await self._client.load(url)
+        if initial_state_is_guest(page):
+            raise _error(
+                ProviderFailureCode.PAGE_INCOMPATIBLE,
+                "HTTP 二级页面需要浏览器水合，请改用浏览器模式",
+            )
+        return page
 
     async def _load(self, url: str) -> str:
         self._ensure_configured()

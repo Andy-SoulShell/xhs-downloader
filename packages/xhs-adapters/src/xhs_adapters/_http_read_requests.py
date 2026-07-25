@@ -103,7 +103,7 @@ def build_search_url(keyword: str) -> str:
         仅指向小红书主站的编码地址。
     """
     query = urlencode({"keyword": keyword, "source": "web_explore_feed"})
-    return f"{_ORIGIN}/search_result?{query}"
+    return f"{_ORIGIN}/search_result/?{query}"
 
 
 def build_detail_url(payload: FeedDetailPayload) -> str:
