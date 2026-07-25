@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   saveCredential: vi.fn(),
   loadSettings: vi.fn(),
   activateControl: vi.fn(),
+  typeSchedule: vi.fn(),
 }));
 vi.mock("./publication-service", () => ({
   claimPublicationTask: mocks.claim,
@@ -42,6 +43,7 @@ vi.mock("./extension-credential", () => ({
 vi.mock("./storage", () => ({ loadSettings: mocks.loadSettings }));
 vi.mock("./publication-input", () => ({
   activatePublicationControl: mocks.activateControl,
+  typePublicationSchedule: mocks.typeSchedule,
 }));
 
 import { PublicationUnauthorizedError } from "./publication-service";
@@ -148,6 +150,29 @@ describe("发布任务后台协调器", () => {
     expect(response.ok).toBe(true);
     expect(mocks.activateControl).toHaveBeenCalledWith(
       41,
+      "https://creator.xiaohongshu.com/publish/publish",
+    );
+  });
+
+  it("只允许持有租约的创作页填写官方定时时间", async () => {
+    mocks.loadActive.mockResolvedValue(makeClaim("filling"));
+    mocks.loadOwner.mockResolvedValue(41);
+
+    const response = await handlePublicationRequest(
+      {
+        type: "publication-schedule-input",
+        taskId: "task",
+        leaseToken: "lease",
+        value: "2026-07-25 16:42",
+      },
+      41,
+      "https://creator.xiaohongshu.com/publish/publish",
+    );
+
+    expect(response.ok).toBe(true);
+    expect(mocks.typeSchedule).toHaveBeenCalledWith(
+      41,
+      "2026-07-25 16:42",
       "https://creator.xiaohongshu.com/publish/publish",
     );
   });

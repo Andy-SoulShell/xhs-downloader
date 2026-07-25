@@ -18,7 +18,10 @@ import {
   ensureExtensionCredential,
 } from "./extension-credential";
 import { schedulePublicationTabClose } from "./publication-tab";
-import { activatePublicationControl } from "./publication-input";
+import {
+  activatePublicationControl,
+  typePublicationSchedule,
+} from "./publication-input";
 import type {
   ExtensionCredential,
   PublicationClaim,
@@ -76,6 +79,15 @@ export async function handlePublicationRequest(
     }
     await activatePublicationControl(senderTabId, senderUrl);
     return { ok: true, message: "已授权当前创作页提交发布" };
+  }
+  if (request.type === "publication-schedule-input") {
+    if (senderTabId === undefined) throw new Error("无法确认创作页标签");
+    const active = await validActiveClaim(request.taskId, senderTabId);
+    if (!active || active.lease_token !== request.leaseToken) {
+      throw new Error("发布任务租约无效");
+    }
+    await typePublicationSchedule(senderTabId, request.value, senderUrl);
+    return { ok: true, message: "官方定时时间已通过受控输入填写" };
   }
   if (request.type === "publication-status") {
     const task = await withCredential((baseUrl, credential) =>

@@ -2,8 +2,10 @@ const PUBLISH_CONTROL = "xhs-publish-btn";
 const BRIDGE = Symbol.for("xhs-downloader.publisher-control");
 
 type BridgeScope = typeof globalThis & {
-  [BRIDGE]?: () => PublicationControlLocation;
+  [BRIDGE]?: (action?: PublicationControlAction) => PublicationControlLocation;
 };
+
+type PublicationControlAction = "locate" | "activate";
 
 export function installPublisherBridge(): () => void {
   const roots = new WeakMap<Element, ShadowRoot>();
@@ -18,7 +20,8 @@ export function installPublisherBridge(): () => void {
 
   const scope = globalThis as BridgeScope;
   const previous = scope[BRIDGE];
-  scope[BRIDGE] = () => locateCapturedControl(roots);
+  scope[BRIDGE] = (action = "locate") =>
+    accessCapturedControl(roots, action);
   return () => {
     Element.prototype.attachShadow = originalAttachShadow;
     if (previous) scope[BRIDGE] = previous;
@@ -29,30 +32,43 @@ export function installPublisherBridge(): () => void {
 interface PublicationControlLocation {
   ok: boolean;
   message: string;
+  x?: number;
+  y?: number;
 }
 
-function locateCapturedControl(
+function accessCapturedControl(
   roots: WeakMap<Element, ShadowRoot>,
+  action: PublicationControlAction,
 ): PublicationControlLocation {
   const control = document.querySelector<HTMLElement>(PUBLISH_CONTROL);
-  if (
-    control?.getAttribute("is-publish") !== "true" ||
-    control.getAttribute("submit-disabled") === "true" ||
-    control.getAttribute("submit-loading") === "true"
-  ) {
+  if (control?.getAttribute("is-publish") !== "true") {
     return { ok: false, message: "创作平台发布控件不可用" };
   }
+  const submitting =
+    control.getAttribute("submit-disabled") === "true" ||
+    control.getAttribute("submit-loading") === "true";
+  if (submitting && action === "activate") {
+    return { ok: true, message: "创作平台已经进入提交状态" };
+  }
+  if (submitting) return { ok: false, message: "创作平台发布控件不可用" };
   const label = control.getAttribute("submit-text") || "发布";
   const button = [...(roots.get(control)?.querySelectorAll("button") ?? [])]
     .find((item) => !item.disabled && item.textContent?.trim() === label);
   if (!button) return { ok: false, message: "无法访问创作平台发布按钮" };
+  if (action === "activate") {
+    button.click();
+    return { ok: true, message: "已通过创作页内部按钮提交发布" };
+  }
+  button.scrollIntoView({ block: "center", inline: "center" });
+  button.focus({ preventScroll: true });
   const rect = button.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
     return { ok: false, message: "创作平台发布按钮当前不可见" };
   }
-  button.focus();
   return {
     ok: true,
     message: "已聚焦创作平台发布按钮",
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
   };
 }

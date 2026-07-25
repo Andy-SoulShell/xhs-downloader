@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   setOriginalDeclaration,
@@ -113,7 +113,7 @@ describe("发布选项目标状态", () => {
     ).rejects.toThrow("原创声明控件结构已经变化");
   });
 
-  it("开启官方定时并写入浏览器本地时间", async () => {
+  it("开启官方定时并按北京时间写入平台控件", async () => {
     document.body.innerHTML = `
       <div class="post-time-wrapper">
         <div class="d-switch"><input type="checkbox" /></div>
@@ -126,21 +126,41 @@ describe("发布选项目标状态", () => {
       state.checked = true;
     });
 
-    await setPlatformSchedule(document, "2026-07-25T12:34:00.000Z", 100);
+    await setPlatformSchedule(document, "2026-07-25T12:34:00.000Z", {
+      timeout: 100,
+    });
 
-    const expected = new Date("2026-07-25T12:34:00.000Z");
-    const part = (value: number) => String(value).padStart(2, "0");
-    expect(document.querySelector<HTMLInputElement>(".date-picker-container input")?.value)
-      .toBe(
-        `${expected.getFullYear()}-${part(expected.getMonth() + 1)}-${part(
-          expected.getDate(),
-        )} ${part(expected.getHours())}:${part(expected.getMinutes())}`,
-      );
+    expect(
+      document.querySelector<HTMLInputElement>(
+        ".date-picker-container input",
+      )?.value,
+    ).toBe("2026-07-25 20:34");
   });
 
   it("拒绝无效官方定时时间", async () => {
     await expect(
-      setPlatformSchedule(document, "not-a-date", 100),
+      setPlatformSchedule(document, "not-a-date", { timeout: 100 }),
     ).rejects.toThrow("官方定时时间格式无效");
+  });
+
+  it("允许通过浏览器级可信输入填写官方定时时间", async () => {
+    document.body.innerHTML = `
+      <div class="post-time-wrapper">
+        <div class="d-switch checked"></div>
+      </div>
+      <div class="date-picker-container"><input /></div>
+    `;
+    const write = vi.fn(async (value: string) => {
+      document.querySelector<HTMLInputElement>(
+        ".date-picker-container input",
+      )!.value = value;
+    });
+
+    await setPlatformSchedule(document, "2026-07-25T12:34:00.000Z", {
+      timeout: 100,
+      write,
+    });
+
+    expect(write).toHaveBeenCalledWith("2026-07-25 20:34");
   });
 });

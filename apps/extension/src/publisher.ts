@@ -94,7 +94,9 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
     await setOriginalDeclaration(document, draft.is_original);
     await bindConfirmedProducts(document, draft.products);
     if (claim.task.mode === "platform_scheduled") {
-      await setPlatformSchedule(document, claim.task.scheduled_at);
+      await setPlatformSchedule(document, claim.task.scheduled_at, {
+        write: (value) => typePlatformSchedule(claim, value),
+      });
     }
     const control = await waitForPublishControl(document);
     showStatus("正在提交到创作平台");
@@ -106,7 +108,7 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
         leaseToken: claim.lease_token,
       });
       if (!activation.ok) throw new Error(activation.message);
-      await report(claim, "publishing", "已发送可信输入，等待平台确认");
+      await report(claim, "publishing", "已发送受控输入，等待平台确认");
     } else {
       activateNativePublishControl(control);
     }
@@ -116,6 +118,19 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
     await safelyReport(claim, "failed", message);
     showStatus(message, "warning");
   }
+}
+
+async function typePlatformSchedule(
+  claim: PublicationClaim,
+  value: string,
+): Promise<void> {
+  const response = await send({
+    type: "publication-schedule-input",
+    taskId: claim.task.task_id,
+    leaseToken: claim.lease_token,
+    value,
+  });
+  if (!response.ok) throw new Error(response.message);
 }
 
 async function observeOutcome(claim: PublicationClaim): Promise<void> {

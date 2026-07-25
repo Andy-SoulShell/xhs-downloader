@@ -80,8 +80,12 @@ export async function setOriginalDeclaration(
 export async function setPlatformSchedule(
   root: ParentNode,
   scheduledAt: string,
-  timeout = 10_000,
+  options: {
+    timeout?: number;
+    write?: (value: string) => Promise<void>;
+  } = {},
 ): Promise<void> {
+  const timeout = options.timeout ?? 10_000;
   const date = new Date(scheduledAt);
   if (Number.isNaN(date.getTime())) throw new Error("官方定时时间格式无效");
   const toggle = await waitForElement<HTMLElement>(
@@ -102,9 +106,13 @@ export async function setPlatformSchedule(
     timeout,
     "没有找到官方定时发布时间输入框",
   );
-  const value = formatLocalDateTime(date);
-  setInputValue(input, value);
-  input.dispatchEvent(new Event("blur", { bubbles: true }));
+  const value = formatPlatformDateTime(date);
+  if (options.write) {
+    await options.write(value);
+  } else {
+    setInputValue(input, value);
+    input.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
   await waitForValue(
     () => (input.value === value ? true : undefined),
     timeout,
@@ -190,11 +198,19 @@ function isDisabled(element: HTMLElement): boolean {
   );
 }
 
-function formatLocalDateTime(value: Date): string {
-  const part = (number: number) => String(number).padStart(2, "0");
-  return `${value.getFullYear()}-${part(value.getMonth() + 1)}-${part(
-    value.getDate(),
-  )} ${part(value.getHours())}:${part(value.getMinutes())}`;
+function formatPlatformDateTime(value: Date): string {
+  const parts = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(value);
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${read("year")}-${read("month")}-${read("day")} ${read("hour")}:${read("minute")}`;
 }
 
 function normalizedText(element: HTMLElement): string {

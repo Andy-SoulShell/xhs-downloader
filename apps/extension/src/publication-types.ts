@@ -75,6 +75,12 @@ export type PublicationRequest =
       leaseToken: string;
     }
   | {
+      type: "publication-schedule-input";
+      taskId: string;
+      leaseToken: string;
+      value: string;
+    }
+  | {
       type: "publication-status";
       taskId: string;
       leaseToken: string;
