@@ -1,4 +1,4 @@
-"""通过 FastAPI 暴露的小红书浏览 MCP 工具。"""
+"""通过 FastAPI 暴露的小红书内容浏览 MCP 工具。"""
 
 from typing import Annotated
 
@@ -12,20 +12,12 @@ def register_browser_tools(
     mcp: FastMCP,
     client: BrowserCapabilityClient,
 ) -> None:
-    """注册登录状态、内容读取和用户资料工具。
+    """注册内容读取、互动和用户资料工具。
 
     Args:
         mcp: 待扩展的 FastMCP 服务。
         client: 只访问本机 FastAPI 的浏览能力客户端。
     """
-
-    @mcp.tool(
-        name="check_login_status",
-        description="检查浏览器中的小红书登录状态，不读取或返回 Cookie。",
-        annotations=_read_annotations("检查登录状态"),
-    )
-    async def check_login_status() -> dict:
-        return await client.execute("/xhs/login/status", {})
 
     @mcp.tool(
         name="list_feeds",

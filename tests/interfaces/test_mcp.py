@@ -122,6 +122,8 @@ async def test_mcp_browser_tools_delegate_to_local_api() -> None:
         "get_detail_data",
         "download_detail",
         "check_login_status",
+        "get_login_qrcode",
+        "delete_cookies",
         "list_feeds",
         "search_feeds",
         "get_feed_detail",

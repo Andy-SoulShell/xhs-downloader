@@ -1,10 +1,21 @@
-"""MCP 调用本机浏览器能力 API 的客户端。"""
+"""MCP 调用本机浏览器与登录会话 API 的客户端。"""
 
-from typing import Protocol
+from typing import Literal, Protocol
 
 from httpx import AsyncClient, HTTPError
-from pydantic import JsonValue
+from pydantic import BaseModel, ConfigDict, JsonValue
 from xhs_core.domain import BrowserTask, BrowserTaskError, BrowserTaskStatus
+
+
+class _CookieDeletionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target: Literal["browser", "http"]
+    status: BrowserTaskStatus
+    deleted: bool
+    message: str
+    task_id: str | None = None
+    restart_required: bool = False
 
 
 class BrowserCapabilityClient(Protocol):
@@ -23,6 +34,27 @@ class BrowserCapabilityClient(Protocol):
 
         Returns:
             包含任务标识、说明和结构化结果的数据。
+
+        Raises:
+            BrowserTaskError: API 不可用、任务失败或等待超时。
+        """
+        ...
+
+    async def delete_cookies(
+        self,
+        target: Literal["browser", "http"],
+        confirmed: bool,
+        request_id: str,
+    ) -> dict[str, JsonValue]:
+        """清理指定会话的 Cookie。
+
+        Args:
+            target: 浏览器会话或 Cookie HTTP 会话。
+            confirmed: 调用方是否已明确确认。
+            request_id: 调用方生成的幂等请求标识。
+
+        Returns:
+            经本机 API 验证的清理结果。
 
         Raises:
             BrowserTaskError: API 不可用、任务失败或等待超时。
@@ -83,3 +115,46 @@ class HttpBrowserCapabilityClient:
         raise BrowserTaskError(
             f"等待浏览器扩展执行超时，可通过任务 {task.task_id} 查询进度"
         )
+
+    async def delete_cookies(
+        self,
+        target: Literal["browser", "http"],
+        confirmed: bool,
+        request_id: str,
+    ) -> dict[str, JsonValue]:
+        """清理指定会话的 Cookie 并验证响应。
+
+        Args:
+            target: 浏览器会话或 Cookie HTTP 会话。
+            confirmed: 调用方是否已明确确认。
+            request_id: 调用方生成的幂等请求标识。
+
+        Returns:
+            清理目标、执行状态与重启提示。
+
+        Raises:
+            BrowserTaskError: API 不可用、响应无效、任务失败或等待超时。
+        """
+        try:
+            response = await self._client.post(
+                "/xhs/login/cookies/delete",
+                params={"wait_seconds": self._wait_seconds},
+                json={
+                    "target": target,
+                    "confirmed": confirmed,
+                    "request_id": request_id,
+                },
+            )
+            response.raise_for_status()
+            result = _CookieDeletionResponse.model_validate(response.json())
+        except (HTTPError, ValueError) as error:
+            raise BrowserTaskError("无法调用本机 Cookie 清理 API") from error
+        if result.status is BrowserTaskStatus.SUCCEEDED:
+            return result.model_dump(mode="json")
+        if result.status in {
+            BrowserTaskStatus.FAILED,
+            BrowserTaskStatus.NEEDS_REVIEW,
+        }:
+            raise BrowserTaskError(result.message)
+        task_hint = f"，可通过任务 {result.task_id} 查询进度" if result.task_id else ""
+        raise BrowserTaskError(f"等待浏览器扩展清理 Cookie 超时{task_hint}")

@@ -13,6 +13,7 @@ from xhs_core.version import VERSION
 
 from .browser_client import BrowserCapabilityClient, HttpBrowserCapabilityClient
 from .browser_tools import register_browser_tools
+from .login_tools import register_login_tools
 from .publication_client import (
     HttpPublicationCapabilityClient,
     PublicationCapabilityClient,
@@ -100,6 +101,7 @@ def create_mcp(
         }
 
     if browser:
+        register_login_tools(mcp, browser)
         register_browser_tools(mcp, browser)
     if publication:
         register_publication_tools(mcp, publication)

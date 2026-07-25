@@ -72,3 +72,78 @@ async def test_mcp_browser_client_reports_non_success(
                 "/xhs/feeds/list",
                 {},
             )
+
+
+async def test_mcp_browser_client_deletes_cookie_session() -> None:
+    """确保 Cookie 清理请求和结果经过专用模型验证。"""
+
+    async def handler(request: Request) -> Response:
+        assert request.url.path == "/xhs/login/cookies/delete"
+        assert request.url.params["wait_seconds"] == "60"
+        assert request.read().decode() == (
+            '{"target":"http","confirmed":true,"request_id":"synthetic-delete-request"}'
+        )
+        return Response(
+            200,
+            json={
+                "target": "http",
+                "status": "succeeded",
+                "deleted": True,
+                "message": "HTTP Cookie 已清除",
+                "task_id": None,
+                "restart_required": True,
+            },
+        )
+
+    async with AsyncClient(
+        transport=MockTransport(handler),
+        base_url="http://127.0.0.1:5556",
+    ) as client:
+        result = await HttpBrowserCapabilityClient(client).delete_cookies(
+            "http",
+            True,
+            "synthetic-delete-request",
+        )
+
+    assert result["deleted"] is True
+    assert result["restart_required"] is True
+
+
+@pytest.mark.parametrize(
+    ("response", "message"),
+    [
+        (
+            Response(
+                200,
+                json={
+                    "target": "browser",
+                    "status": "failed",
+                    "deleted": False,
+                    "message": "浏览器清理失败",
+                },
+            ),
+            "浏览器清理失败",
+        ),
+        (Response(500), "无法调用本机 Cookie 清理 API"),
+    ],
+)
+async def test_mcp_browser_client_reports_cookie_deletion_failure(
+    response: Response,
+    message: str,
+) -> None:
+    """确保 Cookie 清理失败不会伪装成成功。
+
+    Args:
+        response: 合成 API 响应。
+        message: 预期用户可见错误片段。
+    """
+    async with AsyncClient(
+        transport=MockTransport(lambda _: response),
+        base_url="http://127.0.0.1:5556",
+    ) as client:
+        with pytest.raises(BrowserTaskError, match=message):
+            await HttpBrowserCapabilityClient(client).delete_cookies(
+                "browser",
+                True,
+                "synthetic-delete-request",
+            )
