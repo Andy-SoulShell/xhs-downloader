@@ -1,10 +1,8 @@
 """统一只读能力的进程内运行时。"""
 
-from collections.abc import Awaitable, Callable
-
 from xhs_adapters import (
     BrowserRuntime,
-    HttpFeedDetailProvider,
+    HttpReadProvider,
     PublicationRuntime,
 )
 from xhs_adapters.config import AppSettings
@@ -16,15 +14,10 @@ from xhs_core.application import (
 from xhs_core.domain import (
     FeedDetailResult,
     FeedListResult,
-    ProviderError,
-    ProviderFailureCode,
-    ProviderKind,
     RoutedCapabilityResult,
     UserProfileResult,
 )
 from xhs_core.domain.browser_requests import SearchFilters
-
-type _UnsupportedCall[ResultT] = Callable[[], Awaitable[ResultT]]
 
 _BROWSER_READ_TIMEOUT_SECONDS = 60.0
 
@@ -37,14 +30,14 @@ class ReadCapabilityRuntime:
 
     Args:
         settings: 本运行时采用的已验证配置。
-        http: Cookie HTTP 详情 Provider。
+        http: Cookie HTTP 统一只读 Provider。
         browser: 固定浏览器驱动的只读 Provider。
     """
 
     def __init__(
         self,
         settings: AppSettings,
-        http: HttpFeedDetailProvider,
+        http: HttpReadProvider,
         browser: BrowserReadProvider,
     ) -> None:
         self.strategy = settings.route_strategy
@@ -74,7 +67,7 @@ class ReadCapabilityRuntime:
         """
         return await self._router.execute_read(
             self.strategy,
-            http=_unsupported("HTTP 模式暂不支持读取推荐"),
+            http=self._http.list_feeds,
             browser=lambda: self._browser.list_feeds(request_id),
         )
 
@@ -99,7 +92,7 @@ class ReadCapabilityRuntime:
         """
         return await self._router.execute_read(
             self.strategy,
-            http=_unsupported("HTTP 模式暂不支持搜索帖子"),
+            http=lambda: self._http.search_feeds(keyword, filters),
             browser=lambda: self._browser.search_feeds(
                 keyword,
                 filters,
@@ -174,7 +167,7 @@ class ReadCapabilityRuntime:
         """
         return await self._router.execute_read(
             self.strategy,
-            http=_unsupported("HTTP 模式暂不支持读取用户主页"),
+            http=lambda: self._http.get_user_profile(user_id, xsec_token),
             browser=lambda: self._browser.get_user_profile(
                 user_id,
                 xsec_token,
@@ -199,7 +192,7 @@ class ReadCapabilityRuntime:
         """
         return await self._router.execute_read(
             self.strategy,
-            http=_unsupported("HTTP 模式暂不支持读取当前账号主页"),
+            http=self._http.get_my_profile,
             browser=lambda: self._browser.get_my_profile(request_id),
         )
 
@@ -225,7 +218,7 @@ def create_read_capability_runtime(
     )
     return ReadCapabilityRuntime(
         settings,
-        HttpFeedDetailProvider(settings),
+        HttpReadProvider(settings),
         BrowserReadProvider(
             browser.tasks,
             readiness,
@@ -236,14 +229,3 @@ def create_read_capability_runtime(
             ),
         ),
     )
-
-
-def _unsupported[ResultT](message: str) -> _UnsupportedCall[ResultT]:
-    async def operation() -> ResultT:
-        raise ProviderError(
-            ProviderKind.HTTP,
-            ProviderFailureCode.UNSUPPORTED,
-            message,
-        )
-
-    return operation

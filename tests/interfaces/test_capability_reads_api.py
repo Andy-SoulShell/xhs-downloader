@@ -120,8 +120,8 @@ async def test_read_routes_return_data_and_actual_route_trace() -> None:
     assert mine.json()["data"]["user_id"] == "synthetic-self"
 
 
-async def test_http_only_unsupported_read_returns_typed_error(tmp_path) -> None:
-    """确保仅 HTTP 策略不会把未实现能力静默改交浏览器。
+async def test_http_only_without_cookie_returns_typed_error(tmp_path) -> None:
+    """确保仅 HTTP 策略未配置 Cookie 时不发起读取或改交浏览器。
 
     Args:
         tmp_path: Pytest 提供的临时工作目录。
@@ -129,6 +129,7 @@ async def test_http_only_unsupported_read_returns_typed_error(tmp_path) -> None:
     api = create_api(
         AppSettings(
             work_path=tmp_path,
+            cookie="",
             route_strategy=RouteStrategy.HTTP_ONLY,
         ),
         lambda _: FakeService(),
@@ -144,9 +145,9 @@ async def test_http_only_unsupported_read_returns_typed_error(tmp_path) -> None:
 
     assert response.status_code == 400
     assert response.json() == {
-        "message": "HTTP 模式暂不支持读取推荐",
+        "message": "HTTP 模式尚未配置 Cookie",
         "provider": "http",
-        "code": "unsupported",
+        "code": "not_configured",
     }
 
 
