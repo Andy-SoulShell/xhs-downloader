@@ -35,7 +35,7 @@
 | 受管 Chromium 生命周期 | CDP、专用 Profile | 通过 | 专用用户目录真实启动，CDP 仅回环监听且端口由浏览器分配；强制终止专用进程后状态准确变为 `error`，重新启动取得新端口并再次真实返回 35 条推荐 |
 | 受管共享页面适配器 | Playwright、合成页面 | 通过 | 真实 Chromium 经 CDP 注入由扩展源码生成的同一适配器，完成登录状态结构化读取；未使用真实账号、Cookie 或页面原文 |
 | 受管扫码与只读页面 | 受管任务 Worker | 部分通过 | 独立 Profile 的二维码可生成并保留真实登录页；匿名推荐返回 34 条，详情 ID/作者/媒体严格一致，指定主页含 3 项统计，匿名搜索合法返回空列表；扫码确认、登录后搜索和当前账号主页待现场确认 |
-| 统一访问路由 | API、WebUI、MCP | 通过 | 四种策略已接入；扩展读取响应标明实际驱动，HTTP 优先的搜索以 `unsupported`、未配置 Cookie 的详情以 `not_configured` 回退并成功 |
+| 统一访问路由 | API、WebUI、MCP | 部分通过 | 四种策略均有自动化覆盖；最新服务真实通过扩展与受管 `browser_only`、受管 `browser_first`、无 Cookie 的 `http_first` 安全回退及 `http_only` 结构化拒绝，Cookie HTTP 成功路径待重新配置后确认 |
 | 配置热替换 | API、WebUI | 通过 | 多次切换 `browser_only/http_first` 与 `extension/managed` 均无需重启；在途请求排空后提交新运行时，提交后取消也不会造成读取运行时与写操作驱动不一致 |
 | 检查登录 | 扩展 | 通过 | 真实浏览器任务成功，返回已登录及脱敏账号存在性 |
 | 二维码登录 | 扩展、API、WebUI、MCP | 通过 | 未登录分支向 WebUI 和 MCP 交付一次性图片，任务记录随后清除图片；原生页扫码确认后 WebUI、API 和 MCP 均识别为已登录 |
