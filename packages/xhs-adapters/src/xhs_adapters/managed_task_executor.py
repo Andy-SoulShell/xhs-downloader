@@ -1,4 +1,4 @@
-"""在受管 Chromium 页面中执行登录、读取和首批互动任务。"""
+"""在受管 Chromium 中执行登录、会话清理、读取和首批互动任务。"""
 
 from typing import Any
 
@@ -13,6 +13,7 @@ from xhs_core.domain import (
 )
 from xhs_core.domain.browser_ports import ManagedBrowserController
 
+from .managed_cookie_deletion import delete_managed_xhs_cookies
 from .managed_page_assets import load_managed_page_adapter
 from .managed_page_session import (
     ManagedPage,
@@ -30,6 +31,11 @@ from .managed_task_navigation import (
     managed_task_target_url,
     safe_xhs_navigation,
 )
+from .managed_task_results import (
+    managed_task_failure,
+    parse_managed_page_response,
+    should_keep_login_page,
+)
 
 _ADAPTER_GLOBAL = "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__"
 _EXECUTE_EXPRESSION = f"(task) => window.{_ADAPTER_GLOBAL}.execute(task)"
@@ -41,6 +47,7 @@ _MAX_INTERNAL_NAVIGATIONS = 2
 _READ_TASKS = {
     BrowserTaskKind.CHECK_LOGIN_STATUS,
     BrowserTaskKind.GET_LOGIN_QRCODE,
+    BrowserTaskKind.DELETE_COOKIES,
     BrowserTaskKind.LIST_FEEDS,
     BrowserTaskKind.SEARCH_FEEDS,
     BrowserTaskKind.GET_FEED_DETAIL,
@@ -52,7 +59,7 @@ _SUPPORTED_TASKS = _READ_TASKS | _WRITE_TASKS
 
 
 class PlaywrightManagedTaskExecutor:
-    """通过共享页面适配器执行受管浏览器读取与首批互动能力。
+    """通过受管上下文和共享页面适配器执行登录、读取与首批互动能力。
 
     Args:
         controller: 提供当前 CDP 端点的受管 Chromium 控制器。
@@ -83,17 +90,19 @@ class PlaywrightManagedTaskExecutor:
         if self._closed:
             raise ManagedBrowserError("受管浏览器页面执行器已经关闭")
         if task.target_driver is not BrowserDriver.MANAGED:
-            return _failure("任务没有固定到受管浏览器驱动")
+            return managed_task_failure("任务没有固定到受管浏览器驱动")
         if task.status is not BrowserTaskStatus.RUNNING:
-            return _failure("受管浏览器任务必须先进入运行态")
+            return managed_task_failure("受管浏览器任务必须先进入运行态")
         if task.kind not in _SUPPORTED_TASKS:
-            return _failure("当前受管浏览器版本尚未支持此任务")
+            return managed_task_failure("当前受管浏览器版本尚未支持此任务")
         status = await self._controller.status()
         if status.state is not ManagedBrowserState.RUNNING or status.cdp_port is None:
             raise ManagedBrowserError("受管浏览器尚未运行")
         session = self._session_factory()
         try:
             await session.connect(status.cdp_port)
+            if task.kind is BrowserTaskKind.DELETE_COOKIES:
+                return await delete_managed_xhs_cookies(session)
             page, created = await self._prepare_page(session, task)
             keep_open = False
             try:
@@ -101,14 +110,17 @@ class PlaywrightManagedTaskExecutor:
                     outcome = await self._execute_interaction(page, task)
                 else:
                     response = await self._execute_with_navigation(page, task)
-                    outcome = _parse_response(response)
-                keep_open = _keep_login_page(task, outcome)
+                    outcome = parse_managed_page_response(response)
+                keep_open = should_keep_login_page(task, outcome)
                 if keep_open:
                     await page.bring_to_front()
                 return outcome
             except Exception:
                 diagnostics = await self._safe_diagnostics(page)
-                return _failure("受管浏览器页面执行失败", diagnostics)
+                return managed_task_failure(
+                    "受管浏览器页面执行失败",
+                    diagnostics,
+                )
             finally:
                 if created and not keep_open:
                     await page.close()
@@ -251,49 +263,4 @@ def _is_transient_message(value: Any) -> bool:
             "实时状态不可用",
             "实时状态超时",
         )
-    )
-
-
-def _parse_response(value: dict[str, Any]) -> BrowserTaskExecutionResult:
-    message = value.get("message")
-    safe_message = (
-        message[:1000]
-        if isinstance(message, str) and message
-        else "受管浏览器任务执行完成"
-    )
-    raw_status = value.get("status")
-    if raw_status == BrowserTaskStatus.NEEDS_REVIEW.value:
-        status = BrowserTaskStatus.NEEDS_REVIEW
-    elif value.get("ok") is True:
-        status = BrowserTaskStatus.SUCCEEDED
-    else:
-        status = BrowserTaskStatus.FAILED
-    result = value.get("result")
-    return BrowserTaskExecutionResult(
-        status=status,
-        message=safe_message,
-        result=result if isinstance(result, dict) else None,
-    )
-
-
-def _keep_login_page(
-    task: BrowserTask,
-    outcome: BrowserTaskExecutionResult,
-) -> bool:
-    return bool(
-        task.kind is BrowserTaskKind.GET_LOGIN_QRCODE
-        and outcome.status is BrowserTaskStatus.SUCCEEDED
-        and outcome.result
-        and outcome.result.get("is_logged_in") is False
-    )
-
-
-def _failure(
-    message: str,
-    result: dict[str, Any] | None = None,
-) -> BrowserTaskExecutionResult:
-    return BrowserTaskExecutionResult(
-        status=BrowserTaskStatus.FAILED,
-        message=message,
-        result=result,
     )

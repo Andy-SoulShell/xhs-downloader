@@ -18,6 +18,7 @@ from xhs_core.domain import ManagedBrowserError
 from .chromium_process import CDP_HOST
 
 CDP_CONNECT_TIMEOUT_MILLISECONDS = 10_000
+_XHS_COOKIE_DOMAINS = ("xiaohongshu.com", ".xiaohongshu.com")
 
 
 class ManagedPage(Protocol):
@@ -105,6 +106,10 @@ class ManagedPageSession(Protocol):
         """
         ...
 
+    async def delete_xhs_cookies(self) -> None:
+        """仅清理小红书顶级域的 Cookie，且不读取 Cookie 值。"""
+        ...
+
     async def close(self) -> None:
         """断开自动化连接，但不终止受管 Chromium。"""
         ...
@@ -170,6 +175,19 @@ class PlaywrightCdpSession:
         if not self._context:
             raise ManagedBrowserError("受管浏览器自动化会话尚未连接")
         return await self._context.new_page()
+
+    async def delete_xhs_cookies(self) -> None:
+        """仅清理精确匹配小红书顶级域的 Cookie。
+
+        清理直接使用 BrowserContext 的域过滤能力，不读取或返回 Cookie。
+
+        Raises:
+            ManagedBrowserError: 会话尚未连接。
+        """
+        if not self._context:
+            raise ManagedBrowserError("受管浏览器自动化会话尚未连接")
+        for domain in _XHS_COOKIE_DOMAINS:
+            await self._context.clear_cookies(domain=domain)
 
     async def close(self) -> None:
         """停止 Playwright 驱动并仅断开 CDP 连接。"""

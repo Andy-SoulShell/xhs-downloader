@@ -15,10 +15,14 @@ class _Context:
         self.pages = [page]
         self.page = page
         self.new_page_calls = 0
+        self.clear_cookie_calls: list[dict[str, Any]] = []
 
     async def new_page(self) -> object:
         self.new_page_calls += 1
         return self.page
+
+    async def clear_cookies(self, **filters: Any) -> None:
+        self.clear_cookie_calls.append(filters)
 
 
 class _Browser:
@@ -75,6 +79,8 @@ async def test_cdp_session_requires_connection_before_page_access() -> None:
         await session.pages()
     with pytest.raises(ManagedBrowserError, match="尚未连接"):
         await session.new_page()
+    with pytest.raises(ManagedBrowserError, match="尚未连接"):
+        await session.delete_xhs_cookies()
 
 
 async def test_cdp_session_connects_loopback_and_only_stops_driver(
@@ -109,6 +115,29 @@ async def test_cdp_session_connects_loopback_and_only_stops_driver(
     await session.close()
 
     assert runtime.stopped is True
+
+
+async def test_cdp_session_clears_only_exact_xhs_cookie_domains(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """确保清理使用精确域过滤且从不枚举 Cookie。
+
+    Args:
+        monkeypatch: Pytest 提供的属性替换工具。
+    """
+    context = _Context(object())
+    runtime = _Playwright(_Browser([context]))
+    starter = _Starter(runtime)
+    monkeypatch.setattr(session_module, "async_playwright", lambda: starter)
+    session = PlaywrightCdpSession()
+
+    await session.connect(19222)
+    await session.delete_xhs_cookies()
+
+    assert context.clear_cookie_calls == [
+        {"domain": "xiaohongshu.com"},
+        {"domain": ".xiaohongshu.com"},
+    ]
 
 
 async def test_cdp_session_rejects_browser_without_default_context(

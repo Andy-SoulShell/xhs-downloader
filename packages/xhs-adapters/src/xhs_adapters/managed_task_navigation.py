@@ -111,6 +111,33 @@ def is_xhs_page(value: str) -> bool:
         return False
 
 
+def is_xhs_site_page(value: str) -> bool:
+    """判断页面是否属于小红书顶级域或其 Web 子域。
+
+    Args:
+        value: 仅在进程内判定且不写入日志的页面地址。
+
+    Returns:
+        地址使用标准 HTTP(S) 端口且主机属于小红书站点时返回真。
+    """
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        standard_port = (
+            parsed.port in {None, 443}
+            if parsed.scheme == "https"
+            else parsed.port in {None, 80}
+        )
+        return bool(
+            parsed.scheme in {"http", "https"}
+            and hostname
+            and (hostname == "xiaohongshu.com" or hostname.endswith(".xiaohongshu.com"))
+            and standard_port
+        )
+    except ValueError:
+        return False
+
+
 def is_explore_or_login_page(value: str) -> bool:
     """判断页面是否适合继续承载二维码登录。
 

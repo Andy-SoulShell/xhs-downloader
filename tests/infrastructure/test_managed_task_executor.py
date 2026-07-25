@@ -112,6 +112,119 @@ async def test_qrcode_page_stays_open_and_is_brought_to_front() -> None:
     assert session.closed is True
 
 
+async def test_cookie_deletion_closes_only_xhs_pages_and_returns_typed_result() -> None:
+    """确保受管 Cookie 清理不创建页面并关闭所有小红书站点页面。"""
+    main_page = FakePage("https://www.xiaohongshu.com/explore")
+    creator_page = FakePage("https://creator.xiaohongshu.com/publish")
+    root_page = FakePage("http://xiaohongshu.com/")
+    unrelated_page = FakePage("https://synthetic.invalid/")
+    deceptive_page = FakePage("https://xiaohongshu.com.synthetic.invalid/")
+    session = FakeSession(
+        existing_pages=[
+            main_page,
+            creator_page,
+            root_page,
+            unrelated_page,
+            deceptive_page,
+        ]
+    )
+    executor = PlaywrightManagedTaskExecutor(
+        FakeController(synthetic_browser_status(cdp_port=_CDP_PORT)),
+        lambda: session,
+    )
+
+    outcome = await executor.execute(
+        synthetic_browser_task(
+            BrowserTaskKind.DELETE_COOKIES,
+            {"confirmed": True},
+        )
+    )
+
+    assert outcome.status is BrowserTaskStatus.SUCCEEDED
+    assert outcome.result == {"target": "browser", "deleted": True}
+    assert session.delete_cookie_calls == 1
+    assert session.new_page_calls == 0
+    assert main_page.closed is True
+    assert creator_page.closed is True
+    assert root_page.closed is True
+    assert unrelated_page.closed is False
+    assert deceptive_page.closed is False
+    assert session.closed is True
+
+
+async def test_cookie_deletion_failure_is_safe_and_does_not_leak_error() -> None:
+    """确保清理失败明确可重试且不会回传异常中的敏感内容。"""
+    session = FakeSession(delete_cookie_error=RuntimeError("session=synthetic-secret"))
+    executor = PlaywrightManagedTaskExecutor(
+        FakeController(synthetic_browser_status(cdp_port=_CDP_PORT)),
+        lambda: session,
+    )
+
+    outcome = await executor.execute(
+        synthetic_browser_task(
+            BrowserTaskKind.DELETE_COOKIES,
+            {"confirmed": True},
+        )
+    )
+
+    assert outcome.status is BrowserTaskStatus.FAILED
+    assert outcome.result is None
+    assert "安全重试" in outcome.message
+    assert "synthetic-secret" not in outcome.message
+    assert session.delete_cookie_calls == 1
+    assert session.new_page_calls == 0
+    assert session.closed is True
+
+
+@pytest.mark.parametrize(
+    ("session", "message"),
+    [
+        (
+            FakeSession(pages_error=RuntimeError("synthetic-page-secret")),
+            "页面状态读取失败",
+        ),
+        (
+            FakeSession(
+                existing_pages=[
+                    FakePage(
+                        "https://creator.xiaohongshu.com/publish",
+                        close_error=RuntimeError("synthetic-close-secret"),
+                    )
+                ]
+            ),
+            "页面未能全部关闭",
+        ),
+    ],
+)
+async def test_cookie_deletion_page_cleanup_failures_are_safe(
+    session: FakeSession,
+    message: str,
+) -> None:
+    """确保 Cookie 已清理后的页面清理异常仍返回可安全重试。
+
+    Args:
+        session: 模拟页面读取或关闭异常的会话。
+        message: 预期的脱敏失败摘要。
+    """
+    executor = PlaywrightManagedTaskExecutor(
+        FakeController(synthetic_browser_status(cdp_port=_CDP_PORT)),
+        lambda: session,
+    )
+
+    outcome = await executor.execute(
+        synthetic_browser_task(
+            BrowserTaskKind.DELETE_COOKIES,
+            {"confirmed": True},
+        )
+    )
+
+    assert outcome.status is BrowserTaskStatus.FAILED
+    assert message in outcome.message
+    assert "secret" not in outcome.message
+    assert session.delete_cookie_calls == 1
+    assert session.closed is True
+
+
 @pytest.mark.parametrize(
     ("task", "message"),
     [

@@ -47,6 +47,7 @@ class FakePage:
         *,
         responses: Sequence[dict[str, Any]] = (),
         click_error: Exception | None = None,
+        close_error: Exception | None = None,
     ) -> None:
         """创建具有固定响应序列的页面。
 
@@ -54,10 +55,12 @@ class FakePage:
             url: 页面初始地址。
             responses: 每次执行页面适配器时依次返回的结构化响应。
             click_error: 浏览器级点击需要模拟抛出的异常。
+            close_error: 页面关闭需要模拟抛出的异常。
         """
         self._url = url
         self._responses = list(responses)
         self._click_error = click_error
+        self._close_error = close_error
         self.goto_calls: list[tuple[str, dict[str, Any]]] = []
         self.execute_args: list[dict[str, Any]] = []
         self.execute_expressions: list[str] = []
@@ -134,7 +137,13 @@ class FakePage:
             raise self._click_error
 
     async def close(self) -> None:
-        """记录页面已关闭。"""
+        """记录页面已关闭。
+
+        Raises:
+            Exception: 构造页面时指定的合成关闭异常。
+        """
+        if self._close_error:
+            raise self._close_error
         self.closed = True
 
     async def bring_to_front(self) -> None:
@@ -150,17 +159,24 @@ class FakeSession:
         *,
         existing_pages: Sequence[FakePage] = (),
         task_page: FakePage | None = None,
+        delete_cookie_error: Exception | None = None,
+        pages_error: Exception | None = None,
     ) -> None:
         """保存会话页面。
 
         Args:
             existing_pages: 连接时已经打开的页面。
             task_page: 新建任务页面时返回的页面。
+            delete_cookie_error: Cookie 清理需要模拟抛出的异常。
+            pages_error: 页面快照读取需要模拟抛出的异常。
         """
         self._existing_pages = tuple(existing_pages)
         self.task_page = task_page or FakePage()
+        self._delete_cookie_error = delete_cookie_error
+        self._pages_error = pages_error
         self.connected_ports: list[int] = []
         self.new_page_calls = 0
+        self.delete_cookie_calls = 0
         self.closed = False
 
     async def connect(self, port: int) -> None:
@@ -176,7 +192,12 @@ class FakeSession:
 
         Returns:
             不可变的合成页面序列。
+
+        Raises:
+            Exception: 构造会话时指定的合成页面读取异常。
         """
+        if self._pages_error:
+            raise self._pages_error
         return self._existing_pages
 
     async def new_page(self) -> FakePage:
@@ -187,6 +208,16 @@ class FakeSession:
         """
         self.new_page_calls += 1
         return self.task_page
+
+    async def delete_xhs_cookies(self) -> None:
+        """记录一次不读取 Cookie 值的精确域清理。
+
+        Raises:
+            Exception: 构造会话时指定的合成清理异常。
+        """
+        self.delete_cookie_calls += 1
+        if self._delete_cookie_error:
+            raise self._delete_cookie_error
 
     async def close(self) -> None:
         """记录自动化会话已经断开。"""
