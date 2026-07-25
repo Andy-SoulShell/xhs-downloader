@@ -107,6 +107,7 @@ describe("浏览器状态与操作记录", () => {
     expect(
       await screen.findByText("等待浏览器扩展重试"),
     ).toBeInTheDocument();
+    expect(screen.getByText("浏览器扩展已连接")).toBeInTheDocument();
   });
 
   it("刷新心跳并展示秒级和分钟级相对时间", async () => {
@@ -175,5 +176,20 @@ describe("浏览器状态与操作记录", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("离线")).toBeInTheDocument();
     expect(screen.getByText("还没有浏览器操作记录")).toBeInTheDocument();
+  });
+
+  it("选择离线扩展时接入安装引导", async () => {
+    vi.mocked(listBrowserExtensions).mockResolvedValue([]);
+    vi.mocked(listBrowserTasks).mockResolvedValue([]);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver="extension"
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
+
+    expect(await screen.findByText("加载浏览器扩展")).toBeInTheDocument();
+    expect(screen.getByText(/解压发行目录中的扩展 ZIP/)).toBeInTheDocument();
   });
 });

@@ -21,6 +21,7 @@ import type { ManagedBrowserControl } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
+import { ExtensionInstallGuide } from "./extension-install-guide";
 import { ManagedBrowserPanel } from "./managed-browser-panel";
 
 interface BrowserMonitorProps {
@@ -64,6 +65,12 @@ export function BrowserMonitor({
 
   return (
     <>
+      <ExtensionInstallGuide
+        browserDriver={browserDriver}
+        onlineCount={monitor.onlineCount}
+        onRefresh={monitor.refresh}
+        refreshing={monitor.refreshing}
+      />
       <ManagedBrowserPanel
         control={managedBrowser}
         selected={browserDriver === "managed"}
