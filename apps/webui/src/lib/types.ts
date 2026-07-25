@@ -130,6 +130,10 @@ export interface SettingsValues {
   publish_max_asset_size: number;
   publish_lease_seconds: number;
   browser_task_lease_seconds: number;
+  managed_browser_executable: string | null;
+  managed_browser_headless: boolean;
+  managed_browser_startup_timeout: number;
+  managed_browser_shutdown_timeout: number;
 }
 
 export interface SettingsResponse {

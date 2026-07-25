@@ -12,10 +12,12 @@ from xhs_core.application import (
     PublicationScheduler,
     PublicationTaskService,
 )
+from xhs_core.domain.browser_ports import ManagedBrowserController
 
 from .config import AppSettings
 from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
+from .managed_browser import ChromiumController
 from .parsing import InitialStateParser
 from .sqlite import (
     SqliteBrowserTaskRepository,
@@ -28,10 +30,11 @@ from .sqlite import (
 
 @dataclass(frozen=True)
 class BrowserRuntime:
-    """通用浏览器任务的管理与扩展执行用例。"""
+    """浏览器任务、扩展执行和受管 Chromium 生命周期。"""
 
     tasks: BrowserTaskService
     execution: BrowserExecutionService
+    managed: ManagedBrowserController
 
 
 @dataclass(frozen=True)
@@ -84,6 +87,7 @@ def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
             repository,
             settings.browser_task_lease_seconds,
         ),
+        managed=ChromiumController(settings),
     )
 
 

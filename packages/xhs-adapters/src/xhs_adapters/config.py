@@ -44,6 +44,8 @@ class AppSettings(BaseSettings):
         folder_name: 媒体文件目录名称。
         cookie: 小红书网页版 Cookie，日志与模型输出会自动隐藏。
         download_record: 是否启用带指纹校验的下载记录。
+        managed_browser_executable: 受管 Chromium 可执行文件；为空时自动检测。
+        managed_browser_headless: 是否隐藏受管浏览器窗口。
     """
 
     model_config = SettingsConfigDict(
@@ -85,8 +87,17 @@ class AppSettings(BaseSettings):
     )
     publish_lease_seconds: int = Field(default=300, ge=60, le=1800)
     browser_task_lease_seconds: int = Field(default=120, ge=30, le=1800)
+    managed_browser_executable: Path | None = None
+    managed_browser_headless: bool = False
+    managed_browser_startup_timeout: float = Field(default=15, gt=0, le=120)
+    managed_browser_shutdown_timeout: float = Field(default=5, gt=0, le=30)
 
-    @field_validator("work_path", "proxy", mode="before")
+    @field_validator(
+        "work_path",
+        "proxy",
+        "managed_browser_executable",
+        mode="before",
+    )
     @classmethod
     def empty_value_to_none(cls, value: Any) -> Any:
         """把 dotenv 中的空字符串转换为空值。
@@ -220,3 +231,21 @@ class AppSettings(BaseSettings):
             仅供本地服务和已登记扩展访问的素材目录。
         """
         return self.state_dir.joinpath("publication")
+
+    @property
+    def managed_browser_dir(self) -> Path:
+        """返回受管浏览器状态目录。
+
+        Returns:
+            保存锁、运行状态和专用用户目录的本机路径。
+        """
+        return self.state_dir.joinpath("managed-browser")
+
+    @property
+    def managed_browser_profile_dir(self) -> Path:
+        """返回默认受管浏览器用户目录。
+
+        Returns:
+            不与用户日常 Chrome 配置共享的持久化目录。
+        """
+        return self.managed_browser_dir.joinpath("profiles", "default")

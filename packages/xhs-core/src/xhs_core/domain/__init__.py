@@ -13,6 +13,7 @@ from .errors import (
     DownloadError,
     InvalidLinkError,
     InvalidPartialContentError,
+    ManagedBrowserError,
     ParseError,
     PublicationError,
     SettingsError,
@@ -31,6 +32,7 @@ from .feeds import (
     ProfileMetric,
     UserProfileResult,
 )
+from .managed_browser import ManagedBrowserState, ManagedBrowserStatus
 from .models import (
     Author,
     ClientDownloadRecord,
@@ -84,6 +86,9 @@ __all__ = [
     "InvalidLinkError",
     "InvalidPartialContentError",
     "LoginQrCodeResult",
+    "ManagedBrowserError",
+    "ManagedBrowserState",
+    "ManagedBrowserStatus",
     "MediaKind",
     "MediaResource",
     "ParseError",

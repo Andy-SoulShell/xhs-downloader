@@ -102,6 +102,10 @@ class SettingsValues(BaseModel):
     publish_max_asset_size: int
     publish_lease_seconds: int
     browser_task_lease_seconds: int
+    managed_browser_executable: str | None
+    managed_browser_headless: bool
+    managed_browser_startup_timeout: float
+    managed_browser_shutdown_timeout: float
 
 
 class SettingsUpdate(BaseModel):
@@ -147,6 +151,18 @@ class SettingsUpdate(BaseModel):
         default=None,
         ge=30,
         le=1800,
+    )
+    managed_browser_executable: str | None = None
+    managed_browser_headless: bool | None = None
+    managed_browser_startup_timeout: float | None = Field(
+        default=None,
+        gt=0,
+        le=120,
+    )
+    managed_browser_shutdown_timeout: float | None = Field(
+        default=None,
+        gt=0,
+        le=30,
     )
 
 

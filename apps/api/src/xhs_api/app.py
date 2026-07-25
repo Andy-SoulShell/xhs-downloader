@@ -24,6 +24,7 @@ from .browser import create_browser_router
 from .browser_operations import create_browser_operation_router
 from .extension import create_extension_router
 from .login import create_login_router
+from .managed_browser import create_managed_browser_router
 from .posts import create_post_router
 from .publication import create_publication_router
 from .settings import (
@@ -83,6 +84,7 @@ def create_api(
             try:
                 yield
             finally:
+                await dependencies.browser.managed.close()
                 await dependencies.publication.scheduler.close()
                 await tasks.close()
 
@@ -122,6 +124,12 @@ def create_api(
     api.include_router(
         create_browser_operation_router(
             dependencies.browser.tasks,
+            settings_access_policy,
+        )
+    )
+    api.include_router(
+        create_managed_browser_router(
+            dependencies.browser.managed,
             settings_access_policy,
         )
     )

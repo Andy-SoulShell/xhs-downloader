@@ -29,6 +29,10 @@ class BrowserTaskError(XhsError):
     """浏览器任务提交或执行失败。"""
 
 
+class ManagedBrowserError(XhsError):
+    """受管浏览器安装、启动或生命周期操作失败。"""
+
+
 class DownloadError(XhsError):
     """媒体请求或文件落盘失败。"""
 

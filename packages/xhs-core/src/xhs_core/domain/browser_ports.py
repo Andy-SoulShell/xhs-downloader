@@ -4,6 +4,39 @@ from datetime import datetime
 from typing import Protocol
 
 from .browser_tasks import BrowserTask, BrowserTaskStatus
+from .managed_browser import ManagedBrowserStatus
+
+
+class ManagedBrowserController(Protocol):
+    """受管浏览器进程生命周期端口。"""
+
+    async def status(self) -> ManagedBrowserStatus:
+        """读取安装与运行状态。
+
+        Returns:
+            不包含完整路径或浏览数据的状态快照。
+        """
+        ...
+
+    async def start(self) -> ManagedBrowserStatus:
+        """启动或复用当前受管浏览器。
+
+        Returns:
+            已进入运行态的状态快照。
+        """
+        ...
+
+    async def stop(self) -> ManagedBrowserStatus:
+        """安全停止当前服务持有的受管浏览器。
+
+        Returns:
+            已进入停止态的状态快照。
+        """
+        ...
+
+    async def close(self) -> None:
+        """释放进程、端口和单实例锁。"""
+        ...
 
 
 class BrowserTaskRepository(Protocol):
