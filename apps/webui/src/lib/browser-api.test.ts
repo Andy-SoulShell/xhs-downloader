@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { executeBrowserOperation } from "./browser-api";
+import { deleteCookies, executeBrowserOperation } from "./browser-api";
 
 function task(status: string, result: Record<string, unknown> | null) {
   return {
@@ -61,5 +61,59 @@ describe("浏览器能力 API 客户端", () => {
     await expect(
       executeBrowserOperation("/xhs/feeds/list", {}),
     ).rejects.toThrow(message);
+  });
+
+  it("显式确认后清理指定 Cookie 会话", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          target: "browser",
+          status: "succeeded",
+          deleted: true,
+          message: "浏览器 Cookie 已清除",
+          task_id: "synthetic-delete-task",
+          restart_required: false,
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-delete-request" });
+
+    await expect(deleteCookies("browser")).resolves.toMatchObject({
+      deleted: true,
+      target: "browser",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/xhs/login/cookies/delete?wait_seconds=60",
+      expect.objectContaining({
+        body: JSON.stringify({
+          target: "browser",
+          confirmed: true,
+          request_id: "synthetic-delete-request",
+        }),
+      }),
+    );
+  });
+
+  it("把 Cookie 清理中的非终态转换为明确错误", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            target: "browser",
+            status: "queued",
+            deleted: false,
+            message: "等待扩展",
+            task_id: "synthetic-delete-task",
+            restart_required: false,
+          }),
+        ),
+      ),
+    );
+
+    await expect(deleteCookies("browser")).rejects.toThrow(
+      "尚未完成 Cookie 清理",
+    );
   });
 });

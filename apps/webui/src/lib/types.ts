@@ -2,12 +2,14 @@
 export type {
   BrowserLoginState,
   BrowserTask,
+  BrowserTaskStatus,
   ClientDownloadRecord,
   CommentResult,
   DesiredStateResult,
   FeedDetailResult,
   FeedListResult,
   FeedSummary,
+  LoginQrCodeResult,
   UserProfileResult,
 } from "@xhs-downloader/contracts";
 

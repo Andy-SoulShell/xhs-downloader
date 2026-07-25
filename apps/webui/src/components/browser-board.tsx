@@ -3,7 +3,6 @@ import {
   Compass,
   Heart,
   LoaderCircle,
-  LogIn,
   MessageCircle,
   Search,
 } from "lucide-react";
@@ -14,6 +13,7 @@ import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BrowserDetail } from "./browser-detail";
+import { BrowserLoginActions } from "./browser-login-actions";
 import { BrowserMonitor } from "./browser-monitor";
 import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
@@ -39,24 +39,23 @@ export function BrowserBoard() {
         }
         title="浏览器探索"
         actions={
-          <div className="flex flex-wrap gap-2">
-            <ActionButton
-              disabled={explorer.busy}
-              onClick={() => void explorer.checkLogin()}
-              variant="outline"
-            >
-              <LogIn aria-hidden size={15} />
-              检查登录
-            </ActionButton>
-            <ActionButton
-              disabled={explorer.busy}
-              onClick={() => void explorer.loadFeeds()}
-            >
-              <Compass aria-hidden size={15} />
-              读取推荐
-            </ActionButton>
-          </div>
+          <ActionButton
+            disabled={explorer.busy}
+            onClick={() => void explorer.loadFeeds()}
+          >
+            <Compass aria-hidden size={15} />
+            读取推荐
+          </ActionButton>
         }
+      />
+
+      <BrowserLoginActions
+        busy={explorer.busy}
+        message={explorer.sessionMessage}
+        onCheckLogin={explorer.checkLogin}
+        onDeleteCookies={explorer.deleteBrowserCookies}
+        onGetQrCode={explorer.getLoginQrCode}
+        qrCode={explorer.qrCode}
       />
 
       <div className="control-shell p-4 sm:p-5">

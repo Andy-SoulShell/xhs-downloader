@@ -9,8 +9,9 @@ import type {
   FeedDetailResult,
   FeedListResult,
   FeedSummary,
+  LoginQrCodeResult,
 } from "./types";
-import { executeBrowserOperation } from "./browser-api";
+import { deleteCookies, executeBrowserOperation } from "./browser-api";
 
 /** 浏览器探索页面的读取状态和互动操作。 */
 export interface BrowserExplorer {
@@ -19,8 +20,12 @@ export interface BrowserExplorer {
   detail: FeedDetailResult | null;
   error: string;
   feeds: FeedSummary[];
+  qrCode: LoginQrCodeResult | null;
+  sessionMessage: string;
   task: BrowserTask | null;
   checkLogin: () => Promise<void>;
+  deleteBrowserCookies: () => Promise<void>;
+  getLoginQrCode: () => Promise<void>;
   loadFeeds: () => Promise<void>;
   openFeed: (feed: FeedSummary) => Promise<void>;
   postComment: (content: string) => Promise<void>;
@@ -39,6 +44,8 @@ export function useBrowserExplorer(): BrowserExplorer {
   const [detail, setDetail] = useState<FeedDetailResult | null>(null);
   const [error, setError] = useState("");
   const [feeds, setFeeds] = useState<FeedSummary[]>([]);
+  const [qrCode, setQrCode] = useState<LoginQrCodeResult | null>(null);
+  const [sessionMessage, setSessionMessage] = useState("");
   const [task, setTask] = useState<BrowserTask | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
 
@@ -56,6 +63,7 @@ export function useBrowserExplorer(): BrowserExplorer {
       activeRequest.current = controller;
       setBusy(true);
       setError("");
+      setSessionMessage("");
       try {
         const result = await executeBrowserOperation<T>(
           path,
@@ -80,11 +88,49 @@ export function useBrowserExplorer(): BrowserExplorer {
 
   const checkLogin = useCallback(
     () =>
-      run<BrowserLoginState>("/xhs/login/status", {}, (data) =>
-        setAccount(data),
-      ),
+      run<BrowserLoginState>("/xhs/login/status", {}, (data) => {
+        setAccount(data);
+        if (data.logged_in) setQrCode(null);
+      }),
     [run],
   );
+  const getLoginQrCode = useCallback(
+    () =>
+      run<LoginQrCodeResult>("/xhs/login/qrcode", {}, (data) => {
+        setQrCode(data);
+        setAccount({
+          logged_in: data.is_logged_in,
+          user_id: null,
+          nickname: null,
+        });
+      }),
+    [run],
+  );
+  const deleteBrowserCookies = useCallback(async () => {
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setBusy(true);
+    setError("");
+    setSessionMessage("");
+    try {
+      const result = await deleteCookies("browser", controller.signal);
+      if (activeRequest.current !== controller) return;
+      setAccount({ logged_in: false, user_id: null, nickname: null });
+      setQrCode(null);
+      setSessionMessage(result.message);
+    } catch (reason) {
+      if (controller.signal.aborted) return;
+      setError(
+        reason instanceof Error ? reason.message : "浏览器 Cookie 清理失败",
+      );
+    } finally {
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setBusy(false);
+      }
+    }
+  }, []);
   const loadFeeds = useCallback(
     () =>
       run<FeedListResult>("/xhs/feeds/list", {}, (data) => {
@@ -185,8 +231,12 @@ export function useBrowserExplorer(): BrowserExplorer {
     detail,
     error,
     feeds,
+    qrCode,
+    sessionMessage,
     task,
     checkLogin,
+    deleteBrowserCookies,
+    getLoginQrCode,
     loadFeeds,
     openFeed,
     postComment: postCurrentComment,

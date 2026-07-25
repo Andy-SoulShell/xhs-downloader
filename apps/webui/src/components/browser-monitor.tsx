@@ -26,6 +26,8 @@ interface BrowserMonitorProps {
 
 const KIND_LABELS: Record<BrowserTaskKind, string> = {
   check_login_status: "检查登录",
+  get_login_qrcode: "获取登录二维码",
+  delete_cookies: "清除 Cookie",
   list_feeds: "读取推荐",
   search_feeds: "搜索帖子",
   get_feed_detail: "读取详情",

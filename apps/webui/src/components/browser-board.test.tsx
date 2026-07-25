@@ -12,6 +12,7 @@ import { BrowserBoard } from "./browser-board";
 import { BrowserDetail } from "./browser-detail";
 
 vi.mock("../lib/browser-api", () => ({
+  deleteCookies: vi.fn(),
   executeBrowserOperation: vi.fn(),
 }));
 vi.mock("../lib/browser-management-api", () => ({
