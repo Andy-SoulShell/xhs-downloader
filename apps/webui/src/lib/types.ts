@@ -117,6 +117,7 @@ export interface SettingsValues {
   log_level: string;
   publish_max_asset_size: number;
   publish_lease_seconds: number;
+  browser_task_lease_seconds: number;
 }
 
 export interface SettingsResponse {

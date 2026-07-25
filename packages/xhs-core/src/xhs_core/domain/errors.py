@@ -25,6 +25,10 @@ class PublicationError(XhsError):
     """发布草稿、素材或任务状态无效。"""
 
 
+class BrowserTaskError(XhsError):
+    """浏览器任务提交或执行失败。"""
+
+
 class DownloadError(XhsError):
     """媒体请求或文件落盘失败。"""
 

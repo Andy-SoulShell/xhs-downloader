@@ -268,4 +268,5 @@ const settingLabels: Record<string, string> = {
   log_level: "日志级别",
   publish_max_asset_size: "发布素材上限",
   publish_lease_seconds: "发布任务租约",
+  browser_task_lease_seconds: "浏览器任务租约",
 };

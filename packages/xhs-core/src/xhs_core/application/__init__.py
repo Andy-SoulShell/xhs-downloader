@@ -1,5 +1,7 @@
 """可由不同交付应用复用的应用用例。"""
 
+from .browser_execution import BrowserExecutionService
+from .browser_tasks import BrowserTaskService
 from .collection import CollectionService
 from .download import DownloadService
 from .download_tasks import DownloadTaskCoordinator
@@ -10,6 +12,8 @@ from .publication_scheduler import PublicationScheduler
 from .publication_tasks import PublicationTaskService
 
 __all__ = [
+    "BrowserExecutionService",
+    "BrowserTaskService",
     "CollectionService",
     "DownloadService",
     "DownloadTaskCoordinator",

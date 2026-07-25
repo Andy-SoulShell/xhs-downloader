@@ -109,6 +109,7 @@ export function makeSettingsResponse(
       log_level: "info",
       publish_max_asset_size: 1073741824,
       publish_lease_seconds: 300,
+      browser_task_lease_seconds: 120,
     },
     config_file: "/tmp/synthetic.env",
     restart_required: false,

@@ -3,7 +3,12 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from xhs_adapters import PublicationRuntime, create_publication_runtime
+from xhs_adapters import (
+    BrowserRuntime,
+    PublicationRuntime,
+    create_browser_runtime,
+    create_publication_runtime,
+)
 from xhs_adapters.config import AppSettings
 from xhs_adapters.settings_repository import DotenvSettingsRepository
 from xhs_adapters.sqlite import (
@@ -24,6 +29,7 @@ from .settings_service import SettingsManager
 class ApiDependencies:
     """HTTP API 生命周期所需依赖。"""
 
+    browser: BrowserRuntime
     client_records: ClientRecordRepository
     download_tasks: TaskRepository
     posts: PostRepository
@@ -48,6 +54,7 @@ def create_api_dependencies(
     """
     database = settings.state_dir.joinpath("downloads.db")
     return ApiDependencies(
+        browser=create_browser_runtime(settings),
         client_records=SqliteClientRecordRepository(database),
         download_tasks=SqliteTaskRepository(database),
         posts=SqlitePostRepository(database),

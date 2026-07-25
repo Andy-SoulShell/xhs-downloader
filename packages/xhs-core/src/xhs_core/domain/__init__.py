@@ -1,6 +1,14 @@
 """领域模型、端口和纯业务规则。"""
 
+from .browser_tasks import (
+    BrowserTask,
+    BrowserTaskClaim,
+    BrowserTaskKind,
+    BrowserTaskStatus,
+    can_retry_browser_task,
+)
 from .errors import (
+    BrowserTaskError,
     DownloadError,
     InvalidLinkError,
     InvalidPartialContentError,
@@ -36,6 +44,11 @@ from .publication import (
 
 __all__ = [
     "Author",
+    "BrowserTask",
+    "BrowserTaskClaim",
+    "BrowserTaskError",
+    "BrowserTaskKind",
+    "BrowserTaskStatus",
     "ClientDownloadRecord",
     "ClientRecordStatus",
     "DownloadArtifact",
@@ -62,4 +75,5 @@ __all__ = [
     "WorkDetail",
     "WorkType",
     "XhsError",
+    "can_retry_browser_task",
 ]

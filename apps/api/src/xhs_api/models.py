@@ -101,6 +101,7 @@ class SettingsValues(BaseModel):
     log_level: str
     publish_max_asset_size: int
     publish_lease_seconds: int
+    browser_task_lease_seconds: int
 
 
 class SettingsUpdate(BaseModel):
@@ -140,6 +141,11 @@ class SettingsUpdate(BaseModel):
     publish_lease_seconds: int | None = Field(
         default=None,
         ge=60,
+        le=1800,
+    )
+    browser_task_lease_seconds: int | None = Field(
+        default=None,
+        ge=30,
         le=1800,
     )
 

@@ -84,6 +84,7 @@ class AppSettings(BaseSettings):
         le=10 * 1024 * 1024 * 1024,
     )
     publish_lease_seconds: int = Field(default=300, ge=60, le=1800)
+    browser_task_lease_seconds: int = Field(default=120, ge=30, le=1800)
 
     @field_validator("work_path", "proxy", mode="before")
     @classmethod

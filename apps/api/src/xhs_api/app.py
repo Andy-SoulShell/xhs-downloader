@@ -20,6 +20,7 @@ from xhs_core.domain import XhsError
 from xhs_core.version import VERSION
 
 from .bootstrap import create_api_dependencies
+from .browser import create_browser_router
 from .extension import create_extension_router
 from .posts import create_post_router
 from .publication import create_publication_router
@@ -99,6 +100,7 @@ def create_api(
             "Content-Type",
             "Range",
             "X-Extension-Id",
+            "X-Browser-Lease",
             "X-Publish-Lease",
         ],
         expose_headers=[
@@ -106,6 +108,14 @@ def create_api(
             "Content-Length",
             "Content-Range",
         ],
+    )
+    api.include_router(
+        create_browser_router(
+            dependencies.browser.tasks,
+            dependencies.browser.execution,
+            dependencies.publication.credentials,
+            settings_access_policy,
+        )
     )
     api.include_router(
         create_settings_router(dependencies.settings, settings_access_policy)

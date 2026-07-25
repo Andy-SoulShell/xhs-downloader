@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 
 from xhs_core.application import (
+    BrowserExecutionService,
+    BrowserTaskService,
     DownloadService,
     ExtensionCredentialService,
     PublicationDraftService,
@@ -16,11 +18,20 @@ from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
 from .parsing import InitialStateParser
 from .sqlite import (
+    SqliteBrowserTaskRepository,
     SqliteDownloadRepository,
     SqliteExtensionCredentialRepository,
     SqlitePublicationDraftRepository,
     SqlitePublicationTaskRepository,
 )
+
+
+@dataclass(frozen=True)
+class BrowserRuntime:
+    """通用浏览器任务的管理与扩展执行用例。"""
+
+    tasks: BrowserTaskService
+    execution: BrowserExecutionService
 
 
 @dataclass(frozen=True)
@@ -51,6 +62,27 @@ def create_download_service(settings: AppSettings) -> DownloadService:
         downloader=FileDownloader(settings, gateway),
         repository=SqliteDownloadRepository(
             settings.state_dir.joinpath("downloads.db")
+        ),
+    )
+
+
+def create_browser_runtime(settings: AppSettings) -> BrowserRuntime:
+    """创建通用浏览器任务运行时。
+
+    Args:
+        settings: 已验证的运行配置。
+
+    Returns:
+        共享同一 SQLite 仓储的任务管理与执行用例。
+    """
+    repository = SqliteBrowserTaskRepository(
+        settings.state_dir.joinpath("downloads.db")
+    )
+    return BrowserRuntime(
+        tasks=BrowserTaskService(repository),
+        execution=BrowserExecutionService(
+            repository,
+            settings.browser_task_lease_seconds,
         ),
     )
 

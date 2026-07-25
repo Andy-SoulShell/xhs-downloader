@@ -22,7 +22,7 @@ def create_extension_router(records: ClientRecordRepository) -> APIRouter:
     @router.get("/capabilities", response_model=ExtensionCapabilities)
     async def extension_capabilities() -> ExtensionCapabilities:
         return ExtensionCapabilities(
-            protocol_version=2,
+            protocol_version=3,
             service_version=VERSION,
             download_modes=[DownloadMode.BROWSER, DownloadMode.BACKGROUND],
             features={
@@ -34,6 +34,7 @@ def create_extension_router(records: ClientRecordRepository) -> APIRouter:
                 "persistent_tasks": True,
                 "retry": True,
                 "publication": True,
+                "browser_tasks": True,
             },
         )
 
