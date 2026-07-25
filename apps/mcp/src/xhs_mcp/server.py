@@ -13,17 +13,24 @@ from xhs_core.version import VERSION
 
 from .browser_client import BrowserCapabilityClient, HttpBrowserCapabilityClient
 from .browser_tools import register_browser_tools
+from .publication_client import (
+    HttpPublicationCapabilityClient,
+    PublicationCapabilityClient,
+)
+from .publication_tools import register_publication_tools
 
 
 def create_mcp(
     service: DownloadService,
     browser: BrowserCapabilityClient | None = None,
+    publication: PublicationCapabilityClient | None = None,
 ) -> FastMCP:
     """为下载服务创建 MCP 工具集合。
 
     Args:
         service: 已进入生命周期的下载应用服务。
         browser: 可选的本机浏览器能力 API 客户端。
+        publication: 可选的本机发布 API 客户端。
 
     Returns:
         注册了详情和下载工具的 FastMCP 实例。
@@ -94,6 +101,8 @@ def create_mcp(
 
     if browser:
         register_browser_tools(mcp, browser)
+    if publication:
+        register_publication_tools(mcp, publication)
     return mcp
 
 
@@ -118,7 +127,11 @@ async def run_mcp(
         create_download_service(settings) as service,
         AsyncClient(base_url=resolved_api_url, timeout=65) as api_client,
     ):
-        mcp = create_mcp(service, HttpBrowserCapabilityClient(api_client))
+        mcp = create_mcp(
+            service,
+            HttpBrowserCapabilityClient(api_client),
+            HttpPublicationCapabilityClient(api_client),
+        )
         await mcp.run_async(
             transport="streamable-http",
             host=host or settings.server_host,

@@ -1,6 +1,7 @@
 """FastMCP 工具接口测试。"""
 
 from fastmcp import Client
+from xhs_mcp.publication_client import PublicationSubmission
 from xhs_mcp.server import create_mcp
 
 from tests.interfaces.helpers import FakeService
@@ -16,6 +17,19 @@ class _FakeBrowserClient:
             "task_id": "synthetic-browser-task",
             "message": "合成浏览结果",
             "data": {"items": []},
+        }
+
+
+class _FakePublicationClient:
+    def __init__(self) -> None:
+        self.calls: list[PublicationSubmission] = []
+
+    async def submit(self, request: PublicationSubmission) -> dict[str, object]:
+        self.calls.append(request)
+        return {
+            "task_id": "synthetic-publication-task",
+            "status": "ready",
+            "message": "合成发布任务已就绪",
         }
 
 
@@ -199,3 +213,58 @@ async def test_mcp_reply_requires_a_target() -> None:
         )
 
     assert result.is_error is True
+
+
+async def test_mcp_publication_tools_require_confirmation() -> None:
+    """确保发布工具显式确认后才把结构化参数交给本机 API 客户端。"""
+    publication = _FakePublicationClient()
+    mcp = create_mcp(FakeService(), publication=publication)
+    async with Client(mcp) as client:
+        tools = await client.list_tools()
+        rejected = await client.call_tool(
+            "publish_content",
+            {
+                "title": "合成图文",
+                "content": "合成正文",
+                "image_paths": ["/tmp/synthetic.jpeg"],
+                "confirmed": False,
+            },
+            raise_on_error=False,
+        )
+        content = await client.call_tool(
+            "publish_content",
+            {
+                "title": "合成图文",
+                "content": "合成正文",
+                "image_paths": ["/tmp/synthetic.jpeg"],
+                "confirmed": True,
+                "tags": ["合成"],
+                "schedule_at": "2026-08-01T12:00:00+08:00",
+                "is_original": True,
+                "visibility": "mutual",
+                "products": ["合成商品"],
+            },
+        )
+        await client.call_tool(
+            "publish_video",
+            {
+                "title": "合成视频",
+                "content": "合成正文",
+                "video_path": "/tmp/synthetic.mp4",
+                "confirmed": True,
+                "visibility": "private",
+            },
+        )
+
+    tool_map = {tool.name: tool for tool in tools}
+    assert rejected.is_error is True
+    assert content.data["task_id"] == "synthetic-publication-task"
+    assert tool_map["publish_content"].annotations.destructiveHint is True
+    assert tool_map["publish_content"].annotations.idempotentHint is False
+    assert len(publication.calls) == 2
+    assert publication.calls[0].media_kind == "image"
+    assert publication.calls[0].visibility.value == "mutual"
+    assert publication.calls[0].is_original is True
+    assert publication.calls[0].products == ["合成商品"]
+    assert publication.calls[1].media_kind == "video"
+    assert publication.calls[1].visibility.value == "private"
