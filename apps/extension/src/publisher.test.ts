@@ -14,6 +14,9 @@ const claim: PublicationClaim = {
       title: "合成标题",
       body: "合成正文",
       tags: ["自动化"],
+      visibility: "public",
+      is_original: false,
+      products: [],
       assets: [
         {
           asset_id: "synthetic-asset",
@@ -52,6 +55,9 @@ beforeEach(() => {
     <input type="file" accept="image/*" />
     <input placeholder="填写标题" />
     <div class="ProseMirror" contenteditable="true"></div>
+    <div class="permission-card-wrapper">
+      <div class="d-select-content">公开可见</div>
+    </div>
     <button id="publish">发布</button>
   `;
   transferred = [];

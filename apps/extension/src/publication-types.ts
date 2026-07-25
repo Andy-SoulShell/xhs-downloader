@@ -1,4 +1,5 @@
-export type PublicationMode = "manual" | "scheduled";
+export type PublicationMode = "manual" | "scheduled" | "platform_scheduled";
+export type PublicationVisibility = "public" | "private" | "mutual";
 export type PublicationTaskStatus =
   | "scheduled"
   | "ready"
@@ -24,6 +25,9 @@ export interface PublicationDraft {
   title: string;
   body: string;
   tags: string[];
+  visibility: PublicationVisibility;
+  is_original: boolean;
+  products: string[];
   assets: PublicationAsset[];
   created_at: string;
   updated_at: string;

@@ -10,6 +10,13 @@ import {
   waitForPublishControl,
   waitForUploadInput,
 } from "./publisher-dom";
+import { waitForMediaReady } from "./publisher-media";
+import {
+  setOriginalDeclaration,
+  setPlatformSchedule,
+  setPublicationVisibility,
+} from "./publisher-options";
+import { bindConfirmedProducts } from "./publisher-products";
 import type {
   PublicationClaim,
   PublicationRequest,
@@ -74,12 +81,21 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
       );
     }
     attachFiles(input, files);
+    showStatus(kind === "video" ? "正在等待视频处理完成" : "正在填写发布内容");
+    await waitForMediaReady(document, kind);
     showStatus("正在填写标题和正文");
     const draft = claim.task.package;
     const body = [draft.body, ...draft.tags.map((tag) => `#${tag}`)]
       .filter(Boolean)
       .join("\n");
     await fillPublicationForm(document, draft.title, body);
+    showStatus("正在核对发布选项");
+    await setPublicationVisibility(document, draft.visibility);
+    await setOriginalDeclaration(document, draft.is_original);
+    await bindConfirmedProducts(document, draft.products);
+    if (claim.task.mode === "platform_scheduled") {
+      await setPlatformSchedule(document, claim.task.scheduled_at);
+    }
     const control = await waitForPublishControl(document);
     showStatus("正在提交到创作平台");
     await report(claim, "publishing", "即将点击创作平台发布按钮");
