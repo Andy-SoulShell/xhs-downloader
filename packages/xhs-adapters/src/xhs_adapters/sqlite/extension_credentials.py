@@ -132,6 +132,7 @@ class SqliteExtensionCredentialRepository:
             return
         self._database.parent.mkdir(parents=True, exist_ok=True)
         async with connect(self._database) as database:
+            await database.execute("BEGIN IMMEDIATE")
             await database.execute(
                 """
                 CREATE TABLE IF NOT EXISTS publication_extension (
