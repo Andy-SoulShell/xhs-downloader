@@ -98,7 +98,7 @@ cp .env.example .env
 | `XHS_DOWNLOAD_RECORD` | `true` | 启用指纹下载记录 |
 | `XHS_RECORD_DATA` | `false` | 保存结构化作品元数据 |
 | `XHS_PUBLISH_MAX_ASSET_SIZE` | `1073741824` | 单个发布素材上限，单位为字节 |
-| `XHS_PUBLISH_LEASE_SECONDS` | `300` | 扩展执行发布任务的租约秒数 |
+| `XHS_PUBLISH_LEASE_SECONDS` | `300` | 浏览器执行发布任务的租约秒数 |
 | `XHS_ROUTE_STRATEGY` | `browser_only` | `http_only/browser_only/http_first/browser_first` |
 | `XHS_BROWSER_DRIVER` | `extension` | `extension/managed` 浏览器执行器 |
 | `XHS_SERVER_HOST` | `0.0.0.0` | API 监听地址；MCP 默认沿用 |
