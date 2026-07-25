@@ -3,7 +3,14 @@
   "name": "xhs-downloader",
   "version": "3.0.0",
   "description": "预览和下载帖子媒体，并与本地服务协作完成内容浏览、互动与发布。",
-  "permissions": ["activeTab", "alarms", "debugger", "downloads", "storage"],
+  "permissions": [
+    "activeTab",
+    "alarms",
+    "browsingData",
+    "debugger",
+    "downloads",
+    "storage"
+  ],
   "host_permissions": [
     "http://127.0.0.1/*",
     "http://localhost/*"

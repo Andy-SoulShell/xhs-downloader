@@ -26,7 +26,7 @@ describe("浏览器任务服务客户端", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),
@@ -34,7 +34,7 @@ describe("浏览器任务服务客户端", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 2,
+            protocol_version: 3,
             features: { browser_tasks: true },
           }),
         ),

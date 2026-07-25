@@ -26,7 +26,7 @@ export async function supportsBrowserTasks(baseUrl: string): Promise<boolean> {
       features?: Record<string, boolean>;
     };
     return (
-      (payload.protocol_version ?? 0) >= 3 &&
+      (payload.protocol_version ?? 0) >= 4 &&
       payload.features?.browser_tasks === true
     );
   } catch {

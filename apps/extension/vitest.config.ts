@@ -23,6 +23,7 @@ export default defineConfig({
         "src/feed-detail-parser.ts",
         "src/feed-parser.ts",
         "src/interaction-runner.ts",
+        "src/login-qrcode.ts",
         "src/login-state.ts",
         "src/page-data.ts",
         "src/publication-assets.ts",
@@ -35,6 +36,7 @@ export default defineConfig({
         "src/publisher-products.ts",
         "src/profile-parser.ts",
         "src/search-filters.ts",
+        "src/browser-session-runner.ts",
       ],
       thresholds: {
         branches: 85,

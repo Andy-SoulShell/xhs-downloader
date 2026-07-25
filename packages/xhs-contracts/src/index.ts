@@ -1,6 +1,6 @@
 /** 服务端与浏览器客户端共享的稳定协议。 */
 /** 浏览器扩展与本地服务协商使用的协议版本。 */
-export const EXTENSION_PROTOCOL_VERSION = 1;
+export const EXTENSION_PROTOCOL_VERSION = 4;
 
 /** 负责执行媒体下载的一侧。 */
 export type DownloadMode = "browser" | "background";
@@ -30,6 +30,8 @@ export type JsonValue =
 /** 浏览器扩展当前支持的任务类型。 */
 export type BrowserTaskKind =
   | "check_login_status"
+  | "get_login_qrcode"
+  | "delete_cookies"
   | "list_feeds"
   | "search_feeds"
   | "get_feed_detail"
@@ -84,6 +86,20 @@ export interface BrowserLoginState {
   logged_in: boolean;
   user_id: string | null;
   nickname: string | null;
+}
+
+/** 一次性交付的登录二维码结果。 */
+export interface LoginQrCodeResult {
+  is_logged_in: boolean;
+  image_data_url: string | null;
+  expires_at: string | null;
+  consumed: boolean;
+}
+
+/** 浏览器 Cookie 已按小红书站点范围清理。 */
+export interface BrowserCookieDeletionResult {
+  target: "browser";
+  deleted: true;
 }
 
 /** Feed 卡片、详情和评论共用的作者信息。 */

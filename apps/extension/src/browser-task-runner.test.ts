@@ -95,7 +95,7 @@ describe("浏览器任务后台执行器", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),
@@ -128,7 +128,7 @@ describe("浏览器任务后台执行器", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),
@@ -149,7 +149,7 @@ describe("浏览器任务后台执行器", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),
@@ -228,7 +228,7 @@ describe("浏览器任务后台执行器", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),
@@ -273,7 +273,7 @@ describe("浏览器任务后台执行器", () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            protocol_version: 3,
+            protocol_version: 4,
             features: { browser_tasks: true },
           }),
         ),

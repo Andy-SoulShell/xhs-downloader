@@ -5,6 +5,7 @@ import type {
 } from "@xhs-downloader/contracts";
 
 import { detectLoginState } from "./login-state";
+import { readLoginQrCode } from "./login-qrcode";
 import { readLiveInitialState } from "./browser-state-bridge";
 import {
   loadComments,
@@ -56,6 +57,12 @@ export async function executeBrowserPageTask(
       message: state.logged_in ? "浏览器已登录小红书" : "浏览器尚未登录小红书",
       result: { ...state },
     };
+  }
+  if (task.kind === "get_login_qrcode") {
+    return success(
+      "登录二维码已生成，登录页面将保持打开",
+      readLoginQrCode(page, pageUrl),
+    );
   }
   if (task.kind === "list_feeds") {
     return success("推荐流读取完成", parseFeedListDocument(page, "home"));

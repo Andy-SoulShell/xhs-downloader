@@ -85,6 +85,30 @@ describe("内容脚本浏览器任务执行器", () => {
     });
   });
 
+  it("从登录页返回短期二维码", async () => {
+    const page = document.implementation.createHTMLDocument();
+    page.body.innerHTML = `
+      <div class="login-container">
+        <img class="qrcode-img" src="data:image/png;base64,c3ludGhldGljLXFy">
+      </div>
+    `;
+
+    const response = await executeBrowserPageTask(
+      task("get_login_qrcode"),
+      page,
+      "https://www.xiaohongshu.com/explore",
+    );
+
+    expect(response).toMatchObject({
+      ok: true,
+      result: {
+        is_logged_in: false,
+        image_data_url: "data:image/png;base64,c3ludGhldGljLXFy",
+        consumed: false,
+      },
+    });
+  });
+
   it("明确拒绝未知任务类型", async () => {
     const page = document.implementation.createHTMLDocument();
     const response = await executeBrowserPageTask(

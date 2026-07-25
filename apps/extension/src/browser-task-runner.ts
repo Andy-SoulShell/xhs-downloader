@@ -13,6 +13,7 @@ import {
   reportBrowserTaskRunning,
   supportsBrowserTasks,
 } from "./browser-task-service";
+import { executeBrowserSessionTask } from "./browser-session-runner";
 import {
   clearExtensionCredential,
   ensureExtensionCredential,
@@ -106,6 +107,8 @@ async function executeClaim(
 async function executeInXhsTab(
   claim: BrowserTaskClaim,
 ): Promise<BrowserPageTaskResponse> {
+  const sessionResponse = await executeBrowserSessionTask(claim.task);
+  if (sessionResponse) return sessionResponse;
   const request: BrowserPageTaskRequest = {
     type: "browser-page-task",
     task: claim.task,
@@ -131,6 +134,7 @@ async function executeInNewTab(
   const targetUrl = taskTargetUrl(request.task);
   const tab = await chrome.tabs.create({ url: targetUrl, active: false });
   if (tab.id === undefined) throw new Error("无法创建小红书任务页面");
+  let keepOpen = false;
   try {
     let response = await sendWhenReady(tab.id, request);
     if (response.navigateUrl) {
@@ -148,9 +152,13 @@ async function executeInNewTab(
         response.result = { ...(response.result ?? {}), ...artifact };
       }
     }
+    keepOpen =
+      request.task.kind === "get_login_qrcode" &&
+      response.ok &&
+      response.result?.is_logged_in === false;
     return response;
   } finally {
-    await chrome.tabs.remove(tab.id);
+    if (!keepOpen) await chrome.tabs.remove(tab.id);
   }
 }
 
@@ -186,7 +194,11 @@ async function sendWhenReady(
 }
 
 function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
-  if (task.kind === "check_login_status" || task.kind === "list_feeds") {
+  if (
+    task.kind === "check_login_status" ||
+    task.kind === "get_login_qrcode" ||
+    task.kind === "list_feeds"
+  ) {
     return EXPLORE_URL;
   }
   if (task.kind === "search_feeds") {

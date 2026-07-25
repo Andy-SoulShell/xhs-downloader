@@ -60,7 +60,7 @@ async def test_api_exposes_extension_capabilities_and_record_sync(tmp_path) -> N
         )
         records = await client.get("/extension/records?limit=10")
 
-    assert capabilities.json()["protocol_version"] == 3
+    assert capabilities.json()["protocol_version"] == 4
     assert capabilities.json()["features"]["browser_tasks"] is True
     assert capabilities.json()["features"]["publication"] is True
     assert capabilities.json()["features"]["artifact_validation"] is True

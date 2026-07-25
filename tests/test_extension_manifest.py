@@ -8,7 +8,7 @@ MANIFEST = ROOT.joinpath("apps", "extension", "manifest.json")
 
 
 def test_extension_uses_minimum_permissions() -> None:
-    """确保扩展只申请发布与下载所需权限，不开放 Cookie 或全站访问。"""
+    """确保扩展可清理站点数据，但不能读取 Cookie 或全站内容。"""
     manifest = loads(MANIFEST.read_text(encoding="utf-8"))
     permissions = set(manifest["permissions"])
     host_permissions = set(manifest["host_permissions"])
@@ -16,6 +16,7 @@ def test_extension_uses_minimum_permissions() -> None:
     assert permissions == {
         "activeTab",
         "alarms",
+        "browsingData",
         "debugger",
         "downloads",
         "storage",
