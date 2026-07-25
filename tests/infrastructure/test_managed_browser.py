@@ -197,3 +197,54 @@ async def test_managed_browser_releases_lock_after_startup_failure(
     assert process.terminated is True
     assert controller._instance_lock.is_locked is False
     assert (await controller.status()).state is ManagedBrowserState.ERROR
+
+
+async def test_managed_browser_restarts_after_unexpected_exit(
+    tmp_path: Path,
+) -> None:
+    """确保进程异常退出后释放旧锁并可使用同一专用 Profile 恢复。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    first = FakeChromiumProcess()
+    second = FakeChromiumProcess()
+    processes = [first, second]
+    launched: list[FakeChromiumProcess] = []
+    settings = AppSettings(
+        work_path=tmp_path,
+        managed_browser_executable=_executable(tmp_path),
+    )
+
+    async def launch(command: Sequence[str]) -> FakeChromiumProcess:
+        process = processes[len(launched)]
+        launched.append(process)
+        profile_arg = next(
+            item for item in command if item.startswith("--user-data-dir=")
+        )
+        profile = Path(profile_arg.partition("=")[2])
+        profile.joinpath("DevToolsActivePort").write_text(
+            "9222\n/devtools/browser/synthetic\n",
+            encoding="utf-8",
+        )
+        return process
+
+    async def healthy(port: int) -> bool:
+        return port == 9222 and any(process.returncode is None for process in launched)
+
+    controller = ChromiumController(
+        settings,
+        launcher=launch,
+        endpoint_probe=healthy,
+    )
+    await controller.start()
+    first.returncode = 1
+
+    crashed = await controller.status()
+    recovered = await controller.start()
+
+    assert crashed.state is ManagedBrowserState.ERROR
+    assert recovered.state is ManagedBrowserState.RUNNING
+    assert launched == [first, second]
+    assert controller._instance_lock.is_locked is True
+    await controller.stop()
