@@ -22,3 +22,4 @@ __pycache__/
 /dist/
 /output/
 /tmp/
+/.pnpm-store
