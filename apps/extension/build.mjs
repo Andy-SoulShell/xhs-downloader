@@ -27,6 +27,7 @@ await build({
     "browser-page-main": "src/browser-page-main.ts",
     content: "src/content.ts",
     "managed-page-adapter": "src/managed-page-adapter.ts",
+    "managed-publisher-adapter": "src/managed-publisher-adapter.ts",
     publisher: "src/publisher.ts",
     "publisher-main": "src/publisher-main.ts",
   },
@@ -41,4 +42,8 @@ await cp(resolve(appDirectory, "manifest.json"), resolve(output, "manifest.json"
 await cp(
   resolve(output, "managed-page-adapter.js"),
   resolve(browserAssets, "managed_page_adapter.js"),
+);
+await cp(
+  resolve(output, "managed-publisher-adapter.js"),
+  resolve(browserAssets, "managed_publisher_adapter.js"),
 );

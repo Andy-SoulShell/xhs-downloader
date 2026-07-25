@@ -86,6 +86,30 @@ export async function setPlatformSchedule(
   } = {},
 ): Promise<void> {
   const timeout = options.timeout ?? 10_000;
+  const prepared = await preparePlatformSchedule(root, scheduledAt, timeout);
+  if (options.write) {
+    await options.write(prepared.value);
+  } else {
+    setInputValue(prepared.input, prepared.value);
+    prepared.input.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
+  await verifyPlatformSchedule(prepared.input, prepared.value, timeout);
+}
+
+/** 受管浏览器可信输入前准备好的官方定时控件。 */
+export interface PreparedPlatformSchedule {
+  input: HTMLInputElement;
+  value: string;
+}
+
+/**
+ * 开启官方定时开关并返回待由浏览器级输入填写的控件和值。
+ */
+export async function preparePlatformSchedule(
+  root: ParentNode,
+  scheduledAt: string,
+  timeout = 10_000,
+): Promise<PreparedPlatformSchedule> {
   const date = new Date(scheduledAt);
   if (Number.isNaN(date.getTime())) throw new Error("官方定时时间格式无效");
   const toggle = await waitForElement<HTMLElement>(
@@ -107,12 +131,17 @@ export async function setPlatformSchedule(
     "没有找到官方定时发布时间输入框",
   );
   const value = formatPlatformDateTime(date);
-  if (options.write) {
-    await options.write(value);
-  } else {
-    setInputValue(input, value);
-    input.dispatchEvent(new Event("blur", { bubbles: true }));
-  }
+  return { input, value };
+}
+
+/**
+ * 回读并核验浏览器级输入后的官方定时时间。
+ */
+export async function verifyPlatformSchedule(
+  input: HTMLInputElement,
+  value: string,
+  timeout = 10_000,
+): Promise<void> {
   await waitForValue(
     () => (input.value === value ? true : undefined),
     timeout,
@@ -223,7 +252,11 @@ function waitForElement<T extends HTMLElement>(
   timeout: number,
   message: string,
 ): Promise<T> {
-  return waitForValue(() => root.querySelector<T>(selector) ?? undefined, timeout, message);
+  return waitForValue(
+    () => root.querySelector<T>(selector) ?? undefined,
+    timeout,
+    message,
+  );
 }
 
 async function waitForValue<T>(
