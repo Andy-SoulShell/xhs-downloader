@@ -27,6 +27,8 @@ describe("浏览器管理 API 客户端", () => {
       payload: {},
       status: "failed",
       result: null,
+      target_driver: "extension",
+      executor_id: "synthetic-extension",
       extension_id: "synthetic-extension",
       lease_expires_at: null,
       attempts: 1,

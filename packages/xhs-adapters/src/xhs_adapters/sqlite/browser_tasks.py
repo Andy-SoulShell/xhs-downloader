@@ -4,10 +4,12 @@ from datetime import datetime
 from pathlib import Path
 from secrets import compare_digest
 
-from aiosqlite import Connection, connect
-from xhs_core.domain import BrowserTask, BrowserTaskStatus
+from aiosqlite import connect
+from xhs_core.domain import BrowserDriver, BrowserTask, BrowserTaskStatus
 
 from .browser_task_storage import (
+    browser_task_parameters,
+    first_queued_browser_task,
     initialize_browser_task_storage,
     parse_browser_task,
 )
@@ -35,18 +37,19 @@ class SqliteBrowserTaskRepository:
             await database.execute(
                 """
                 INSERT INTO browser_task (
-                    task_id, request_id, kind, status, payload, lease_hash,
-                    lease_expires_at, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)
+                    task_id, request_id, kind, target_driver, status, payload,
+                    lease_hash, lease_expires_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
                 ON CONFLICT(task_id) DO UPDATE SET
                     request_id = excluded.request_id,
                     kind = excluded.kind,
+                    target_driver = excluded.target_driver,
                     status = excluded.status,
                     payload = excluded.payload,
                     lease_expires_at = excluded.lease_expires_at,
                     updated_at = excluded.updated_at
                 """,
-                _task_parameters(task),
+                browser_task_parameters(task),
             )
             await database.commit()
 
@@ -125,7 +128,11 @@ class SqliteBrowserTaskRepository:
                 (
                     task.status.value,
                     task.model_dump_json(),
-                    _iso(task.lease_expires_at),
+                    (
+                        task.lease_expires_at.isoformat()
+                        if task.lease_expires_at
+                        else None
+                    ),
                     task.updated_at.isoformat(),
                     task.task_id,
                     expected.value,
@@ -136,18 +143,20 @@ class SqliteBrowserTaskRepository:
 
     async def claim_next(
         self,
-        extension_id: str,
+        executor_id: str,
         now: datetime,
         lease_expires_at: datetime,
         lease_hash: str,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> BrowserTask | None:
         """原子领取最早排队任务。
 
         Args:
-            extension_id: 扩展实例标识。
+            executor_id: 扩展或受管 Worker 实例标识。
             now: 领取时间。
             lease_expires_at: 租约到期时间。
             lease_hash: 不可逆租约摘要。
+            target_driver: 只领取该驱动的任务。
 
         Returns:
             已领取任务；队列为空时返回 ``None``。
@@ -155,17 +164,26 @@ class SqliteBrowserTaskRepository:
         await self._initialize()
         async with connect(self._database) as database:
             await database.execute("BEGIN IMMEDIATE")
-            task = await _first_queued(database)
+            task = await first_queued_browser_task(database, target_driver)
             if not task:
                 await database.rollback()
                 return None
             claimed = task.model_copy(
                 update={
                     "status": BrowserTaskStatus.CLAIMED,
-                    "extension_id": extension_id,
+                    "executor_id": executor_id,
+                    "extension_id": (
+                        executor_id
+                        if target_driver is BrowserDriver.EXTENSION
+                        else None
+                    ),
                     "lease_expires_at": lease_expires_at,
                     "attempts": task.attempts + 1,
-                    "message": "浏览器扩展已领取任务",
+                    "message": (
+                        "浏览器扩展已领取任务"
+                        if target_driver is BrowserDriver.EXTENSION
+                        else "受管浏览器已领取任务"
+                    ),
                     "updated_at": now,
                 }
             )
@@ -174,7 +192,7 @@ class SqliteBrowserTaskRepository:
                 UPDATE browser_task SET
                     status = ?, payload = ?, lease_hash = ?,
                     lease_expires_at = ?, updated_at = ?
-                WHERE task_id = ? AND status = ?
+                WHERE task_id = ? AND status = ? AND target_driver = ?
                 """,
                 (
                     claimed.status.value,
@@ -184,6 +202,7 @@ class SqliteBrowserTaskRepository:
                     now.isoformat(),
                     claimed.task_id,
                     BrowserTaskStatus.QUEUED.value,
+                    target_driver.value,
                 ),
             )
             if cursor.rowcount != 1:
@@ -267,32 +286,3 @@ class SqliteBrowserTaskRepository:
             return
         await initialize_browser_task_storage(self._database)
         self._initialized = True
-
-
-async def _first_queued(database: Connection) -> BrowserTask | None:
-    cursor = await database.execute(
-        """
-        SELECT payload FROM browser_task
-        WHERE status = ? ORDER BY created_at LIMIT 1
-        """,
-        (BrowserTaskStatus.QUEUED.value,),
-    )
-    row = await cursor.fetchone()
-    return parse_browser_task(row[0]) if row else None
-
-
-def _task_parameters(task: BrowserTask) -> tuple:
-    return (
-        task.task_id,
-        task.request_id,
-        task.kind.value,
-        task.status.value,
-        task.model_dump_json(),
-        _iso(task.lease_expires_at),
-        task.created_at.isoformat(),
-        task.updated_at.isoformat(),
-    )
-
-
-def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None

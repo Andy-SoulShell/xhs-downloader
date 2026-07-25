@@ -36,6 +36,8 @@ function browserTask(
     payload: { content: "不应展示的合成正文" },
     status,
     result: null,
+    target_driver: "extension",
+    executor_id: "synthetic-extension",
     extension_id: "synthetic-extension",
     lease_expires_at: null,
     attempts: 1,

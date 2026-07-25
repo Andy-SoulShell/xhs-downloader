@@ -53,6 +53,8 @@ function completedTask(result: Record<string, JsonValue>): BrowserTask {
     payload: {},
     status: "succeeded",
     result,
+    target_driver: "extension",
+    executor_id: "synthetic-extension",
     extension_id: "synthetic-extension",
     lease_expires_at: null,
     attempts: 1,

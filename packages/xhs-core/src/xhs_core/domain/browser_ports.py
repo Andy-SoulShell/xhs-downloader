@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from .browser_tasks import BrowserTask, BrowserTaskStatus
+from .browser_tasks import BrowserDriver, BrowserTask, BrowserTaskStatus
 from .managed_browser import ManagedBrowserStatus
 
 
@@ -101,18 +101,20 @@ class BrowserTaskRepository(Protocol):
 
     async def claim_next(
         self,
-        extension_id: str,
+        executor_id: str,
         now: datetime,
         lease_expires_at: datetime,
         lease_hash: str,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> BrowserTask | None:
         """原子领取最早排队任务。
 
         Args:
-            extension_id: 扩展实例标识。
+            executor_id: 扩展或受管 Worker 实例标识。
             now: 领取时间。
             lease_expires_at: 租约到期时间。
             lease_hash: 不可逆租约摘要。
+            target_driver: 只领取该驱动的任务。
 
         Returns:
             已领取任务；队列为空时返回 ``None``。

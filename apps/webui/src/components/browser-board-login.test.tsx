@@ -33,6 +33,8 @@ const qrTask: BrowserTask = {
   payload: {},
   status: "succeeded",
   result: { ...qrCode },
+  target_driver: "extension",
+  executor_id: "synthetic-extension",
   extension_id: "synthetic-extension",
   lease_expires_at: null,
   attempts: 1,

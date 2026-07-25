@@ -7,6 +7,7 @@ import pytest
 from xhs_adapters.sqlite import SqliteBrowserTaskRepository
 from xhs_core.application import BrowserExecutionService, BrowserTaskService
 from xhs_core.domain import (
+    BrowserDriver,
     BrowserTaskError,
     BrowserTaskKind,
     BrowserTaskStatus,
@@ -49,6 +50,29 @@ async def test_browser_task_submission_is_idempotent(tmp_path) -> None:
         )
     with pytest.raises(BrowserTaskError, match="不存在"):
         await tasks.require("missing")
+
+
+async def test_browser_task_idempotency_includes_target_driver(tmp_path) -> None:
+    """确保相同请求标识不能跨浏览器驱动静默复用。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    _, tasks, _ = _services(tmp_path)
+    await tasks.submit(
+        BrowserTaskKind.LIST_FEEDS,
+        {},
+        "synthetic-driver-request",
+        BrowserDriver.EXTENSION,
+    )
+
+    with pytest.raises(BrowserTaskError, match="另一项"):
+        await tasks.submit(
+            BrowserTaskKind.LIST_FEEDS,
+            {},
+            "synthetic-driver-request",
+            BrowserDriver.MANAGED,
+        )
 
 
 async def test_browser_execution_claims_and_completes_with_lease(tmp_path) -> None:

@@ -27,7 +27,7 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-/** 浏览器扩展当前支持的任务类型。 */
+/** 浏览器驱动当前支持的任务类型。 */
 export type BrowserTaskKind =
   | "check_login_status"
   | "get_login_qrcode"
@@ -42,6 +42,9 @@ export type BrowserTaskKind =
   | "post_comment"
   | "reply_comment";
 
+/** 执行浏览器任务的驱动类型。 */
+export type BrowserDriver = "extension" | "managed";
+
 /** 服务端持久化的浏览器任务状态。 */
 export type BrowserTaskStatus =
   | "queued"
@@ -51,7 +54,7 @@ export type BrowserTaskStatus =
   | "failed"
   | "needs_review";
 
-/** 服务端与扩展共享的浏览器任务快照。 */
+/** 服务端与浏览器驱动共享的浏览器任务快照。 */
 export interface BrowserTask {
   task_id: string;
   request_id: string | null;
@@ -59,6 +62,8 @@ export interface BrowserTask {
   payload: Record<string, JsonValue>;
   status: BrowserTaskStatus;
   result: Record<string, JsonValue> | null;
+  target_driver: BrowserDriver;
+  executor_id: string | null;
   extension_id: string | null;
   lease_expires_at: string | null;
   attempts: number;
@@ -67,7 +72,7 @@ export interface BrowserTask {
   updated_at: string;
 }
 
-/** 扩展领取浏览器任务后获得的短期执行凭据。 */
+/** 浏览器驱动领取任务后获得的短期执行凭据。 */
 export interface BrowserTaskClaim {
   task: BrowserTask;
   lease_token: string;

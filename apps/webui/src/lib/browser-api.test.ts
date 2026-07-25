@@ -10,6 +10,8 @@ function task(status: string, result: Record<string, unknown> | null) {
     payload: {},
     status,
     result,
+    target_driver: "extension",
+    executor_id: "synthetic-extension",
     extension_id: "synthetic-extension",
     lease_expires_at: null,
     attempts: 1,

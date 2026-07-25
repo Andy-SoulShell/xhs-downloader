@@ -23,6 +23,8 @@ export function makeBrowserTaskClaim(
       payload,
       status: "claimed",
       result: null,
+      target_driver: "extension",
+      executor_id: "synthetic-extension",
       extension_id: "synthetic-extension",
       lease_expires_at: "2026-01-01T00:05:00Z",
       attempts: 1,

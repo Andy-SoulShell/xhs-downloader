@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, JsonValue
 
 
 class BrowserTaskKind(StrEnum):
-    """浏览器扩展可执行的任务类型。"""
+    """浏览器驱动可执行的任务类型。"""
 
     CHECK_LOGIN_STATUS = "check_login_status"
     GET_LOGIN_QRCODE = "get_login_qrcode"
@@ -34,19 +34,28 @@ class BrowserTaskStatus(StrEnum):
     NEEDS_REVIEW = "needs_review"
 
 
+class BrowserDriver(StrEnum):
+    """浏览器任务的固定执行驱动。"""
+
+    EXTENSION = "extension"
+    MANAGED = "managed"
+
+
 class BrowserTask(BaseModel):
-    """由本地服务持久化并交给浏览器扩展执行的任务。
+    """由本地服务持久化并交给指定浏览器驱动执行的任务。
 
     Attributes:
         task_id: 服务端生成的任务唯一标识。
         request_id: 调用方提供的幂等请求标识。
         kind: 浏览器操作类型。
         payload: 提交时冻结的结构化输入。
+        target_driver: 提交时冻结的执行驱动。
         status: 当前任务状态。
-        result: 扩展回传并通过 JSON 边界验证的结果。
+        result: 执行器回传并通过 JSON 边界验证的结果。
+        executor_id: 当前持有租约的执行器实例。
         extension_id: 当前持有租约的扩展实例。
         lease_expires_at: 当前租约失效时间。
-        attempts: 被扩展领取的次数。
+        attempts: 被浏览器执行器领取的次数。
         message: 面向用户的状态说明。
         created_at: 任务创建时间。
         updated_at: 任务最近更新时间。
@@ -56,12 +65,14 @@ class BrowserTask(BaseModel):
     request_id: str | None = Field(default=None, max_length=128)
     kind: BrowserTaskKind
     payload: dict[str, JsonValue] = Field(default_factory=dict)
+    target_driver: BrowserDriver = BrowserDriver.EXTENSION
     status: BrowserTaskStatus = BrowserTaskStatus.QUEUED
     result: dict[str, JsonValue] | None = None
+    executor_id: str | None = Field(default=None, max_length=128)
     extension_id: str | None = Field(default=None, max_length=128)
     lease_expires_at: datetime | None = None
     attempts: int = Field(default=0, ge=0)
-    message: str = Field(default="等待浏览器扩展执行", max_length=1000)
+    message: str = Field(default="等待浏览器执行", max_length=1000)
     created_at: datetime
     updated_at: datetime
 

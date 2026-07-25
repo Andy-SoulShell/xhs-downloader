@@ -1,5 +1,6 @@
-/** 浏览器扩展与本机服务共享的稳定数据类型。 */
+/** 浏览器客户端与本机服务共享的稳定数据类型。 */
 export type {
+  BrowserDriver,
   BrowserLoginState,
   BrowserTask,
   BrowserTaskStatus,

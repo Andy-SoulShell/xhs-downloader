@@ -2,6 +2,7 @@
 
 from .browser_sessions import BrowserCookieDeletionResult, LoginQrCodeResult
 from .browser_tasks import (
+    BrowserDriver,
     BrowserTask,
     BrowserTaskClaim,
     BrowserTaskKind,
@@ -62,6 +63,7 @@ __all__ = [
     "Author",
     "BrowserAccount",
     "BrowserCookieDeletionResult",
+    "BrowserDriver",
     "BrowserTask",
     "BrowserTaskClaim",
     "BrowserTaskError",

@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import JsonValue
 
 from xhs_core.domain import (
+    BrowserDriver,
     BrowserTask,
     BrowserTaskError,
     BrowserTaskKind,
@@ -33,6 +34,7 @@ class BrowserTaskService:
         kind: BrowserTaskKind,
         payload: dict[str, JsonValue],
         request_id: str | None = None,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
     ) -> BrowserTask:
         """提交冻结输入的浏览器任务。
 
@@ -40,6 +42,7 @@ class BrowserTaskService:
             kind: 浏览器操作类型。
             payload: 通过 JSON 类型边界验证的任务输入。
             request_id: 可选的调用方幂等标识。
+            target_driver: 提交时冻结的浏览器执行驱动。
 
         Returns:
             新任务或同一幂等请求已经创建的任务。
@@ -55,6 +58,7 @@ class BrowserTaskService:
                     if (
                         existing.kind is not kind
                         or existing.payload != normalized_payload
+                        or existing.target_driver is not target_driver
                     ):
                         raise BrowserTaskError("请求标识已被另一项浏览器任务使用")
                     return existing
@@ -64,6 +68,7 @@ class BrowserTaskService:
                 request_id=request_id,
                 kind=kind,
                 payload=normalized_payload,
+                target_driver=target_driver,
                 created_at=now,
                 updated_at=now,
             )
@@ -154,9 +159,10 @@ class BrowserTaskService:
             update={
                 "status": BrowserTaskStatus.QUEUED,
                 "result": None,
+                "executor_id": None,
                 "extension_id": None,
                 "lease_expires_at": None,
-                "message": "等待浏览器扩展重试",
+                "message": "等待浏览器重试",
                 "updated_at": datetime.now(UTC),
             }
         )

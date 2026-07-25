@@ -1,4 +1,4 @@
-"""浏览器扩展领取任务与回传结果用例。"""
+"""浏览器驱动领取任务与回传结果用例。"""
 
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
@@ -7,6 +7,7 @@ from secrets import token_urlsafe
 from pydantic import JsonValue
 
 from xhs_core.domain import (
+    BrowserDriver,
     BrowserTask,
     BrowserTaskClaim,
     BrowserTaskError,
@@ -37,11 +38,11 @@ _RECOVERABLE = {
 
 
 class BrowserExecutionService:
-    """向已登记扩展提供短期租约并维护执行状态。
+    """向浏览器执行器提供短期租约并维护执行状态。
 
     Args:
         repository: 浏览器任务仓储。
-        lease_seconds: 扩展无心跳时的租约秒数。
+        lease_seconds: 执行器无心跳时的租约秒数。
     """
 
     def __init__(
@@ -52,11 +53,16 @@ class BrowserExecutionService:
         self._repository = repository
         self._lease_seconds = lease_seconds
 
-    async def claim(self, extension_id: str) -> BrowserTaskClaim | None:
+    async def claim(
+        self,
+        executor_id: str,
+        target_driver: BrowserDriver = BrowserDriver.EXTENSION,
+    ) -> BrowserTaskClaim | None:
         """原子领取最早排队的浏览器任务。
 
         Args:
-            extension_id: 已登记扩展 ID。
+            executor_id: 已登记扩展或受管 Worker 实例 ID。
+            target_driver: 只领取该驱动的排队任务。
 
         Returns:
             带短期令牌的任务；队列为空时返回 ``None``。
@@ -65,10 +71,11 @@ class BrowserExecutionService:
         now = datetime.now(UTC)
         token = token_urlsafe(32)
         task = await self._repository.claim_next(
-            extension_id,
+            executor_id,
             now,
             now + timedelta(seconds=self._lease_seconds),
             _token_hash(token),
+            target_driver,
         )
         return BrowserTaskClaim(task=task, lease_token=token) if task else None
 
@@ -84,10 +91,10 @@ class BrowserExecutionService:
 
         Args:
             task_id: 任务唯一标识。
-            lease_token: 扩展领取任务时获得的短期令牌。
+            lease_token: 浏览器执行器领取任务时获得的短期令牌。
             status: 运行中或终态状态。
             message: 不含用户原文的执行摘要。
-            result: 扩展返回的结构化结果。
+            result: 浏览器执行器返回的结构化结果。
 
         Returns:
             更新后的任务。
@@ -145,6 +152,7 @@ class BrowserExecutionService:
             updated = task.model_copy(
                 update={
                     "status": status,
+                    "executor_id": None,
                     "extension_id": None,
                     "lease_expires_at": None,
                     "message": message,
