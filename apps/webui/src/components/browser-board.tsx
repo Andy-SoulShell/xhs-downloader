@@ -9,6 +9,7 @@ import {
 import { useState, type FormEvent } from "react";
 
 import type { FeedSummary } from "../lib/types";
+import { capabilityRouteSource } from "../lib/browser-route";
 import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
@@ -33,7 +34,7 @@ export function BrowserBoard() {
   return (
     <section>
       <PageHeading
-        description="由浏览器扩展使用当前小红书登录态读取与交互；Cookie 始终留在浏览器内。"
+        description="按配置通过 Cookie HTTP、浏览器扩展或受管浏览器读取；写操作始终使用选定浏览器。"
         meta={
           explorer.task ? `任务 ${explorer.task.task_id.slice(0, 8)}` : "浏览能力"
         }
@@ -107,6 +108,15 @@ export function BrowserBoard() {
           {explorer.error && (
             <Badge icon={CircleAlert} tone="danger">
               {explorer.error}
+            </Badge>
+          )}
+          {explorer.route && (
+            <Badge
+              title={explorer.route.fallback_reason?.message}
+              tone={explorer.route.fallback_used ? "warning" : "neutral"}
+            >
+              来源：{capabilityRouteSource(explorer.route)}
+              {explorer.route.fallback_used ? " · 已回退" : ""}
             </Badge>
           )}
         </div>

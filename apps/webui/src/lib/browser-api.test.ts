@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { deleteCookies, executeBrowserOperation } from "./browser-api";
+import {
+  deleteCookies,
+  executeBrowserOperation,
+  executeReadCapability,
+} from "./browser-api";
 
 function task(status: string, result: Record<string, unknown> | null) {
   return {
@@ -26,23 +30,65 @@ describe("浏览器能力 API 客户端", () => {
     vi.unstubAllGlobals();
   });
 
-  it("提交幂等请求并返回终态结果", async () => {
+  it("同步返回只读结果与完整路由轨迹", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
-        JSON.stringify(task("succeeded", { items: [], source: "home" })),
+        JSON.stringify({
+          data: { items: [], source: "home" },
+          route: {
+            provider: "http",
+            strategy: "http_first",
+            browser_driver: null,
+            fallback_used: false,
+            fallback_reason: null,
+            attempted_providers: ["http"],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("crypto", { randomUUID: () => "synthetic-read-request" });
+
+    const result = await executeReadCapability<{ items: [] }>(
+      "/xhs/feeds/list",
+      {},
+    );
+
+    expect(result).toMatchObject({
+      data: { items: [] },
+      route: { provider: "http", attempted_providers: ["http"] },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/xhs/feeds/list",
+      expect.objectContaining({
+        body: JSON.stringify({ request_id: "synthetic-read-request" }),
+      }),
+    );
+  });
+
+  it("提交登录任务并返回终态结果", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          task("succeeded", {
+            logged_in: true,
+            user_id: null,
+            nickname: null,
+          }),
+        ),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("crypto", { randomUUID: () => "synthetic-request" });
 
-    const result = await executeBrowserOperation<{ items: [] }>(
-      "/xhs/feeds/list",
+    const result = await executeBrowserOperation<{ logged_in: boolean }>(
+      "/xhs/login/status",
       {},
     );
 
-    expect(result.data.items).toEqual([]);
+    expect(result.data.logged_in).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/xhs/feeds/list?wait_seconds=60",
+      "/api/xhs/login/status?wait_seconds=60",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ request_id: "synthetic-request" }),
@@ -61,7 +107,7 @@ describe("浏览器能力 API 客户端", () => {
     );
 
     await expect(
-      executeBrowserOperation("/xhs/feeds/list", {}),
+      executeBrowserOperation("/xhs/login/status", {}),
     ).rejects.toThrow(message);
   });
 

@@ -1,9 +1,48 @@
 import type { JsonValue } from "@xhs-downloader/contracts";
 
-import type { BrowserTask, BrowserTaskStatus } from "./types";
+import type {
+  BrowserDriver,
+  BrowserTask,
+  BrowserTaskStatus,
+  RouteStrategy,
+} from "./types";
 import { API_BASE, parseResponse } from "./http";
 
-/** 浏览能力完成后的任务与类型化结果。 */
+/** 统一只读能力实际使用的提供方。 */
+export type CapabilityProvider = "http" | "browser";
+
+/** 首选提供方安全回退前的结构化失败。 */
+export interface RouteFallbackReason {
+  provider: CapabilityProvider;
+  code:
+    | "unavailable"
+    | "not_configured"
+    | "authentication_expired"
+    | "unsupported"
+    | "page_incompatible"
+    | "timeout_before_effect"
+    | "effect_uncertain"
+    | "invalid_result";
+  message: string;
+}
+
+/** 一次只读能力调用的实际路由轨迹。 */
+export interface CapabilityRoute {
+  provider: CapabilityProvider;
+  strategy: RouteStrategy;
+  browser_driver: BrowserDriver | null;
+  fallback_used: boolean;
+  fallback_reason: RouteFallbackReason | null;
+  attempted_providers: CapabilityProvider[];
+}
+
+/** 统一只读能力返回的数据和路由轨迹。 */
+export interface ReadCapabilityResult<T> {
+  data: T;
+  route: CapabilityRoute;
+}
+
+/** 登录和写操作完成后的浏览器任务与类型化结果。 */
 export interface BrowserOperationResult<T> {
   task: BrowserTask;
   data: T;
@@ -19,7 +58,25 @@ export interface CookieDeletionResult {
   restart_required: boolean;
 }
 
-/** 通过本机 API 提交并等待一项浏览器能力任务。 */
+/** 同步调用可在 HTTP 与浏览器间安全路由的只读能力。 */
+export async function executeReadCapability<T>(
+  path: string,
+  payload: Record<string, JsonValue>,
+  signal?: AbortSignal,
+): Promise<ReadCapabilityResult<T>> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      request_id: crypto.randomUUID(),
+    }),
+    signal,
+  });
+  return parseResponse<ReadCapabilityResult<T>>(response);
+}
+
+/** 提交并等待登录或写入类浏览器任务。 */
 export async function executeBrowserOperation<T>(
   path: string,
   payload: Record<string, JsonValue>,

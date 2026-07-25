@@ -11,7 +11,12 @@ import type {
   FeedSummary,
   LoginQrCodeResult,
 } from "./types";
-import { deleteCookies, executeBrowserOperation } from "./browser-api";
+import {
+  deleteCookies,
+  executeBrowserOperation,
+  executeReadCapability,
+  type CapabilityRoute,
+} from "./browser-api";
 
 /** 浏览器探索页面的读取状态和互动操作。 */
 export interface BrowserExplorer {
@@ -20,6 +25,7 @@ export interface BrowserExplorer {
   detail: FeedDetailResult | null;
   error: string;
   feeds: FeedSummary[];
+  route: CapabilityRoute | null;
   qrCode: LoginQrCodeResult | null;
   sessionMessage: string;
   task: BrowserTask | null;
@@ -44,6 +50,7 @@ export function useBrowserExplorer(): BrowserExplorer {
   const [detail, setDetail] = useState<FeedDetailResult | null>(null);
   const [error, setError] = useState("");
   const [feeds, setFeeds] = useState<FeedSummary[]>([]);
+  const [route, setRoute] = useState<CapabilityRoute | null>(null);
   const [qrCode, setQrCode] = useState<LoginQrCodeResult | null>(null);
   const [sessionMessage, setSessionMessage] = useState("");
   const [task, setTask] = useState<BrowserTask | null>(null);
@@ -52,11 +59,10 @@ export function useBrowserExplorer(): BrowserExplorer {
   // 浏览器能力请求可能长轮询，卸载或新操作时取消旧请求以防陈旧结果覆盖当前页面。
   useEffect(() => () => activeRequest.current?.abort(), []);
 
-  const run = useCallback(
+  const runRequest = useCallback(
     async <T,>(
-      path: string,
-      payload: Record<string, JsonValue>,
-      apply: (data: T) => void,
+      request: (signal: AbortSignal) => Promise<T>,
+      apply: (result: T) => void,
     ) => {
       activeRequest.current?.abort();
       const controller = new AbortController();
@@ -65,17 +71,12 @@ export function useBrowserExplorer(): BrowserExplorer {
       setError("");
       setSessionMessage("");
       try {
-        const result = await executeBrowserOperation<T>(
-          path,
-          payload,
-          controller.signal,
-        );
+        const result = await request(controller.signal);
         if (activeRequest.current !== controller) return;
-        setTask(result.task);
-        apply(result.data);
+        apply(result);
       } catch (reason) {
         if (controller.signal.aborted) return;
-        setError(reason instanceof Error ? reason.message : "浏览器任务执行失败");
+        setError(reason instanceof Error ? reason.message : "能力请求执行失败");
       } finally {
         if (activeRequest.current === controller) {
           activeRequest.current = null;
@@ -86,17 +87,48 @@ export function useBrowserExplorer(): BrowserExplorer {
     [],
   );
 
+  const runBrowser = useCallback(
+    <T,>(
+      path: string,
+      payload: Record<string, JsonValue>,
+      apply: (data: T) => void,
+    ) =>
+      runRequest(
+        (signal) => executeBrowserOperation<T>(path, payload, signal),
+        (result) => {
+          setTask(result.task);
+          apply(result.data);
+        },
+      ),
+    [runRequest],
+  );
+  const runRead = useCallback(
+    <T,>(
+      path: string,
+      payload: Record<string, JsonValue>,
+      apply: (data: T) => void,
+    ) =>
+      runRequest(
+        (signal) => executeReadCapability<T>(path, payload, signal),
+        (result) => {
+          setTask(null);
+          setRoute(result.route);
+          apply(result.data);
+        },
+      ),
+    [runRequest],
+  );
   const checkLogin = useCallback(
     () =>
-      run<BrowserLoginState>("/xhs/login/status", {}, (data) => {
+      runBrowser<BrowserLoginState>("/xhs/login/status", {}, (data) => {
         setAccount(data);
         if (data.logged_in) setQrCode(null);
       }),
-    [run],
+    [runBrowser],
   );
   const getLoginQrCode = useCallback(
     () =>
-      run<LoginQrCodeResult>("/xhs/login/qrcode", {}, (data) => {
+      runBrowser<LoginQrCodeResult>("/xhs/login/qrcode", {}, (data) => {
         setQrCode(data);
         setAccount({
           logged_in: data.is_logged_in,
@@ -104,7 +136,7 @@ export function useBrowserExplorer(): BrowserExplorer {
           nickname: null,
         });
       }),
-    [run],
+    [runBrowser],
   );
   const deleteBrowserCookies = useCallback(async () => {
     activeRequest.current?.abort();
@@ -133,15 +165,15 @@ export function useBrowserExplorer(): BrowserExplorer {
   }, []);
   const loadFeeds = useCallback(
     () =>
-      run<FeedListResult>("/xhs/feeds/list", {}, (data) => {
+      runRead<FeedListResult>("/xhs/feeds/list", {}, (data) => {
         setDetail(null);
         setFeeds(data.items);
       }),
-    [run],
+    [runRead],
   );
   const search = useCallback(
     (keyword: string) =>
-      run<FeedListResult>(
+      runRead<FeedListResult>(
         "/xhs/feeds/search",
         { keyword, filters: {} },
         (data) => {
@@ -149,11 +181,11 @@ export function useBrowserExplorer(): BrowserExplorer {
           setFeeds(data.items);
         },
       ),
-    [run],
+    [runRead],
   );
   const openFeed = useCallback(
     (feed: FeedSummary) =>
-      run<FeedDetailResult>(
+      runRead<FeedDetailResult>(
         "/xhs/feeds/detail",
         {
           feed_id: feed.feed_id,
@@ -164,12 +196,12 @@ export function useBrowserExplorer(): BrowserExplorer {
         },
         setDetail,
       ),
-    [run],
+    [runRead],
   );
   const setInteraction = useCallback(
     (kind: "like" | "favorite", active: boolean) => {
       if (!detail) return Promise.resolve();
-      return run<DesiredStateResult>(
+      return runBrowser<DesiredStateResult>(
         kind === "like" ? "/xhs/feeds/like" : "/xhs/feeds/favorite",
         {
           feed_id: detail.feed_id,
@@ -190,12 +222,12 @@ export function useBrowserExplorer(): BrowserExplorer {
           ),
       );
     },
-    [detail, run],
+    [detail, runBrowser],
   );
   const postCurrentComment = useCallback(
     (content: string) => {
       if (!detail) return Promise.resolve();
-      return run<CommentResult>(
+      return runBrowser<CommentResult>(
         "/xhs/feeds/comment",
         {
           feed_id: detail.feed_id,
@@ -205,12 +237,12 @@ export function useBrowserExplorer(): BrowserExplorer {
         () => undefined,
       );
     },
-    [detail, run],
+    [detail, runBrowser],
   );
   const replyCurrentComment = useCallback(
     (commentId: string, content: string) => {
       if (!detail) return Promise.resolve();
-      return run<CommentResult>(
+      return runBrowser<CommentResult>(
         "/xhs/feeds/comment/reply",
         {
           feed_id: detail.feed_id,
@@ -222,7 +254,7 @@ export function useBrowserExplorer(): BrowserExplorer {
         () => undefined,
       );
     },
-    [detail, run],
+    [detail, runBrowser],
   );
 
   return {
@@ -231,6 +263,7 @@ export function useBrowserExplorer(): BrowserExplorer {
     detail,
     error,
     feeds,
+    route,
     qrCode,
     sessionMessage,
     task,

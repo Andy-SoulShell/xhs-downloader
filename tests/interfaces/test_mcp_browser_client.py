@@ -45,11 +45,53 @@ async def test_mcp_browser_client_returns_validated_success() -> None:
     assert result["message"] == "推荐流读取完成"
 
 
+async def test_mcp_browser_client_returns_routed_read_without_fake_task() -> None:
+    """确保同步只读响应保留路由轨迹且不补造任务字段。"""
+
+    async def handler(_: Request) -> Response:
+        return Response(
+            200,
+            json={
+                "data": {"items": [], "source": "home", "keyword": None},
+                "route": {
+                    "provider": "browser",
+                    "strategy": "http_first",
+                    "browser_driver": "managed",
+                    "fallback_used": True,
+                    "fallback_reason": {
+                        "provider": "http",
+                        "code": "not_configured",
+                        "message": "Cookie HTTP 尚未配置",
+                    },
+                    "attempted_providers": ["http", "browser"],
+                },
+            },
+        )
+
+    async with AsyncClient(
+        transport=MockTransport(handler),
+        base_url="http://127.0.0.1:5556",
+    ) as client:
+        result = await HttpBrowserCapabilityClient(client).execute(
+            "/xhs/feeds/list",
+            {},
+        )
+
+    assert result["data"]["items"] == []
+    assert result["route"]["provider"] == "browser"
+    assert result["route"]["fallback_reason"]["code"] == "not_configured"
+    assert "task_id" not in result
+
+
 @pytest.mark.parametrize(
     ("response", "message"),
     [
         (Response(202, json=_task("failed", "页面读取失败")), "页面读取失败"),
         (Response(202, json=_task("queued")), "等待浏览器扩展执行超时"),
+        (
+            Response(200, json={"data": {}, "route": {"provider": "invalid"}}),
+            "无法调用本机浏览器能力 API",
+        ),
         (Response(500), "无法调用本机浏览器能力 API"),
     ],
 )

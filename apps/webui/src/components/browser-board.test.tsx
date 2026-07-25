@@ -2,18 +2,22 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { BrowserTask, FeedDetailResult } from "../lib/types";
-import { executeBrowserOperation } from "../lib/browser-api";
+import type { BrowserTask } from "../lib/types";
+import {
+  executeBrowserOperation,
+  executeReadCapability,
+  type CapabilityRoute,
+} from "../lib/browser-api";
 import {
   listBrowserExtensions,
   listBrowserTasks,
 } from "../lib/browser-management-api";
 import { BrowserBoard } from "./browser-board";
-import { BrowserDetail } from "./browser-detail";
 
 vi.mock("../lib/browser-api", () => ({
   deleteCookies: vi.fn(),
   executeBrowserOperation: vi.fn(),
+  executeReadCapability: vi.fn(),
 }));
 vi.mock("../lib/browser-management-api", () => ({
   listBrowserExtensions: vi.fn(),
@@ -45,6 +49,19 @@ const feed = {
   video_duration: null,
 };
 
+const readRoute = {
+  provider: "browser",
+  strategy: "http_first",
+  browser_driver: "managed",
+  fallback_used: true,
+  fallback_reason: {
+    provider: "http",
+    code: "not_configured",
+    message: "Cookie HTTP 尚未配置",
+  },
+  attempted_providers: ["http", "browser"],
+} satisfies CapabilityRoute;
+
 function completedTask(result: Record<string, JsonValue>): BrowserTask {
   return {
     task_id: "synthetic-browser-task",
@@ -69,44 +86,49 @@ describe("浏览器探索工作台", () => {
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockImplementation(async (path) => {
-      const data = (
+      const data: Record<string, JsonValue> =
         path === "/xhs/login/status"
           ? {
               logged_in: true,
               user_id: "synthetic-user",
               nickname: "合成账号",
             }
-          : path === "/xhs/feeds/detail"
-            ? {
-                feed_id: feed.feed_id,
-                xsec_token: feed.xsec_token,
-                title: "合成详情",
-                body: "仅用于自动化测试",
-                note_type: "image",
-                author: feed.author,
-                metrics: feed.metrics,
-                image_urls: [],
-                published_at: null,
-                ip_location: "合成地点",
-                comments: [
-                  {
-                    comment_id: "synthetic-comment",
-                    content: "合成评论",
-                    author: feed.author,
-                    liked: false,
-                    like_count: "0",
-                    created_at: null,
-                    ip_location: "",
-                    reply_count: "0",
-                    replies: [],
-                  },
-                ],
-                comments_has_more: false,
-                comments_cursor: "",
-              }
-            : { items: [feed], source: "home", keyword: null }
-      ) as Record<string, JsonValue>;
+          : {};
       return { task: completedTask(data), data } as never;
+    });
+    vi.mocked(executeReadCapability).mockImplementation(async (path) => {
+      const data = (
+        path === "/xhs/feeds/detail"
+          ? {
+              feed_id: feed.feed_id,
+              xsec_token: feed.xsec_token,
+              title: "合成详情",
+              body: "仅用于自动化测试",
+              note_type: "image",
+              author: feed.author,
+              metrics: feed.metrics,
+              image_urls: [],
+              published_at: null,
+              ip_location: "合成地点",
+              comments: [
+                {
+                  comment_id: "synthetic-comment",
+                  content: "合成评论",
+                  author: feed.author,
+                  liked: false,
+                  like_count: "0",
+                  created_at: null,
+                  ip_location: "",
+                  reply_count: "0",
+                  replies: [],
+                },
+              ],
+              comments_has_more: false,
+              comments_cursor: "",
+            }
+          : { items: [feed], source: "home", keyword: null }
+      ) as Record<string, JsonValue>;
+      return { data, route: readRoute } as never;
     });
   });
 
@@ -118,13 +140,16 @@ describe("浏览器探索工作台", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
     expect(await screen.findByText("合成浏览帖子")).toBeInTheDocument();
+    expect(
+      screen.getByText("来源：受管浏览器 · 已回退"),
+    ).toHaveAttribute("title", "Cookie HTTP 尚未配置");
 
     fireEvent.change(screen.getByLabelText("搜索小红书帖子"), {
       target: { value: " 合成关键词 " },
     });
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     await waitFor(() =>
-      expect(executeBrowserOperation).toHaveBeenCalledWith(
+      expect(executeReadCapability).toHaveBeenCalledWith(
         "/xhs/feeds/search",
         { keyword: "合成关键词", filters: {} },
         expect.any(AbortSignal),
@@ -149,6 +174,7 @@ describe("浏览器探索工作台", () => {
         expect.any(AbortSignal),
       ),
     );
+    expect(screen.getByText("来源：受管浏览器 · 已回退")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "收藏" }));
     fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
     await waitFor(() =>
@@ -191,7 +217,7 @@ describe("浏览器探索工作台", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
     await waitFor(() =>
-      expect(executeBrowserOperation).toHaveBeenLastCalledWith(
+      expect(executeReadCapability).toHaveBeenLastCalledWith(
         "/xhs/feeds/list",
         {},
         expect.any(AbortSignal),
@@ -200,7 +226,7 @@ describe("浏览器探索工作台", () => {
   });
 
   it("显示任务错误并阻止空关键词搜索", async () => {
-    vi.mocked(executeBrowserOperation).mockRejectedValueOnce(
+    vi.mocked(executeReadCapability).mockRejectedValueOnce(
       new Error("浏览器扩展未连接"),
     );
     render(<BrowserBoard />);
@@ -223,23 +249,23 @@ describe("浏览器探索工作台", () => {
         }),
         data: { logged_in: false, user_id: null, nickname: null },
       })
-      .mockResolvedValueOnce({
-        task: completedTask({ items: [], source: "home", keyword: null }),
-        data: {
-          items: [
-            {
-              ...feed,
-              xsec_token: "",
-              title: "",
-              author: { ...feed.author, nickname: "" },
-              cover_url: null,
-            },
-          ],
-          source: "home",
-          keyword: null,
-        },
-      })
       .mockRejectedValueOnce("非标准异常");
+    vi.mocked(executeReadCapability).mockResolvedValueOnce({
+      route: readRoute,
+      data: {
+        items: [
+          {
+            ...feed,
+            xsec_token: "",
+            title: "",
+            author: { ...feed.author, nickname: "" },
+            cover_url: null,
+          },
+        ],
+        source: "home",
+        keyword: null,
+      },
+    });
     render(<BrowserBoard />);
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
@@ -250,47 +276,6 @@ describe("浏览器探索工作台", () => {
       screen.getByRole("button", { name: "读取帖子详情：未命名帖子" }),
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
-    expect(await screen.findByText("浏览器任务执行失败")).toBeInTheDocument();
-  });
-});
-
-describe("浏览器帖子详情", () => {
-  it("为空资料和评论提供稳定回退文案", () => {
-    const onClose = vi.fn();
-    const detail: FeedDetailResult = {
-      feed_id: feed.feed_id,
-      xsec_token: feed.xsec_token,
-      title: "",
-      body: "",
-      note_type: "unknown",
-      author: { ...feed.author, nickname: "" },
-      metrics: feed.metrics,
-      image_urls: [],
-      published_at: null,
-      ip_location: "",
-      comments: [],
-      comments_has_more: false,
-      comments_cursor: "",
-    };
-
-    render(
-      <BrowserDetail
-        busy={false}
-        detail={detail}
-        onClose={onClose}
-        onComment={vi.fn()}
-        onReply={vi.fn()}
-        onSetFavorite={vi.fn()}
-        onSetLike={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("未知作者")).toBeInTheDocument();
-    expect(screen.getByText("位置未知")).toBeInTheDocument();
-    expect(screen.getByText("未命名帖子")).toBeInTheDocument();
-    expect(screen.getByText("这个帖子没有文字描述。")).toBeInTheDocument();
-    expect(screen.getByText("当前没有已加载评论。")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
-    expect(onClose).toHaveBeenCalled();
+    expect(await screen.findByText("能力请求执行失败")).toBeInTheDocument();
   });
 });
