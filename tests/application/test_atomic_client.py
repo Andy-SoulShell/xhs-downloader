@@ -146,10 +146,17 @@ async def test_replace_cancellation_after_commit_finishes_old_close() -> None:
     old = _Client("old", block_close=True)
     new = _Client("new")
     slot = AtomicClientSlot(old)
+    committed: list[str] = []
 
-    replacement = asyncio.create_task(slot.replace(lambda: _build(new)))
+    replacement = asyncio.create_task(
+        slot.replace(
+            lambda: _build(new),
+            on_commit=lambda: committed.append(new.name),
+        )
+    )
     await old.close_started.wait()
 
+    assert committed == ["new"]
     assert await _lease_name(slot) == "new"
     replacement.cancel()
     await asyncio.sleep(0)

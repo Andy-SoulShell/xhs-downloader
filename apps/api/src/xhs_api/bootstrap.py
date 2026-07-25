@@ -1,5 +1,6 @@
 """HTTP API 的生产依赖装配。"""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -65,7 +66,10 @@ def create_api_dependencies(
         create_read_capability_runtime(settings, browser, publication)
     )
 
-    async def apply_runtime(candidate: AppSettings) -> None:
+    async def apply_runtime(
+        candidate: AppSettings,
+        commit: Callable[[], None],
+    ) -> None:
         async def build() -> ReadCapabilityRuntime:
             return create_read_capability_runtime(
                 candidate,
@@ -73,7 +77,7 @@ def create_api_dependencies(
                 publication,
             )
 
-        await capabilities.replace(build)
+        await capabilities.replace(build, on_commit=commit)
 
     return ApiDependencies(
         browser=browser,

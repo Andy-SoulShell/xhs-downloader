@@ -11,7 +11,10 @@ from pydantic import ValidationError
 from xhs_adapters.config import AppSettings
 from xhs_core.domain import SettingsError
 
-type RuntimeSettingsApplier = Callable[[AppSettings], Awaitable[None]]
+type RuntimeSettingsApplier = Callable[
+    [AppSettings, Callable[[], None]],
+    Awaitable[None],
+]
 
 _HOT_RUNTIME_FIELDS = frozenset(
     {
@@ -88,7 +91,7 @@ class SettingsManager:
             repository: 配置持久化端口。
             environment: 用于识别高优先级覆盖项的进程环境。
             runtime_overrides: CLI 等启动参数显式覆盖的字段。
-            apply_runtime: 排空当前请求后替换 HTTP 与只读路由运行时的回调。
+            apply_runtime: 排空当前请求后替换运行时并通知提交边界的回调。
         """
         self.current = current
         self.config_file = config_file.expanduser().resolve()
@@ -153,13 +156,26 @@ class SettingsManager:
         effective = AppSettings(**current_values)
         if _settings_fingerprint(effective) == _settings_fingerprint(self.current):
             return
+        committed = False
+
+        def commit() -> None:
+            nonlocal committed
+            self.current = effective
+            committed = True
+
         try:
-            await self._apply_runtime(effective)
+            await self._apply_runtime(effective, commit)
         except Exception as error:
+            message = (
+                "配置已生效，但旧运行时释放失败；请重启本地服务完成清理"
+                if committed
+                else "配置已保存，但运行时热更新失败；请重启本地服务后生效"
+            )
+            raise SettingsError(message) from error
+        if not committed:
             raise SettingsError(
-                "配置已保存，但运行时热更新失败；请重启本地服务后生效"
-            ) from error
-        self.current = effective
+                "配置已保存，但运行时没有提交更新；请重启本地服务后生效"
+            )
 
     def _snapshot(self, values: AppSettings) -> SettingsSnapshot:
         overridden = self._overridden_fields()

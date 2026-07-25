@@ -73,18 +73,24 @@ class AtomicClientSlot[ClientT: AsyncCloseable]:
         finally:
             self._release()
 
-    async def replace(self, factory: AsyncClientFactory[ClientT]) -> None:
+    async def replace(
+        self,
+        factory: AsyncClientFactory[ClientT],
+        *,
+        on_commit: Callable[[], None] | None = None,
+    ) -> None:
         """排空当前请求后构造并原子替换客户端。
 
         并发替换会严格串行。构造失败或提交前取消时继续保留旧客户端；
-        成功提交后，旧客户端恰好关闭一次。
+        成功提交后先同步通知调用方，再开放新租用并把旧客户端恰好关闭一次。
 
         Args:
             factory: 在旧请求排空后构造新客户端的异步工厂。
+            on_commit: 客户端指针切换后、开放新租用前执行的无异常同步回调。
 
         Raises:
             AtomicClientSlotClosedError: 客户端槽已经关闭。
-            BaseException: 客户端工厂或旧客户端关闭过程产生的异常。
+            BaseException: 客户端工厂、提交回调或旧客户端关闭产生的异常。
         """
         async with self._maintenance_lock:
             if self._closed:
@@ -98,9 +104,22 @@ class AtomicClientSlot[ClientT: AsyncCloseable]:
                 raise
             previous = self._client
             self._client = replacement
+            commit_error: BaseException | None = None
+            try:
+                if on_commit is not None:
+                    on_commit()
+            except BaseException as error:
+                commit_error = error
             self._accepting.set()
-            if previous is not replacement:
-                await _close_without_interruption(previous)
+            try:
+                if previous is not replacement:
+                    await _close_without_interruption(previous)
+            except BaseException as close_error:
+                if commit_error is not None:
+                    raise commit_error from close_error
+                raise
+            if commit_error is not None:
+                raise commit_error
 
     async def close(self) -> None:
         """排空当前请求并幂等关闭客户端槽。

@@ -1,5 +1,7 @@
 """集中配置用例测试。"""
 
+import asyncio
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -71,8 +73,12 @@ async def test_settings_manager_hot_applies_network_and_route_fields(
     """
     applied: list[AppSettings] = []
 
-    async def apply_runtime(settings: AppSettings) -> None:
+    async def apply_runtime(
+        settings: AppSettings,
+        commit: Callable[[], None],
+    ) -> None:
         applied.append(settings)
+        commit()
 
     env_file = tmp_path.joinpath(".env")
     manager = SettingsManager(
@@ -107,8 +113,12 @@ async def test_settings_manager_keeps_cold_fields_for_restart(tmp_path: Path) ->
     """
     applied: list[AppSettings] = []
 
-    async def apply_runtime(settings: AppSettings) -> None:
+    async def apply_runtime(
+        settings: AppSettings,
+        commit: Callable[[], None],
+    ) -> None:
         applied.append(settings)
+        commit()
 
     env_file = tmp_path.joinpath(".env")
     manager = SettingsManager(
@@ -142,7 +152,10 @@ async def test_settings_manager_reports_saved_hot_reload_failure(
         tmp_path: Pytest 提供的临时目录。
     """
 
-    async def fail_runtime(_: AppSettings) -> None:
+    async def fail_runtime(
+        _: AppSettings,
+        __: Callable[[], None],
+    ) -> None:
         raise RuntimeError("synthetic replacement failure")
 
     env_file = tmp_path.joinpath(".env")
@@ -159,3 +172,41 @@ async def test_settings_manager_reports_saved_hot_reload_failure(
 
     assert manager.current.timeout == 15
     assert "XHS_TIMEOUT=30" in env_file.read_text(encoding="utf-8")
+
+
+async def test_settings_manager_keeps_state_consistent_after_committed_cancel(
+    tmp_path: Path,
+) -> None:
+    """确保运行时提交后的请求取消不会留下新旧配置不一致。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    committed = asyncio.Event()
+
+    async def apply_runtime(
+        _: AppSettings,
+        commit: Callable[[], None],
+    ) -> None:
+        commit()
+        committed.set()
+        await asyncio.Event().wait()
+
+    env_file = tmp_path.joinpath(".env")
+    manager = SettingsManager(
+        AppSettings(_env_file=None),
+        env_file,
+        DotenvSettingsRepository(env_file),
+        {},
+        apply_runtime=apply_runtime,
+    )
+    updating = asyncio.create_task(manager.update({"timeout": 30}))
+
+    await committed.wait()
+    updating.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await updating
+
+    assert manager.current.timeout == 30
+    snapshot = await manager.get()
+    assert snapshot.restart_required is False
