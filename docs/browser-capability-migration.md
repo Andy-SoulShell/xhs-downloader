@@ -8,7 +8,7 @@
 
 核心边界：
 
-- 小红书登录态和 Cookie 只留在用户浏览器。
+- 浏览器登录态只留在用户浏览器；HTTP Cookie 只留在本机服务配置。
 - FastAPI 是任务、权限、状态和审计的唯一事实来源。
 - MCP 与 WebUI 只调用 FastAPI，不直接调用扩展或数据库。
 - 扩展只领取经过服务端验证的任务，并回传封闭的结构化结果。
@@ -66,14 +66,16 @@ queued → claimed → running → succeeded | failed | needs_review
 | 页面兼容性诊断 | 扩展、SQLite | 已完成 | 记录适配器版本、页面类型和语义锚点，不记录原文 |
 | 失败截图 | 扩展本地 | 已完成 | 隐藏文本与媒体后截图，只保留最近两份且不上传 |
 | 长内容与分页元数据 | API、扩展 | 已完成 | 有界截断、结果上限、游标和 `has_more` |
-| 二维码登录 | 不迁移 | 明确排除 | 直接在真实浏览器页面登录，避免转存凭据 |
-| 删除 Cookie | 不迁移 | 明确排除 | 由浏览器站点数据设置负责 |
+| 二维码登录 | API、MCP、WebUI、扩展 | 已完成 | 从真实登录页一次性交付短期图片，保留标签页完成扫码握手 |
+| 删除 Cookie | API、MCP、WebUI、扩展 | 已完成 | 浏览器按站点清理；HTTP 模式清除本机配置并提示重启 |
 
 ## 类型化 API
 
 面向 WebUI 和 MCP：
 
 - `POST /xhs/login/status`
+- `POST /xhs/login/qrcode`
+- `POST /xhs/login/cookies/delete`
 - `POST /xhs/feeds/list`
 - `POST /xhs/feeds/search`
 - `POST /xhs/feeds/detail`
@@ -110,6 +112,9 @@ queued → claimed → running → succeeded | failed | needs_review
 - `xsec_token` 仅作为站内导航输入，不进入日志或用户可见状态说明。
 - 公开测试只使用合成 ID、合成文本和保留测试域名。
 - 扩展不申请 Cookie 权限；小红书页面权限由内容脚本匹配范围限定。
+- 扩展使用 `browsingData` 只清理小红书来源的 Cookie，不能读取 Cookie 内容。
+- 二维码只接受受限图片 Data URL；API 响应后立即擦除持久化任务中的图片，
+  MCP 以图片内容块交付，结构化结果不保留 Base64。
 - 心跳只保存扩展标识和认证时间，不包含浏览历史、账号信息或页面内容。
 - 管理接口只允许本机调用；扩展接口要求来源匹配、能力令牌和任务租约。
 - MCP 发布只接受用户明确提供的普通文件绝对路径，素材仍由 FastAPI 校验。
@@ -124,6 +129,7 @@ queued → claimed → running → succeeded | failed | needs_review
 2. P1：点赞、收藏、评论、回复、目标状态核验、审计与人工确认。
 3. P2：发布选项、视频处理、官方定时、MCP 发布和 WebUI 二次确认。
 4. P3：协议版本、选择器兼容诊断、脱敏失败证据、断线恢复和结果上限。
+5. P4：二维码登录、一次性交付和浏览器/HTTP 双会话清理。
 
 真实页面变化不属于可静态锁定的完成项。后续维护以脱敏诊断中的适配器版本、
 页面类型和缺失锚点为依据更新合成契约夹具；不得提交真实帖子、Cookie、

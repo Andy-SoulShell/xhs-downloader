@@ -13,8 +13,8 @@ HTTP API、MCP、Python 客户端和浏览器扩展。
 - 未完成文件保存在隐藏状态目录，可安全续传；完成后原子替换目标文件。
 - 应用、Uvicorn 与 FastMCP 日志统一接入 Loguru，并抑制敏感请求 URL。
 - WebUI 使用 React、Vite、Tailwind CSS 与 Radix UI，敏感配置仅保留在服务端。
-- 浏览器扩展使用当前登录态执行推荐、搜索、详情和资料读取，不申请 Cookie 权限；
-  本地服务离线时也能使用浏览器下载。
+- 浏览器扩展支持扫码登录，并使用当前登录态执行推荐、搜索、详情和资料读取；
+  它不能读取 Cookie，只能在明确确认后按小红书站点清理 Cookie。
 - 发布草稿、素材、排期和执行状态由本地服务持久化；普通账号的登录态只留在浏览器
   创作中心，扩展不会读取或传输 Cookie。
 - 后台下载先写入 SQLite 任务队列再执行，支持幂等提交、进程重启恢复和失败重试。
@@ -153,8 +153,8 @@ pnpm --filter xhs-downloader-webui build
 `.env`；Cookie 与代理只允许覆盖或清除，服务端不会返回原文，WebUI 也不会将其
 写入浏览器存储。配置端点只接受本机回环地址发起的请求，保存后需重启服务生效。
 
-管理后台包含帖子列表、浏览器探索、扩展心跳与操作记录、发布中心、持久化下载任务、
-扩展独立下载记录和服务配置。
+管理后台包含帖子列表、浏览器扫码与会话管理、内容探索、扩展心跳与操作记录、
+发布中心、持久化下载任务、扩展独立下载记录和服务配置。
 关闭 WebUI 不会中断已经提交的后台任务；重新打开后会从服务端恢复任务和完成状态。
 帖子详情解析成功后会立即写入本地 SQLite，即使尚未下载，刷新或重启 WebUI 也会
 恢复到帖子列表；从列表移除时会同步删除这条采集记录。
@@ -217,7 +217,8 @@ pnpm --filter xhs-downloader-extension build
 发布控件不接受脚本合成点击，因此扩展会用 `debugger` 权限在当前任务所属的创作页发送
 一次可信键盘输入，随后立即释放调试会话；该能力不能由其他标签页或失效租约触发。首次
 联动时，扩展只向回环地址登记随机能力令牌；服务端仅保存令牌摘要。扩展不读取或保存
-浏览器 Cookie、密钥和密码。
+浏览器 Cookie、密钥和密码。`browsingData` 权限只用于用户二次确认后的
+小红书站点 Cookie 清理；二维码图片只在当前调用中短期交付。
 
 浏览任务失败时，扩展会记录不含页面原文、账号或 URL 参数的兼容性诊断。为排查布局
 变化，扩展会先隐藏页面文本和媒体，再截取失败页面；截图只保存在扩展本地，最多两份，
@@ -237,6 +238,8 @@ uv run xhs-api
 - 采集帖子：`GET /posts`、`DELETE /posts/{work_id}`
 - 下载任务：`POST /tasks`
 - 浏览器登录状态：`POST /xhs/login/status`
+- 浏览器登录二维码：`POST /xhs/login/qrcode`
+- 登录会话清理：`POST /xhs/login/cookies/delete`
 - 推荐、搜索与详情：`POST /xhs/feeds/list|search|detail`
 - 点赞、收藏与评论：`POST /xhs/feeds/like|favorite|comment`
 - 用户资料：`POST /xhs/user/profile`、`POST /xhs/user/me`
@@ -286,6 +289,8 @@ Streamable HTTP 地址：`http://127.0.0.1:5557/mcp`。可通过 `--api-url`
 - `get_detail_data`：只解析作品详情。
 - `download_detail`：下载媒体，可指定图片序号和强制下载。
 - `check_login_status`：检查浏览器登录状态。
+- `get_login_qrcode`：返回一次性二维码图片，并保持真实登录页供用户扫码。
+- `delete_cookies`：显式确认后清理浏览器或 Cookie HTTP 会话。
 - `list_feeds`、`search_feeds`：读取推荐和搜索结果。
 - `get_feed_detail`：读取帖子详情和已加载评论。
 - `user_profile`、`get_my_profile`：读取指定用户或当前账号资料。
