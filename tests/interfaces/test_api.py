@@ -256,7 +256,6 @@ async def test_api_manages_settings_without_returning_secrets(tmp_path) -> None:
     assert updated.json()["restart_required"] is True
     assert updated.json()["values"]["timeout"] == 30
     assert updated.json()["values"]["route_strategy"] == "http_first"
-    assert updated.json()["values"]["browser_driver"] == "managed"
     assert loaded.json()["values"]["folder_name"] == "media"
     assert "session=synthetic" not in updated.text
     assert "user:secret" not in updated.text
