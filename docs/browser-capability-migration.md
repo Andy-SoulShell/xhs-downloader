@@ -106,17 +106,16 @@ queued → claimed → running → succeeded | failed | needs_review
 - HTTP 统一读取 Provider 已支持推荐、默认筛选搜索、详情、指定主页和严格身份
   确认后的当前主页；非默认筛选会先验证 Cookie 会话，再明确回退浏览器，避免把
   已过期 Cookie 误归为无法验证，不扩展到写操作。
-- 扩展五项读取、受管匿名 Profile 的推荐/详情/指定主页，以及未配置 Cookie 时
-  HTTP→受管浏览器安全回退已真实通过；当前过期 Cookie→扩展的安全回退也已通过，
-  更新 Cookie 后的 HTTP 成功路径和扫码后的账号能力仍待现场确认。
+- 扩展五项读取、受管 Profile 的推荐/搜索/详情/指定与当前主页，以及未配置
+  Cookie 时 HTTP→受管浏览器安全回退已真实通过；当前过期 Cookie→扩展的安全
+  回退也已通过，更新 Cookie 后的 HTTP 成功路径仍待现场确认。
 - 受管 Chromium 被强制终止后能准确报告异常，重新启动会取得新的回环 CDP 端口并
   恢复真实读取，不影响用户日常 Chrome。
 - 受管点赞和收藏已实现目标状态预检、可信点击、严格回读和
-  `failed/needs_review` 分界。
+  `failed/needs_review` 分界；登录 Profile 中两项均真实切换成功并恢复原状态。
 - 受管私密图文、视频和平台定时发布已接入共享 Chromium、独占执行闸门及 API
   生命周期；安全验证可保留原页面进入 `awaiting_verification`，用户确认后恢复
-  同一任务且不会重复点击发布。上述写能力的真实验收仍需独立 Profile 登录及用户
-  最终确认。
+  同一任务且不会重复点击发布。上述写能力的真实验收仍需用户在最终提交前确认。
 - WebUI 已按冻结驱动区分扩展与受管发布；受管模式不会打开日常浏览器创作页，并在
   提交前禁用非私密可见范围和商品绑定。浏览器失败记录只展示和复制严格白名单中的
   脱敏页面诊断。
@@ -124,9 +123,9 @@ queued → claimed → running → succeeded | failed | needs_review
   扩展通过独立内存 Claim/Answer 通道计算，受管浏览器通过同一 Profile 的 CDP
   旁路计算。只有 `matched` 允许跨 Provider 回退；挑战不进入浏览器任务、SQLite、
   浏览器存储、日志或诊断。协议 5 挑战通道构建已真实重载并完成响应；随后补充的
-  页面水合后 DOM 账号识别兜底已构建、待再次重载。当前 HTTP Cookie 已过期、
-  受管 Profile 未登录，刷新 Cookie 和扫码后的 `matched/different` 现场矩阵仍待
-  复验。
+  页面水合后 DOM 账号识别兜底已构建、待再次重载。受管真实页面已返回
+  `proved`；当前 HTTP Cookie 已过期，刷新 Cookie 后的 `matched/different`
+  现场矩阵仍待复验。
 
 ## 类型化 API
 
