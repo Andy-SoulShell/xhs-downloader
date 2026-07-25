@@ -14,6 +14,7 @@ import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BrowserDetail } from "./browser-detail";
+import { BrowserMonitor } from "./browser-monitor";
 import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
 import { PageHeading } from "./page-heading";
@@ -111,6 +112,8 @@ export function BrowserBoard() {
           )}
         </div>
       </div>
+
+      <BrowserMonitor account={explorer.account} />
 
       {explorer.detail && (
         <BrowserDetail

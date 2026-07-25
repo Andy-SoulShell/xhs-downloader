@@ -4,11 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BrowserTask, FeedDetailResult } from "../lib/types";
 import { executeBrowserOperation } from "../lib/browser-api";
+import {
+  listBrowserExtensions,
+  listBrowserTasks,
+} from "../lib/browser-management-api";
 import { BrowserBoard } from "./browser-board";
 import { BrowserDetail } from "./browser-detail";
 
 vi.mock("../lib/browser-api", () => ({
   executeBrowserOperation: vi.fn(),
+}));
+vi.mock("../lib/browser-management-api", () => ({
+  listBrowserExtensions: vi.fn(),
+  listBrowserTasks: vi.fn(),
+  retryBrowserTask: vi.fn(),
 }));
 
 const feed = {
@@ -54,6 +63,8 @@ function completedTask(result: Record<string, JsonValue>): BrowserTask {
 
 describe("浏览器探索工作台", () => {
   beforeEach(() => {
+    vi.mocked(listBrowserExtensions).mockResolvedValue([]);
+    vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockImplementation(async (path) => {
       const data = (
         path === "/xhs/login/status"

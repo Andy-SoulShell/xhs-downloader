@@ -51,6 +51,8 @@ queued → claimed → running → succeeded | failed | needs_review
 | 收藏/取消收藏 | API、MCP、WebUI | 已完成 | 目标状态语义，操作后重新读取并核验 |
 | 发表评论 | API、MCP、WebUI | 已完成 | 幂等请求、提交后查找新评论并核验 |
 | 回复评论 | API、MCP、WebUI | 已完成 | 评论 ID 或用户 ID 定位、有界滚动和提交后核验 |
+| 扩展在线状态 | API、WebUI | 已完成 | 持久化登记与最近认证心跳，按轮询周期判断在线 |
+| 操作审计记录 | API、WebUI | 已完成 | 展示脱敏任务状态、尝试次数与人工核对提示 |
 | 图文/视频发布 | WebUI、扩展 | 已有能力 | 继续使用现有草稿、素材、排期和发布租约 |
 | 二维码登录 | 不迁移 | 明确排除 | 直接在真实浏览器页面登录，避免转存凭据 |
 | 删除 Cookie | 不迁移 | 明确排除 | 由浏览器站点数据设置负责 |
@@ -71,7 +73,8 @@ queued → claimed → running → succeeded | failed | needs_review
 - `POST /xhs/feeds/comment/reply`
 
 这些接口接收可选幂等标识，并通过 `wait_seconds` 选择立即返回任务或等待终态。
-通用任务查询、重试和扩展执行仍位于 `/browser/*`。
+通用任务查询、重试和扩展执行仍位于 `/browser/*`；本机管理界面通过
+`GET /browser/extensions` 读取扩展登记和最近心跳。
 
 ## 数据与安全
 
@@ -80,6 +83,7 @@ queued → claimed → running → succeeded | failed | needs_review
 - `xsec_token` 仅作为站内导航输入，不进入日志或用户可见状态说明。
 - 公开测试只使用合成 ID、合成文本和保留测试域名。
 - 扩展不申请 Cookie 权限；小红书页面权限由内容脚本匹配范围限定。
+- 心跳只保存扩展标识和认证时间，不包含浏览历史、账号信息或页面内容。
 - 管理接口只允许本机调用；扩展接口要求来源匹配、能力令牌和任务租约。
 
 ## 后续实施顺序
