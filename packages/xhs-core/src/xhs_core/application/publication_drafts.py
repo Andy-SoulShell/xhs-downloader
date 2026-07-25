@@ -4,7 +4,11 @@ from collections.abc import AsyncIterable
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from xhs_core.domain import PublicationDraft, PublicationError
+from xhs_core.domain import (
+    PublicationDraft,
+    PublicationError,
+    PublicationVisibility,
+)
 from xhs_core.domain.publication_ports import (
     PublicationAssetStore,
     PublicationDraftRepository,
@@ -39,6 +43,9 @@ class PublicationDraftService:
         title: str,
         body: str,
         tags: list[str],
+        visibility: PublicationVisibility = PublicationVisibility.PUBLIC,
+        is_original: bool = False,
+        products: list[str] | None = None,
     ) -> PublicationDraft:
         """创建草稿。
 
@@ -46,6 +53,9 @@ class PublicationDraftService:
             title: 发布标题。
             body: 发布正文。
             tags: 不含井号的标签。
+            visibility: 发布后的可见范围。
+            is_original: 是否声明原创。
+            products: 用户确认过的商品名称或商品 ID。
 
         Returns:
             新建草稿。
@@ -56,6 +66,9 @@ class PublicationDraftService:
             title=title.strip(),
             body=body.strip(),
             tags=tags,
+            visibility=visibility,
+            is_original=is_original,
+            products=products or [],
             created_at=now,
             updated_at=now,
         )
@@ -69,6 +82,9 @@ class PublicationDraftService:
         body: str,
         tags: list[str],
         asset_order: list[str] | None = None,
+        visibility: PublicationVisibility = PublicationVisibility.PUBLIC,
+        is_original: bool = False,
+        products: list[str] | None = None,
     ) -> PublicationDraft:
         """更新草稿及素材顺序。
 
@@ -78,6 +94,9 @@ class PublicationDraftService:
             body: 发布正文。
             tags: 不含井号的标签。
             asset_order: 可选的完整素材 ID 顺序。
+            visibility: 发布后的可见范围。
+            is_original: 是否声明原创。
+            products: 用户确认过的商品名称或商品 ID。
 
         Returns:
             更新后的草稿。
@@ -100,6 +119,9 @@ class PublicationDraftService:
                 "title": title.strip(),
                 "body": body.strip(),
                 "tags": tags,
+                "visibility": visibility,
+                "is_original": is_original,
+                "products": products or [],
                 "assets": assets,
                 "updated_at": datetime.now(UTC),
             }

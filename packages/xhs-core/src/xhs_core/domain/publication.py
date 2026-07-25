@@ -13,6 +13,15 @@ class PublicationMode(StrEnum):
 
     MANUAL = "manual"
     SCHEDULED = "scheduled"
+    PLATFORM_SCHEDULED = "platform_scheduled"
+
+
+class PublicationVisibility(StrEnum):
+    """作品发布后的可见范围。"""
+
+    PUBLIC = "public"
+    PRIVATE = "private"
+    MUTUAL = "mutual"
 
 
 class PublicationTaskStatus(StrEnum):
@@ -56,6 +65,9 @@ class PublicationDraft(BaseModel):
     title: str = Field(default="", max_length=100)
     body: str = Field(default="", max_length=5000)
     tags: list[str] = Field(default_factory=list, max_length=20)
+    visibility: PublicationVisibility = PublicationVisibility.PUBLIC
+    is_original: bool = False
+    products: list[str] = Field(default_factory=list, max_length=20)
     assets: list[PublicationAsset] = Field(default_factory=list, max_length=20)
     created_at: datetime
     updated_at: datetime
@@ -78,6 +90,24 @@ class PublicationDraft(BaseModel):
                 result.append(cleaned[:50])
         return result
 
+    @field_validator("products")
+    @classmethod
+    def normalize_products(cls, values: list[str]) -> list[str]:
+        """清理商品检索词并保持原有顺序。
+
+        Args:
+            values: 用户确认过的商品名称或商品 ID。
+
+        Returns:
+            去除空白和重复项后的商品检索词。
+        """
+        result: list[str] = []
+        for value in values:
+            cleaned = value.strip()
+            if cleaned and cleaned not in result:
+                result.append(cleaned[:100])
+        return result
+
     def fingerprint(self) -> str:
         """计算草稿内容指纹。
 
@@ -87,7 +117,15 @@ class PublicationDraft(BaseModel):
         canonical = dumps(
             self.model_dump(
                 mode="json",
-                include={"title", "body", "tags", "assets"},
+                include={
+                    "title",
+                    "body",
+                    "tags",
+                    "visibility",
+                    "is_original",
+                    "products",
+                    "assets",
+                },
             ),
             ensure_ascii=False,
             sort_keys=True,

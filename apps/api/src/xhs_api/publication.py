@@ -22,6 +22,7 @@ from .publication_models import (
     ExtensionTokenResponse,
     PublicationClaimRequest,
     PublicationEventRequest,
+    TaskReviewRequest,
     TaskSubmitRequest,
 )
 from .settings import SettingsAccessPolicy
@@ -72,7 +73,14 @@ def create_publication_router(
         request: Request,
     ) -> PublicationDraft:
         _require_management(request, management_access)
-        return await drafts.create(payload.title, payload.body, payload.tags)
+        return await drafts.create(
+            payload.title,
+            payload.body,
+            payload.tags,
+            payload.visibility,
+            payload.is_original,
+            payload.products,
+        )
 
     @router.get("/drafts/{draft_id}", response_model=PublicationDraft)
     async def get_draft(draft_id: str, request: Request) -> PublicationDraft:
@@ -92,6 +100,9 @@ def create_publication_router(
             payload.body,
             payload.tags,
             payload.asset_order,
+            payload.visibility,
+            payload.is_original,
+            payload.products,
         )
 
     @router.delete("/drafts/{draft_id}", status_code=204)
@@ -162,6 +173,19 @@ def create_publication_router(
     async def retry_task(task_id: str, request: Request) -> PublicationTask:
         _require_management(request, management_access)
         return await tasks.retry(task_id)
+
+    @router.post("/tasks/{task_id}/review", response_model=PublicationTask)
+    async def review_task(
+        task_id: str,
+        payload: TaskReviewRequest,
+        request: Request,
+    ) -> PublicationTask:
+        _require_management(request, management_access)
+        return await tasks.review(
+            task_id,
+            payload.decision == "published",
+            payload.result_url,
+        )
 
     @router.post("/tasks/{task_id}/cancel", response_model=PublicationTask)
     async def cancel_task(task_id: str, request: Request) -> PublicationTask:

@@ -52,6 +52,7 @@ from .publication import (
     PublicationMode,
     PublicationTask,
     PublicationTaskStatus,
+    PublicationVisibility,
 )
 
 __all__ = [
@@ -91,6 +92,7 @@ __all__ = [
     "PublicationMode",
     "PublicationTask",
     "PublicationTaskStatus",
+    "PublicationVisibility",
     "SettingsError",
     "TaskStateError",
     "UserProfileResult",

@@ -1,9 +1,14 @@
 """内容发布 HTTP 请求与响应模型。"""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from xhs_core.domain import PublicationMode, PublicationTaskStatus
+from xhs_core.domain import (
+    PublicationMode,
+    PublicationTaskStatus,
+    PublicationVisibility,
+)
 
 
 class DraftCreateRequest(BaseModel):
@@ -14,6 +19,9 @@ class DraftCreateRequest(BaseModel):
     title: str = Field(default="", max_length=100)
     body: str = Field(default="", max_length=5000)
     tags: list[str] = Field(default_factory=list, max_length=20)
+    visibility: PublicationVisibility = PublicationVisibility.PUBLIC
+    is_original: bool = False
+    products: list[str] = Field(default_factory=list, max_length=20)
 
 
 class DraftUpdateRequest(DraftCreateRequest):
@@ -37,10 +45,30 @@ class TaskSubmitRequest(BaseModel):
         Returns:
             通过模式与时间组合校验的请求。
         """
-        if self.mode is PublicationMode.SCHEDULED and not self.scheduled_at:
+        if self.mode is not PublicationMode.MANUAL and not self.scheduled_at:
             raise ValueError("定时发布必须指定计划时间")
         if self.mode is PublicationMode.MANUAL and self.scheduled_at:
             raise ValueError("手动发布不接受计划时间")
+        return self
+
+
+class TaskReviewRequest(BaseModel):
+    """人工核对不确定发布结果。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["published", "not_published"]
+    result_url: str | None = Field(default=None, max_length=2048)
+
+    @model_validator(mode="after")
+    def validate_result_url(self) -> "TaskReviewRequest":
+        """确保只有已发布结论可以携带作品地址。
+
+        Returns:
+            通过组合校验的人工核对请求。
+        """
+        if self.decision == "not_published" and self.result_url:
+            raise ValueError("确认未发布时不能提供作品地址")
         return self
 
 

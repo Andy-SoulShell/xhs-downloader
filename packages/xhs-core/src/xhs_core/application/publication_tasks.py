@@ -1,7 +1,7 @@
 """发布任务提交与管理用例。"""
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from xhs_core.domain import (
@@ -15,10 +15,9 @@ from xhs_core.domain.publication_ports import PublicationTaskRepository
 
 from .publication_scheduler import PublicationScheduler
 
-_RETRYABLE = {
-    PublicationTaskStatus.FAILED,
-    PublicationTaskStatus.NEEDS_REVIEW,
-}
+_RETRYABLE = {PublicationTaskStatus.FAILED}
+_PLATFORM_SCHEDULE_MIN = timedelta(hours=1)
+_PLATFORM_SCHEDULE_MAX = timedelta(days=14)
 
 
 class PublicationTaskService:
@@ -60,8 +59,13 @@ class PublicationTaskService:
         _validate_package(draft)
         now = datetime.now(UTC)
         schedule = _as_utc(scheduled_at) if scheduled_at else now
-        if mode is PublicationMode.SCHEDULED and schedule <= now:
+        if mode is not PublicationMode.MANUAL and schedule <= now:
             raise PublicationError("自动发布时间必须晚于当前时间")
+        if mode is PublicationMode.PLATFORM_SCHEDULED:
+            if schedule < now + _PLATFORM_SCHEDULE_MIN:
+                raise PublicationError("官方定时发布时间必须至少在 1 小时后")
+            if schedule > now + _PLATFORM_SCHEDULE_MAX:
+                raise PublicationError("官方定时发布时间不能超过 14 天")
         fingerprint = draft.fingerprint()
         async with self._lock:
             await self._scheduler.reconcile()
@@ -75,9 +79,9 @@ class PublicationTaskService:
                 ):
                     return task
             status = (
-                PublicationTaskStatus.READY
-                if mode is PublicationMode.MANUAL
-                else PublicationTaskStatus.SCHEDULED
+                PublicationTaskStatus.SCHEDULED
+                if mode is PublicationMode.SCHEDULED
+                else PublicationTaskStatus.READY
             )
             task = PublicationTask(
                 task_id=uuid4().hex,
@@ -89,7 +93,11 @@ class PublicationTaskService:
                 message=(
                     "等待扩展立即发布"
                     if mode is PublicationMode.MANUAL
-                    else "等待计划发布时间"
+                    else (
+                        "等待本地计划发布时间"
+                        if mode is PublicationMode.SCHEDULED
+                        else "等待扩展设置官方定时发布"
+                    )
                 ),
                 created_at=now,
                 updated_at=now,
@@ -98,7 +106,7 @@ class PublicationTaskService:
             return task
 
     async def retry(self, task_id: str) -> PublicationTask:
-        """重新排队需要人工处理或失败的任务。
+        """重新排队已经明确失败的任务。
 
         Args:
             task_id: 任务唯一标识。
@@ -112,7 +120,14 @@ class PublicationTaskService:
         async with self._lock:
             task = await self.require(task_id)
             if task.status not in _RETRYABLE:
-                raise PublicationError("只有失败或待人工处理的任务可以重试")
+                if task.status is PublicationTaskStatus.NEEDS_REVIEW:
+                    raise PublicationError("结果不确定的发布任务必须先人工核对")
+                raise PublicationError("只有明确失败的发布任务可以重试")
+            if (
+                task.mode is PublicationMode.PLATFORM_SCHEDULED
+                and task.scheduled_at < datetime.now(UTC) + _PLATFORM_SCHEDULE_MIN
+            ):
+                raise PublicationError("官方定时时间已失效，请重新提交发布任务")
             updated = task.model_copy(
                 update={
                     "status": PublicationTaskStatus.READY,
@@ -126,6 +141,55 @@ class PublicationTaskService:
             if not await self._repository.save_task_if_status(
                 updated,
                 task.status,
+            ):
+                raise PublicationError("发布任务状态已经变化，请刷新后重试")
+            await self._repository.clear_lease(task_id)
+            return updated
+
+    async def review(
+        self,
+        task_id: str,
+        published: bool,
+        result_url: str | None = None,
+    ) -> PublicationTask:
+        """记录人工核对结果，解除不确定任务的重试禁令。
+
+        Args:
+            task_id: 需要人工核对的任务标识。
+            published: 已在创作平台确认发布成功时为真。
+            result_url: 可选的已发布作品地址。
+
+        Returns:
+            转为已发布或明确失败的任务。
+
+        Raises:
+            PublicationError: 任务不是待核对状态或状态已经变化。
+        """
+        async with self._lock:
+            task = await self.require(task_id)
+            if task.status is not PublicationTaskStatus.NEEDS_REVIEW:
+                raise PublicationError("只有待人工核对的发布任务可以确认结果")
+            updated = task.model_copy(
+                update={
+                    "status": (
+                        PublicationTaskStatus.PUBLISHED
+                        if published
+                        else PublicationTaskStatus.FAILED
+                    ),
+                    "message": (
+                        "已人工确认作品发布成功"
+                        if published
+                        else "已人工确认作品未发布，可以显式重试"
+                    ),
+                    "result_url": result_url if published else None,
+                    "extension_id": None,
+                    "lease_expires_at": None,
+                    "updated_at": datetime.now(UTC),
+                }
+            )
+            if not await self._repository.save_task_if_status(
+                updated,
+                PublicationTaskStatus.NEEDS_REVIEW,
             ):
                 raise PublicationError("发布任务状态已经变化，请刷新后重试")
             await self._repository.clear_lease(task_id)
@@ -200,6 +264,8 @@ def _validate_package(draft: PublicationDraft) -> None:
     videos = [asset for asset in draft.assets if asset.media_type.startswith("video/")]
     if videos and (len(videos) != 1 or len(draft.assets) != 1):
         raise PublicationError("视频笔记只能包含一个视频，不能混合图片")
+    if videos and draft.is_original:
+        raise PublicationError("当前原创声明只支持图文笔记")
     if not videos and len(draft.assets) > 18:
         raise PublicationError("图文笔记最多包含 18 张图片")
     if not draft.title and not draft.body:
