@@ -108,6 +108,8 @@ def _smoke_test(executable: Path) -> None:
     port = _free_port()
     with tempfile.TemporaryDirectory(prefix="xhs-desktop-smoke-") as temporary:
         root = Path(temporary)
+        environment = os.environ.copy()
+        environment["XHS_MANAGED_BROWSER_HEADLESS"] = "true"
         process = subprocess.Popen(
             [
                 str(executable),
@@ -118,7 +120,8 @@ def _smoke_test(executable: Path) -> None:
                 str(root.joinpath("config")),
                 "--data-dir",
                 str(root.joinpath("data")),
-            ]
+            ],
+            env=environment,
         )
         try:
             deadline = time.monotonic() + 30
@@ -132,6 +135,7 @@ def _smoke_test(executable: Path) -> None:
                     time.sleep(0.2)
                     continue
                 if b'"status":"ok"' in health and b"<html" in page.lower():
+                    _smoke_managed_browser(port)
                     return
                 time.sleep(0.2)
             raise RuntimeError("桌面程序 HTTP 冒烟验证超时")
@@ -144,9 +148,47 @@ def _smoke_test(executable: Path) -> None:
                 process.wait(timeout=5)
 
 
+def _smoke_managed_browser(port: int) -> None:
+    base_url = f"http://127.0.0.1:{port}/browser/managed"
+    initial = _request_json(f"{base_url}/status")
+    if initial.get("state") != "stopped":
+        raise RuntimeError("受管浏览器初始状态不是 stopped")
+    if initial.get("installed") is not True:
+        if initial.get("installed") is False and initial.get("cdp_port") is None:
+            return
+        raise RuntimeError("受管浏览器安装检测响应无效")
+    try:
+        started = _request_json(f"{base_url}/start", method="POST")
+        cdp_port = started.get("cdp_port")
+        if not (
+            started.get("state") == "running"
+            and started.get("cdp_host") == "127.0.0.1"
+            and isinstance(cdp_port, int)
+            and not isinstance(cdp_port, bool)
+            and 0 < cdp_port <= 65535
+        ):
+            raise RuntimeError("受管浏览器没有返回有效的本机 CDP 端点")
+        running = _request_json(f"{base_url}/status")
+        if running.get("state") != "running" or running.get("cdp_port") != cdp_port:
+            raise RuntimeError("受管浏览器运行状态与启动结果不一致")
+    finally:
+        stopped = _request_json(f"{base_url}/stop", method="POST")
+        if stopped.get("state") != "stopped" or stopped.get("cdp_port") is not None:
+            raise RuntimeError("受管浏览器没有安全停止")
+
+
 def _read_url(url: str) -> bytes:
     with urllib.request.urlopen(url, timeout=1) as response:
         return response.read()
+
+
+def _request_json(url: str, *, method: str = "GET") -> dict[str, object]:
+    request = urllib.request.Request(url, method=method)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.loads(response.read())
+    if not isinstance(payload, dict):
+        raise RuntimeError("桌面程序返回了无效的 JSON 响应")
+    return payload
 
 
 def _free_port() -> int:

@@ -21,8 +21,11 @@ uv run python -m scripts.build_desktop
 1. 使用同源 API 路径和 `/ui/` 资源基址构建 WebUI。
 2. 构建浏览器扩展。
 3. 使用 PyInstaller 生成当前平台的一目录桌面程序。
-4. 用临时配置和数据目录启动未压缩成品，实际请求 `/health` 与 `/ui/`。
-5. 生成当前平台归档，并从最终归档重新解压、验签和执行相同 HTTP 冒烟。
+4. 用临时配置和数据目录启动未压缩成品，实际请求 `/health` 与 `/ui/`；
+   若构建机已安装 Chromium 浏览器，还会以无头模式验证安装检测、专用用户目录、
+   本机 CDP 端点及启动和停止完整生命周期。
+5. 生成当前平台归档，并从最终归档重新解压、验签和执行相同 HTTP 与受管浏览器
+   生命周期冒烟。
 6. 检查归档不含 `.env`、数据库、日志或浏览器 Profile，再生成扩展 ZIP、
    `release-manifest.json` 和 `SHA256SUMS`。
 
@@ -30,6 +33,10 @@ uv run python -m scripts.build_desktop
 链接和可执行位的 `.tar.gz`。macOS 用户运行 `xhs-downloader.app`，Windows 或 Linux
 用户运行解压目录内的同名可执行文件。浏览器扩展 ZIP 解压后，通过 Chromium 的
 “加载已解压的扩展程序”选择 `xhs-downloader-extension/`。
+
+构建机没有受支持浏览器时，冒烟测试只接受明确的“未安装 + stopped + 无 CDP
+端口”状态；不会把缺失依赖伪装成启动成功。正式交付平台仍须在安装了目标浏览器的
+构建机完成一次完整生命周期验证。
 
 macOS 正式发行前，把 Developer ID 和 `notarytool` 钥匙串配置名传给构建：
 
