@@ -36,7 +36,7 @@ export function AccessModeSettings({
       title="访问模式"
     >
       <SelectSetting
-        help="HTTP 使用本机保存的 Cookie；回退只会发生在确认尚未产生外部效果的失败上。"
+        help="仅决定推荐、搜索、详情等只读能力的提供方顺序；互动与发布不受此项影响。HTTP 使用本机保存的 Cookie，回退只会发生在确认尚未产生外部效果的失败上。"
         label="只读路由策略"
         onChange={(value) =>
           onChange("route_strategy", value as RouteStrategy)

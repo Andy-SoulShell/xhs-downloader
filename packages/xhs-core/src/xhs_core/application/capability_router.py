@@ -14,7 +14,6 @@ from xhs_core.domain.capability_routing import (
     ProviderFailureCode,
     ProviderKind,
     RoutedCapabilityResult,
-    RoutePolicyError,
     RouteStrategy,
 )
 
@@ -38,7 +37,11 @@ class CapabilityRouter:
     """按安全策略编排同一能力的 HTTP 与浏览器实现。
 
     只读调用只会在提供方抛出明确可回退的 ``ProviderError`` 时尝试下一
-    提供方。写调用固定使用浏览器且至多调用一次。
+    提供方。
+
+    路由策略只作用于只读能力。点赞、收藏、评论和发布等写操作没有 HTTP
+    实现，一律由接口层直接提交给当前浏览器驱动执行，既不参与策略选择，
+    也不存在跨提供方回退，因此不经过本路由。
     """
 
     async def execute_read[T](
@@ -100,37 +103,6 @@ class CapabilityRouter:
                 account_consistency=account_consistency,
             )
         raise AssertionError("路由顺序至少应包含一个提供方")
-
-    async def execute_write[T](
-        self,
-        strategy: RouteStrategy,
-        *,
-        browser: _ProviderCallable[T] | None = None,
-    ) -> RoutedCapabilityResult[T]:
-        """执行禁止跨提供方重试的写能力。
-
-        Args:
-            strategy: 必须为 ``browser_only``。
-            browser: 可选浏览器写能力实现。
-
-        Returns:
-            固定由浏览器产生的结构化成功结果。
-
-        Raises:
-            RoutePolicyError: 写操作配置了非 ``browser_only`` 策略。
-            ProviderError: 浏览器未配置或执行失败。
-        """
-        if strategy is not RouteStrategy.BROWSER_ONLY:
-            raise RoutePolicyError("写操作仅支持 browser_only 路由策略")
-        value = await self._invoke(ProviderKind.BROWSER, browser)
-        return RoutedCapabilityResult(
-            value=value,
-            provider=ProviderKind.BROWSER,
-            strategy=strategy,
-            fallback_used=False,
-            fallback_reason=None,
-            attempted_providers=(ProviderKind.BROWSER,),
-        )
 
     async def _invoke[T](
         self,
