@@ -26,6 +26,11 @@ import {
   syncClientRecords,
 } from "./service";
 import {
+  installDownloadTracking,
+  trackDownloadBatch,
+  type BrowserDownloadOutcome,
+} from "./browser-download-tracker";
+import {
   appendPendingRecord,
   loadPendingRecords,
   loadSettings,
@@ -34,7 +39,6 @@ import {
 } from "./storage";
 import type {
   ClientDownloadRecord,
-  DownloadMode,
   ExtensionRequest,
   ExtensionResponse,
   ExtensionWork,
@@ -105,6 +109,7 @@ async function handleRequest(
 installPublicationAutomation();
 installBrowserTaskAutomation();
 installAccountChallengeAutomation();
+installDownloadTracking(recordSettledDownloads);
 
 async function getState(): Promise<ExtensionResponse> {
   const settings = await loadSettings();
@@ -145,12 +150,17 @@ async function download(
       return { ok: true, message, mode };
     }
     const message = await downloadInBrowser(work, indexes);
-    await saveRecord(work, indexes, mode, "completed", message, online);
     return { ok: true, message, mode };
   } catch (error) {
     const message = error instanceof Error ? error.message : "下载失败";
     if (mode === "browser") {
-      await saveRecord(work, indexes, mode, "failed", message, online);
+      await saveRecord(
+        buildRecord(work.workId, work.sourceUrl, work.title, indexes, {
+          status: "failed",
+          message,
+        }),
+        online,
+      );
     }
     throw error;
   }
@@ -163,7 +173,7 @@ async function downloadInBrowser(
   const selected = new Set(indexes);
   const media = work.media.filter((item) => selected.has(item.index));
   if (!media.length) throw new Error("选中的媒体没有可下载资源");
-  await Promise.all(
+  const downloadIds = await Promise.all(
     media.map((item) =>
       chrome.downloads.download({
         conflictAction: "uniquify",
@@ -173,37 +183,70 @@ async function downloadInBrowser(
       }),
     ),
   );
-  return `已交给浏览器下载 ${media.length} 个文件`;
-}
-
-async function saveRecord(
-  work: ExtensionWork,
-  indexes: number[],
-  mode: DownloadMode,
-  status: ClientDownloadRecord["status"],
-  message: string,
-  serviceOnline: boolean,
-): Promise<void> {
-  const record: ClientDownloadRecord = {
-    record_id: crypto.randomUUID(),
+  // 浏览器在下载排队时即返回编号；结果由下载跟踪器在落盘后确认。
+  await trackDownloadBatch({
+    batch_id: crypto.randomUUID(),
     work_id: work.workId,
     source_url: work.sourceUrl,
     title: work.title,
-    mode,
-    status,
+    media_indexes: indexes,
+    download_ids: downloadIds,
+    created_at: new Date().toISOString(),
+  });
+  return `已交给浏览器下载 ${media.length} 个文件`;
+}
+
+async function recordSettledDownloads(
+  outcomes: BrowserDownloadOutcome[],
+): Promise<void> {
+  const settings = await loadSettings();
+  const online = await checkService(settings.serviceUrl);
+  for (const { batch, status, message } of outcomes) {
+    await saveRecord(
+      buildRecord(
+        batch.work_id,
+        batch.source_url,
+        batch.title,
+        batch.media_indexes,
+        { status, message },
+      ),
+      online,
+    );
+  }
+}
+
+function buildRecord(
+  workId: string,
+  sourceUrl: string,
+  title: string,
+  indexes: number[],
+  outcome: { status: ClientDownloadRecord["status"]; message: string },
+): ClientDownloadRecord {
+  return {
+    record_id: crypto.randomUUID(),
+    work_id: workId,
+    source_url: sourceUrl,
+    title,
+    mode: "browser",
+    status: outcome.status,
     media_indexes: indexes,
     created_at: new Date().toISOString(),
-    message,
+    message: outcome.message,
   };
+}
+
+async function saveRecord(
+  record: ClientDownloadRecord,
+  serviceOnline: boolean,
+): Promise<void> {
   await appendPendingRecord(record);
-  if (serviceOnline && mode === "background") {
-    try {
-      const settings = await loadSettings();
-      await syncClientRecords(settings.serviceUrl, [record]);
-      await removePendingRecords([record.record_id]);
-    } catch {
-      // 下载结果已经确定；同步失败时保留本地记录，等待用户稍后重试。
-    }
+  if (!serviceOnline) return;
+  try {
+    const settings = await loadSettings();
+    await syncClientRecords(settings.serviceUrl, [record]);
+    await removePendingRecords([record.record_id]);
+  } catch {
+    // 下载结果已经确定；同步失败时保留本地记录，等待用户稍后重试。
   }
 }
 

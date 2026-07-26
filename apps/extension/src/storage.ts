@@ -1,5 +1,6 @@
 import { DEFAULT_SERVICE_URL } from "./service";
 import type {
+  BrowserDownloadBatch,
   ClientDownloadRecord,
   DownloadPreference,
   ExtensionSettings,
@@ -7,7 +8,9 @@ import type {
 
 const SETTINGS_KEY = "settings";
 const RECORDS_KEY = "pendingRecords";
+const BATCHES_KEY = "browserDownloadBatches";
 const MAX_PENDING_RECORDS = 500;
+const MAX_TRACKED_BATCHES = 100;
 
 export async function loadSettings(): Promise<ExtensionSettings> {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
@@ -47,5 +50,35 @@ export async function removePendingRecords(recordIds: string[]): Promise<void> {
   const records = await loadPendingRecords();
   await chrome.storage.local.set({
     [RECORDS_KEY]: records.filter((record) => !ids.has(record.record_id)),
+  });
+}
+
+/** 读取尚未确认结果的浏览器下载批次。 */
+export async function loadDownloadBatches(): Promise<BrowserDownloadBatch[]> {
+  const stored = await chrome.storage.local.get(BATCHES_KEY);
+  const batches = stored[BATCHES_KEY];
+  return Array.isArray(batches) ? (batches as BrowserDownloadBatch[]) : [];
+}
+
+/** 登记一个等待浏览器回报结果的下载批次。 */
+export async function appendDownloadBatch(
+  batch: BrowserDownloadBatch,
+): Promise<void> {
+  const batches = await loadDownloadBatches();
+  const next = [
+    batch,
+    ...batches.filter((item) => item.batch_id !== batch.batch_id),
+  ].slice(0, MAX_TRACKED_BATCHES);
+  await chrome.storage.local.set({ [BATCHES_KEY]: next });
+}
+
+/** 移除已经确认结果的下载批次。 */
+export async function removeDownloadBatches(
+  batchIds: string[],
+): Promise<void> {
+  const ids = new Set(batchIds);
+  const batches = await loadDownloadBatches();
+  await chrome.storage.local.set({
+    [BATCHES_KEY]: batches.filter((batch) => !ids.has(batch.batch_id)),
   });
 }

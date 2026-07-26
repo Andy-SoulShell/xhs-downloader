@@ -32,6 +32,22 @@ export interface ExtensionSettings {
   serviceUrl: string;
 }
 
+/**
+ * 一次浏览器下载涉及的全部文件，等待浏览器回报最终结果。
+ *
+ * Service Worker 可能在下载期间休眠，因此批次持久化保存，
+ * 唤醒后凭 `download_ids` 向浏览器补查真实结果。
+ */
+export interface BrowserDownloadBatch {
+  batch_id: string;
+  work_id: string;
+  source_url: string;
+  title: string;
+  media_indexes: number[];
+  download_ids: number[];
+  created_at: string;
+}
+
 export interface ExtensionState {
   mode: DownloadPreference;
   online: boolean;

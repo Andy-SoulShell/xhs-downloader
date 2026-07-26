@@ -8,13 +8,16 @@ import {
 } from "vitest";
 
 import {
+  appendDownloadBatch,
   appendPendingRecord,
+  loadDownloadBatches,
   loadPendingRecords,
   loadSettings,
+  removeDownloadBatches,
   removePendingRecords,
   saveMode,
 } from "./storage";
-import type { ClientDownloadRecord } from "./types";
+import type { BrowserDownloadBatch, ClientDownloadRecord } from "./types";
 
 let values: Record<string, unknown>;
 
@@ -90,4 +93,38 @@ describe("扩展本地存储", () => {
 
     await expect(loadPendingRecords()).resolves.toEqual([]);
   });
+
+  it("幂等更新、限制并删除下载批次", async () => {
+    values.browserDownloadBatches = Array.from({ length: 100 }, (_, index) =>
+      makeBatch(`batch-${index}`),
+    );
+
+    await appendDownloadBatch(makeBatch("batch-20"));
+    let batches = await loadDownloadBatches();
+    expect(batches).toHaveLength(100);
+    expect(batches[0].batch_id).toBe("batch-20");
+
+    await removeDownloadBatches(["batch-20", "batch-21"]);
+    batches = await loadDownloadBatches();
+    expect(batches.some((item) => item.batch_id === "batch-20")).toBe(false);
+    expect(batches.some((item) => item.batch_id === "batch-21")).toBe(false);
+  });
+
+  it("损坏的批次记录恢复为空列表", async () => {
+    values.browserDownloadBatches = "invalid";
+
+    await expect(loadDownloadBatches()).resolves.toEqual([]);
+  });
 });
+
+function makeBatch(id: string): BrowserDownloadBatch {
+  return {
+    batch_id: id,
+    work_id: "synthetic-work",
+    source_url: "https://example.invalid/synthetic-work",
+    title: "合成测试作品",
+    media_indexes: [1],
+    download_ids: [1],
+    created_at: "2026-01-01T00:00:00.000Z",
+  };
+}
