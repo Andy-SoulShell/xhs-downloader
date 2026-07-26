@@ -204,4 +204,110 @@ describe("创作页可信输入", () => {
     ).rejects.toThrow("格式无效");
     expect(mocks.attach).not.toHaveBeenCalled();
   });
+
+  it("填写后的定时时间与目标不一致时报错并释放会话", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method, params) => {
+      if (method !== "Runtime.evaluate") return undefined;
+      // 页面把输入规整成了另一个时间，不能当作填写成功。
+      return String(params.expression).includes("input.value")
+        ? { result: { value: { ok: true, value: "2026-07-25 16:00" } } }
+        : { result: { value: { ok: true } } };
+    });
+
+    await expect(
+      typePublicationSchedule(
+        42,
+        "2026-07-25 16:42",
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).rejects.toThrow("未能确认");
+    expect(mocks.detach).toHaveBeenCalledWith({ tabId: 42 });
+  });
+
+  it("定时输入控件不可用时给出桥接文案", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method) =>
+      method === "Runtime.evaluate"
+        ? { result: { value: { ok: false, message: "找不到定时输入框" } } }
+        : undefined,
+    );
+
+    await expect(
+      typePublicationSchedule(
+        42,
+        "2026-07-25 16:42",
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).rejects.toThrow("找不到定时输入框");
+  });
+
+  it("桥接未给出失败原因时使用固定文案", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method) =>
+      method === "Runtime.evaluate" ? { result: { value: {} } } : undefined,
+    );
+
+    await expect(
+      typePublicationSchedule(
+        42,
+        "2026-07-25 16:42",
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).rejects.toThrow("创作平台输入控件不可用");
+  });
+
+  it("点击后已离开发布页时视为已提交", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method, params) => {
+      if (method !== "Runtime.evaluate") return undefined;
+      // 页面已跳转说明发布流程推进，不能据此判为失败。
+      return String(params.expression).includes("path:location.pathname")
+        ? { result: { value: { path: "/publish/success" } } }
+        : { result: { value: { ok: true, x: 160, y: 120 } } };
+    });
+
+    await expect(
+      activatePublicationControl(
+        42,
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).resolves.toBeUndefined();
+    expect(mocks.detach).toHaveBeenCalledWith({ tabId: 42 });
+  });
+
+  it("仍在发布页且兜底未成功时报出桥接原因", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method, params) => {
+      if (method !== "Runtime.evaluate") return undefined;
+      return String(params.expression).includes("path:location.pathname")
+        ? {
+            result: {
+              value: {
+                path: "/publish/publish",
+                result: { ok: false, message: "按钮仍不可点击" },
+              },
+            },
+          }
+        : { result: { value: { ok: true, x: 160, y: 120 } } };
+    });
+
+    await expect(
+      activatePublicationControl(
+        42,
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).rejects.toThrow("按钮仍不可点击");
+  });
+
+  it("兜底结果缺少原因时使用固定文案", async () => {
+    mocks.sendCommand.mockImplementation(async (_target, method, params) => {
+      if (method !== "Runtime.evaluate") return undefined;
+      return String(params.expression).includes("path:location.pathname")
+        ? { result: { value: { path: "/publish/publish" } } }
+        : { result: { value: { ok: true, x: 160, y: 120 } } };
+    });
+
+    await expect(
+      activatePublicationControl(
+        42,
+        "https://creator.xiaohongshu.com/publish/publish",
+      ),
+    ).rejects.toThrow("无法提交创作平台发布按钮");
+  });
 });

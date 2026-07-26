@@ -26,12 +26,6 @@ export default defineConfig({
         "src/publisher-main.ts",
         "src/browser-page.ts",
         "src/browser-page-main.ts",
-        // 分支覆盖尚未达到阈值，补齐测试后应从此清单移除。
-        "src/browser-task-claim-execution.ts",
-        "src/managed-publisher-adapter.ts",
-        "src/managed-publisher-control.ts",
-        "src/publication-input.ts",
-        "src/publisher-bridge.ts",
       ],
       thresholds: {
         branches: 85,
