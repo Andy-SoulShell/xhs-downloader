@@ -10,18 +10,23 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run --coverage"
   },
   "dependencies": {
     "@xhs-downloader/contracts": "workspace:*"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.1.32",
     "@types/node": "^26.1.1",
     "@vitest/coverage-v8": "^4.1.10",
     "esbuild": "^0.27.2",
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.10"
   }
 }

@@ -5,7 +5,6 @@ import type {
   DownloadPreference,
   ExtensionRequest,
   ExtensionResponse,
-  ExtensionState,
 } from "./types";
 
 const host = document.createElement("div");
