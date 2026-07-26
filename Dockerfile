@@ -21,6 +21,8 @@ COPY packages/xhs-adapters/src /app/packages/xhs-adapters/src
 COPY apps/api/src /app/apps/api/src
 
 ENV PYTHONPATH="/app/apps/api/src:/app/packages/xhs-adapters/src:/app/packages/xhs-core/src"
+# 容器内必须监听所有接口，端口映射才能到达；宿主侧请自行限制暴露范围。
+ENV XHS_SERVER_HOST="0.0.0.0"
 
 EXPOSE 5556
 VOLUME /app/volume

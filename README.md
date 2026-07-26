@@ -101,7 +101,7 @@ cp .env.example .env
 | `XHS_PUBLISH_LEASE_SECONDS` | `300` | 浏览器执行发布任务的租约秒数 |
 | `XHS_ROUTE_STRATEGY` | `browser_only` | `http_only/browser_only/http_first/browser_first` |
 | `XHS_BROWSER_DRIVER` | `extension` | `extension/managed` 浏览器执行器 |
-| `XHS_SERVER_HOST` | `0.0.0.0` | API 监听地址；MCP 默认沿用 |
+| `XHS_SERVER_HOST` | `127.0.0.1` | API 监听地址；MCP 默认沿用，局域网访问需显式改为 `0.0.0.0` |
 | `XHS_SERVER_PORT` | `5556` | API 端口；MCP 默认使用下一个端口 |
 
 完整配置见 [.env.example](.env.example)。

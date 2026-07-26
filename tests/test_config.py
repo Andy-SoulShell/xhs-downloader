@@ -32,6 +32,17 @@ def test_environment_overrides_dotenv(
     assert settings.work_path is None
 
 
+def test_server_listens_on_loopback_by_default(tmp_path: Path) -> None:
+    """确保未显式配置监听地址时服务只对本机开放。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    settings = AppSettings(work_path=tmp_path)
+
+    assert settings.server_host == "127.0.0.1"
+
+
 def test_output_paths_share_one_root(tmp_path: Path) -> None:
     """确保下载记录不会跨越自定义数据根目录。
 

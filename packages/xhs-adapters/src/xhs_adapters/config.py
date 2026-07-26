@@ -80,7 +80,7 @@ class AppSettings(BaseSettings):
     author_archive: bool = False
     write_mtime: bool = False
     mapping_data: dict[str, str] = Field(default_factory=dict)
-    server_host: str = "0.0.0.0"
+    server_host: str = "127.0.0.1"
     server_port: int = Field(default=5556, ge=1, le=65535)
     log_level: str = "info"
     publish_max_asset_size: int = Field(
