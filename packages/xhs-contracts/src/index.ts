@@ -1,6 +1,12 @@
 /** 服务端与浏览器客户端共享的稳定协议。 */
-/** 浏览器扩展与本地服务协商使用的协议版本。 */
-export const EXTENSION_PROTOCOL_VERSION = 4;
+/**
+ * 当前扩展构建实现的协作协议版本。
+ *
+ * 必须与 packages/xhs-core/src/xhs_core/version.py 的同名常量保持一致。
+ * 服务端在能力协商中声明它要求的最低扩展协议版本，低于该值的扩展会
+ * 明确拒绝连接，而不是在任务执行中途因字段不匹配而失败。
+ */
+export const EXTENSION_PROTOCOL_VERSION = 5;
 
 /** 负责执行媒体下载的一侧。 */
 export type DownloadMode = "browser" | "background";

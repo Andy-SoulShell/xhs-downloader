@@ -5,6 +5,10 @@ import type {
   PublicationTask,
   PublicationTaskStatus,
 } from "./publication-types";
+import {
+  supportsCapability,
+  type ServiceCapabilities,
+} from "./capability-negotiation";
 
 const ASSET_CHUNK_SIZE = 256 * 1024;
 
@@ -21,13 +25,10 @@ export async function supportsPublication(baseUrl: string): Promise<boolean> {
       },
     );
     if (!response.ok) return false;
-    const payload = (await response.json()) as {
-      protocol_version?: number;
-      features?: Record<string, boolean>;
-    };
-    return (
-      (payload.protocol_version ?? 0) >= 2 &&
-      payload.features?.publication === true
+    return supportsCapability(
+      (await response.json()) as ServiceCapabilities,
+      2,
+      "publication",
     );
   } catch {
     return false;

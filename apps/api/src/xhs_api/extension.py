@@ -3,7 +3,11 @@
 from fastapi import APIRouter, Query
 from xhs_core.domain import ClientDownloadRecord, DownloadMode
 from xhs_core.domain.ports import ClientRecordRepository
-from xhs_core.version import VERSION
+from xhs_core.version import (
+    EXTENSION_PROTOCOL_VERSION,
+    MINIMUM_EXTENSION_PROTOCOL_VERSION,
+    VERSION,
+)
 
 from .models import ClientRecordBatch, ExtensionCapabilities
 
@@ -22,7 +26,8 @@ def create_extension_router(records: ClientRecordRepository) -> APIRouter:
     @router.get("/capabilities", response_model=ExtensionCapabilities)
     async def extension_capabilities() -> ExtensionCapabilities:
         return ExtensionCapabilities(
-            protocol_version=5,
+            protocol_version=EXTENSION_PROTOCOL_VERSION,
+            minimum_extension_protocol=MINIMUM_EXTENSION_PROTOCOL_VERSION,
             service_version=VERSION,
             download_modes=[DownloadMode.BROWSER, DownloadMode.BACKGROUND],
             features={

@@ -45,6 +45,7 @@ class ExtensionCapabilities(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     protocol_version: int = 1
+    minimum_extension_protocol: int = 1
     service_version: str = VERSION
     download_modes: list[DownloadMode]
     features: dict[str, bool]

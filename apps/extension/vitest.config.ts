@@ -20,6 +20,7 @@ export default defineConfig({
         "src/browser-state-main.ts",
         "src/browser-task-runner.ts",
         "src/browser-task-service.ts",
+        "src/capability-negotiation.ts",
         "src/comment-loader.ts",
         "src/comment-runner.ts",
         "src/extension-credential.ts",

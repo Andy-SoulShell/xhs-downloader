@@ -6,6 +6,10 @@ import type {
 } from "@xhs-downloader/contracts";
 
 import type { ExtensionCredential } from "./publication-types";
+import {
+  supportsCapability,
+  type ServiceCapabilities,
+} from "./capability-negotiation";
 
 /** 扩展首个任务领取请求的默认长轮询秒数。 */
 export const BROWSER_TASK_CLAIM_WAIT_SECONDS = 25;
@@ -30,13 +34,10 @@ export async function supportsBrowserTasks(baseUrl: string): Promise<boolean> {
       },
     );
     if (!response.ok) return false;
-    const payload = (await response.json()) as {
-      protocol_version?: number;
-      features?: Record<string, boolean>;
-    };
-    return (
-      (payload.protocol_version ?? 0) >= 4 &&
-      payload.features?.browser_tasks === true
+    return supportsCapability(
+      (await response.json()) as ServiceCapabilities,
+      4,
+      "browser_tasks",
     );
   } catch {
     return false;

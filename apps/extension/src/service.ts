@@ -4,6 +4,10 @@ import type {
   ExtensionWork,
   MediaKind,
 } from "./types";
+import {
+  supportsCapability,
+  type ServiceCapabilities,
+} from "./capability-negotiation";
 
 export const DEFAULT_SERVICE_URL = "http://127.0.0.1:5556";
 
@@ -15,8 +19,7 @@ export async function checkService(baseUrl: string): Promise<boolean> {
       signal: AbortSignal.timeout(1200),
     });
     if (!response.ok) return false;
-    const payload = (await response.json()) as { protocol_version?: number };
-    return (payload.protocol_version ?? 0) >= 1;
+    return supportsCapability((await response.json()) as ServiceCapabilities, 1);
   } catch {
     return false;
   }
