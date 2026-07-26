@@ -52,7 +52,7 @@ describe("配置状态管理", () => {
     expect(result.current.error).toBe("");
   });
 
-  it("已有配置刷新失败时清空执行器快照", async () => {
+  it("已有配置刷新失败时保留上一次成功的快照", async () => {
     const settings = makeSettingsResponse();
     vi.mocked(getSettings)
       .mockResolvedValueOnce(settings)
@@ -64,7 +64,8 @@ describe("配置状态管理", () => {
       await result.current.refresh();
     });
 
-    expect(result.current.settings).toBeNull();
+    // 重新读取失败不能退回空状态，否则界面会丢掉正在显示的配置。
+    expect(result.current.settings).toEqual(settings);
     expect(result.current.error).toBe("配置响应无效");
   });
 
@@ -82,7 +83,8 @@ describe("配置状态管理", () => {
     });
 
     expect(result.current.error).toBe("配置保存失败");
-    expect(result.current.settings).toBeNull();
+    // 保存失败必须保留表单内容，此前会清空用户刚填写的全部配置。
+    expect(result.current.settings).toEqual(settings);
     expect(result.current.saving).toBe(false);
   });
 });

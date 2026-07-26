@@ -62,7 +62,7 @@ describe("服务配置界面", () => {
       ),
     );
     expect(onSaved).toHaveBeenCalledWith(
-      "配置已保存；可热更新字段已生效，其余配置重启后生效",
+      "已保存；部分修改要重启服务才生效",
     );
   });
 

@@ -15,7 +15,7 @@ class DesktopIdentity(BaseModel):
 
 
 class DesktopShutdownResponse(BaseModel):
-    """桌面服务退出响应。"""
+    """桌面服务退出或重启响应。"""
 
     message: str
 
@@ -24,6 +24,8 @@ def create_desktop_control_router(
     instance_id: str,
     request_shutdown: Callable[[], None],
     access_policy: SettingsAccessPolicy = allow_loopback_settings,
+    *,
+    request_restart: Callable[[], None] | None = None,
 ) -> APIRouter:
     """创建仅限本机使用的桌面控制路由。
 
@@ -31,6 +33,7 @@ def create_desktop_control_router(
         instance_id: 当前安装目录持久化的随机实例标识。
         request_shutdown: 响应发出后请求服务器优雅退出的回调。
         access_policy: 本机来源校验策略。
+        request_restart: 响应发出后请求就地重启的回调；省略时不提供重启。
 
     Returns:
         可挂载到一体化桌面 API 的路由。
@@ -47,6 +50,14 @@ def create_desktop_control_router(
         _require_loopback(request, access_policy)
         request_shutdown()
         return DesktopShutdownResponse(message="本地服务正在安全退出")
+
+    if request_restart is not None:
+
+        @router.post("/restart", response_model=DesktopShutdownResponse)
+        async def restart(request: Request) -> DesktopShutdownResponse:
+            _require_loopback(request, access_policy)
+            request_restart()
+            return DesktopShutdownResponse(message="本地服务正在重启")
 
     return router
 

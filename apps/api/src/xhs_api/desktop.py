@@ -12,15 +12,11 @@ import httpx
 import typer
 from filelock import FileLock, Timeout
 from loguru import logger
-from uvicorn import Config, Server
-from xhs_adapters.config import AppSettings
 from xhs_adapters.logging import configure_logging
 
-from .app import create_api
-from .desktop_control import create_desktop_control_router
 from .desktop_error import show_startup_error
 from .desktop_paths import prepare_desktop_paths
-from .webui import mount_webui
+from .desktop_runtime import serve_desktop
 
 _HOST = "127.0.0.1"
 
@@ -97,52 +93,24 @@ async def _run_primary_instance(
         return
     if existing is False:
         raise RuntimeError(f"本机端口 {port} 已被其他程序占用")
-    settings = AppSettings.from_env(
-        settings_file,
-        server_host=_HOST,
-        server_port=port,
-    )
-    configure_logging(
-        settings.log_level,
-        settings.state_dir.joinpath("logs", "desktop.log"),
-    )
-    api = create_api(
-        settings,
+
+    def on_ready(first_run: bool) -> None:
+        # 重启后管理界面仍然打开: 只在首次启动时唤起浏览器。
+        if first_run and open_browser:
+            asyncio.get_running_loop().run_in_executor(
+                None,
+                webbrowser.open,
+                url,
+            )
+
+    await serve_desktop(
         settings_file=settings_file,
-        settings_override_fields={"server_host", "server_port"},
+        webui_dir=webui_dir,
+        host=_HOST,
+        port=port,
+        instance_id=instance_id,
+        on_ready=on_ready,
     )
-    mount_webui(api, webui_dir)
-    server = Server(
-        Config(
-            api,
-            host=_HOST,
-            port=port,
-            log_level=settings.log_level,
-            log_config=None,
-        )
-    )
-    loop = asyncio.get_running_loop()
-    api.include_router(
-        create_desktop_control_router(
-            instance_id,
-            lambda: loop.call_later(
-                0.2,
-                setattr,
-                server,
-                "should_exit",
-                True,
-            ),
-        )
-    )
-    serving = asyncio.create_task(server.serve())
-    while not server.started and not serving.done():
-        await asyncio.wait({serving}, timeout=0.05)
-    if not server.started:
-        await serving
-        raise RuntimeError("本地服务未能启动")
-    if open_browser:
-        await asyncio.to_thread(webbrowser.open, url)
-    await serving
 
 
 def main() -> None:

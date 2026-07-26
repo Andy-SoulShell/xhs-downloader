@@ -52,3 +52,45 @@ async def test_desktop_control_rejects_remote_clients() -> None:
         response = await client.post("/desktop/shutdown")
 
     assert response.status_code == 403
+
+
+async def test_restart_endpoint_exists_only_when_supported(tmp_path) -> None:
+    """确保提供重启回调时才暴露重启端点，且限定本机访问。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    restarts: list[bool] = []
+    supported = FastAPI()
+    supported.include_router(
+        create_desktop_control_router(
+            _load_or_create_instance_id(tmp_path),
+            lambda: None,
+            request_restart=lambda: restarts.append(True),
+        )
+    )
+    plain = FastAPI()
+    plain.include_router(
+        create_desktop_control_router("synthetic-instance", lambda: None)
+    )
+
+    async with AsyncClient(
+        transport=ASGITransport(app=supported, client=("127.0.0.1", 45000)),
+        base_url="http://127.0.0.1",
+    ) as client:
+        restarted = await client.post("/desktop/restart")
+    async with AsyncClient(
+        transport=ASGITransport(app=supported, client=("198.51.100.8", 45000)),
+        base_url="http://198.51.100.8",
+    ) as remote:
+        rejected = await remote.post("/desktop/restart")
+    async with AsyncClient(
+        transport=ASGITransport(app=plain, client=("127.0.0.1", 45000)),
+        base_url="http://127.0.0.1",
+    ) as without:
+        missing = await without.post("/desktop/restart")
+
+    assert restarted.json() == {"message": "本地服务正在重启"}
+    assert restarts == [True]
+    assert rejected.status_code == 403
+    assert missing.status_code == 404

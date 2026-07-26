@@ -210,3 +210,29 @@ async def test_settings_manager_keeps_state_consistent_after_committed_cancel(
     assert manager.current.timeout == 30
     snapshot = await manager.get()
     assert snapshot.restart_required is False
+
+
+async def test_runtime_overrides_never_require_restart(tmp_path: Path) -> None:
+    """确保启动参数强制覆盖的字段不会让界面永远提示需要重启。
+
+    桌面模式用命令行指定监听端口，配置文件中仍是默认值；重启并不能让
+    文件里的值生效，因此这类差异不应计入重启判定。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    env_file = tmp_path.joinpath(".env")
+    env_file.write_text("", encoding="utf-8")
+    manager = SettingsManager(
+        AppSettings(server_port=5591),
+        env_file,
+        DotenvSettingsRepository(env_file),
+        {},
+        {"server_port"},
+    )
+
+    assert not (await manager.get()).restart_required
+
+    await manager.update({"folder_name": "synthetic-media"})
+
+    assert (await manager.get()).restart_required

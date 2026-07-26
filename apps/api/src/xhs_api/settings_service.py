@@ -182,8 +182,8 @@ class SettingsManager:
         return SettingsSnapshot(
             values=values,
             config_file=self.config_file,
-            restart_required=_settings_fingerprint(values)
-            != _settings_fingerprint(self.current),
+            restart_required=_settings_fingerprint(values, overridden)
+            != _settings_fingerprint(self.current, overridden),
             overridden_fields=overridden,
             cookie_configured=bool(values.cookie.get_secret_value()),
             proxy_configured=bool(values.proxy),
@@ -198,8 +198,27 @@ class SettingsManager:
         )
 
 
-def _settings_fingerprint(settings: AppSettings) -> dict[str, Any]:
-    return _settings_values(settings, mode="json")
+def _settings_fingerprint(
+    settings: AppSettings,
+    overridden: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """计算用于判断是否需要重启的配置指纹。
+
+    命令行参数与环境变量强制覆盖的字段会在每次启动时重新覆盖，重启
+    并不能让文件中的值生效，因此不参与比较；否则桌面模式下自定义端口
+    会让界面永远提示需要重启。
+
+    Args:
+        settings: 待比较的配置。
+        overridden: 由环境变量或运行时参数强制覆盖的字段名。
+
+    Returns:
+        排除强制覆盖字段后的可比较配置值。
+    """
+    values = _settings_values(settings, mode="json")
+    for name in overridden:
+        values.pop(name, None)
+    return values
 
 
 def _settings_values(

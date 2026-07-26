@@ -84,7 +84,10 @@ export function SettingsBoard({
         saving={saving}
         settings={settings}
       />
-      <DesktopServiceControl />
+      <DesktopServiceControl
+        onRestarted={onRefresh}
+        restartRequired={settings.restart_required}
+      />
     </>
   );
 }
@@ -151,8 +154,8 @@ function SettingsForm({
       setFormError("");
       onSaved(
         result.restart_required
-          ? "配置已保存；可热更新字段已生效，其余配置重启后生效"
-          : "配置已保存，新请求已使用更新后的配置",
+          ? "已保存；部分修改要重启服务才生效"
+          : "已保存并生效",
       );
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : "配置保存失败");
@@ -167,14 +170,14 @@ function SettingsForm({
     <section aria-label="配置管理" className="mt-8 min-w-0">
       <PageHeading
         description="统一维护本地服务配置；Cookie 与代理只写入服务端配置文件，不会回传或保存到浏览器。"
-        meta={settings.restart_required ? "部分配置等待重启" : "当前配置已生效"}
+        meta={settings.restart_required ? "有修改等待重启" : "全部已生效"}
         title="服务配置"
       />
 
       {settings.restart_required && (
         <Notice tone="warning">
-          正在执行的请求会继续使用开始时的配置快照；网络、Cookie
-          与访问模式已用于新请求，其余配置重启服务后生效。
+          网络、Cookie 与访问方式的修改已经生效；其余修改需要重启本地
+          服务，可以在页面底部的「本地服务」里立即重启。
         </Notice>
       )}
       {overridden && (

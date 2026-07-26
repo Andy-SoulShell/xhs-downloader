@@ -15,7 +15,7 @@ export function useSettings() {
       setSettings(await getSettings());
       setError("");
     } catch (cause) {
-      setSettings(null);
+      // 重新读取失败时保留上一次成功的配置，避免界面退回空状态。
       setError(cause instanceof Error ? cause.message : "配置读取失败");
     } finally {
       setLoading(false);
@@ -53,9 +53,8 @@ export function useSettings() {
       setError("");
       return next;
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "配置保存失败";
-      setSettings(null);
-      setError(message);
+      // 保留已加载的配置：保存失败不能清空表单，否则用户刚填的内容全部丢失。
+      setError(cause instanceof Error ? cause.message : "配置保存失败");
       throw cause;
     } finally {
       setSaving(false);
