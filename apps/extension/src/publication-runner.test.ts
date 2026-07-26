@@ -182,10 +182,48 @@ describe("发布任务后台协调器", () => {
     );
     mocks.claim.mockResolvedValue(makeClaim());
 
-    await handlePublicationRequest({ type: "publication-prepare" });
+    await handlePublicationRequest({
+      type: "publication-prepare",
+      preferredTaskId: "task",
+    });
 
     expect(mocks.clearActive).toHaveBeenCalledOnce();
     expect(mocks.claim).toHaveBeenCalledOnce();
+  });
+
+  it("页面未指名任务时不领取新任务", async () => {
+    mocks.claim.mockResolvedValue(makeClaim());
+
+    const response = await handlePublicationRequest(
+      { type: "publication-prepare" },
+      41,
+    );
+
+    expect(response.ok).toBe(false);
+    expect(response.claim).toBeUndefined();
+    expect(mocks.claim).not.toHaveBeenCalled();
+  });
+
+  it("页面未指名任务时仅归属标签页可恢复租约", async () => {
+    const claim = makeClaim("publishing");
+    mocks.loadActive.mockResolvedValue(claim);
+    mocks.loadOwner.mockResolvedValue(41);
+
+    const owned = await handlePublicationRequest(
+      { type: "publication-prepare" },
+      41,
+    );
+    expect(owned.claim).toEqual(claim);
+
+    mocks.loadOwner.mockResolvedValue(undefined);
+    const anonymous = await handlePublicationRequest(
+      { type: "publication-prepare" },
+      52,
+    );
+    expect(anonymous.ok).toBe(false);
+    expect(anonymous.claim).toBeUndefined();
+    expect(mocks.claim).not.toHaveBeenCalled();
+    expect(mocks.saveOwner).not.toHaveBeenCalled();
   });
 
   it("未授权时重新登记并重试一次", async () => {
@@ -195,6 +233,7 @@ describe("发布任务后台协调器", () => {
 
     const response = await handlePublicationRequest({
       type: "publication-prepare",
+      preferredTaskId: "task",
     });
 
     expect(response.ok).toBe(true);

@@ -139,7 +139,7 @@ async function pollPublicationTasks(): Promise<void> {
   try {
     const settings = await loadSettings();
     if (!(await supportsPublication(settings.serviceUrl))) return;
-    const prepared = await preparePublication();
+    const prepared = await preparePublication(undefined, undefined, true);
     if (!prepared?.isNew) return;
     const url = new URL(CREATOR_URL);
     url.searchParams.set("xhd_task", prepared.claim.task.task_id);
@@ -155,12 +155,27 @@ async function pollPublicationTasks(): Promise<void> {
   }
 }
 
+/**
+ * 准备当前应执行的发布任务。
+ *
+ * 页面发起的准备请求必须通过 `preferredTaskId` 指名任务才能领取新任务，
+ * 且未指名任务时仅登记过归属的标签页可以恢复已有租约；`claimWithoutTask`
+ * 仅供后台闹钟补发使用，补发会自行打开携带任务参数的创作页。
+ */
 async function preparePublication(
   preferredTaskId?: string,
   senderTabId?: number,
+  claimWithoutTask = false,
 ): Promise<PreparedPublication | null> {
   const active = await validActiveClaim(preferredTaskId, senderTabId);
-  if (active) return { claim: active, isNew: false };
+  if (active) {
+    if (!claimWithoutTask && !preferredTaskId) {
+      const ownerTabId = await loadActivePublicationOwner();
+      if (senderTabId === undefined || ownerTabId !== senderTabId) return null;
+    }
+    return { claim: active, isNew: false };
+  }
+  if (!claimWithoutTask && !preferredTaskId) return null;
   const startsClaim = claimOperation === undefined;
   if (!claimOperation) {
     claimOperation = withCredential((baseUrl, credential) =>
@@ -207,7 +222,8 @@ async function validActiveClaim(
   ) {
     throw new Error("该发布任务已由另一个创作页执行");
   }
-  if (ownerTabId === undefined && senderTabId !== undefined) {
+  // 只有指名任务的页面可以补登记归属，避免无参页面抢占他人租约。
+  if (ownerTabId === undefined && senderTabId !== undefined && preferredTaskId) {
     await saveActivePublicationOwner(senderTabId);
   }
   return claim;
