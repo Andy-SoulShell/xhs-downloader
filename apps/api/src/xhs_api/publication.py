@@ -18,10 +18,10 @@ from xhs_core.domain import (
     PublicationTask,
 )
 
-from .publication_access import (
+from .extension_access import (
     require_extension as _require_extension,
 )
-from .publication_access import (
+from .extension_access import (
     require_extension_origin as _require_extension_origin,
 )
 from .publication_access import (

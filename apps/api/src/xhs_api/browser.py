@@ -2,8 +2,6 @@
 
 from base64 import urlsafe_b64encode
 from datetime import UTC, datetime, timedelta
-from ipaddress import ip_address
-from urllib.parse import urlsplit
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from xhs_core.application import (
@@ -24,13 +22,14 @@ from .browser_models import (
     BrowserTaskResultRequest,
     BrowserTaskStatusRequest,
 )
+from .extension_access import (
+    require_extension as _require_extension,
+)
+from .extension_access import (
+    require_extension_origin as _require_extension_origin,
+)
 from .settings import SettingsAccessPolicy
 
-_EXTENSION_SCHEMES = {
-    "chrome-extension",
-    "moz-extension",
-    "safari-web-extension",
-}
 _ONLINE_GRACE = timedelta(seconds=75)
 
 
@@ -217,30 +216,6 @@ def _require_management(
         raise HTTPException(status_code=403, detail="浏览器任务仅允许从本机管理")
 
 
-def _require_extension_origin(request: Request, extension_id: str) -> None:
-    if not request.client or not _is_loopback(request.client.host):
-        raise HTTPException(status_code=403, detail="扩展登记仅允许连接本机服务")
-    origin = urlsplit(request.headers.get("origin", ""))
-    if origin.scheme not in _EXTENSION_SCHEMES or origin.netloc != extension_id:
-        raise HTTPException(status_code=403, detail="扩展来源与标识不匹配")
-
-
-async def _require_extension(
-    request: Request,
-    credentials: ExtensionCredentialService,
-) -> str:
-    extension_id = request.headers.get("x-extension-id", "")
-    scheme, _, token = request.headers.get("authorization", "").partition(" ")
-    if (
-        not extension_id
-        or scheme.casefold() != "bearer"
-        or not token
-        or not await credentials.validate(extension_id, token)
-    ):
-        raise HTTPException(status_code=401, detail="扩展能力令牌无效")
-    return extension_id
-
-
 def _lease_token(request: Request) -> str:
     token = request.headers.get("x-browser-lease", "")
     if not token:
@@ -261,12 +236,3 @@ def _account_proof(payload: BrowserAccountChallengeAnswerRequest) -> AccountProo
     if payload.status != "proved" or payload.proof is None:
         return AccountProof.unverified()
     return AccountProof.proved(bytes.fromhex(payload.proof))
-
-
-def _is_loopback(host: str) -> bool:
-    if host.casefold() == "localhost":
-        return True
-    try:
-        return ip_address(host).is_loopback
-    except ValueError:
-        return False

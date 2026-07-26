@@ -150,6 +150,44 @@ async def test_browser_api_enforces_local_and_extension_boundaries(
     assert no_lease.status_code == 401
 
 
+async def test_browser_api_rejects_remote_extension_endpoints(tmp_path) -> None:
+    """确保扩展登记与令牌接口拒绝非回环连接，即使令牌本身有效。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as local,
+        AsyncClient(
+            transport=ASGITransport(app=api, client=("203.0.113.9", 40001)),
+            base_url="http://127.0.0.1:5556",
+        ) as remote,
+    ):
+        headers = await _register(local)
+        remote_register = await remote.post(
+            "/browser/extension/register",
+            json={"extension_id": _EXTENSION_ID},
+            headers={"Origin": _ORIGIN},
+        )
+        remote_claim = await remote.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+        local_claim = await local.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+
+    assert remote_register.status_code == 403
+    assert remote_claim.status_code == 403
+    assert local_claim.status_code == 200
+
+
 async def test_browser_api_freezes_managed_driver_before_queueing(tmp_path) -> None:
     """确保本机可以提交受管任务且扩展不能误领。
 

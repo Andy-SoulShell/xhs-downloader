@@ -28,6 +28,34 @@ async def _register(client: AsyncClient) -> dict[str, str]:
     }
 
 
+async def test_publication_api_rejects_remote_extension_claim(tmp_path) -> None:
+    """确保发布扩展令牌接口拒绝非回环连接。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as local,
+        AsyncClient(
+            transport=ASGITransport(app=api, client=("203.0.113.9", 40002)),
+            base_url="http://127.0.0.1:5556",
+        ) as remote,
+    ):
+        headers = await _register(local)
+        remote_claim = await remote.post(
+            "/publication/extension/claim",
+            json={"preferred_task_id": None},
+            headers=headers,
+        )
+
+    assert remote_claim.status_code == 403
+
+
 async def test_publication_api_completes_manual_extension_flow(tmp_path) -> None:
     """确保本机草稿可由已登记扩展领取、取材并完成发布。
 
