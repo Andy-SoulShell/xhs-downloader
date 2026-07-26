@@ -4,13 +4,13 @@ import {
   Compass,
   GalleryVerticalEnd,
   History,
-  ListTodo,
+  Search,
   Send,
   Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { Filter, WorkspaceView } from "../lib/workspace";
+import type { ContentTab, Filter, WorkspaceView } from "../lib/workspace";
 
 export interface PostFilterItem {
   filter: Filter;
@@ -26,6 +26,12 @@ export interface WorkspaceViewItem {
   view: WorkspaceView;
 }
 
+export interface ContentTabItem {
+  icon: LucideIcon;
+  label: string;
+  tab: ContentTab;
+}
+
 export const postFilterItems: PostFilterItem[] = [
   {
     filter: "all",
@@ -36,8 +42,8 @@ export const postFilterItems: PostFilterItem[] = [
   {
     filter: "ready",
     icon: CircleDashed,
-    label: "待处理",
-    sidebarLabel: "待处理",
+    label: "未下载",
+    sidebarLabel: "未下载",
   },
   {
     filter: "done",
@@ -47,45 +53,40 @@ export const postFilterItems: PostFilterItem[] = [
   },
 ];
 
+/** 内容工作台顶部分段；三段共用同一套帖子卡片与操作。 */
+export const contentTabItems: ContentTabItem[] = [
+  { icon: GalleryVerticalEnd, label: "我的帖子", tab: "library" },
+  { icon: Compass, label: "推荐", tab: "feeds" },
+  { icon: Search, label: "搜索", tab: "search" },
+];
+
 export const workspaceViewItems: WorkspaceViewItem[] = [
   {
     icon: GalleryVerticalEnd,
-    label: "帖子",
-    sidebarLabel: "全部帖子",
-    view: "posts",
+    label: "内容",
+    sidebarLabel: "内容",
+    view: "content",
   },
   {
-    icon: Compass,
-    label: "探索",
-    sidebarLabel: "浏览器探索",
-    view: "browser",
+    icon: History,
+    label: "动态",
+    sidebarLabel: "动态",
+    view: "activity",
   },
   {
     icon: Send,
     label: "发布",
-    sidebarLabel: "发布中心",
+    sidebarLabel: "发布",
     view: "publication",
   },
   {
-    icon: ListTodo,
-    label: "任务",
-    sidebarLabel: "下载任务",
-    view: "tasks",
-  },
-  {
-    icon: History,
-    label: "记录",
-    sidebarLabel: "独立记录",
-    view: "records",
-  },
-  {
     icon: Settings2,
-    label: "配置",
-    sidebarLabel: "服务配置",
+    label: "设置",
+    sidebarLabel: "设置",
     view: "settings",
   },
 ];
 
 export const managementViewItems = workspaceViewItems.filter(
-  ({ view }) => view !== "posts",
+  ({ view }) => view !== "content",
 );

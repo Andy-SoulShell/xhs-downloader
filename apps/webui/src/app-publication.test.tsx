@@ -61,7 +61,7 @@ describe("发布中心主导航集成", () => {
     render(<App />);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "发布中心" }),
+      await screen.findByRole("button", { name: "发布" }),
     );
 
     expect(await screen.findByLabelText("当前草稿")).toBeInTheDocument();

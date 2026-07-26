@@ -131,7 +131,7 @@ describe("帖子下载工作台", () => {
       target: { value: "合成作者" },
     });
     expect(screen.getByText("合成测试帖子")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("radio", { name: "待处理" }));
+    fireEvent.click(screen.getByRole("radio", { name: "未下载" }));
     expect(screen.getByText("合成测试帖子")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("搜索帖子"), {
       target: { value: "不存在" },
@@ -183,12 +183,12 @@ describe("帖子下载工作台", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
     expect(
-      await screen.findByText("接口没有返回帖子详情"),
+      await screen.findByText("没有解析到帖子内容，请确认链接是否正确"),
     ).toBeInTheDocument();
 
     vi.mocked(submitDetail).mockRejectedValueOnce("未知异常");
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    expect(await screen.findByText("帖子解析失败")).toBeInTheDocument();
+    expect(await screen.findByText("解析失败")).toBeInTheDocument();
 
     const untitled = makeDetailResponse();
     untitled.data!.作品标题 = "";
@@ -249,7 +249,7 @@ describe("帖子下载工作台", () => {
     render(<App />);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: /下载任务/ }),
+      await screen.findByRole("button", { name: /动态/ }),
     );
     expect(screen.getByText("合成任务失败")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重新下载" }));
@@ -257,8 +257,7 @@ describe("帖子下载工作台", () => {
       expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /独立记录/ }));
-    expect(screen.getByText("合成独立记录")).toBeInTheDocument();
+        expect(screen.getByText("合成独立记录")).toBeInTheDocument();
     expect(screen.getByText("浏览器下载完成")).toBeInTheDocument();
   });
 
@@ -266,7 +265,7 @@ describe("帖子下载工作台", () => {
     render(<App />);
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "服务配置" }),
+      await screen.findByRole("button", { name: "设置" }),
     );
     fireEvent.change(screen.getByLabelText("媒体目录名"), {
       target: { value: "media" },

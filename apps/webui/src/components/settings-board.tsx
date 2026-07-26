@@ -2,10 +2,7 @@ import { CircleAlert, RotateCcw, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import type {
-  SettingsResponse,
-  SettingsUpdate,
-} from "../lib/types";
+import type { SettingsResponse, SettingsUpdate } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { AccessModeSettings } from "./access-mode-settings";
 import { Badge } from "./badge";

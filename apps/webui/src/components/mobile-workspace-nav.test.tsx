@@ -7,12 +7,12 @@ describe("移动端工作台导航", () => {
   it("切换到任务管理视图", () => {
     const onViewChange = vi.fn();
     render(
-      <MobileWorkspaceNav onViewChange={onViewChange} view="posts" />,
+      <MobileWorkspaceNav onViewChange={onViewChange} view="content" />,
     );
 
-    fireEvent.click(screen.getByRole("radio", { name: "任务" }));
+    fireEvent.click(screen.getByRole("radio", { name: "动态" }));
 
-    expect(onViewChange).toHaveBeenCalledWith("tasks");
+    expect(onViewChange).toHaveBeenCalledWith("activity");
     fireEvent.click(screen.getByRole("radio", { name: "发布" }));
     expect(onViewChange).toHaveBeenCalledWith("publication");
   });

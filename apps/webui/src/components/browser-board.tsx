@@ -17,7 +17,6 @@ import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BrowserDetail } from "./browser-detail";
 import { BrowserLoginActions } from "./browser-login-actions";
-import { BrowserMonitor } from "./browser-monitor";
 import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
 import { PageHeading } from "./page-heading";
@@ -141,12 +140,6 @@ export function BrowserBoard({
           )}
         </div>
       </div>
-
-      <BrowserMonitor
-        account={explorer.account}
-        browserDriver={confirmedDriver}
-        managedBrowser={managedBrowser}
-      />
 
       {explorer.detail && (
         <BrowserDetail

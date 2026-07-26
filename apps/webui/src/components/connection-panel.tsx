@@ -1,41 +1,36 @@
 import { useState } from "react";
-import {
-  Activity,
-  CircleAlert,
-  Clock3,
-  History,
-  MonitorCheck,
-  RefreshCw,
-  ShieldOff,
-  UserRound,
-} from "lucide-react";
+import { Activity, CircleAlert, MonitorCheck, ShieldOff, UserRound } from "lucide-react";
 import type {
   BrowserDriver,
   BrowserExtensionStatus,
   BrowserLoginState,
 } from "@xhs-downloader/contracts";
 
+import { connectionCopy } from "../lib/terminology";
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
 import type { ManagedBrowserControl } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
-import { EmptyState } from "./empty-state";
 import { ExtensionInstallGuide } from "./extension-install-guide";
 import { ManagedBrowserPanel } from "./managed-browser-panel";
-import { BrowserTaskRecord } from "./browser-task-record";
 
-interface BrowserMonitorProps {
+interface ConnectionPanelProps {
   account: BrowserLoginState | null;
   browserDriver: BrowserDriver | null;
   managedBrowser: ManagedBrowserControl;
 }
 
-/** 展示浏览器执行器状态、登录账号和任务审计记录。 */
-export function BrowserMonitor({
+/**
+ * 展示与小红书的连接是否就绪，并提供连接方式的安装与启停入口。
+ *
+ * 属于设置范畴：此前它夹在搜索框和搜索结果之间，用户点了搜索要滚过
+ * 好几屏运维内容才看得到帖子。
+ */
+export function ConnectionPanel({
   account,
   browserDriver,
   managedBrowser,
-}: BrowserMonitorProps) {
+}: ConnectionPanelProps) {
   const monitor = useBrowserMonitor();
   const latestExtension = monitor.extensions[0] ?? null;
 
@@ -51,42 +46,40 @@ export function BrowserMonitor({
         control={managedBrowser}
         selected={browserDriver === "managed"}
       />
-      <section aria-label="浏览器状态" className="mt-6">
+      <section aria-label="连接状态" className="mt-6">
         <div className="grid gap-3 md:grid-cols-3">
           <StatusCard
             description={
-              latestExtension
-                ? `${monitor.onlineCount}/${monitor.extensions.length} 个实例在线`
-                : "等待扩展首次连接"
+              browserDriver
+                ? connectionCopy[browserDriver].label
+                : "还没有选择连接方式"
             }
             icon={MonitorCheck}
-            label="浏览器扩展"
+            label="连接方式"
             tone={monitor.onlineCount ? "success" : "warning"}
-            value={monitor.onlineCount ? "在线" : "离线"}
+            value={monitor.onlineCount ? "已连接" : "未连接"}
           />
           <StatusCard
             description={
-              latestExtension
-                ? `实例 ${latestExtension.extension_id.slice(0, 8)}`
-                : "尚无心跳记录"
+              latestExtension ? "浏览器插件正在正常通信" : "等待插件首次连接"
             }
             icon={Activity}
-            label="最近心跳"
+            label="最近通信"
             tone={latestExtension?.online ? "success" : "neutral"}
             value={
               latestExtension
                 ? formatRelativeTime(latestExtension.last_seen_at)
-                : "未连接"
+                : "尚未连接"
             }
           />
           <StatusCard
             description={
               account?.logged_in
-                ? account.nickname || "当前账号昵称不可用"
-                : "在小红书页面完成登录后检查"
+                ? account.nickname || "已登录，昵称暂时读不到"
+                : "在小红书网页登录后回来检查"
             }
             icon={UserRound}
-            label="登录账号"
+            label="小红书账号"
             tone={account?.logged_in ? "success" : "neutral"}
             value={account?.logged_in ? "已登录" : "待检查"}
           />
@@ -101,21 +94,23 @@ export function BrowserMonitor({
       </section>
 
       {monitor.extensions.length > 0 && (
-        <section aria-label="扩展登记" className="mt-8">
+        <section aria-label="已连接的插件" className="mt-8">
           <div className="mb-3">
             <div className="flex items-center gap-2">
               <ShieldOff aria-hidden className="text-stone-500" size={18} />
-              <h2 className="text-lg font-semibold text-stone-950">扩展登记</h2>
-              <Badge>{monitor.extensions.length} 条</Badge>
+              <h2 className="text-lg font-semibold text-stone-950">
+                已连接的插件
+              </h2>
+              <Badge>{monitor.extensions.length} 个</Badge>
             </div>
             <p className="mt-1 text-xs leading-5 text-stone-500">
-              注销后旧令牌立即失效；仍在运行的扩展会自动重新登记，已卸载扩展
-              或疑似泄露的令牌则从此无法通过认证。
+              断开后这个插件需要重新连接才能继续工作。还在运行的插件会自动
+              重新连上；已经卸载的则从此断开。
             </p>
           </div>
           <div className="space-y-3">
             {monitor.extensions.map((item) => (
-              <ExtensionRegistrationRow
+              <ExtensionRow
                 extension={item}
                 key={item.extension_id}
                 onRevoke={() => void monitor.revoke(item.extension_id)}
@@ -125,64 +120,11 @@ export function BrowserMonitor({
           </div>
         </section>
       )}
-
-      <section aria-label="浏览器操作记录" className="mt-8">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <History aria-hidden className="text-stone-500" size={18} />
-              <h2 className="text-lg font-semibold text-stone-950">
-                浏览器操作记录
-              </h2>
-              <Badge>{monitor.tasks.length} 条</Badge>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-stone-500">
-              记录任务状态与执行结果，不展示评论正文、访问令牌或页面原文。
-            </p>
-          </div>
-          <ActionButton
-            disabled={monitor.refreshing}
-            onClick={() => void monitor.refresh()}
-            variant="outline"
-          >
-            <RefreshCw
-              aria-hidden
-              className={monitor.refreshing ? "animate-spin" : ""}
-              size={14}
-            />
-            刷新
-          </ActionButton>
-        </div>
-
-        {monitor.tasks.length ? (
-          <div className="space-y-3">
-            {monitor.tasks.map((task) => (
-              <BrowserTaskRecord
-                key={task.task_id}
-                onResolve={(succeeded) =>
-                  void monitor.review(task.task_id, succeeded)
-                }
-                onRetry={() => void monitor.retry(task.task_id)}
-                resolving={monitor.reviewingTaskId === task.task_id}
-                retrying={monitor.retryingTaskId === task.task_id}
-                task={task}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            compact
-            description="检查登录、读取内容或执行互动后，持久化任务会显示在这里。"
-            icon={Clock3}
-            title="还没有浏览器操作记录"
-          />
-        )}
-      </section>
     </>
   );
 }
 
-function ExtensionRegistrationRow({
+function ExtensionRow({
   extension,
   onRevoke,
   revoking,
@@ -196,11 +138,11 @@ function ExtensionRegistrationRow({
     <article className="control-shell min-w-0 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-mono text-xs text-stone-700">
-            {extension.extension_id}
+          <p className="truncate text-sm text-stone-700">
+            浏览器插件
           </p>
           <p className="mt-1 text-[11px] text-stone-400">
-            最近心跳 {formatRelativeTime(extension.last_seen_at)}
+            最近通信 {formatRelativeTime(extension.last_seen_at)}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -212,22 +154,21 @@ function ExtensionRegistrationRow({
             onClick={() => setConfirming(true)}
             variant="outline"
           >
-            注销
+            断开
           </ActionButton>
         </div>
       </div>
       {confirming && (
         <div
-          aria-label="确认注销扩展登记"
+          aria-label="确认断开插件"
           className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4"
           role="alertdialog"
         >
           <p className="text-sm font-semibold text-amber-900">
-            确认注销该扩展登记吗？
+            确认断开这个插件吗？
           </p>
           <p className="mt-1 text-xs leading-5 text-amber-700">
-            该实例的能力令牌会立即失效；仍在运行的扩展会在下次连接时自动
-            重新登记。
+            断开后它需要重新连接才能继续工作。还在运行的插件会自动重新连上。
           </p>
           <div className="mt-3 flex gap-2">
             <ActionButton onClick={() => setConfirming(false)} variant="ghost">
@@ -240,7 +181,7 @@ function ExtensionRegistrationRow({
                 onRevoke();
               }}
             >
-              确认注销
+              确认断开
             </ActionButton>
           </div>
         </div>

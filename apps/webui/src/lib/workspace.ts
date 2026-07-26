@@ -6,13 +6,16 @@ import type {
 
 export type PostStatus = "ready" | "downloading" | "done" | "error";
 export type Filter = "all" | "ready" | "done";
-export type WorkspaceView =
-  | "posts"
-  | "browser"
-  | "publication"
-  | "tasks"
-  | "records"
-  | "settings";
+/**
+ * 四个工作台。
+ *
+ * 按用户要做的事划分，而不是按后端子系统划分：内容页承载全部浏览与
+ * 下载入口，动态页汇总三类历史，浏览器运维归入设置。
+ */
+export type WorkspaceView = "content" | "activity" | "publication" | "settings";
+
+/** 内容工作台内部的分段：我的帖子、推荐流与搜索结果。 */
+export type ContentTab = "library" | "feeds" | "search";
 
 export interface PostRecord {
   id: string;
@@ -34,6 +37,29 @@ export function postFromDetail(detail: WorkDetail): PostRecord {
     },
     selected: new Set(detail.媒体.map((item) => item.序号)),
     downloaded: new Set(),
+    force: false,
+    status: "ready",
+  };
+}
+
+/**
+ * 把一次解析结果转换成帖子记录。
+ *
+ * 默认选中全部媒体，并按已产出文件标记哪些已经下载过。
+ *
+ * @param result 解析接口返回的详情。
+ * @returns 可直接进入帖子库的记录。
+ * @throws Error 接口没有返回详情数据。
+ */
+export function postFromResponse(result: DetailResponse): PostRecord {
+  if (!result.data) throw new Error("没有解析到帖子内容，请确认链接是否正确");
+  return {
+    id: result.data.作品ID,
+    result,
+    selected: new Set(result.data.媒体.map((item) => item.序号)),
+    downloaded: new Set(
+      result.files.map((file) => `${file.media_index}:${file.kind}`),
+    ),
     force: false,
     status: "ready",
   };
