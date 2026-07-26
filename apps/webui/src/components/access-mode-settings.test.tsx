@@ -4,94 +4,102 @@ import { describe, expect, it, vi } from "vitest";
 import { makeSettingsResponse } from "../test/fixtures";
 import { AccessModeSettings } from "./access-mode-settings";
 
-describe("访问模式配置", () => {
-  it("分别修改路由策略和浏览器执行器", () => {
+const values = makeSettingsResponse().values;
+
+describe("连接方式配置", () => {
+  it("选择使用方式即写入对应的路由与浏览器组合", () => {
     const onChange = vi.fn();
     render(
       <AccessModeSettings
         onChange={onChange}
-        values={makeSettingsResponse().values}
+        values={{ ...values, browser_driver: "extension" }}
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("只读路由策略"), {
-      target: { value: "http_first" },
-    });
-    fireEvent.change(screen.getByLabelText("浏览器执行器"), {
-      target: { value: "managed" },
-    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /用程序自带的浏览器/ }),
+    );
 
-    expect(onChange).toHaveBeenNthCalledWith(
-      1,
-      "route_strategy",
-      "http_first",
-    );
-    expect(onChange).toHaveBeenNthCalledWith(
-      2,
-      "browser_driver",
-      "managed",
-    );
+    expect(onChange).toHaveBeenCalledWith("route_strategy", "browser_only");
+    expect(onChange).toHaveBeenCalledWith("browser_driver", "managed");
   });
 
-  it("可指定受管 Chromium 路径并通过清空恢复自动检测", () => {
+  it("高级选项默认收起，展开后可直接调整术语选项", () => {
     const onChange = vi.fn();
     render(
       <AccessModeSettings
         onChange={onChange}
+        values={{ ...values, browser_driver: "extension" }}
+      />,
+    );
+
+    expect(screen.queryByLabelText("读取方式")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "展开高级选项" }));
+    fireEvent.change(screen.getByLabelText("读取方式"), {
+      target: { value: "http_first" },
+    });
+
+    expect(onChange).toHaveBeenCalledWith("route_strategy", "http_first");
+  });
+
+  it("自定义组合会说明原因并默认展开高级选项", () => {
+    render(
+      <AccessModeSettings
+        onChange={vi.fn()}
         values={{
-          ...makeSettingsResponse().values,
-          managed_browser_executable: "/synthetic/chromium",
+          ...values,
+          route_strategy: "http_first",
+          browser_driver: "managed",
         }}
       />,
     );
 
-    const executable = screen.getByLabelText("受管 Chromium 可执行文件");
-    expect(executable).toHaveValue("/synthetic/chromium");
-    fireEvent.change(executable, {
-      target: { value: "/synthetic/updated-chromium" },
-    });
-    fireEvent.change(executable, { target: { value: "" } });
-
-    expect(onChange).toHaveBeenNthCalledWith(
-      1,
-      "managed_browser_executable",
-      "/synthetic/updated-chromium",
-    );
-    expect(onChange).toHaveBeenNthCalledWith(
-      2,
-      "managed_browser_executable",
-      null,
-    );
     expect(
       screen.getByText(
-        "可选；请填写 Chrome 或 Chromium 的完整可执行文件路径。清空后恢复自动检测，保存后重启本地服务生效。",
+        "当前使用的是自定义组合，可以在下面的高级选项里查看和调整。",
       ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("读取方式")).toHaveValue("http_first");
+  });
+
+  it("使用扩展时停用自带浏览器位置并说明原因", () => {
+    render(
+      <AccessModeSettings
+        onChange={vi.fn()}
+        values={{
+          ...values,
+          route_strategy: "http_first",
+          browser_driver: "extension",
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("自带浏览器位置")).toBeDisabled();
+    expect(
+      screen.getByText("当前使用浏览器扩展，不需要这一项。"),
     ).toBeInTheDocument();
   });
 
-  it("仅 HTTP 读取时仍允许选择写操作浏览器执行器", () => {
-    const values = makeSettingsResponse().values;
+  it("使用自带浏览器时可填写位置并清空恢复自动检测", () => {
     const onChange = vi.fn();
     render(
       <AccessModeSettings
         onChange={onChange}
         values={{
           ...values,
-          route_strategy: "http_only",
+          route_strategy: "http_first",
           browser_driver: "managed",
+          managed_browser_executable: "/synthetic/chromium",
         }}
       />,
     );
 
-    const browser = screen.getByLabelText("浏览器执行器");
-    expect(browser).toBeEnabled();
-    expect(browser).toHaveValue("managed");
-    fireEvent.change(browser, { target: { value: "extension" } });
-    expect(onChange).toHaveBeenCalledWith("browser_driver", "extension");
-    expect(
-      screen.getByText(
-        "该选择同时用于浏览器读取和写操作；即使只读策略为仅 HTTP，互动与发布仍使用这里选定的执行器。",
-      ),
-    ).toBeInTheDocument();
+    const executable = screen.getByLabelText("自带浏览器位置");
+    expect(executable).toBeEnabled();
+    expect(executable).toHaveValue("/synthetic/chromium");
+    fireEvent.change(executable, { target: { value: "" } });
+
+    expect(onChange).toHaveBeenCalledWith("managed_browser_executable", null);
   });
 });

@@ -2,6 +2,7 @@ import { CircleAlert, RotateCcw, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { toMappingObject, toMappingRows } from "../lib/author-mapping";
 import type { SettingsResponse, SettingsUpdate } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { AccessModeSettings } from "./access-mode-settings";
@@ -10,10 +11,10 @@ import { DesktopServiceControl } from "./desktop-service-control";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
 import { PublicationSettings } from "./publication-settings";
+import { ServiceSettings } from "./service-settings";
 import {
   DownloadSettings,
   NetworkSettings,
-  ServiceSettings,
   StorageSettings,
   type SettingsChange,
 } from "./settings-sections";
@@ -106,8 +107,8 @@ function SettingsForm({
   onSaved: (message: string) => void;
 }) {
   const [draft, setDraft] = useState(settings.values);
-  const [mappingText, setMappingText] = useState(
-    JSON.stringify(settings.values.mapping_data, null, 2),
+  const [mappingRows, setMappingRows] = useState(() =>
+    toMappingRows(settings.values.mapping_data),
   );
   const [cookie, setCookie] = useState("");
   const [proxy, setProxy] = useState("");
@@ -138,15 +139,17 @@ function SettingsForm({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     try {
-      const mapping = parseMapping(mappingText);
-      const payload: SettingsUpdate = { ...draft, mapping_data: mapping };
+      const payload: SettingsUpdate = {
+        ...draft,
+        mapping_data: toMappingObject(mappingRows),
+      };
       if (cookie) payload.cookie = cookie;
       else if (clearCookie) payload.cookie = null;
       if (proxy) payload.proxy = proxy;
       else if (clearProxy) payload.proxy = null;
       const result = await onSave(payload);
       setDraft(result.values);
-      setMappingText(JSON.stringify(result.values.mapping_data, null, 2));
+      setMappingRows(toMappingRows(result.values.mapping_data));
       setCookie("");
       setProxy("");
       setClearCookie(false);
@@ -193,9 +196,9 @@ function SettingsForm({
       <form className="space-y-5" onSubmit={(event) => void submit(event)}>
         <AccessModeSettings onChange={change} values={draft} />
         <StorageSettings
-          mappingText={mappingText}
+          mappingRows={mappingRows}
           onChange={change}
-          onMappingChange={setMappingText}
+          onMappingChange={setMappingRows}
           values={draft}
         />
         <NetworkSettings
@@ -251,24 +254,6 @@ function Notice({
       <p>{children}</p>
     </div>
   );
-}
-
-function parseMapping(value: string): Record<string, string> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error("作者名称映射必须是有效 JSON");
-  }
-  if (
-    !parsed ||
-    Array.isArray(parsed) ||
-    typeof parsed !== "object" ||
-    Object.values(parsed).some((item) => typeof item !== "string")
-  ) {
-    throw new Error("作者名称映射必须是字符串键值对象");
-  }
-  return parsed as Record<string, string>;
 }
 
 const settingLabels: Record<string, string> = {

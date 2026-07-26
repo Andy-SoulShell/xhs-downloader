@@ -5,8 +5,8 @@ import { makeSettingsResponse } from "../test/fixtures";
 import { SettingsBoard } from "./settings-board";
 
 describe("服务配置界面", () => {
-  it("校验作者映射后再提交配置", async () => {
-    const onSave = vi.fn();
+  it("作者映射填了一半也不会阻断其余配置保存", async () => {
+    const onSave = vi.fn().mockResolvedValue(makeSettingsResponse());
     render(
       <SettingsBoard
         error=""
@@ -19,17 +19,25 @@ describe("服务配置界面", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("作者名称映射"), {
-      target: { value: "[]" },
+    fireEvent.click(screen.getByRole("button", { name: "添加一条" }));
+    fireEvent.change(screen.getByLabelText("作者 ID"), {
+      target: { value: "synthetic-author" },
     });
+    // 填了一半时就地提示，而不是等到保存时整页报错。
+    expect(
+      screen.getByText("有 1 条只填了一半，保存时会忽略这些行。"),
+    ).toBeInTheDocument();
+
     const saveButton = screen.getByRole("button", { name: "保存配置" });
     expect(saveButton).toHaveAttribute("type", "submit");
     fireEvent.click(saveButton);
 
-    expect(
-      await screen.findByText("作者名称映射必须是字符串键值对象"),
-    ).toBeInTheDocument();
-    expect(onSave).not.toHaveBeenCalled();
+    // 半行被忽略，其余配置照常保存，不再整页阻断。
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ mapping_data: {} }),
+      ),
+    );
   });
 
   it("允许显式清除敏感配置且不会显示原值", async () => {
@@ -115,10 +123,10 @@ describe("服务配置界面", () => {
       />,
     );
 
-    fireEvent.change(
-      screen.getByLabelText("受管 Chromium 可执行文件"),
-      { target: { value: "" } },
-    );
+    fireEvent.click(screen.getByRole("button", { name: "展开高级选项" }));
+    fireEvent.change(screen.getByLabelText("自带浏览器位置"), {
+      target: { value: "" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
 
     await waitFor(() =>

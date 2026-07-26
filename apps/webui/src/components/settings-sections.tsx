@@ -3,13 +3,15 @@ import type {
   SettingsValues,
   VideoPreference,
 } from "../lib/types";
+import type { AuthorMappingRow } from "../lib/author-mapping";
+import { AuthorMappingEditor } from "./author-mapping-editor";
 import { CookieSetupGuide } from "./cookie-setup-guide";
+import { NameFormatPicker } from "./name-format-picker";
 import {
   NumberSetting,
   SelectSetting,
   SensitiveSetting,
   SettingsSection,
-  TextAreaSetting,
   TextSetting,
   ToggleSetting,
 } from "./setting-controls";
@@ -20,14 +22,14 @@ export type SettingsChange = <Key extends keyof SettingsValues>(
 ) => void;
 
 export function StorageSettings({
-  mappingText,
+  mappingRows,
   onChange,
   onMappingChange,
   values,
 }: {
-  mappingText: string;
+  mappingRows: AuthorMappingRow[];
   onChange: SettingsChange;
-  onMappingChange: (value: string) => void;
+  onMappingChange: (rows: AuthorMappingRow[]) => void;
   values: SettingsValues;
 }) {
   return (
@@ -48,12 +50,9 @@ export function StorageSettings({
         onChange={(value) => onChange("folder_name", value)}
         value={values.folder_name}
       />
-      <TextSetting
-        help="按空格分隔：发布时间、作者昵称、作品标题等字段。"
-        label="文件命名格式"
+      <NameFormatPicker
         onChange={(value) => onChange("name_format", value)}
         value={values.name_format}
-        wide
       />
       <ToggleSetting
         checked={values.folder_mode}
@@ -85,12 +84,7 @@ export function StorageSettings({
         label="写入发布时间"
         onChange={(value) => onChange("write_mtime", value)}
       />
-      <TextAreaSetting
-        help='JSON 对象，例如 {"作者ID":"本地名称"}。'
-        label="作者名称映射"
-        onChange={onMappingChange}
-        value={mappingText}
-      />
+      <AuthorMappingEditor onChange={onMappingChange} rows={mappingRows} />
     </SettingsSection>
   );
 }
@@ -190,7 +184,12 @@ export function DownloadSettings({
       title="下载行为"
     >
       <SelectSetting
-        help="auto 保留响应格式，其他选项请求指定格式。"
+        disabled={!values.image_download}
+        help={
+          values.image_download
+            ? "自动会保留原始格式。"
+            : "已关闭图片下载，此项暂不生效。"
+        }
         label="图片格式"
         onChange={(value) =>
           onChange("image_format", value as ImageFormat)
@@ -206,7 +205,12 @@ export function DownloadSettings({
         value={values.image_format}
       />
       <SelectSetting
-        help="当作品提供多个视频流时使用。"
+        disabled={!values.video_download}
+        help={
+          values.video_download
+            ? "一个作品有多个清晰度时按此挑选。"
+            : "已关闭视频下载，此项暂不生效。"
+        }
         label="视频流偏好"
         onChange={(value) =>
           onChange("video_preference", value as VideoPreference)
@@ -250,50 +254,6 @@ export function DownloadSettings({
         description="下载 Live Photo 附带的动态视频。"
         label="下载动态图片"
         onChange={(value) => onChange("live_download", value)}
-      />
-    </SettingsSection>
-  );
-}
-
-export function ServiceSettings({
-  onChange,
-  values,
-}: {
-  onChange: SettingsChange;
-  values: SettingsValues;
-}) {
-  return (
-    <SettingsSection
-      description="修改监听地址、端口或日志级别后必须重启服务。"
-      title="本地服务"
-    >
-      <TextSetting
-        help="仅本机使用建议填写 127.0.0.1。"
-        label="监听地址"
-        onChange={(value) => onChange("server_host", value)}
-        value={values.server_host}
-      />
-      <NumberSetting
-        help="API 与 MCP 共用；范围 1–65535。"
-        label="监听端口"
-        max={65535}
-        min={1}
-        onChange={(value) => onChange("server_port", value)}
-        value={values.server_port}
-      />
-      <SelectSetting
-        help="应用、Uvicorn 与 MCP 共用 Loguru 日志级别。"
-        label="日志级别"
-        onChange={(value) => onChange("log_level", value)}
-        options={[
-          { label: "Trace", value: "trace" },
-          { label: "Debug", value: "debug" },
-          { label: "Info", value: "info" },
-          { label: "Warning", value: "warning" },
-          { label: "Error", value: "error" },
-          { label: "Critical", value: "critical" },
-        ]}
-        value={values.log_level}
       />
     </SettingsSection>
   );

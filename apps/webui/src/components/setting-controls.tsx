@@ -53,6 +53,7 @@ const fieldClass =
   "mt-2 h-11 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-400 focus:bg-white focus:ring-4 focus:ring-stone-100";
 
 export function TextSetting({
+  disabled = false,
   help,
   label,
   onChange,
@@ -61,6 +62,7 @@ export function TextSetting({
   value,
   wide,
 }: {
+  disabled?: boolean;
   help: string;
   label: string;
   onChange: (value: string) => void;
@@ -75,7 +77,8 @@ export function TextSetting({
       <input
         aria-label={label}
         autoComplete={type === "password" ? "new-password" : "off"}
-        className={fieldClass}
+        className={`${fieldClass} disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400`}
+        disabled={disabled}
         id={id}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

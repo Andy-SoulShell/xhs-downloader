@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { makeSettingsResponse } from "../test/fixtures";
+import { ServiceSettings } from "./service-settings";
 import {
   DownloadSettings,
   NetworkSettings,
-  ServiceSettings,
   StorageSettings,
 } from "./settings-sections";
 
@@ -17,7 +17,7 @@ describe("配置分组控件", () => {
     const onMappingChange = vi.fn();
     render(
       <StorageSettings
-        mappingText="{}"
+        mappingRows={[]}
         onChange={onChange}
         onMappingChange={onMappingChange}
         values={values}
@@ -30,20 +30,19 @@ describe("配置分组控件", () => {
     fireEvent.change(screen.getByLabelText("媒体目录名"), {
       target: { value: "assets" },
     });
-    fireEvent.change(screen.getByLabelText("文件命名格式"), {
-      target: { value: "作品ID" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "作品ID" }));
     fireEvent.click(screen.getByRole("switch", { name: "作品目录" }));
     fireEvent.click(screen.getByRole("switch", { name: "作者归档" }));
     fireEvent.click(screen.getByRole("switch", { name: "下载记录与校验" }));
     fireEvent.click(screen.getByRole("switch", { name: "保存作品详情" }));
     fireEvent.click(screen.getByRole("switch", { name: "写入发布时间" }));
-    fireEvent.change(screen.getByLabelText("作者名称映射"), {
-      target: { value: '{"id":"name"}' },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "添加一条" }));
 
     expect(onChange).toHaveBeenCalledTimes(8);
-    expect(onMappingChange).toHaveBeenCalledWith('{"id":"name"}');
+    // 映射改为键值行编辑，新增一行即回传结构化数据而不是 JSON 文本。
+    expect(onMappingChange).toHaveBeenCalledWith([
+      expect.objectContaining({ authorId: "", displayName: "" }),
+    ]);
   });
 
   it("编辑网络、敏感值和数值边界", () => {
