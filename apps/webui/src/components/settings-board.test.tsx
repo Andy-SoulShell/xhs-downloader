@@ -19,6 +19,7 @@ describe("服务配置界面", () => {
       />,
     );
 
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /文件与目录/ }));
     fireEvent.click(screen.getByRole("button", { name: "添加一条" }));
     fireEvent.change(screen.getByLabelText("作者 ID"), {
       target: { value: "synthetic-author" },
@@ -60,6 +61,7 @@ describe("服务配置界面", () => {
       />,
     );
 
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /网络与凭据/ }));
     expect(screen.getByLabelText("小红书 Cookie")).toHaveValue("");
     fireEvent.click(screen.getByRole("button", { name: "清除" }));
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
@@ -88,6 +90,7 @@ describe("服务配置界面", () => {
       />,
     );
 
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /网络与凭据/ }));
     fireEvent.click(screen.getByRole("button", { name: "清除" }));
     fireEvent.change(screen.getByLabelText("小红书 Cookie"), {
       target: { value: "session=replacement" },
@@ -123,6 +126,7 @@ describe("服务配置界面", () => {
       />,
     );
 
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /连接方式/ }));
     fireEvent.click(screen.getByRole("button", { name: "展开高级选项" }));
     fireEvent.change(screen.getByLabelText("自带浏览器位置"), {
       target: { value: "" },

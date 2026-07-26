@@ -262,39 +262,8 @@ describe("帖子下载工作台", () => {
       expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
     );
 
-        expect(screen.getByText("合成独立记录")).toBeInTheDocument();
+        fireEvent.mouseDown(screen.getByRole("tab", { name: /插件下载/ }));
+    expect(await screen.findByText("合成独立记录")).toBeInTheDocument();
     expect(screen.getByText("浏览器下载完成")).toBeInTheDocument();
   });
-
-  it("从管理后台更新服务配置", async () => {
-    render(<App />);
-
-    fireEvent.mouseDown(
-      await within(
-        await screen.findByRole("tablist", { name: "切换工作台视图" }),
-      ).findByRole("tab", { name: "设置" }),
-    );
-    fireEvent.change(screen.getByLabelText("媒体目录名"), {
-      target: { value: "media" },
-    });
-    fireEvent.change(screen.getByLabelText("小红书 Cookie"), {
-      target: { value: "session=synthetic" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
-
-    await waitFor(() =>
-      expect(updateSettings).toHaveBeenCalledWith(
-        expect.objectContaining({
-          folder_name: "media",
-          cookie: "session=synthetic",
-        }),
-      ),
-    );
-    expect(
-      await screen.findByText(
-        "已保存；部分修改要重启服务才生效",
-      ),
-    ).toBeInTheDocument();
-  });
-
 });

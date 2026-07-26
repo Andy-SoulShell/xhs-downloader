@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { BrowserTask } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -76,7 +76,7 @@ describe("动态工作台", () => {
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
   });
 
-  it("把三类历史汇总到一个页面", async () => {
+  it("三类历史各自成组并给出条目数", async () => {
     vi.mocked(listBrowserTasks).mockResolvedValue([browseTask("succeeded")]);
 
     render(
@@ -87,27 +87,49 @@ describe("动态工作台", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /动态/ })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /^下载/ })).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /插件下载/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: /浏览操作/ }),
-    ).toBeInTheDocument();
+    const tabs = await screen.findAllByRole("tab");
+
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "下载1",
+      "浏览操作1",
+      "插件下载1",
+    ]);
+    // 默认停在下载，其余分类要切换后才呈现，不再串成一页长滚动。
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("合成下载状态");
+    expect(screen.queryByText("合成插件记录")).not.toBeInTheDocument();
+  });
+
+  it("切换到插件下载与浏览操作分组", async () => {
+    vi.mocked(listBrowserTasks).mockResolvedValue([browseTask("succeeded")]);
+
+    render(
+      <ActivityBoard
+        onRetryDownload={vi.fn()}
+        records={[clientRecord()]}
+        tasks={[downloadTask("completed")]}
+      />,
+    );
+
+    fireEvent.mouseDown(
+      await screen.findByRole("tab", { name: /插件下载/ }),
+    );
     expect(screen.getByText("合成插件记录")).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /浏览操作/ }));
     expect(await screen.findByText("点赞")).toBeInTheDocument();
   });
 
-  it("没有浏览操作时给出空状态而不是空白", async () => {
+  it("各分组为空时给出各自的空状态", async () => {
     render(
       <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
     );
 
-    expect(
-      await screen.findByText("还没有浏览操作"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("还没有下载记录")).toBeInTheDocument();
+    expect(await screen.findByText("还没有下载记录")).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /浏览操作/ }));
+    expect(await screen.findByText("还没有浏览操作")).toBeInTheDocument();
+
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /插件下载/ }));
     expect(screen.getByText("还没有插件下载记录")).toBeInTheDocument();
   });
 
@@ -124,6 +146,9 @@ describe("动态工作台", () => {
       <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
     );
 
+    fireEvent.mouseDown(
+      await screen.findByRole("tab", { name: /浏览操作/ }),
+    );
     (await screen.findByRole("button", { name: "没有生效" })).click();
     (await screen.findByRole("button", { name: "确认" })).click();
 
@@ -144,6 +169,9 @@ describe("动态工作台", () => {
       <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
     );
 
+    fireEvent.mouseDown(
+      await screen.findByRole("tab", { name: /浏览操作/ }),
+    );
     (await screen.findByRole("button", { name: "重试" })).click();
 
     await waitFor(() =>

@@ -1,6 +1,8 @@
+import { Compass, GalleryVerticalEnd } from "lucide-react";
 import type { FormEvent } from "react";
 
 import type { Filter, PostRecord } from "../lib/workspace";
+import { BoardTabs } from "./board-tabs";
 import { BrowserBoard } from "./browser-board";
 import { LinkComposer } from "./link-composer";
 import { PostLibrary } from "./post-library";
@@ -50,27 +52,50 @@ export function ContentBoard({
   onSelectionChange,
 }: ContentBoardProps) {
   return (
-    <>
-      <LinkComposer
-        link={link}
-        onChange={onLinkChange}
-        onSubmit={onLinkSubmit}
-        parsing={parsing}
-      />
-      <PostLibrary
-        completedCount={completedCount}
-        filter={filter}
-        onDownload={onDownload}
-        onFilterChange={onFilterChange}
-        onForceChange={onForceChange}
-        onQueryChange={onQueryChange}
-        onRemove={onRemove}
-        onSelectionChange={onSelectionChange}
-        posts={posts}
-        query={query}
-        visiblePosts={visiblePosts}
-      />
-      <BrowserBoard browserDriver={browserDriver} onDownload={onDownloadFeed} />
-    </>
+    <BoardTabs
+      ariaLabel="内容分类"
+      tabs={[
+        {
+          value: "library",
+          label: "我的帖子",
+          icon: GalleryVerticalEnd,
+          count: posts.length,
+          content: (
+            <>
+              <LinkComposer
+                link={link}
+                onChange={onLinkChange}
+                onSubmit={onLinkSubmit}
+                parsing={parsing}
+              />
+              <PostLibrary
+                completedCount={completedCount}
+                filter={filter}
+                onDownload={onDownload}
+                onFilterChange={onFilterChange}
+                onForceChange={onForceChange}
+                onQueryChange={onQueryChange}
+                onRemove={onRemove}
+                onSelectionChange={onSelectionChange}
+                posts={posts}
+                query={query}
+                visiblePosts={visiblePosts}
+              />
+            </>
+          ),
+        },
+        {
+          value: "browse",
+          label: "浏览小红书",
+          icon: Compass,
+          content: (
+            <BrowserBoard
+              browserDriver={browserDriver}
+              onDownload={onDownloadFeed}
+            />
+          ),
+        },
+      ]}
+    />
   );
 }

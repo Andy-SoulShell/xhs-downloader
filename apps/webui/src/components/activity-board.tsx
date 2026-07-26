@@ -1,7 +1,8 @@
-import { History } from "lucide-react";
+import { Download, History, Puzzle } from "lucide-react";
 
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
+import { BoardTabs } from "./board-tabs";
 import { BrowserTaskRecord } from "./browser-task-record";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
@@ -31,39 +32,71 @@ export function ActivityBoard({
         meta={`${tasks.length + records.length} 条`}
         title="动态"
       />
-      <TaskBoard onRetry={onRetryDownload} tasks={tasks} />
-      <RecordBoard records={records} />
-
-      <section aria-label="浏览操作" className="mt-8">
-        <PageHeading
-          description="点赞、收藏和评论的执行结果；不记录评论正文和页面内容。"
-          meta={`${monitor.tasks.length} 条`}
-          title="浏览操作"
-        />
-        {monitor.tasks.length ? (
-          <div className="mt-4 space-y-3">
-            {monitor.tasks.map((task) => (
-              <BrowserTaskRecord
-                key={task.task_id}
-                onResolve={(succeeded) =>
-                  void monitor.review(task.task_id, succeeded)
-                }
-                onRetry={() => void monitor.retry(task.task_id)}
-                resolving={monitor.reviewingTaskId === task.task_id}
-                retrying={monitor.retryingTaskId === task.task_id}
-                task={task}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            compact
-            description="点赞、收藏或评论之后，执行结果会显示在这里。"
-            icon={History}
-            title="还没有浏览操作"
-          />
-        )}
-      </section>
+      <BoardTabs
+        ariaLabel="动态分类"
+        tabs={[
+          {
+            value: "downloads",
+            label: "下载",
+            icon: Download,
+            count: tasks.length,
+            content: <TaskBoard onRetry={onRetryDownload} tasks={tasks} />,
+          },
+          {
+            value: "actions",
+            label: "浏览操作",
+            icon: History,
+            count: monitor.tasks.length,
+            content: <BrowseActions monitor={monitor} />,
+          },
+          {
+            value: "extension",
+            label: "插件下载",
+            icon: Puzzle,
+            count: records.length,
+            content: <RecordBoard records={records} />,
+          },
+        ]}
+      />
     </>
+  );
+}
+
+function BrowseActions({
+  monitor,
+}: {
+  monitor: ReturnType<typeof useBrowserMonitor>;
+}) {
+  return (
+    <section aria-label="浏览操作" className="mt-8">
+      <PageHeading
+        description="点赞、收藏和评论的执行结果；不记录评论正文和页面内容。"
+        meta={`${monitor.tasks.length} 条`}
+        title="浏览操作"
+      />
+      {monitor.tasks.length ? (
+        <div className="mt-4 space-y-3">
+          {monitor.tasks.map((task) => (
+            <BrowserTaskRecord
+              key={task.task_id}
+              onResolve={(succeeded) =>
+                void monitor.review(task.task_id, succeeded)
+              }
+              onRetry={() => void monitor.retry(task.task_id)}
+              resolving={monitor.reviewingTaskId === task.task_id}
+              retrying={monitor.retryingTaskId === task.task_id}
+              task={task}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          compact
+          description="点赞、收藏或评论之后，执行结果会显示在这里。"
+          icon={History}
+          title="还没有浏览操作"
+        />
+      )}
+    </section>
   );
 }

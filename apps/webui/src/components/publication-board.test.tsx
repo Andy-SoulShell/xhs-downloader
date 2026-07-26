@@ -130,7 +130,7 @@ describe("发布中心界面", () => {
     const selector = await screen.findByLabelText("当前草稿");
     fireEvent.change(selector, { target: { value: "second" } });
     expect(screen.getByLabelText("标题")).toHaveValue("第二份草稿");
-    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    fireEvent.click((fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ })), screen.getByRole("button", { name: "重试" })));
 
     await waitFor(() =>
       expect(retryPublicationTask).toHaveBeenCalledWith(task.task_id),
@@ -172,8 +172,11 @@ describe("发布中心界面", () => {
       <PublicationBoard browserDriver="managed" onNotify={onNotify} />,
     );
 
+    fireEvent.mouseDown(
+      await screen.findByRole("tab", { name: /发布任务/ }),
+    );
     fireEvent.click(
-      await screen.findByRole("button", {
+      screen.getByRole("button", {
         name: "我已完成验证，继续原任务",
       }),
     );

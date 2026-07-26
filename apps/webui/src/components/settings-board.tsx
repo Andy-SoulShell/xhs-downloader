@@ -5,19 +5,13 @@ import type { FormEvent, ReactNode } from "react";
 import { toMappingObject, toMappingRows } from "../lib/author-mapping";
 import type { SettingsResponse, SettingsUpdate } from "../lib/types";
 import { ActionButton } from "./action-button";
-import { AccessModeSettings } from "./access-mode-settings";
+import { BoardTabs } from "./board-tabs";
+import type { SettingsChange } from "./settings-sections";
+import { settingsTabs } from "./settings-tabs";
 import { Badge } from "./badge";
 import { DesktopServiceControl } from "./desktop-service-control";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
-import { PublicationSettings } from "./publication-settings";
-import { ServiceSettings } from "./service-settings";
-import {
-  DownloadSettings,
-  NetworkSettings,
-  StorageSettings,
-  type SettingsChange,
-} from "./settings-sections";
 
 interface SettingsBoardProps {
   error: string;
@@ -194,30 +188,24 @@ function SettingsForm({
       )}
 
       <form className="space-y-5" onSubmit={(event) => void submit(event)}>
-        <AccessModeSettings onChange={change} values={draft} />
-        <StorageSettings
-          mappingRows={mappingRows}
-          onChange={change}
-          onMappingChange={setMappingRows}
-          values={draft}
+        <BoardTabs
+          ariaLabel="配置分组"
+          tabs={settingsTabs({
+            clearCookie,
+            clearProxy,
+            cookie,
+            draft,
+            mappingRows,
+            proxy,
+            settings,
+            onChange: change,
+            onClearCookieChange: toggleClearCookie,
+            onClearProxyChange: toggleClearProxy,
+            onCookieChange: changeCookie,
+            onMappingChange: setMappingRows,
+            onProxyChange: changeProxy,
+          })}
         />
-        <NetworkSettings
-          clearCookie={clearCookie}
-          clearProxy={clearProxy}
-          cookie={cookie}
-          cookieConfigured={settings.cookie_configured}
-          onChange={change}
-          onClearCookieChange={toggleClearCookie}
-          onClearProxyChange={toggleClearProxy}
-          onCookieChange={changeCookie}
-          onProxyChange={changeProxy}
-          proxy={proxy}
-          proxyConfigured={settings.proxy_configured}
-          values={draft}
-        />
-        <DownloadSettings onChange={change} values={draft} />
-        <PublicationSettings onChange={change} values={draft} />
-        <ServiceSettings onChange={change} values={draft} />
 
         <div className="control-shell flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 text-xs text-stone-500">

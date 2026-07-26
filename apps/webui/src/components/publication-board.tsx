@@ -7,6 +7,7 @@ import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
+import { BoardTabs } from "./board-tabs";
 import { PublicationEditor } from "./publication-editor";
 import { PublicationTaskList } from "./publication-task-list";
 
@@ -154,8 +155,16 @@ export function PublicationBoard({
           title="还没有发布草稿"
         />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.7fr)]">
-          <section className="control-shell min-w-0 p-5" aria-label="草稿编辑">
+        <BoardTabs
+          ariaLabel="发布分类"
+          tabs={[
+            {
+              value: "drafts",
+              label: "草稿",
+              icon: FilePlus2,
+              count: center.drafts.length,
+              content: (
+          <section className="control-shell mt-4 min-w-0 p-5" aria-label="草稿编辑">
             <label className="mb-5 block text-xs font-semibold text-stone-700">
               当前草稿
               <select
@@ -206,8 +215,17 @@ export function PublicationBoard({
               />
             )}
           </section>
-          {taskList}
-        </div>
+              ),
+            },
+            {
+              value: "tasks",
+              label: "发布任务",
+              icon: Send,
+              count: center.tasks.length,
+              content: taskList,
+            },
+          ]}
+        />
       )}
     </section>
   );
