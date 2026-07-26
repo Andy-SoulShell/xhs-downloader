@@ -10,6 +10,7 @@ from xhs_core.domain import (
     BrowserTaskStatus,
     ManagedBrowserError,
     ManagedBrowserState,
+    browser_driver_supports,
 )
 from xhs_core.domain.browser_ports import ManagedBrowserController
 
@@ -44,18 +45,7 @@ _PAGE_NAVIGATION_TIMEOUT_MILLISECONDS = 30_000
 _PAGE_READY_ATTEMPTS = 20
 _PAGE_READY_INTERVAL_MILLISECONDS = 250
 _MAX_INTERNAL_NAVIGATIONS = 2
-_READ_TASKS = {
-    BrowserTaskKind.CHECK_LOGIN_STATUS,
-    BrowserTaskKind.GET_LOGIN_QRCODE,
-    BrowserTaskKind.DELETE_COOKIES,
-    BrowserTaskKind.LIST_FEEDS,
-    BrowserTaskKind.SEARCH_FEEDS,
-    BrowserTaskKind.GET_FEED_DETAIL,
-    BrowserTaskKind.GET_USER_PROFILE,
-    BrowserTaskKind.GET_MY_PROFILE,
-}
 _WRITE_TASKS = {BrowserTaskKind.SET_LIKE, BrowserTaskKind.SET_FAVORITE}
-_SUPPORTED_TASKS = _READ_TASKS | _WRITE_TASKS
 
 
 class PlaywrightManagedTaskExecutor:
@@ -93,7 +83,7 @@ class PlaywrightManagedTaskExecutor:
             return managed_task_failure("任务没有固定到受管浏览器驱动")
         if task.status is not BrowserTaskStatus.RUNNING:
             return managed_task_failure("受管浏览器任务必须先进入运行态")
-        if task.kind not in _SUPPORTED_TASKS:
+        if not browser_driver_supports(BrowserDriver.MANAGED, task.kind):
             return managed_task_failure("当前受管浏览器版本尚未支持此任务")
         status = await self._controller.status()
         if status.state is not ManagedBrowserState.RUNNING or status.cdp_port is None:

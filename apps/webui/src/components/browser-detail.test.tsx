@@ -4,9 +4,8 @@ import { expect, it, vi } from "vitest";
 import type { FeedDetailResult } from "../lib/types";
 import { BrowserDetail } from "./browser-detail";
 
-it("为空资料和评论提供稳定回退文案", () => {
-  const onClose = vi.fn();
-  const detail: FeedDetailResult = {
+function makeDetail(): FeedDetailResult {
+  return {
     feed_id: "synthetic-feed",
     xsec_token: "synthetic-token",
     title: "",
@@ -32,11 +31,15 @@ it("为空资料和评论提供稳定回退文案", () => {
     comments_has_more: false,
     comments_cursor: "",
   };
+}
+
+it("为空资料和评论提供稳定回退文案", () => {
+  const onClose = vi.fn();
 
   render(
     <BrowserDetail
       busy={false}
-      detail={detail}
+      detail={makeDetail()}
       onClose={onClose}
       onComment={vi.fn()}
       onReply={vi.fn()}
@@ -52,4 +55,28 @@ it("为空资料和评论提供稳定回退文案", () => {
   expect(screen.getByText("当前没有已加载评论。")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
   expect(onClose).toHaveBeenCalled();
+});
+
+it("执行器不支持评论时停用输入并说明原因", () => {
+  render(
+    <BrowserDetail
+      busy={false}
+      commentEnabled={false}
+      detail={makeDetail()}
+      onClose={vi.fn()}
+      onComment={vi.fn()}
+      onReply={vi.fn()}
+      onSetFavorite={vi.fn()}
+      onSetLike={vi.fn()}
+    />,
+  );
+
+  expect(
+    screen.getByText("受管浏览器尚未支持评论与回复，请切换到浏览器扩展执行器。"),
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText("发表评论")).toBeDisabled();
+  expect(screen.getByRole("button", { name: "评论" })).toBeDisabled();
+  // 点赞与收藏由受管浏览器实现，不受评论限制影响。
+  expect(screen.getByRole("button", { name: "点赞" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "收藏" })).toBeEnabled();
 });

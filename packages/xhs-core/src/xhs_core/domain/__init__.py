@@ -24,6 +24,7 @@ from .browser_tasks import (
     BrowserTaskExecutionResult,
     BrowserTaskKind,
     BrowserTaskStatus,
+    browser_driver_supports,
     browser_task_may_write_platform,
     can_retry_browser_task,
 )
@@ -165,6 +166,7 @@ __all__ = [
     "WorkDetail",
     "WorkType",
     "XhsError",
+    "browser_driver_supports",
     "browser_task_may_write_platform",
     "can_retry_browser_task",
     "sanitize_browser_page_diagnostics",

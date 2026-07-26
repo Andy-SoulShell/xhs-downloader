@@ -8,6 +8,8 @@ import { Metric } from "./metric";
 
 interface BrowserDetailProps {
   busy: boolean;
+  /** 当前执行器是否实现评论与回复；受管浏览器尚未支持。 */
+  commentEnabled?: boolean;
   detail: FeedDetailResult;
   onComment: (content: string) => Promise<void>;
   onClose: () => void;
@@ -20,6 +22,7 @@ interface BrowserDetailProps {
 /** 展示帖子详情、已加载评论和需要二次确认的互动操作。 */
 export function BrowserDetail({
   busy,
+  commentEnabled = true,
   detail,
   onComment,
   onClose,
@@ -155,6 +158,11 @@ export function BrowserDetail({
             浏览器执行器尚未确认，互动、评论和回复已停用。
           </p>
         )}
+        {writeEnabled && !commentEnabled && (
+          <p className="mb-3 text-xs leading-5 text-amber-700">
+            受管浏览器尚未支持评论与回复，请切换到浏览器扩展执行器。
+          </p>
+        )}
         <label
           className="text-sm font-semibold text-stone-900"
           htmlFor="browser-comment"
@@ -164,7 +172,7 @@ export function BrowserDetail({
         <textarea
           className="mt-3 min-h-24 w-full resize-y rounded-xl border border-stone-200 p-3 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-100"
           id="browser-comment"
-          disabled={!writeEnabled}
+          disabled={!writeEnabled || !commentEnabled}
           maxLength={1000}
           onChange={(event) => setDraft(event.target.value)}
           placeholder={replyTarget ? "输入回复内容" : "输入评论内容"}
@@ -183,7 +191,7 @@ export function BrowserDetail({
             <span className="text-xs text-stone-400">{draft.length}/1000</span>
           )}
           <ActionButton
-            disabled={busy || !writeEnabled || !draft.trim()}
+            disabled={busy || !writeEnabled || !commentEnabled || !draft.trim()}
             onClick={() => {
               const content = draft.trim();
               queue(replyTarget ? "提交回复" : "发表评论", async () => {
@@ -218,7 +226,7 @@ export function BrowserDetail({
               </p>
               <button
                 className="mt-2 text-xs font-medium text-red-600 hover:text-red-700"
-                disabled={!writeEnabled}
+                disabled={!writeEnabled || !commentEnabled}
                 onClick={() => {
                   setReplyTarget(comment.comment_id);
                   setDraft("");

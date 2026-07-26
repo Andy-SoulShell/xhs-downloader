@@ -151,6 +151,7 @@ export function BrowserBoard({
       {explorer.detail && (
         <BrowserDetail
           busy={explorer.busy}
+          commentEnabled={confirmedDriver !== "managed"}
           detail={explorer.detail}
           onComment={(content) => explorer.postComment(content)}
           onClose={() => void explorer.loadFeeds()}

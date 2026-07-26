@@ -13,6 +13,7 @@ from xhs_core.domain import (
     BrowserTaskError,
     BrowserTaskKind,
     BrowserTaskStatus,
+    browser_driver_supports,
     can_retry_browser_task,
 )
 from xhs_core.domain.browser_ports import BrowserTaskRepository
@@ -52,8 +53,12 @@ class BrowserTaskService:
             新任务或同一幂等请求已经创建的任务。
 
         Raises:
-            BrowserTaskError: 幂等标识被不同请求复用。
+            BrowserTaskError: 目标驱动不支持该任务，或幂等标识被不同请求复用。
         """
+        if not browser_driver_supports(target_driver, kind):
+            raise BrowserTaskError(
+                f"当前浏览器执行器尚未支持{kind.value}任务，请改用其他执行器"
+            )
         normalized_payload = validate_browser_task_payload(kind, payload)
         async with self._submit_lock:
             if request_id:

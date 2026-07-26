@@ -66,13 +66,68 @@ async def test_browser_write_routes_freeze_selected_driver(tmp_path) -> None:
                 "request_id": "synthetic-reply-request",
             },
         )
+        queued = await client.get("/browser/tasks")
 
     assert login.status_code == 202
     assert login.json()["target_driver"] == "managed"
     assert liked.json()["payload"]["active"] is True
     assert liked.json()["target_driver"] == "managed"
     assert favorite.json()["payload"]["active"] is False
+    # 受管浏览器尚未实现评论: 提交阶段即拒绝而不是入队后失败。
+    assert commented.status_code == 400
+    assert replied.status_code == 400
+    assert "尚未支持" in commented.json()["message"]
+    assert {task["kind"] for task in queued.json()} == {
+        "check_login_status",
+        "set_like",
+        "set_favorite",
+    }
+
+
+async def test_extension_driver_accepts_comment_operations(tmp_path) -> None:
+    """确保扩展驱动仍然接受评论与回复提交。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(
+        AppSettings(
+            work_path=tmp_path,
+            browser_driver=BrowserDriver.EXTENSION,
+        ),
+        lambda _: FakeService(),
+    )
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        commented = await client.post(
+            "/xhs/feeds/comment",
+            json={
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成评论",
+                "request_id": "synthetic-comment-request",
+            },
+        )
+        replied = await client.post(
+            "/xhs/feeds/comment/reply",
+            json={
+                "feed_id": "synthetic-feed",
+                "xsec_token": "synthetic-token",
+                "content": "合成回复",
+                "comment_id": "synthetic-comment",
+                "request_id": "synthetic-reply-request",
+            },
+        )
+
+    assert commented.status_code == 202
     assert commented.json()["kind"] == "post_comment"
+    assert commented.json()["target_driver"] == "extension"
+    assert replied.status_code == 202
     assert replied.json()["kind"] == "reply_comment"
 
 

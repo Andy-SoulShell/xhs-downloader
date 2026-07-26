@@ -151,3 +151,40 @@ def browser_task_may_write_platform(kind: BrowserTaskKind) -> bool:
         BrowserTaskKind.GET_MY_PROFILE,
     }
     return kind not in safe_kinds
+
+
+# 受管浏览器当前实现的任务类型。
+# 扩展驱动实现全部类型。
+# 受管驱动新增能力时同步扩充。
+_MANAGED_BROWSER_KINDS = frozenset(
+    {
+        BrowserTaskKind.CHECK_LOGIN_STATUS,
+        BrowserTaskKind.GET_LOGIN_QRCODE,
+        BrowserTaskKind.DELETE_COOKIES,
+        BrowserTaskKind.LIST_FEEDS,
+        BrowserTaskKind.SEARCH_FEEDS,
+        BrowserTaskKind.GET_FEED_DETAIL,
+        BrowserTaskKind.GET_USER_PROFILE,
+        BrowserTaskKind.GET_MY_PROFILE,
+        BrowserTaskKind.SET_LIKE,
+        BrowserTaskKind.SET_FAVORITE,
+    }
+)
+
+
+def browser_driver_supports(driver: BrowserDriver, kind: BrowserTaskKind) -> bool:
+    """判断驱动是否实现了该任务类型。
+
+    调用方据此在提交阶段就拒绝无法执行的组合，避免任务先入队、
+    再由执行器领取后才失败。
+
+    Args:
+        driver: 目标浏览器执行驱动。
+        kind: 浏览器任务类型。
+
+    Returns:
+        该驱动能够执行此类型任务时返回真。
+    """
+    if driver is BrowserDriver.MANAGED:
+        return kind in _MANAGED_BROWSER_KINDS
+    return True
