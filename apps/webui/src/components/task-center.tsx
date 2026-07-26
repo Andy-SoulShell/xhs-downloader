@@ -36,7 +36,7 @@ export function TaskBoard({
         <div className="space-y-3">
           {tasks.map((task) => (
             <article
-              className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 sm:flex-row sm:items-start"
+              className="record-card flex flex-col gap-4 sm:flex-row sm:items-start"
               key={task.task_id}
             >
               <TaskStatusIcon status={task.status} />
@@ -55,7 +55,7 @@ export function TaskBoard({
                     {downloadStatusCopy[task.status].hint}
                   </p>
                 )}
-                <p className="mt-2 text-[11px] text-stone-400">
+                <p className="meta-text mt-2">
                   {formatTime(task.updated_at)}
                   {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
                   {task.media_indexes.length
@@ -101,7 +101,7 @@ export function RecordBoard({
         <div className="grid gap-3 md:grid-cols-2">
           {records.map((record) => (
             <article
-              className="rounded-2xl border border-stone-200 bg-white p-5"
+              className="record-card"
               key={record.record_id}
             >
               <div className="flex items-start justify-between gap-3">

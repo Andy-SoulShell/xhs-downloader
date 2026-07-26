@@ -30,24 +30,19 @@ export function SegmentedControl({
   );
 }
 
+/** 单选式筛选项；工作台切换请使用 Radix Tabs 而不是本控件。 */
 export function SegmentedControlItem({
   children,
   icon: Icon,
   value,
-  variant = "compact",
 }: {
   children: ReactNode;
   icon?: LucideIcon;
   value: string;
-  variant?: "compact" | "navigation";
 }) {
-  const variantClass =
-    variant === "navigation"
-      ? "gap-1.5 rounded-xl px-2 py-2.5 text-xs"
-      : "rounded-lg px-3 py-2 text-xs";
   return (
     <ToggleGroup.Item
-      className={`inline-flex min-w-0 items-center justify-center font-medium text-stone-500 outline-none transition data-[state=on]:bg-stone-900 data-[state=on]:text-white focus-visible:ring-2 focus-visible:ring-stone-300 ${variantClass}`}
+      className="inline-flex min-w-0 items-center justify-center rounded-lg px-3 py-2 text-xs font-medium text-stone-500 outline-none transition data-[state=on]:bg-stone-900 data-[state=on]:text-white focus-visible:ring-2 focus-visible:ring-stone-300"
       value={value}
     >
       {Icon && <Icon aria-hidden size={14} />}

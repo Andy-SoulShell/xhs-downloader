@@ -36,7 +36,7 @@ export function PublicationVerificationResume({
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
       <div className="flex items-start gap-2">
         <ScanLine
           aria-hidden

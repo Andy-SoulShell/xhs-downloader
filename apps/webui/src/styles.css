@@ -55,6 +55,30 @@ button {
   backdrop-filter: blur(16px);
 }
 
+/* 列表中的一条记录；与 control-shell 的容器层次区分开。 */
+.record-card {
+  border: 1px solid rgb(28 25 23 / 10%);
+  border-radius: 16px;
+  background: white;
+  padding: 1.25rem;
+}
+
+/* 需要用户注意或采取行动的说明块。 */
+.notice-block {
+  border: 1px solid rgb(251 191 36 / 45%);
+  border-radius: 12px;
+  background: rgb(254 243 199 / 55%);
+  padding: 0.75rem;
+  color: #78350f;
+}
+
+/* 元信息行：时间、次数、数量等次要说明。 */
+.meta-text {
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  color: #a8a29e;
+}
+
 .feed-masonry {
   --feed-min-card-width: 260px;
   --feed-column-gap: 20px;

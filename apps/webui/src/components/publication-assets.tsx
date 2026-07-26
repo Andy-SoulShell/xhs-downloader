@@ -118,7 +118,7 @@ function AssetRow({
         </p>
         <div className="mt-1 flex items-center gap-2">
           <Badge>{video ? "视频" : "图片"}</Badge>
-          <span className="text-[11px] text-stone-400">
+          <span className="meta-text">
             {formatBytes(asset.size)}
           </span>
         </div>

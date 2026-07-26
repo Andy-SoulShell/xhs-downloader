@@ -53,7 +53,7 @@ export function NameFormatPicker({ value, onChange }: NameFormatPickerProps) {
       </div>
 
       <div className="mt-3 rounded-xl bg-stone-50 px-3 py-2">
-        <p className="text-[11px] text-stone-400">
+        <p className="meta-text">
           示例效果{usesDefaultFields(selected) ? "（未选择时的默认组合）" : ""}
         </p>
         <p className="mt-1 truncate font-mono text-xs text-stone-700">

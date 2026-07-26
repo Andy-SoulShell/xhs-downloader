@@ -139,7 +139,7 @@ function AnchorList({
       : "bg-amber-50 text-amber-700";
   return (
     <div className="mt-2 min-w-0">
-      <p className="text-[11px] text-stone-400">{label}</p>
+      <p className="meta-text">{label}</p>
       <div className="mt-1 flex min-w-0 flex-wrap gap-1">
         {anchors.length ? (
           anchors.map((anchor) => (
@@ -151,7 +151,7 @@ function AnchorList({
             </span>
           ))
         ) : (
-          <span className="text-[11px] text-stone-400">{emptyLabel}</span>
+          <span className="meta-text">{emptyLabel}</span>
         )}
       </div>
     </div>

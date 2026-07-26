@@ -53,7 +53,7 @@ export function BrowserTaskRecord({
   const needsReview = task.status === "needs_review";
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-start">
+    <article className="record-card flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3 className="text-sm font-semibold text-stone-900">
@@ -65,12 +65,12 @@ export function BrowserTaskRecord({
         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-500">
           {humanizeError(task.message)}
         </p>
-        <p className="mt-2 break-words text-[11px] text-stone-400">
+        <p className="meta-text mt-2 break-words">
           {formatTime(task.updated_at)}
           {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
         </p>
         {needsReview && (
-          <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
             <p className="break-words text-[11px] leading-5 text-amber-900">
               {status.hint}
             </p>

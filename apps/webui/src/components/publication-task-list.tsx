@@ -99,7 +99,7 @@ function TaskRow({
           <p className="truncate text-sm font-semibold text-stone-900">
             {task.package.title || "未命名发布"}
           </p>
-          <p className="mt-1 text-[11px] text-stone-400">
+          <p className="meta-text mt-1">
             {modeLabel(task.mode)} ·{" "}
             {formatTime(task.scheduled_at)}
           </p>
@@ -112,7 +112,7 @@ function TaskRow({
           <PublicationVerificationResume onResume={onResumeVerification} />
         )}
       {task.status === "needs_review" && (
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] leading-5 text-amber-900">
             {publishStatusCopy.needs_review.hint}
           </p>
@@ -160,7 +160,7 @@ function TaskRow({
         </div>
       )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] text-stone-400">
+        <span className="meta-text">
           {driverLabel(task.target_driver)}
           {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
         </span>

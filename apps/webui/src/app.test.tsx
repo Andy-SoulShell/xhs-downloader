@@ -248,10 +248,15 @@ describe("帖子下载工作台", () => {
     ]);
     render(<App />);
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: /动态/ }),
+    fireEvent.mouseDown(
+      await within(
+        await screen.findByRole("tablist", { name: "切换工作台视图" }),
+      ).findByRole("tab", { name: "动态" }),
     );
-    expect(screen.getByText("合成任务失败")).toBeInTheDocument();
+
+    expect(
+      await screen.findByText("合成任务失败"),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重新下载" }));
     await waitFor(() =>
       expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
@@ -264,8 +269,10 @@ describe("帖子下载工作台", () => {
   it("从管理后台更新服务配置", async () => {
     render(<App />);
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "设置" }),
+    fireEvent.mouseDown(
+      await within(
+        await screen.findByRole("tablist", { name: "切换工作台视图" }),
+      ).findByRole("tab", { name: "设置" }),
     );
     fireEvent.change(screen.getByLabelText("媒体目录名"), {
       target: { value: "media" },

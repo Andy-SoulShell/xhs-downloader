@@ -141,7 +141,7 @@ function ExtensionRow({
           <p className="truncate text-sm text-stone-700">
             浏览器插件
           </p>
-          <p className="mt-1 text-[11px] text-stone-400">
+          <p className="meta-text mt-1">
             最近通信 {formatRelativeTime(extension.last_seen_at)}
           </p>
         </div>
@@ -215,7 +215,7 @@ function StatusCard({
             <p className="font-semibold text-stone-900">{value}</p>
             <Badge tone={tone}>{tone === "success" ? "正常" : "待处理"}</Badge>
           </div>
-          <p className="mt-1 truncate text-[11px] text-stone-400">
+          <p className="meta-text mt-1 truncate">
             {description}
           </p>
         </div>

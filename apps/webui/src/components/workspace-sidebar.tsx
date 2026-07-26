@@ -1,4 +1,5 @@
 import { GalleryVerticalEnd } from "lucide-react";
+import { Tabs } from "radix-ui";
 
 import type { Filter, WorkspaceView } from "../lib/workspace";
 import { ProductBrand } from "./product-brand";
@@ -58,21 +59,27 @@ export function WorkspaceSidebar({
         ))}
       </nav>
 
-      <nav
+      <Tabs.List
         aria-label="工作台"
+        // 宽屏侧栏与窄屏标签栏是同一组标签的两种排布。
         className="mt-6 space-y-1 border-t border-stone-800 pt-6"
       >
         {managementViewItems.map((item) => (
-          <SidebarButton
-            active={view === item.view}
-            count={viewCounts[item.view]}
-            icon={item.icon}
+          <Tabs.Trigger
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-stone-400 outline-none transition hover:bg-stone-900 hover:text-white data-[state=active]:bg-white data-[state=active]:text-stone-950 focus-visible:ring-2 focus-visible:ring-stone-600"
             key={item.view}
-            label={item.sidebarLabel}
-            onClick={() => onViewChange(item.view)}
-          />
+            value={item.view}
+          >
+            <item.icon aria-hidden size={17} />
+            <span className="flex-1 text-left font-medium">
+              {item.sidebarLabel}
+            </span>
+            {viewCounts[item.view] !== undefined && (
+              <span className="text-stone-600">{viewCounts[item.view]}</span>
+            )}
+          </Tabs.Trigger>
         ))}
-      </nav>
+      </Tabs.List>
 
       <div className="mt-auto rounded-2xl border border-stone-800 bg-stone-900 p-4">
         <p className="text-xs font-medium text-stone-300">本地服务</p>

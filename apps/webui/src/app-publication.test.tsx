@@ -1,4 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
@@ -60,8 +65,10 @@ describe("发布中心主导航集成", () => {
     ]);
     render(<App />);
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "发布" }),
+    fireEvent.mouseDown(
+      await within(
+        await screen.findByRole("tablist", { name: "切换工作台视图" }),
+      ).findByRole("tab", { name: "发布" }),
     );
 
     expect(await screen.findByLabelText("当前草稿")).toBeInTheDocument();

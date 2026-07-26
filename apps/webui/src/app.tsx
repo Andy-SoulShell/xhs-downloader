@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Toast } from "radix-ui";
+import { Tabs, Toast } from "radix-ui";
 
 import { ActivityBoard } from "./components/activity-board";
 import { ConnectionPanel } from "./components/connection-panel";
@@ -182,6 +182,12 @@ export default function App() {
 
   return (
     <Toast.Provider swipeDirection="right">
+      {/* 四个工作台是同一组标签；侧栏与窄屏标签栏是它的两种排布。 */}
+      <Tabs.Root
+        asChild
+        onValueChange={(next) => setView(next as WorkspaceView)}
+        value={view}
+      >
       <div className="min-h-screen">
         <WorkspaceSidebar
           activityCount={tasks.length + records.length}
@@ -195,11 +201,11 @@ export default function App() {
         />
 
         <MobileHeader online={effectiveOnline} />
-        <MobileWorkspaceNav onViewChange={setView} view={view} />
+        <MobileWorkspaceNav />
 
         <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
           <div className="mx-auto max-w-[1460px]">
-            {view === "content" && (
+            <Tabs.Content value="content">
               <ContentBoard
                 browserDriver={settings?.values.browser_driver}
                 completedCount={completedCount}
@@ -221,18 +227,18 @@ export default function App() {
                 query={query}
                 visiblePosts={visiblePosts}
               />
-            )}
-            {view === "activity" && (
+            </Tabs.Content>
+            <Tabs.Content value="activity">
               <ActivityBoard
                 onRetryDownload={(taskId) => void handleRetry(taskId)}
                 records={records}
                 tasks={tasks}
               />
-            )}
-            {view === "publication" && (
+            </Tabs.Content>
+            <Tabs.Content value="publication">
               <PublicationBoard browserDriver={settings?.values.browser_driver} onNotify={notify} />
-            )}
-            {view === "settings" && (
+            </Tabs.Content>
+            <Tabs.Content value="settings">
               <>
                 <ConnectionPanel
                   account={null}
@@ -253,10 +259,11 @@ export default function App() {
                   settings={settings}
                 />
               </>
-            )}
+            </Tabs.Content>
           </div>
         </main>
       </div>
+      </Tabs.Root>
 
       <Toast.Root
         className="rounded-2xl border border-stone-200 bg-white p-4 shadow-2xl data-[state=open]:animate-[toast-in_180ms_ease-out]"

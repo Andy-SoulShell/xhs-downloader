@@ -89,7 +89,7 @@ export function PublicationSubmitControls({
       {pending && (
         <div
           aria-label="发布确认"
-          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4"
+          className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"
         >
           <div className="flex items-start gap-2">
             <ShieldCheck
