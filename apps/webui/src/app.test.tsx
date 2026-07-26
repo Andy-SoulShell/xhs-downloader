@@ -223,7 +223,7 @@ describe("帖子下载工作台", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "下载 2 项" }),
     );
-    expect(await screen.findByText("下载任务提交失败")).toBeInTheDocument();
+    expect(await screen.findByText("下载失败")).toBeInTheDocument();
   });
 
   it("统一展示后台任务和独立下载记录", async () => {

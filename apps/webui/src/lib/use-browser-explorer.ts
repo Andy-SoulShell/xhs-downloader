@@ -4,8 +4,6 @@ import type { JsonValue } from "@xhs-downloader/contracts";
 import type {
   BrowserLoginState,
   BrowserTask,
-  CommentResult,
-  DesiredStateResult,
   FeedDetailResult,
   FeedListResult,
   FeedSummary,
@@ -17,22 +15,38 @@ import {
   executeReadCapability,
   type CapabilityRoute,
 } from "./browser-api";
+import {
+  commentRequest,
+  desiredStateRequest,
+  metricKeyOf,
+  replyRequest,
+} from "./feed-interactions";
+import {
+  appendUniqueFeeds,
+  feedContextFrom,
+  loadNextFeedPage,
+  type FeedContext,
+} from "./feed-pagination";
 
 /** 浏览器探索页面的读取状态和互动操作。 */
 export interface BrowserExplorer {
   account: BrowserLoginState | null;
   busy: boolean;
+  context: FeedContext | null;
   detail: FeedDetailResult | null;
   error: string;
   feeds: FeedSummary[];
+  loadingMore: boolean;
   route: CapabilityRoute | null;
   qrCode: LoginQrCodeResult | null;
   sessionMessage: string;
   task: BrowserTask | null;
   checkLogin: () => Promise<void>;
+  closeDetail: () => void;
   deleteBrowserCookies: () => Promise<void>;
   getLoginQrCode: () => Promise<void>;
   loadFeeds: () => Promise<void>;
+  loadMore: () => Promise<void>;
   openFeed: (feed: FeedSummary) => Promise<void>;
   postComment: (content: string) => Promise<void>;
   replyComment: (commentId: string, content: string) => Promise<void>;
@@ -50,6 +64,8 @@ export function useBrowserExplorer(): BrowserExplorer {
   const [detail, setDetail] = useState<FeedDetailResult | null>(null);
   const [error, setError] = useState("");
   const [feeds, setFeeds] = useState<FeedSummary[]>([]);
+  const [context, setContext] = useState<FeedContext | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [route, setRoute] = useState<CapabilityRoute | null>(null);
   const [qrCode, setQrCode] = useState<LoginQrCodeResult | null>(null);
   const [sessionMessage, setSessionMessage] = useState("");
@@ -138,36 +154,24 @@ export function useBrowserExplorer(): BrowserExplorer {
       }),
     [runBrowser],
   );
-  const deleteBrowserCookies = useCallback(async () => {
-    activeRequest.current?.abort();
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    setBusy(true);
-    setError("");
-    setSessionMessage("");
-    try {
-      const result = await deleteCookies("browser", controller.signal);
-      if (activeRequest.current !== controller) return;
-      setAccount({ logged_in: false, user_id: null, nickname: null });
-      setQrCode(null);
-      setSessionMessage(result.message);
-    } catch (reason) {
-      if (controller.signal.aborted) return;
-      setError(
-        reason instanceof Error ? reason.message : "浏览器 Cookie 清理失败",
-      );
-    } finally {
-      if (activeRequest.current === controller) {
-        activeRequest.current = null;
-        setBusy(false);
-      }
-    }
-  }, []);
+  const deleteBrowserCookies = useCallback(
+    () =>
+      runRequest(
+        (signal) => deleteCookies("browser", signal),
+        (result) => {
+          setAccount({ logged_in: false, user_id: null, nickname: null });
+          setQrCode(null);
+          setSessionMessage(result.message);
+        },
+      ),
+    [runRequest],
+  );
   const loadFeeds = useCallback(
     () =>
       runRead<FeedListResult>("/xhs/feeds/list", {}, (data) => {
         setDetail(null);
         setFeeds(data.items);
+        setContext(feedContextFrom("home", "", data));
       }),
     [runRead],
   );
@@ -179,10 +183,36 @@ export function useBrowserExplorer(): BrowserExplorer {
         (data) => {
           setDetail(null);
           setFeeds(data.items);
+          setContext(feedContextFrom("search", keyword, data));
         },
       ),
     [runRead],
   );
+
+  /**
+   * 追加下一页结果。
+   *
+   * 与首次读取共用同一个来源和关键词，并单独维护加载状态，
+   * 避免整页进入忙碌态而遮住已经看到的结果。
+   */
+  const loadMore = useCallback(async () => {
+    if (!context?.hasMore || loadingMore) return;
+    const controller = new AbortController();
+    setLoadingMore(true);
+    try {
+      const page = await loadNextFeedPage(context, controller.signal);
+      setRoute(page.route);
+      setFeeds((current) => appendUniqueFeeds(current, page.items));
+      setContext(page.context);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "加载更多失败");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [context, loadingMore]);
+
+  /** 关闭详情但保留当前浏览结果，避免用户回到列表时丢失搜索上下文。 */
+  const closeDetail = useCallback(() => setDetail(null), []);
   const openFeed = useCallback(
     (feed: FeedSummary) =>
       runRead<FeedDetailResult>(
@@ -200,59 +230,39 @@ export function useBrowserExplorer(): BrowserExplorer {
   );
   const setInteraction = useCallback(
     (kind: "like" | "favorite", active: boolean) => {
-      if (!detail) return Promise.resolve();
-      return runBrowser<DesiredStateResult>(
-        kind === "like" ? "/xhs/feeds/like" : "/xhs/feeds/favorite",
-        {
-          feed_id: detail.feed_id,
-          xsec_token: detail.xsec_token,
-          active,
-        },
-        () =>
-          setDetail((current) =>
-            current
-              ? {
-                  ...current,
-                  metrics: {
-                    ...current.metrics,
-                    [kind === "like" ? "liked" : "collected"]: active,
-                  },
-                }
-              : current,
-          ),
+      const request = desiredStateRequest(detail, kind, active);
+      if (!request) return Promise.resolve();
+      return runBrowser(request.path, request.payload, () =>
+        setDetail((current) =>
+          current
+            ? {
+                ...current,
+                metrics: {
+                  ...current.metrics,
+                  [metricKeyOf(kind)]: active,
+                },
+              }
+            : current,
+        ),
       );
     },
     [detail, runBrowser],
   );
-  const postCurrentComment = useCallback(
+  const postComment = useCallback(
     (content: string) => {
-      if (!detail) return Promise.resolve();
-      return runBrowser<CommentResult>(
-        "/xhs/feeds/comment",
-        {
-          feed_id: detail.feed_id,
-          xsec_token: detail.xsec_token,
-          content,
-        },
-        () => undefined,
-      );
+      const request = commentRequest(detail, content);
+      return request
+        ? runBrowser(request.path, request.payload, () => undefined)
+        : Promise.resolve();
     },
     [detail, runBrowser],
   );
-  const replyCurrentComment = useCallback(
+  const replyComment = useCallback(
     (commentId: string, content: string) => {
-      if (!detail) return Promise.resolve();
-      return runBrowser<CommentResult>(
-        "/xhs/feeds/comment/reply",
-        {
-          feed_id: detail.feed_id,
-          xsec_token: detail.xsec_token,
-          content,
-          comment_id: commentId,
-          user_id: null,
-        },
-        () => undefined,
-      );
+      const request = replyRequest(detail, commentId, content);
+      return request
+        ? runBrowser(request.path, request.payload, () => undefined)
+        : Promise.resolve();
     },
     [detail, runBrowser],
   );
@@ -260,20 +270,24 @@ export function useBrowserExplorer(): BrowserExplorer {
   return {
     account,
     busy,
+    context,
     detail,
     error,
     feeds,
+    loadingMore,
     route,
     qrCode,
     sessionMessage,
     task,
     checkLogin,
+    closeDetail,
     deleteBrowserCookies,
     getLoginQrCode,
     loadFeeds,
+    loadMore,
     openFeed,
-    postComment: postCurrentComment,
-    replyComment: replyCurrentComment,
+    postComment,
+    replyComment,
     search,
     setInteraction,
   };

@@ -1,6 +1,7 @@
 import {
   CircleAlert,
   Compass,
+  Download,
   Heart,
   LoaderCircle,
   MessageCircle,
@@ -10,7 +11,7 @@ import { useState, type FormEvent } from "react";
 
 import type { FeedSummary } from "../lib/types";
 import { isBrowserDriver } from "../lib/types";
-import { capabilityRouteSource } from "../lib/browser-route";
+import { feedPostUrl, MISSING_ACCESS_HINT } from "../lib/feed-links";
 import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { useManagedBrowser } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
@@ -21,18 +22,43 @@ import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
 import { PageHeading } from "./page-heading";
 
-/** 浏览器登录态、执行器控制、内容探索和互动操作的统一工作台。 */
+/**
+ * 浏览小红书并就地下载。
+ *
+ * @param browserDriver 当前连接方式；未确认时停用登录与互动。
+ * @param onDownload 把一条浏览结果交给下载；由内容工作台提供。
+ */
 export function BrowserBoard({
   browserDriver = null,
+  onDownload,
 }: {
   browserDriver?: unknown;
+  onDownload?: (url: string, title: string) => Promise<void>;
 }) {
   const explorer = useBrowserExplorer();
   const managedBrowser = useManagedBrowser();
   const [keyword, setKeyword] = useState("");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [hint, setHint] = useState("");
   const confirmedDriver = isBrowserDriver(browserDriver)
     ? browserDriver
     : null;
+
+  const handleDownload = async (feed: FeedSummary) => {
+    const url = feedPostUrl(feed);
+    if (!url) {
+      setHint(MISSING_ACCESS_HINT);
+      return;
+    }
+    if (!onDownload) return;
+    setHint("");
+    setDownloadingId(feed.feed_id);
+    try {
+      await onDownload(url, feed.title || "未命名帖子");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -43,18 +69,16 @@ export function BrowserBoard({
   return (
     <section>
       <PageHeading
-        description="按配置通过 Cookie HTTP、浏览器扩展或受管浏览器读取；写操作始终使用选定浏览器。"
-        meta={
-          explorer.task ? `任务 ${explorer.task.task_id.slice(0, 8)}` : "浏览能力"
-        }
-        title="浏览器探索"
+        description="用你已登录的小红书浏览推荐和搜索，看到喜欢的可以直接下载。"
+        meta={explorer.feeds.length ? `${explorer.feeds.length} 条` : ""}
+        title="浏览小红书"
         actions={
           <ActionButton
             disabled={explorer.busy}
             onClick={() => void explorer.loadFeeds()}
           >
             <Compass aria-hidden size={15} />
-            读取推荐
+            看看推荐
           </ActionButton>
         }
       />
@@ -82,7 +106,7 @@ export function BrowserBoard({
             <input
               className="h-12 w-full rounded-2xl border border-stone-200 bg-white pr-4 pl-11 text-sm outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100"
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="输入关键词，通过已登录浏览器搜索"
+              placeholder="搜索小红书，例如：露营装备"
               value={keyword}
             />
           </label>
@@ -121,21 +145,14 @@ export function BrowserBoard({
               {explorer.error}
             </Badge>
           )}
-          {explorer.route && (
-            <Badge
-              title={explorer.route.fallback_reason?.message}
-              tone={explorer.route.fallback_used ? "warning" : "neutral"}
-            >
-              来源：{capabilityRouteSource(explorer.route)}
-              {explorer.route.fallback_used ? " · 已回退" : ""}
-            </Badge>
-          )}
-          {explorer.route?.account_consistency === "matched" && (
-            <Badge tone="success">账号一致性已确认</Badge>
-          )}
           {!confirmedDriver && (
             <Badge icon={CircleAlert} tone="warning">
-              浏览器执行器尚未确认，登录与写操作已停用
+              还没有选好连接方式，请先到设置里完成
+            </Badge>
+          )}
+          {hint && (
+            <Badge icon={CircleAlert} tone="warning">
+              {hint}
             </Badge>
           )}
         </div>
@@ -147,7 +164,7 @@ export function BrowserBoard({
           commentEnabled={confirmedDriver !== "managed"}
           detail={explorer.detail}
           onComment={(content) => explorer.postComment(content)}
-          onClose={() => void explorer.loadFeeds()}
+          onClose={explorer.closeDetail}
           onReply={(commentId, content) =>
             explorer.replyComment(commentId, content)
           }
@@ -164,8 +181,10 @@ export function BrowserBoard({
           <div className="feed-grid">
             {explorer.feeds.map((feed) => (
               <BrowserFeedCard
+                downloading={downloadingId === feed.feed_id}
                 feed={feed}
                 key={feed.feed_id}
+                onDownload={() => void handleDownload(feed)}
                 onOpen={() => void explorer.openFeed(feed)}
               />
             ))}
@@ -173,10 +192,24 @@ export function BrowserBoard({
         ) : (
           <EmptyState
             compact
-            description="先检查登录状态，然后读取首页推荐或按关键词搜索。"
+            description="点上面的「看看推荐」，或者搜索你想找的内容。"
             icon={Compass}
-            title={explorer.busy ? "浏览器正在执行任务" : "还没有浏览结果"}
+            title={explorer.busy ? "正在打开小红书" : "还没有内容"}
           />
+        )}
+        {explorer.context?.hasMore && (
+          <div className="mt-6 flex justify-center">
+            <ActionButton
+              disabled={explorer.loadingMore}
+              onClick={() => void explorer.loadMore()}
+              variant="outline"
+            >
+              {explorer.loadingMore ? (
+                <LoaderCircle aria-hidden className="animate-spin" size={14} />
+              ) : null}
+              {explorer.loadingMore ? "正在加载" : "加载更多"}
+            </ActionButton>
+          </div>
         )}
       </div>
     </section>
@@ -184,18 +217,26 @@ export function BrowserBoard({
 }
 
 function BrowserFeedCard({
+  downloading,
   feed,
+  onDownload,
   onOpen,
 }: {
+  downloading: boolean;
   feed: FeedSummary;
+  onDownload: () => void;
   onOpen: () => void;
 }) {
+  // 缺少访问上下文时详情和下载都无法完成，明确说明而不是让按钮默默失效。
+  const accessible = Boolean(feed.xsec_token);
+  const title = feed.title || "未命名帖子";
+
   return (
     <article className="feed-card min-w-0">
       <button
-        aria-label={`读取帖子详情：${feed.title || "未命名帖子"}`}
-        className="block w-full overflow-hidden rounded-2xl bg-stone-100 text-left"
-        disabled={!feed.xsec_token}
+        aria-label={`打开「${title}」`}
+        className="block w-full overflow-hidden rounded-2xl bg-stone-100 text-left disabled:cursor-not-allowed"
+        disabled={!accessible}
         onClick={onOpen}
         type="button"
       >
@@ -212,7 +253,7 @@ function BrowserFeedCard({
         )}
       </button>
       <h2 className="mt-3 line-clamp-2 text-sm leading-6 font-semibold text-stone-900">
-        {feed.title || "未命名帖子"}
+        {title}
       </h2>
       <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-stone-500">
         <span className="truncate">{feed.author.nickname || "未知作者"}</span>
@@ -231,6 +272,25 @@ function BrowserFeedCard({
           />
         </span>
       </div>
+      {accessible ? (
+        <ActionButton
+          className="mt-3 w-full"
+          disabled={downloading}
+          onClick={onDownload}
+          variant="outline"
+        >
+          {downloading ? (
+            <LoaderCircle aria-hidden className="animate-spin" size={14} />
+          ) : (
+            <Download aria-hidden size={14} />
+          )}
+          {downloading ? "正在提交" : "下载"}
+        </ActionButton>
+      ) : (
+        <p className="mt-3 text-[11px] leading-5 text-amber-700">
+          这条暂时打不开，重新搜索一下试试。
+        </p>
+      )}
     </article>
   );
 }

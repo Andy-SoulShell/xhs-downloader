@@ -15,6 +15,7 @@ interface ContentBoardProps {
   query: string;
   visiblePosts: PostRecord[];
   onDownload: (post: PostRecord) => void;
+  onDownloadFeed: (url: string, title: string) => Promise<void>;
   onFilterChange: (filter: Filter) => void;
   onForceChange: (id: string, force: boolean) => void;
   onLinkChange: (link: string) => void;
@@ -39,6 +40,7 @@ export function ContentBoard({
   query,
   visiblePosts,
   onDownload,
+  onDownloadFeed,
   onFilterChange,
   onForceChange,
   onLinkChange,
@@ -68,7 +70,7 @@ export function ContentBoard({
         query={query}
         visiblePosts={visiblePosts}
       />
-      <BrowserBoard browserDriver={browserDriver} />
+      <BrowserBoard browserDriver={browserDriver} onDownload={onDownloadFeed} />
     </>
   );
 }

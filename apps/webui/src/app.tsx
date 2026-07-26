@@ -20,6 +20,7 @@ import {
 import { isBrowserDriver } from "./lib/types";
 import { useManagedBrowser } from "./lib/use-managed-browser";
 import { useSettings } from "./lib/use-settings";
+import { usePostDownloads } from "./lib/use-post-downloads";
 import { useTaskCenter } from "./lib/use-task-center";
 import {
   mergeTaskResults,
@@ -124,29 +125,13 @@ export default function App() {
     );
   };
 
-  const handleDownload = async (post: PostRecord) => {
-    const detail = post.result.data;
-    if (!detail) return;
-    if (!post.selected.size) {
-      notify("请至少选择一组媒体");
-      return;
-    }
-    updatePost(post.id, { status: "downloading" });
-    try {
-      await createTask({
-        url: detail.作品链接,
-        index: [...post.selected].sort((a, b) => a - b),
-        force: post.force,
-        request_id: crypto.randomUUID(),
-      });
-      setOnline(true);
-      notify("已开始下载，可以在动态里查看进度");
-    } catch (error) {
-      updatePost(post.id, { status: "error" });
-      setOnline(false);
-      notify(error instanceof Error ? error.message : "下载任务提交失败");
-    }
-  };
+  const { downloadFeed, downloadPost } = usePostDownloads({
+    createTask,
+    notify,
+    setOnline,
+    setPosts,
+    updatePost,
+  });
 
   const handleRetry = async (taskId: string) => {
     try {
@@ -220,7 +205,8 @@ export default function App() {
                 completedCount={completedCount}
                 filter={filter}
                 link={link}
-                onDownload={(post) => void handleDownload(post)}
+                onDownload={(post) => void downloadPost(post)}
+                onDownloadFeed={downloadFeed}
                 onFilterChange={setFilter}
                 onForceChange={(id, force) => updatePost(id, { force })}
                 onLinkChange={setLink}

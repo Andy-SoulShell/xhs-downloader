@@ -68,11 +68,11 @@ describe("浏览器探索工作台", () => {
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("已登录 · 合成账号")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     expect(await screen.findByText("合成浏览帖子")).toBeInTheDocument();
-    expect(
-      screen.getByText("来源：受管浏览器 · 已回退"),
-    ).toHaveAttribute("title", "Cookie HTTP 尚未配置");
+    // 读取来源与回退属于内部编排，界面不再向用户展示。
+    expect(document.body.textContent).not.toContain("来源：");
+    expect(document.body.textContent).not.toContain("已回退");
 
     fireEvent.change(screen.getByLabelText("搜索小红书帖子"), {
       target: { value: " 合成关键词 " },
@@ -87,7 +87,7 @@ describe("浏览器探索工作台", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: "读取帖子详情：合成浏览帖子" }),
+      screen.getByRole("button", { name: "打开「合成浏览帖子」" }),
     );
     expect(await screen.findByText("合成详情")).toBeInTheDocument();
     expect(screen.getByText("合成评论")).toBeInTheDocument();
@@ -104,7 +104,6 @@ describe("浏览器探索工作台", () => {
         expect.any(AbortSignal),
       ),
     );
-    expect(screen.getByText("来源：受管浏览器 · 已回退")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "收藏" }));
     fireEvent.click(screen.getByRole("button", { name: "确认执行" }));
     await waitFor(() =>
@@ -145,14 +144,14 @@ describe("浏览器探索工作台", () => {
       ),
     );
 
+    // 关闭详情必须保留当前结果，此前会重新拉取推荐并静默清空搜索结果。
+    const readsBeforeClose = vi.mocked(executeReadCapability).mock.calls.length;
     fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
-    await waitFor(() =>
-      expect(executeReadCapability).toHaveBeenLastCalledWith(
-        "/xhs/feeds/list",
-        {},
-        expect.any(AbortSignal),
-      ),
+
+    expect(vi.mocked(executeReadCapability).mock.calls).toHaveLength(
+      readsBeforeClose,
     );
+    expect(screen.getByText("合成浏览帖子")).toBeInTheDocument();
   });
 
   it("显示任务错误并阻止空关键词搜索", async () => {
@@ -162,14 +161,14 @@ describe("浏览器探索工作台", () => {
     render(<BrowserBoard browserDriver="extension" />);
 
     expect(screen.getByRole("button", { name: "搜索" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
     expect(
       await screen.findByText("浏览器扩展未连接"),
     ).toBeInTheDocument();
   });
 
-  it("只展示脱敏账号一致性结论", async () => {
+  it("不向用户暴露账号标识与内部编排结论", async () => {
     vi.mocked(executeReadCapability).mockResolvedValueOnce({
       data: makeBrowserFeedList(),
       route: {
@@ -179,12 +178,11 @@ describe("浏览器探索工作台", () => {
     });
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
-    expect(
-      await screen.findByText("账号一致性已确认"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("合成浏览帖子")).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("synthetic-user");
+    expect(document.body.textContent).not.toContain("账号一致性");
   });
 
   it("处理未登录、无封面和非标准异常", async () => {
@@ -218,10 +216,10 @@ describe("浏览器探索工作台", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("尚未登录")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     expect(await screen.findByText("暂无封面")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "读取帖子详情：未命名帖子" }),
+      screen.getByRole("button", { name: "打开「未命名帖子」" }),
     ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("能力请求执行失败")).toBeInTheDocument();
@@ -231,7 +229,7 @@ describe("浏览器探索工作台", () => {
     render(<BrowserBoard />);
 
     expect(
-      screen.getByText("浏览器执行器尚未确认，登录与写操作已停用"),
+      screen.getByText("还没有选好连接方式，请先到设置里完成"),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "检查登录" }),
@@ -243,10 +241,10 @@ describe("浏览器探索工作台", () => {
       screen.getByRole("button", { name: "清除浏览器 Cookie" }),
     ).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "读取推荐" }));
+    fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "读取帖子详情：合成浏览帖子",
+        name: "打开「合成浏览帖子」",
       }),
     );
 
