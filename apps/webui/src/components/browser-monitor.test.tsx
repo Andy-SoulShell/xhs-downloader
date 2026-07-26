@@ -18,6 +18,7 @@ vi.mock("../lib/browser-management-api", () => ({
   listBrowserExtensions: vi.fn(),
   listBrowserTasks: vi.fn(),
   retryBrowserTask: vi.fn(),
+  reviewBrowserTask: vi.fn(),
   revokeBrowserExtension: vi.fn(),
 }));
 
@@ -88,16 +89,16 @@ describe("浏览器状态与操作记录", () => {
 
     expect(await screen.findByText("1/1 个实例在线")).toBeInTheDocument();
     expect(screen.getByText("合成账号")).toBeInTheDocument();
-    expect(screen.getByText("读取推荐")).toBeInTheDocument();
-    expect(screen.getByText("需要确认")).toBeInTheDocument();
+    expect(screen.getByText("看推荐")).toBeInTheDocument();
+    expect(screen.getByText("需要你确认结果")).toBeInTheDocument();
     expect(
-      screen.getAllByText("执行器：浏览器扩展"),
+      screen.getAllByText("我自己的浏览器"),
     ).not.toHaveLength(0);
-    expect(screen.getByText("执行器：受管浏览器")).toBeInTheDocument();
+    expect(screen.getByText("软件自带浏览器")).toBeInTheDocument();
     expect(screen.getByText("帖子详情页")).toBeInTheDocument();
     expect(screen.queryByText(/synthetic-secret/)).not.toBeInTheDocument();
     expect(
-      screen.getByText("结果可能已写入小红书，请人工核对，禁止直接重试。"),
+      screen.getByText(/请到小红书看一眼实际结果/),
     ).toBeInTheDocument();
     expect(screen.queryByText("不应展示的合成正文")).not.toBeInTheDocument();
   });
@@ -202,7 +203,7 @@ describe("浏览器状态与操作记录", () => {
     expect(
       await screen.findByText("浏览器任务当前不可重试"),
     ).toBeInTheDocument();
-    expect(screen.getByText("失败")).toBeInTheDocument();
+    expect(screen.getAllByText("失败").length).toBeGreaterThan(0);
   });
 
   it("展示离线空态与管理接口错误", async () => {

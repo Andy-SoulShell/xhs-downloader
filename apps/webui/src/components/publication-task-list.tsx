@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 
 import type { PublicationTask } from "../lib/publication";
+import { connectionCopy, publishStatusCopy } from "../lib/terminology";
 import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
@@ -113,7 +114,7 @@ function TaskRow({
       {task.status === "needs_review" && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] leading-5 text-amber-900">
-            请先在创作平台核对作品，结论明确后才能继续处理。
+            {publishStatusCopy.needs_review.hint}
           </p>
           {reviewDecision === null ? (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -121,26 +122,28 @@ function TaskRow({
                 onClick={() => setReviewDecision(true)}
                 variant="outline"
               >
-                标记已发布
+                发出去了
               </ActionButton>
               <ActionButton
                 onClick={() => setReviewDecision(false)}
                 variant="outline"
               >
-                标记未发布
+                没发出去
               </ActionButton>
             </div>
           ) : (
-            <div aria-label="人工核对确认" className="mt-2">
+            <div aria-label="确认发布结果" className="mt-2">
               <p className="text-xs font-semibold text-amber-950">
-                确认核对结论为“{reviewDecision ? "已发布" : "未发布"}”？
+                {reviewDecision
+                  ? "确认这篇已经发布成功？"
+                  : "确认这篇没有发出去？确认后可以重新发布。"}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <ActionButton
                   onClick={() => setReviewDecision(null)}
                   variant="ghost"
                 >
-                  返回
+                  再看看
                 </ActionButton>
                 <ActionButton
                   onClick={() => {
@@ -149,7 +152,7 @@ function TaskRow({
                   }}
                 >
                   <ShieldCheck aria-hidden size={13} />
-                  {reviewDecision ? "确认已发布" : "确认未发布"}
+                  确认
                 </ActionButton>
               </div>
             </div>
@@ -158,8 +161,8 @@ function TaskRow({
       )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[11px] text-stone-400">
-          {driverLabel(task.target_driver)} · 尝试 {task.attempts} 次
-          {task.publish_attempted ? " · 已尝试提交" : ""}
+          {driverLabel(task.target_driver)}
+          {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
         </span>
         <div className="flex items-center gap-1">
           {task.result_url && (
@@ -203,23 +206,19 @@ function TaskRow({
 }
 
 function TaskBadge({ task }: { task: PublicationTask }) {
-  const values = {
-    scheduled: ["已排期", "warning", CalendarClock],
-    ready: [
-      task.target_driver === "managed" ? "等待受管浏览器" : "等待扩展",
-      "warning",
-      CalendarClock,
-    ],
-    claimed: ["已领取", "accent", CalendarClock],
-    filling: ["正在填写", "accent", RotateCcw],
-    publishing: ["正在发布", "accent", RotateCcw],
-    awaiting_verification: ["等待验证", "warning", ShieldCheck],
-    published: ["已发布", "success", CheckCircle2],
-    needs_review: ["待确认", "warning", CircleAlert],
-    failed: ["失败", "danger", CircleAlert],
-    canceled: ["已取消", "neutral", X],
+  const presentation = {
+    scheduled: ["warning", CalendarClock],
+    ready: ["warning", CalendarClock],
+    claimed: ["accent", CalendarClock],
+    filling: ["accent", RotateCcw],
+    publishing: ["accent", RotateCcw],
+    awaiting_verification: ["warning", ShieldCheck],
+    published: ["success", CheckCircle2],
+    needs_review: ["warning", CircleAlert],
+    failed: ["danger", CircleAlert],
+    canceled: ["neutral", X],
   } as const;
-  const [label, tone, Icon] = values[task.status];
+  const [tone, Icon] = presentation[task.status];
   return (
     <Badge
       icon={Icon}
@@ -227,7 +226,7 @@ function TaskBadge({ task }: { task: PublicationTask }) {
       spinning={["filling", "publishing"].includes(task.status)}
       tone={tone}
     >
-      {label}
+      {publishStatusCopy[task.status].label}
     </Badge>
   );
 }
@@ -246,7 +245,7 @@ function modeLabel(mode: PublicationTask["mode"]): string {
 }
 
 function driverLabel(driver: BrowserDriver): string {
-  return driver === "managed" ? "受管浏览器" : "浏览器扩展";
+  return connectionCopy[driver].label;
 }
 
 function creatorUrl(task: PublicationTask): string {

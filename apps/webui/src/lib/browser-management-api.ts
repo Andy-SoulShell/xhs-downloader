@@ -28,6 +28,26 @@ export async function retryBrowserTask(taskId: string): Promise<BrowserTask> {
   return parseResponse<BrowserTask>(response);
 }
 
+/**
+ * 提交用户对结果不确定操作的核对结论。
+ *
+ * 确认已生效的记为完成；确认未生效的转为明确失败，随后才允许重试。
+ */
+export async function reviewBrowserTask(
+  taskId: string,
+  succeeded: boolean,
+): Promise<BrowserTask> {
+  const response = await fetch(
+    `${API_BASE}/browser/tasks/${encodeURIComponent(taskId)}/review`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision: succeeded ? "succeeded" : "failed" }),
+    },
+  );
+  return parseResponse<BrowserTask>(response);
+}
+
 /** 注销一条扩展登记使其令牌立即失效；仍在运行的扩展会自动重新登记。 */
 export async function revokeBrowserExtension(
   extensionId: string,

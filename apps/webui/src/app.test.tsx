@@ -252,7 +252,7 @@ describe("帖子下载工作台", () => {
       await screen.findByRole("button", { name: /下载任务/ }),
     );
     expect(screen.getByText("合成任务失败")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新下载" }));
     await waitFor(() =>
       expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
     );

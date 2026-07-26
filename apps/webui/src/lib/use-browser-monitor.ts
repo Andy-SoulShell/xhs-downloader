@@ -14,6 +14,7 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
   retryBrowserTask,
+  reviewBrowserTask,
   revokeBrowserExtension,
 } from "./browser-management-api";
 
@@ -24,10 +25,12 @@ export interface BrowserMonitorState {
   onlineCount: number;
   refreshing: boolean;
   retryingTaskId: string | null;
+  reviewingTaskId: string | null;
   revokingExtensionId: string | null;
   tasks: BrowserTask[];
   refresh: () => Promise<void>;
   retry: (taskId: string) => Promise<void>;
+  review: (taskId: string, succeeded: boolean) => Promise<void>;
   revoke: (extensionId: string) => Promise<void>;
 }
 
@@ -38,6 +41,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
+  const [reviewingTaskId, setReviewingTaskId] = useState<string | null>(null);
   const [revokingExtensionId, setRevokingExtensionId] = useState<
     string | null
   >(null);
@@ -105,6 +109,25 @@ export function useBrowserMonitor(): BrowserMonitorState {
     }
   }, []);
 
+  const review = useCallback(async (taskId: string, succeeded: boolean) => {
+    if (mounted.current) setReviewingTaskId(taskId);
+    try {
+      const task = await reviewBrowserTask(taskId, succeeded);
+      if (mounted.current) {
+        setTasks((current) =>
+          current.map((item) => (item.task_id === task.task_id ? task : item)),
+        );
+        setError("");
+      }
+    } catch (reason) {
+      if (mounted.current) {
+        setError(reason instanceof Error ? reason.message : "结果确认失败");
+      }
+    } finally {
+      if (mounted.current) setReviewingTaskId(null);
+    }
+  }, []);
+
   const revoke = useCallback(
     async (extensionId: string) => {
       if (mounted.current) setRevokingExtensionId(extensionId);
@@ -136,10 +159,12 @@ export function useBrowserMonitor(): BrowserMonitorState {
     onlineCount,
     refreshing,
     retryingTaskId,
+    reviewingTaskId,
     revokingExtensionId,
     tasks,
     refresh,
     retry,
+    review,
     revoke,
   };
 }

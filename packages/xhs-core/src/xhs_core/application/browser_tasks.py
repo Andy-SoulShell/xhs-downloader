@@ -14,12 +14,12 @@ from xhs_core.domain import (
     BrowserTaskKind,
     BrowserTaskStatus,
     browser_driver_supports,
-    can_retry_browser_task,
 )
 from xhs_core.domain.browser_ports import BrowserTaskRepository
 from xhs_core.domain.browser_requests import validate_browser_task_payload
 
 from .browser_task_claiming import _BrowserTaskClaimWaiter
+from .browser_task_resolution import requeue_failed_task, resolve_reviewed_task
 
 
 class BrowserTaskService:
@@ -237,31 +237,32 @@ class BrowserTaskService:
         Raises:
             BrowserTaskError: 任务不存在、结果不确定或状态不允许重试。
         """
-        task = await self.require(task_id)
-        if not can_retry_browser_task(task):
-            if task.status is BrowserTaskStatus.NEEDS_REVIEW:
-                raise BrowserTaskError("结果不确定的任务必须人工核对，不能直接重试")
-            raise BrowserTaskError("只有明确失败的浏览器任务可以重试")
-        queued = task.model_copy(
-            update={
-                "status": BrowserTaskStatus.QUEUED,
-                "result": None,
-                "executor_id": None,
-                "extension_id": None,
-                "lease_expires_at": None,
-                "message": "等待浏览器重试",
-                "updated_at": datetime.now(UTC),
-            }
+        queued = await requeue_failed_task(
+            self._repository,
+            await self.require(task_id),
         )
-        if not await self._repository.save_if_status(
-            queued,
-            BrowserTaskStatus.FAILED,
-            clear_lease=True,
-        ):
-            raise BrowserTaskError("浏览器任务状态已经变化，请刷新后重试")
         if queued.target_driver is BrowserDriver.EXTENSION:
             self._claim_waiter.notify()
         return queued
+
+    async def review(self, task_id: str, succeeded: bool) -> BrowserTask:
+        """记录人工核对结论，解除结果不确定任务的重试禁令。
+
+        Args:
+            task_id: 需要人工核对的任务标识。
+            succeeded: 用户确认操作已经生效时为真。
+
+        Returns:
+            转为成功或明确失败的任务。
+
+        Raises:
+            BrowserTaskError: 任务不存在、不是待核对状态或状态已经变化。
+        """
+        return await resolve_reviewed_task(
+            self._repository,
+            await self.require(task_id),
+            succeeded,
+        )
 
     async def consume_login_qrcode(self, task_id: str) -> None:
         """从已交付任务中移除短期二维码图像。

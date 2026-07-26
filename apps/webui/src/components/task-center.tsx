@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { downloadStatusCopy, humanizeError } from "../lib/terminology";
 import type {
   ClientDownloadRecord,
   DownloadTask,
@@ -28,14 +29,14 @@ export function TaskBoard({
   return (
     <ManagementSection
       count={tasks.length}
-      description="后台任务由本地服务持久化执行，关闭管理页面不会中断。"
-      title="下载任务"
+      description="下载在后台进行，关掉这个页面也不会中断。"
+      title="下载"
     >
       {tasks.length ? (
         <div className="space-y-3">
           {tasks.map((task) => (
             <article
-              className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-5 sm:flex-row sm:items-start"
               key={task.task_id}
             >
               <TaskStatusIcon status={task.status} />
@@ -46,14 +47,20 @@ export function TaskBoard({
                   </h2>
                   <StatusBadge status={task.status} />
                 </div>
-                <p className="mt-1 truncate text-xs text-stone-500">
-                  {task.message}
+                <p className="mt-1 text-xs leading-5 text-stone-500">
+                  {humanizeError(task.message)}
                 </p>
+                {downloadStatusCopy[task.status].hint && (
+                  <p className="mt-1 text-xs leading-5 text-amber-700">
+                    {downloadStatusCopy[task.status].hint}
+                  </p>
+                )}
                 <p className="mt-2 text-[11px] text-stone-400">
-                  {formatTime(task.updated_at)} · 已尝试 {task.attempts} 次
+                  {formatTime(task.updated_at)}
+                  {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
                   {task.media_indexes.length
-                    ? ` · ${task.media_indexes.length} 项媒体`
-                    : " · 全部媒体"}
+                    ? ` · ${task.media_indexes.length} 张图片或视频`
+                    : " · 全部图片和视频"}
                 </p>
               </div>
               {task.status === "failed" && (
@@ -62,7 +69,7 @@ export function TaskBoard({
                   variant="outline"
                 >
                   <RotateCcw aria-hidden size={14} />
-                  重试
+                  重新下载
                 </ActionButton>
               )}
             </article>
@@ -70,9 +77,9 @@ export function TaskBoard({
         </div>
       ) : (
         <EmptyState
-          description="从帖子详情提交下载后，任务状态会显示在这里。"
+          description="下载开始后可以在这里看到进度。"
           icon={RefreshCw}
-          title="还没有后台下载任务"
+          title="还没有下载记录"
         />
       )}
     </ManagementSection>
@@ -87,8 +94,8 @@ export function RecordBoard({
   return (
     <ManagementSection
       count={records.length}
-      description="这里汇总浏览器独立模式显式同步到本地服务的下载记录。"
-      title="独立下载记录"
+      description="这些是浏览器插件直接下载的，在插件面板里点同步后出现在这里。"
+      title="插件下载"
     >
       {records.length ? (
         <div className="grid gap-3 md:grid-cols-2">
@@ -103,19 +110,21 @@ export function RecordBoard({
                     {record.title || record.work_id}
                   </h2>
                   <p className="mt-1 text-xs text-stone-500">
-                    {record.mode === "browser" ? "浏览器下载" : "后台下载"} ·{" "}
-                    {record.media_indexes.length} 项媒体
+                    {record.mode === "browser" ? "浏览器直接下载" : "本机下载"} ·{" "}
+                    {record.media_indexes.length} 张图片或视频
                   </p>
                 </div>
                 <Badge
                   size="regular"
                   tone={record.status === "completed" ? "success" : "danger"}
                 >
-                  {record.status === "completed" ? "完成" : "失败"}
+                  {record.status === "completed"
+                    ? downloadStatusCopy.completed.label
+                    : downloadStatusCopy.failed.label}
                 </Badge>
               </div>
               <p className="mt-4 line-clamp-2 text-xs leading-5 text-stone-500">
-                {record.message}
+                {humanizeError(record.message)}
               </p>
               <p className="mt-3 text-[11px] text-stone-400">
                 {formatTime(record.created_at)}
@@ -125,9 +134,9 @@ export function RecordBoard({
         </div>
       ) : (
         <EmptyState
-          description="浏览器独立下载完成后，可在扩展中将记录同步到这里。"
+          description="用浏览器插件直接下载后，在插件面板里点一下同步就会显示在这里。"
           icon={MonitorDown}
-          title="还没有同步的独立下载记录"
+          title="还没有插件下载记录"
         />
       )}
     </ManagementSection>
@@ -173,21 +182,17 @@ function TaskStatusIcon({ status }: { status: DownloadTaskStatus }) {
 }
 
 function StatusBadge({ status }: { status: DownloadTaskStatus }) {
-  const labels = {
-    queued: "排队中",
-    running: "下载中",
-    completed: "已完成",
-    failed: "失败",
-  };
-  return (
-    <Badge>
-      {labels[status]}
-    </Badge>
-  );
+  const tones = {
+    queued: "warning",
+    running: "accent",
+    completed: "success",
+    failed: "danger",
+  } as const;
+  return <Badge tone={tones[status]}>{downloadStatusCopy[status].label}</Badge>;
 }
 
 function workId(value: string): string {
-  return value.split("?")[0].split("/").filter(Boolean).at(-1) || "未知作品";
+  return value.split("?")[0].split("/").filter(Boolean).at(-1) || "未命名帖子";
 }
 
 function formatTime(value: string): string {

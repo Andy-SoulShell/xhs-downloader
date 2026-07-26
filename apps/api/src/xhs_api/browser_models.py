@@ -18,6 +18,14 @@ class BrowserTaskRequest(BaseModel):
     target_driver: BrowserDriver = BrowserDriver.EXTENSION
 
 
+class BrowserTaskReviewRequest(BaseModel):
+    """用户对结果不确定操作给出的人工核对结论。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["succeeded", "failed"]
+
+
 class BrowserTaskStatusRequest(BaseModel):
     """扩展回传的浏览器任务运行状态。"""
 

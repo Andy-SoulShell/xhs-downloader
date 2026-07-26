@@ -185,3 +185,112 @@ async def test_browser_api_long_poll_wakes_and_validates_wait_range(
     assert immediate.json() is None
     assert too_short.status_code == 422
     assert too_long.status_code == 422
+
+
+async def test_browser_api_resolves_uncertain_task_by_review(tmp_path) -> None:
+    """确保结果不确定的任务可由用户确认结论后离开待核对状态。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        submitted = await client.post(
+            "/browser/tasks",
+            json={
+                "kind": "post_comment",
+                "payload": {
+                    "feed_id": "synthetic-feed",
+                    "xsec_token": "synthetic-token",
+                    "content": "合成评论",
+                },
+            },
+        )
+        task_id = submitted.json()["task_id"]
+        headers = await _register(client)
+        claimed = await client.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+        uncertain = await client.post(
+            f"/browser/extension/tasks/{task_id}/result",
+            json={"status": "needs_review", "message": "结果无法确认"},
+            headers={
+                **headers,
+                "X-Browser-Lease": claimed.json()["lease_token"],
+            },
+        )
+        blocked_retry = await client.post(f"/browser/tasks/{task_id}/retry")
+        reviewed = await client.post(
+            f"/browser/tasks/{task_id}/review",
+            json={"decision": "failed"},
+        )
+        allowed_retry = await client.post(f"/browser/tasks/{task_id}/retry")
+        repeated = await client.post(
+            f"/browser/tasks/{task_id}/review",
+            json={"decision": "failed"},
+        )
+
+    assert uncertain.json()["status"] == "needs_review"
+    # 未经核对不得重试: 避免评论重复发出。
+    assert blocked_retry.status_code == 400
+    assert reviewed.json()["status"] == "failed"
+    assert allowed_retry.json()["status"] == "queued"
+    assert repeated.status_code == 400
+
+
+async def test_browser_api_review_marks_effective_operation_succeeded(
+    tmp_path,
+) -> None:
+    """确保用户确认已生效的操作转为成功且不再可重试。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        submitted = await client.post(
+            "/browser/tasks",
+            json={
+                "kind": "set_like",
+                "payload": {
+                    "feed_id": "synthetic-feed",
+                    "xsec_token": "synthetic-token",
+                    "active": True,
+                },
+            },
+        )
+        task_id = submitted.json()["task_id"]
+        headers = await _register(client)
+        claimed = await client.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+        await client.post(
+            f"/browser/extension/tasks/{task_id}/result",
+            json={"status": "needs_review", "message": "结果无法确认"},
+            headers={
+                **headers,
+                "X-Browser-Lease": claimed.json()["lease_token"],
+            },
+        )
+        reviewed = await client.post(
+            f"/browser/tasks/{task_id}/review",
+            json={"decision": "succeeded"},
+        )
+        retry = await client.post(f"/browser/tasks/{task_id}/retry")
+
+    assert reviewed.json()["status"] == "succeeded"
+    assert retry.status_code == 400

@@ -159,7 +159,11 @@ export function BrowserMonitor({
             {monitor.tasks.map((task) => (
               <BrowserTaskRecord
                 key={task.task_id}
+                onResolve={(succeeded) =>
+                  void monitor.review(task.task_id, succeeded)
+                }
                 onRetry={() => void monitor.retry(task.task_id)}
+                resolving={monitor.reviewingTaskId === task.task_id}
                 retrying={monitor.retryingTaskId === task.task_id}
                 task={task}
               />

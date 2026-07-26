@@ -20,6 +20,7 @@ from .browser_models import (
     BrowserExtensionTokenResponse,
     BrowserTaskRequest,
     BrowserTaskResultRequest,
+    BrowserTaskReviewRequest,
     BrowserTaskStatusRequest,
 )
 from .extension_access import (
@@ -105,6 +106,15 @@ def create_browser_router(
     async def retry_task(task_id: str, request: Request) -> BrowserTask:
         _require_management(request, management_access)
         return await tasks.retry(task_id)
+
+    @router.post("/tasks/{task_id}/review", response_model=BrowserTask)
+    async def review_task(
+        task_id: str,
+        payload: BrowserTaskReviewRequest,
+        request: Request,
+    ) -> BrowserTask:
+        _require_management(request, management_access)
+        return await tasks.review(task_id, payload.decision == "succeeded")
 
     @router.post(
         "/extension/register",

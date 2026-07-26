@@ -84,7 +84,7 @@ describe("发布中心界面", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "标记未发布" }),
+      screen.getByRole("button", { name: "没发出去" }),
     ).toBeInTheDocument();
   });
 

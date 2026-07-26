@@ -42,28 +42,28 @@ describe("发布任务列表", () => {
     );
 
     for (const label of [
-      "已排期",
-      "等待扩展",
-      "已领取",
-      "正在填写",
+      "等待到点",
+      "正在填写内容",
       "正在发布",
-      "等待验证",
+      "等待你完成验证",
       "已发布",
-      "待确认",
-      "失败",
+      "需要你确认结果",
+      "发布失败",
       "已取消",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+    // 等待领取与已领取对用户是同一件事，合并为一句"准备发布"。
+    expect(screen.getAllByText("准备发布")).toHaveLength(2);
     fireEvent.click(screen.getAllByRole("button", { name: "取消" })[0]);
     fireEvent.click(screen.getByRole("button", { name: "重试" }));
-    fireEvent.click(screen.getByRole("button", { name: "标记未发布" }));
+    fireEvent.click(screen.getByRole("button", { name: "没发出去" }));
     expect(onReview).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "确认未发布" }));
-    fireEvent.click(screen.getByRole("button", { name: "标记已发布" }));
-    fireEvent.click(screen.getByRole("button", { name: "返回" }));
-    fireEvent.click(screen.getByRole("button", { name: "标记已发布" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认已发布" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认" }));
+    fireEvent.click(screen.getByRole("button", { name: "发出去了" }));
+    fireEvent.click(screen.getByRole("button", { name: "再看看" }));
+    fireEvent.click(screen.getByRole("button", { name: "发出去了" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认" }));
     expect(onCancel).toHaveBeenCalledWith("scheduled");
     expect(onRetry).toHaveBeenCalledWith("failed");
     expect(onReview).toHaveBeenCalledWith("needs_review", false);
@@ -107,9 +107,9 @@ describe("发布任务列表", () => {
       />,
     );
 
-    expect(screen.getByText("等待受管浏览器")).toBeInTheDocument();
+    expect(screen.getByText("准备发布")).toBeInTheDocument();
     expect(
-      screen.getByText("受管浏览器 · 尝试 0 次 · 已尝试提交"),
+      screen.getByText("软件自带浏览器"),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: /打开创作页/ }),
