@@ -3,10 +3,11 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from aiosqlite import connect
 from loguru import logger
 from pydantic import ValidationError
 from xhs_core.domain.models import WorkDetail
+
+from .connection import connect
 
 
 class SqlitePostRepository:

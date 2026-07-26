@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from secrets import compare_digest
 
-from aiosqlite import connect
 from xhs_core.domain import (
     BrowserDriver,
     BrowserTask,
@@ -18,6 +17,7 @@ from .browser_task_storage import (
     initialize_browser_task_storage,
     save_browser_task_if_snapshot,
 )
+from .connection import connect
 
 
 class SqliteBrowserTaskRepository:

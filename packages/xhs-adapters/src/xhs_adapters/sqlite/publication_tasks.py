@@ -4,9 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from secrets import compare_digest
 
-from aiosqlite import connect
 from xhs_core.domain import BrowserDriver, PublicationTask, PublicationTaskStatus
 
+from .connection import connect
 from .publication_task_storage import (
     initialize_publication_task_storage,
     parse_publication_task,

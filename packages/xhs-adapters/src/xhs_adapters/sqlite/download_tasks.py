@@ -2,10 +2,11 @@
 
 from pathlib import Path
 
-from aiosqlite import connect
 from loguru import logger
 from pydantic import ValidationError
 from xhs_core.domain.models import DownloadTask, DownloadTaskStatus
+
+from .connection import connect
 
 
 class SqliteTaskRepository:

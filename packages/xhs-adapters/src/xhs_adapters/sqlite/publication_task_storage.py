@@ -3,10 +3,11 @@
 from datetime import datetime
 from pathlib import Path
 
-from aiosqlite import connect
 from loguru import logger
 from pydantic import ValidationError
 from xhs_core.domain import BrowserDriver, PublicationTask, PublicationTaskStatus
+
+from .connection import connect
 
 
 async def initialize_publication_task_storage(database_path: Path) -> None:

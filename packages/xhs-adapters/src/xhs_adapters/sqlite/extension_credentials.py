@@ -4,8 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from secrets import compare_digest
 
-from aiosqlite import connect
 from xhs_core.domain import ExtensionPresence
+
+from .connection import connect
 
 
 class SqliteExtensionCredentialRepository:

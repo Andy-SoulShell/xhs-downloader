@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from aiosqlite import Connection, connect
+from aiosqlite import Connection
 from xhs_core.domain import (
     BrowserTask,
     BrowserTaskStatus,
@@ -11,6 +11,7 @@ from xhs_core.domain import (
 )
 
 from .browser_task_storage import browser_task_matches_storage, parse_browser_task
+from .connection import connect
 
 
 async def load_safe_browser_tasks(

@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from aiosqlite import Connection, connect
+from aiosqlite import Connection
 from loguru import logger
 from pydantic import ValidationError
 from xhs_core.domain import (
@@ -12,6 +12,8 @@ from xhs_core.domain import (
     BrowserTaskStatus,
     sanitize_stored_browser_task,
 )
+
+from .connection import connect
 
 
 async def initialize_browser_task_storage(database_path: Path) -> None:
