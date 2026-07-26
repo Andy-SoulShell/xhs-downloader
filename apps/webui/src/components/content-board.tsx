@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 
 import type { Filter, PostRecord } from "../lib/workspace";
 import { BoardTabs } from "./board-tabs";
+import { PageHeading } from "./page-heading";
 import { BrowserBoard } from "./browser-board";
 import { LinkComposer } from "./link-composer";
 import { PostLibrary } from "./post-library";
@@ -52,9 +53,15 @@ export function ContentBoard({
   onSelectionChange,
 }: ContentBoardProps) {
   return (
-    <BoardTabs
-      ariaLabel="内容分类"
-      tabs={[
+    <>
+      <PageHeading
+        description="粘贴链接下载，或者直接浏览小红书找内容。"
+        meta={posts.length ? `${posts.length} 个帖子` : ""}
+        title="内容"
+      />
+        <BoardTabs
+        ariaLabel="内容分类"
+        tabs={[
         {
           value: "library",
           label: "我的帖子",
@@ -95,7 +102,8 @@ export function ContentBoard({
             />
           ),
         },
-      ]}
-    />
+        ]}
+      />
+    </>
   );
 }

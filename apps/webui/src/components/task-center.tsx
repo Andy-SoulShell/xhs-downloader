@@ -8,6 +8,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
+import {
+  formatFullTime,
+  formatRelativeTime,
+} from "../lib/format-time";
 import { downloadStatusCopy, humanizeError } from "../lib/terminology";
 import type {
   ClientDownloadRecord,
@@ -17,7 +21,6 @@ import type {
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
-import { PageHeading } from "./page-heading";
 
 export function TaskBoard({
   tasks,
@@ -28,7 +31,6 @@ export function TaskBoard({
 }) {
   return (
     <ManagementSection
-      count={tasks.length}
       description="下载在后台进行，关掉这个页面也不会中断。"
       title="下载"
     >
@@ -36,49 +38,65 @@ export function TaskBoard({
         <div className="space-y-3">
           {tasks.map((task) => (
             <article
-              className="record-card flex flex-col gap-4 sm:flex-row sm:items-start"
+              className="record-card group flex items-start gap-3.5 transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_1px_2px_rgb(28_25_23/0.04),0_8px_24px_rgb(28_25_23/0.06)]"
               key={task.task_id}
             >
               <TaskStatusIcon status={task.status} />
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-sm font-semibold text-stone-900">
-                    {task.detail?.作品标题 || workId(task.source_url)}
-                  </h2>
-                  <StatusBadge status={task.status} />
+                <div className="flex min-w-0 items-center gap-3">
+                  {/* 状态紧跟标题：推到行尾会让视线横跨整屏才能对应。 */}
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <h2 className="truncate text-sm leading-6 font-semibold text-stone-900">
+                      {task.detail?.作品标题 || workId(task.source_url)}
+                    </h2>
+                    <StatusBadge status={task.status} />
+                  </div>
+                  {/* 恢复操作常驻：藏在悬停后会让用户找不到出路。 */}
+                  {task.status === "failed" && (
+                    <ActionButton
+                      className="ml-auto shrink-0"
+                      onClick={() => onRetry(task.task_id)}
+                      variant="outline"
+                    >
+                      <RotateCcw
+                        aria-hidden
+                        className="transition-transform duration-300 group-hover:-rotate-180"
+                        size={14}
+                      />
+                      重新下载
+                    </ActionButton>
+                  )}
                 </div>
-                <p className="mt-1 text-xs leading-5 text-stone-500">
+                <p className="mt-0.5 text-xs leading-5 text-stone-500">
                   {humanizeError(task.message)}
                 </p>
                 {downloadStatusCopy[task.status].hint && (
-                  <p className="mt-1 text-xs leading-5 text-amber-700">
+                  <p className="mt-1.5 text-xs leading-5 text-amber-700">
                     {downloadStatusCopy[task.status].hint}
                   </p>
                 )}
-                <p className="meta-text mt-2">
-                  {formatTime(task.updated_at)}
-                  {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
+                <p className="meta-text mt-2 flex flex-wrap items-center gap-x-2">
+                  <time dateTime={task.updated_at} title={formatFullTime(task.updated_at)}>
+                    {formatRelativeTime(task.updated_at)}
+                  </time>
+                  {task.attempts > 1 && (
+                    <>
+                      <Dot />第 {task.attempts} 次尝试
+                    </>
+                  )}
+                  <Dot />
                   {task.media_indexes.length
-                    ? ` · ${task.media_indexes.length} 张图片或视频`
-                    : " · 全部图片和视频"}
+                    ? `${task.media_indexes.length} 张图片或视频`
+                    : "全部图片和视频"}
                 </p>
               </div>
-              {task.status === "failed" && (
-                <ActionButton
-                  onClick={() => onRetry(task.task_id)}
-                  variant="outline"
-                >
-                  <RotateCcw aria-hidden size={14} />
-                  重新下载
-                </ActionButton>
-              )}
             </article>
           ))}
         </div>
       ) : (
         <EmptyState
           description="下载开始后可以在这里看到进度。"
-          icon={RefreshCw}
+          icon={MonitorDown}
           title="还没有下载记录"
         />
       )}
@@ -93,7 +111,6 @@ export function RecordBoard({
 }) {
   return (
     <ManagementSection
-      count={records.length}
       description="这些是浏览器插件直接下载的，在插件面板里点同步后出现在这里。"
       title="插件下载"
     >
@@ -101,19 +118,13 @@ export function RecordBoard({
         <div className="grid gap-3 md:grid-cols-2">
           {records.map((record) => (
             <article
-              className="record-card"
+              className="record-card transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_1px_2px_rgb(28_25_23/0.04),0_8px_24px_rgb(28_25_23/0.06)]"
               key={record.record_id}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-stone-900">
-                    {record.title || record.work_id}
-                  </h2>
-                  <p className="mt-1 text-xs text-stone-500">
-                    {record.mode === "browser" ? "浏览器直接下载" : "本机下载"} ·{" "}
-                    {record.media_indexes.length} 张图片或视频
-                  </p>
-                </div>
+              <div className="flex items-center gap-2.5">
+                <h2 className="min-w-0 truncate text-sm leading-6 font-semibold text-stone-900">
+                  {record.title || record.work_id}
+                </h2>
                 <Badge
                   size="regular"
                   tone={record.status === "completed" ? "success" : "danger"}
@@ -123,11 +134,18 @@ export function RecordBoard({
                     : downloadStatusCopy.failed.label}
                 </Badge>
               </div>
-              <p className="mt-4 line-clamp-2 text-xs leading-5 text-stone-500">
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-stone-500">
                 {humanizeError(record.message)}
               </p>
-              <p className="mt-3 text-[11px] text-stone-400">
-                {formatTime(record.created_at)}
+              <p className="meta-text mt-2.5 flex flex-wrap items-center gap-x-2">
+                <time
+                  dateTime={record.created_at}
+                  title={formatFullTime(record.created_at)}
+                >
+                  {formatRelativeTime(record.created_at)}
+                </time>
+                <Dot />
+                {record.media_indexes.length} 张图片或视频
               </p>
             </article>
           ))}
@@ -143,24 +161,24 @@ export function RecordBoard({
   );
 }
 
+/**
+ * 分区内容容器。
+ *
+ * 标签条已经承担了标题与计数，这里只保留一行说明；再放一个同名大标题
+ * 会让同一件事在一屏内出现三次。
+ */
 function ManagementSection({
   children,
-  count,
   description,
   title,
 }: {
   children: ReactNode;
-  count: number;
   description: string;
   title: string;
 }) {
   return (
-    <section className="mt-8" aria-label={title}>
-      <PageHeading
-        description={description}
-        meta={`${count} 条`}
-        title={title}
-      />
+    <section aria-label={title}>
+      <p className="mb-4 text-xs leading-5 text-stone-500">{description}</p>
       {children}
     </section>
   );
@@ -195,9 +213,7 @@ function workId(value: string): string {
   return value.split("?")[0].split("/").filter(Boolean).at(-1) || "未命名帖子";
 }
 
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+/** 元信息之间的分隔点；比顿号更轻，不打断扫读。 */
+function Dot() {
+  return <span aria-hidden className="text-stone-300">·</span>;
 }

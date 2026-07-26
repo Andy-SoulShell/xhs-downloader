@@ -43,7 +43,7 @@ describe("采集帖子持久化", () => {
     const restored = await screen.findByRole("button", {
       name: "打开帖子：合成测试帖子",
     });
-    expect(screen.getByText("1 个帖子 · 0 个已下载")).toBeInTheDocument();
+    expect(screen.getByText("共 1 个帖子")).toBeInTheDocument();
 
     fireEvent.click(restored);
     fireEvent.click(
@@ -86,6 +86,6 @@ describe("采集帖子持久化", () => {
     );
 
     expect(await screen.findByText(message)).toBeInTheDocument();
-    expect(screen.getByText("1 个帖子 · 0 个已下载")).toBeInTheDocument();
+    expect(screen.getByText("共 1 个帖子")).toBeInTheDocument();
   });
 });

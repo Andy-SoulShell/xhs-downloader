@@ -54,7 +54,7 @@ describe("任务与记录管理界面", () => {
     );
 
     expect(screen.getByText("synthetic-work")).toBeInTheDocument();
-    expect(screen.getByText("本机下载 · 0 张图片或视频")).toBeInTheDocument();
+    expect(screen.getByText("0 张图片或视频")).toBeInTheDocument();
     expect(screen.getByText("下载失败")).toBeInTheDocument();
 
     rerender(<RecordBoard records={[]} />);

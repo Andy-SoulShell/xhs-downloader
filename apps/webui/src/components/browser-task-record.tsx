@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+import { Check, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
 import type {
   BrowserDriver,
@@ -6,6 +6,10 @@ import type {
   BrowserTaskKind,
 } from "@xhs-downloader/contracts";
 
+import {
+  formatFullTime,
+  formatRelativeTime,
+} from "../lib/format-time";
 import {
   browseStatusCopy,
   connectionCopy,
@@ -37,6 +41,7 @@ export function BrowserTaskRecord({
   onRetry,
   resolving,
   retrying,
+  showConnection = false,
   task,
 }: {
   /** 用户核对后给出明确结论；已生效的记为完成，未生效的转为可重试。 */
@@ -44,6 +49,8 @@ export function BrowserTaskRecord({
   onRetry: () => void;
   resolving?: boolean;
   retrying: boolean;
+  /** 列表内出现多种连接方式时才标注来源，否则每条重复同一信息。 */
+  showConnection?: boolean;
   task: BrowserTask;
 }) {
   const [decision, setDecision] = useState<boolean | null>(null);
@@ -60,14 +67,25 @@ export function BrowserTaskRecord({
             {KIND_LABELS[task.kind]}
           </h3>
           <TaskStatusBadge status={task.status as BrowseStatusKey} />
-          <Badge>{connectionCopy[task.target_driver as BrowserDriver].label}</Badge>
+          {showConnection && (
+            <Badge>
+              {connectionCopy[task.target_driver as BrowserDriver].label}
+            </Badge>
+          )}
         </div>
         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-500">
           {humanizeError(task.message)}
         </p>
-        <p className="meta-text mt-2 break-words">
-          {formatTime(task.updated_at)}
-          {task.attempts > 1 ? ` · 第 ${task.attempts} 次尝试` : ""}
+        <p className="meta-text mt-2 flex flex-wrap items-center gap-x-2">
+          <time dateTime={task.updated_at} title={formatFullTime(task.updated_at)}>
+            {formatRelativeTime(task.updated_at)}
+          </time>
+          {task.attempts > 1 && (
+            <>
+              <span aria-hidden className="text-stone-300">·</span>第{" "}
+              {task.attempts} 次尝试
+            </>
+          )}
         </p>
         {needsReview && (
           <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
@@ -76,12 +94,15 @@ export function BrowserTaskRecord({
             </p>
             {onResolve &&
               (decision === null ? (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {/* 两个结论互斥且后果不同：确认生效会结案，未生效才转为可重试。 */}
                   <ActionButton
+                    className="border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100"
                     disabled={resolving}
                     onClick={() => setDecision(true)}
                     variant="outline"
                   >
+                    <Check aria-hidden size={14} />
                     已经生效了
                   </ActionButton>
                   <ActionButton
@@ -89,6 +110,7 @@ export function BrowserTaskRecord({
                     onClick={() => setDecision(false)}
                     variant="outline"
                   >
+                    <X aria-hidden size={14} />
                     没有生效
                   </ActionButton>
                 </div>
@@ -148,11 +170,4 @@ function TaskStatusBadge({ status }: { status: BrowseStatusKey }) {
           ? "warning"
           : "neutral";
   return <Badge tone={tone}>{browseStatusCopy[status].label}</Badge>;
-}
-
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }

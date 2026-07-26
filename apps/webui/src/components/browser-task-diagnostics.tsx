@@ -46,13 +46,8 @@ export function BrowserTaskDiagnostics({
   );
   const [copyMessage, setCopyMessage] = useState("");
 
-  if (!diagnostics) {
-    return (
-      <p className="mt-2 break-words text-[11px] leading-5 text-stone-400">
-        本次任务没有可公开的页面诊断。
-      </p>
-    );
-  }
+  // 没有可公开诊断时不占位：这行提示对用户没有任何可操作价值。
+  if (!diagnostics) return null;
 
   const copyDiagnostics = async () => {
     try {

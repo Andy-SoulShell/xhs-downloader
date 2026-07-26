@@ -67,15 +67,16 @@ function BrowseActions({
 }: {
   monitor: ReturnType<typeof useBrowserMonitor>;
 }) {
+  // 全部记录来自同一连接方式时不必逐条标注。
+  const drivers = new Set(monitor.tasks.map((task) => task.target_driver));
+
   return (
-    <section aria-label="浏览操作" className="mt-8">
-      <PageHeading
-        description="点赞、收藏和评论的执行结果；不记录评论正文和页面内容。"
-        meta={`${monitor.tasks.length} 条`}
-        title="浏览操作"
-      />
+    <section aria-label="浏览操作">
+      <p className="mb-4 text-xs leading-5 text-stone-500">
+        点赞、收藏和评论的执行结果；不记录评论正文和页面内容。
+      </p>
       {monitor.tasks.length ? (
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           {monitor.tasks.map((task) => (
             <BrowserTaskRecord
               key={task.task_id}
@@ -84,6 +85,7 @@ function BrowseActions({
               }
               onRetry={() => void monitor.retry(task.task_id)}
               resolving={monitor.reviewingTaskId === task.task_id}
+              showConnection={drivers.size > 1}
               retrying={monitor.retryingTaskId === task.task_id}
               task={task}
             />

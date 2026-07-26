@@ -22,10 +22,10 @@ export function LinkComposer({
         className="flex flex-col gap-3 sm:flex-row sm:items-center"
         onSubmit={onSubmit}
       >
-        <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl bg-stone-50 px-4 ring-1 ring-stone-200 transition focus-within:bg-white focus-within:ring-stone-400">
+        <div className="group flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl bg-stone-50 px-4 ring-1 ring-stone-200 transition-all duration-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-red-400/70 focus-within:ring-offset-0 focus-within:shadow-[0_0_0_4px_rgba(239,68,68,0.1)]">
           <Link2
             aria-hidden
-            className="shrink-0 text-stone-400"
+            className="shrink-0 text-stone-400 transition-colors duration-200 group-focus-within:text-red-500"
             size={18}
           />
           <label className="min-w-0 flex-1" htmlFor="work-url">

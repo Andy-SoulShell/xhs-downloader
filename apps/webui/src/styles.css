@@ -55,12 +55,33 @@ button {
   backdrop-filter: blur(16px);
 }
 
+/* 分区切换时的入场：轻微上浮加淡入，给出内容已更换的反馈。 */
+@keyframes board-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* 列表中的一条记录；与 control-shell 的容器层次区分开。 */
 .record-card {
-  border: 1px solid rgb(28 25 23 / 10%);
+  border: 1px solid rgb(28 25 23 / 9%);
   border-radius: 16px;
   background: white;
-  padding: 1.25rem;
+  padding: 1rem 1.125rem;
 }
 
 /* 需要用户注意或采取行动的说明块。 */

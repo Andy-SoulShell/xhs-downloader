@@ -9,6 +9,12 @@ interface EmptyStateProps {
   compact?: boolean;
 }
 
+/**
+ * 内容为空时的占位。
+ *
+ * 不使用虚线边框和整屏留白：空状态本身不承载信息，占满视口只会让页面
+ * 显得空洞。这里收紧高度、弱化图标，把注意力留给下一步操作。
+ */
 export function EmptyState({
   description,
   icon: Icon,
@@ -19,19 +25,19 @@ export function EmptyState({
   return (
     <div
       aria-label={title}
-      className={`grid place-items-center rounded-3xl border border-dashed border-stone-300 bg-white/45 p-8 text-center ${
-        compact ? "min-h-56" : "min-h-[420px]"
+      className={`flex flex-col items-center justify-center px-6 text-center ${
+        compact ? "py-10" : "py-14"
       }`}
       role="status"
     >
-      <div className="max-w-sm">
-        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-red-50 text-red-500 ring-1 ring-red-100">
-          <Icon aria-hidden size={22} />
-        </span>
-        <p className="mt-4 text-lg font-semibold text-stone-800">{title}</p>
-        <p className="mt-2 text-sm leading-6 text-stone-500">{description}</p>
-        {action && <div className="mt-5 flex justify-center">{action}</div>}
-      </div>
+      <span className="grid size-11 place-items-center rounded-2xl bg-stone-100 text-stone-400">
+        <Icon aria-hidden size={20} strokeWidth={1.75} />
+      </span>
+      <p className="mt-4 text-sm font-semibold text-stone-700">{title}</p>
+      <p className="mt-1.5 max-w-xs text-xs leading-6 text-stone-500">
+        {description}
+      </p>
+      {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }

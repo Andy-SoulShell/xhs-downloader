@@ -88,7 +88,7 @@ describe("浏览器任务页面诊断", () => {
     expect(screen.queryByText(/synthetic-secret/)).not.toBeInTheDocument();
   });
 
-  it("无白名单诊断时展示安全空态且不提供复制入口", () => {
+  it("无白名单诊断时不占位也不提供复制入口", () => {
     render(
       <BrowserTaskDiagnostics
         result={{
@@ -98,9 +98,8 @@ describe("浏览器任务页面诊断", () => {
       />,
     );
 
-    expect(
-      screen.getByText("本次任务没有可公开的页面诊断。"),
-    ).toBeInTheDocument();
+    // 没有可公开诊断时整块不渲染，避免每条记录都挂一句无用提示。
+    expect(screen.queryByLabelText("安全页面诊断")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "复制安全页面诊断" }),
     ).not.toBeInTheDocument();

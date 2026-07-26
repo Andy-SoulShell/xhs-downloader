@@ -6,7 +6,6 @@ import type {
 } from "../lib/workspace";
 import { EmptyState } from "./empty-state";
 import { MasonryFeed } from "./masonry-feed";
-import { PageHeading } from "./page-heading";
 import { PostCard } from "./post-card";
 import {
   SegmentedControl,
@@ -48,11 +47,21 @@ export function PostLibrary({
   onSelectionChange,
 }: PostLibraryProps) {
   return (
-    <section aria-label="帖子列表" className="mt-8 min-w-0">
-      <PageHeading
-        actions={
+    <section aria-label="帖子列表" className="min-w-0">
+      {/* 标签条已标明这是我的帖子；此处只保留计数与筛选工具，不再重复标题。 */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-stone-500">
+          {posts.length ? (
+            <>
+              共 {posts.length} 个帖子
+              {completedCount > 0 && `，已下载 ${completedCount} 个`}
+            </>
+          ) : (
+            "粘贴链接后帖子会保存在这里"
+          )}
+        </p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <label className="flex h-11 min-w-60 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-stone-400 transition focus-within:border-stone-400 focus-within:ring-4 focus-within:ring-stone-100">
+          <label className="group flex h-11 min-w-60 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-stone-400 transition-all duration-200 focus-within:border-stone-400 focus-within:text-stone-600 focus-within:ring-4 focus-within:ring-stone-900/[0.06]">
             <Search aria-hidden size={16} />
             <input
               aria-label="搜索帖子"
@@ -79,10 +88,7 @@ export function PostLibrary({
             ))}
           </SegmentedControl>
         </div>
-        }
-        meta={`${posts.length} 个帖子 · ${completedCount} 个已下载`}
-        title="帖子列表"
-      />
+      </div>
 
       {visiblePosts.length ? (
         visiblePosts.length <= 5 ? (

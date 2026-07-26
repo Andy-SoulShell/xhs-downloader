@@ -135,6 +135,9 @@ export function humanizeError(message: string): string {
     [/请求失败（HTTP 404）/, "没有找到对应的内容。"],
     [/Failed to fetch|NetworkError|fetch failed/i, "连接不上本地服务，请确认它正在运行。"],
     [/尚未支持.*任务/, "当前连接方式不支持这个操作，换一种连接方式即可。"],
+    [/结果无法确认.*人工核对/, "这次操作可能已经生效，需要你确认一下。"],
+    [/执行失败，可安全重试/, "这次没有成功，可以直接重试。"],
+    [/浏览器任务暂时无法提交/, "现在提交不了，稍后再试。"],
     [/浏览器执行器|驱动/, "还没有选好连接小红书的方式，请先到设置里完成。"],
   ];
   for (const [pattern, friendly] of rules) {
