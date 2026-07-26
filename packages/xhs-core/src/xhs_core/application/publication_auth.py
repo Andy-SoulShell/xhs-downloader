@@ -65,6 +65,20 @@ class ExtensionCredentialService:
         """
         return await self._repository.list_extensions()
 
+    async def revoke(self, extension_id: str) -> bool:
+        """注销扩展登记，使其令牌立即失效。
+
+        正在运行的扩展会在下次认证失败后按登记流程重新申请令牌；
+        已卸载扩展或泄露令牌则从此无法再通过认证。
+
+        Args:
+            extension_id: 浏览器分配的扩展 ID。
+
+        Returns:
+            存在并成功注销登记时返回真。
+        """
+        return await self._repository.revoke_extension(extension_id)
+
 
 def _token_hash(token: str) -> str:
     return sha256(token.encode("utf-8")).hexdigest()

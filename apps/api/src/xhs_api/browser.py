@@ -89,6 +89,13 @@ def create_browser_router(
             for item in await credentials.list_presence()
         ]
 
+    @router.delete("/extensions/{extension_id}", status_code=204)
+    async def revoke_extension(extension_id: str, request: Request) -> Response:
+        _require_management(request, management_access)
+        if not await credentials.revoke(extension_id):
+            raise HTTPException(status_code=404, detail="扩展登记不存在")
+        return Response(status_code=204)
+
     @router.get("/tasks/{task_id}", response_model=BrowserTask)
     async def get_task(task_id: str, request: Request) -> BrowserTask:
         _require_management(request, management_access)

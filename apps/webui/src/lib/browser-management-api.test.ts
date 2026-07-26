@@ -8,6 +8,7 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
   retryBrowserTask,
+  revokeBrowserExtension,
 } from "./browser-management-api";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -56,5 +57,28 @@ describe("浏览器管理 API 客户端", () => {
       "/api/browser/tasks/synthetic-task/retry",
     ]);
     expect(fetchMock.mock.calls[2][1]).toEqual({ method: "POST" });
+  });
+
+  it("注销扩展登记并把失败详情抛给调用方", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: "扩展登记不存在" }), {
+          status: 404,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      revokeBrowserExtension("synthetic-extension"),
+    ).resolves.toBeUndefined();
+    await expect(revokeBrowserExtension("missing")).rejects.toThrow(
+      "扩展登记不存在",
+    );
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "/api/browser/extensions/synthetic-extension",
+    );
+    expect(fetchMock.mock.calls[0][1]).toEqual({ method: "DELETE" });
   });
 });

@@ -14,6 +14,7 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
   retryBrowserTask,
+  revokeBrowserExtension,
 } from "./browser-management-api";
 
 /** 浏览器扩展在线状态与最近任务审计数据。 */
@@ -23,9 +24,11 @@ export interface BrowserMonitorState {
   onlineCount: number;
   refreshing: boolean;
   retryingTaskId: string | null;
+  revokingExtensionId: string | null;
   tasks: BrowserTask[];
   refresh: () => Promise<void>;
   retry: (taskId: string) => Promise<void>;
+  revoke: (extensionId: string) => Promise<void>;
 }
 
 /** 轮询浏览器心跳与任务历史，并管理显式重试。 */
@@ -35,6 +38,9 @@ export function useBrowserMonitor(): BrowserMonitorState {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
+  const [revokingExtensionId, setRevokingExtensionId] = useState<
+    string | null
+  >(null);
   const mounted = useRef(true);
   // 版本号阻止较慢的旧轮询覆盖用户刚刷新得到的新快照。
   const refreshVersion = useRef(0);
@@ -99,6 +105,26 @@ export function useBrowserMonitor(): BrowserMonitorState {
     }
   }, []);
 
+  const revoke = useCallback(
+    async (extensionId: string) => {
+      if (mounted.current) setRevokingExtensionId(extensionId);
+      try {
+        await revokeBrowserExtension(extensionId);
+        if (mounted.current) setError("");
+        await refresh();
+      } catch (reason) {
+        if (mounted.current) {
+          setError(
+            reason instanceof Error ? reason.message : "扩展登记注销失败",
+          );
+        }
+      } finally {
+        if (mounted.current) setRevokingExtensionId(null);
+      }
+    },
+    [refresh],
+  );
+
   const onlineCount = useMemo(
     () => extensions.filter((item) => item.online).length,
     [extensions],
@@ -110,8 +136,10 @@ export function useBrowserMonitor(): BrowserMonitorState {
     onlineCount,
     refreshing,
     retryingTaskId,
+    revokingExtensionId,
     tasks,
     refresh,
     retry,
+    revoke,
   };
 }

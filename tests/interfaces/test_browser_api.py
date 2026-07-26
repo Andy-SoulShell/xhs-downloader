@@ -150,6 +150,38 @@ async def test_browser_api_enforces_local_and_extension_boundaries(
     assert no_lease.status_code == 401
 
 
+async def test_browser_api_revokes_extension_registration(tmp_path) -> None:
+    """确保本机可注销扩展登记且旧令牌随即失效。
+
+    Args:
+        tmp_path: Pytest 提供的临时目录。
+    """
+    api = create_api(AppSettings(work_path=tmp_path), lambda _: FakeService())
+    async with (
+        api.router.lifespan_context(api),
+        AsyncClient(
+            transport=ASGITransport(app=api),
+            base_url="http://127.0.0.1:5556",
+        ) as client,
+    ):
+        headers = await _register(client)
+        revoked = await client.delete(f"/browser/extensions/{_EXTENSION_ID}")
+        stale_claim = await client.post(
+            "/browser/extension/tasks/claim",
+            headers=headers,
+        )
+        missing = await client.delete(f"/browser/extensions/{_EXTENSION_ID}")
+        hostile = await client.delete(
+            f"/browser/extensions/{_EXTENSION_ID}",
+            headers={"Origin": "https://example.invalid"},
+        )
+
+    assert revoked.status_code == 204
+    assert stale_claim.status_code == 401
+    assert missing.status_code == 404
+    assert hostile.status_code == 403
+
+
 async def test_browser_api_rejects_remote_extension_endpoints(tmp_path) -> None:
     """确保扩展登记与令牌接口拒绝非回环连接，即使令牌本身有效。
 

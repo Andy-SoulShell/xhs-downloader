@@ -127,6 +127,27 @@ class SqliteExtensionCredentialRepository:
             for row in rows
         ]
 
+    async def revoke_extension(self, extension_id: str) -> bool:
+        """删除扩展登记，使其令牌立即失效。
+
+        Args:
+            extension_id: 浏览器扩展 ID。
+
+        Returns:
+            存在并成功删除登记时返回真。
+        """
+        await self._initialize()
+        async with connect(self._database) as database:
+            cursor = await database.execute(
+                """
+                DELETE FROM publication_extension
+                WHERE extension_id = ?
+                """,
+                (extension_id,),
+            )
+            await database.commit()
+        return cursor.rowcount > 0
+
     async def _initialize(self) -> None:
         if self._initialized:
             return

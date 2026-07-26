@@ -9,6 +9,7 @@ import {
   listBrowserExtensions,
   listBrowserTasks,
   retryBrowserTask,
+  revokeBrowserExtension,
 } from "../lib/browser-management-api";
 import { makeManagedBrowserControl } from "../test/managed-browser";
 import { BrowserMonitor } from "./browser-monitor";
@@ -17,6 +18,7 @@ vi.mock("../lib/browser-management-api", () => ({
   listBrowserExtensions: vi.fn(),
   listBrowserTasks: vi.fn(),
   retryBrowserTask: vi.fn(),
+  revokeBrowserExtension: vi.fn(),
 }));
 
 const extension: BrowserExtensionStatus = {
@@ -126,6 +128,33 @@ describe("浏览器状态与操作记录", () => {
       await screen.findByText("等待浏览器扩展重试"),
     ).toBeInTheDocument();
     expect(screen.getByText("浏览器扩展已连接")).toBeInTheDocument();
+  });
+
+  it("注销扩展登记需要二次确认并调用注销接口", async () => {
+    vi.mocked(revokeBrowserExtension).mockResolvedValue(undefined);
+    render(
+      <BrowserMonitor
+        account={null}
+        browserDriver="extension"
+        managedBrowser={makeManagedBrowserControl()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "注销" }));
+    expect(revokeBrowserExtension).not.toHaveBeenCalled();
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(revokeBrowserExtension).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "注销" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认注销" }));
+    await waitFor(() =>
+      expect(revokeBrowserExtension).toHaveBeenCalledWith(
+        extension.extension_id,
+      ),
+    );
   });
 
   it("刷新心跳并展示秒级和分钟级相对时间", async () => {

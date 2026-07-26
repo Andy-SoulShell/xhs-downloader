@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Activity,
   CircleAlert,
@@ -5,10 +6,12 @@ import {
   History,
   MonitorCheck,
   RefreshCw,
+  ShieldOff,
   UserRound,
 } from "lucide-react";
 import type {
   BrowserDriver,
+  BrowserExtensionStatus,
   BrowserLoginState,
 } from "@xhs-downloader/contracts";
 
@@ -97,6 +100,32 @@ export function BrowserMonitor({
         )}
       </section>
 
+      {monitor.extensions.length > 0 && (
+        <section aria-label="扩展登记" className="mt-8">
+          <div className="mb-3">
+            <div className="flex items-center gap-2">
+              <ShieldOff aria-hidden className="text-stone-500" size={18} />
+              <h2 className="text-lg font-semibold text-stone-950">扩展登记</h2>
+              <Badge>{monitor.extensions.length} 条</Badge>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-stone-500">
+              注销后旧令牌立即失效；仍在运行的扩展会自动重新登记，已卸载扩展
+              或疑似泄露的令牌则从此无法通过认证。
+            </p>
+          </div>
+          <div className="space-y-3">
+            {monitor.extensions.map((item) => (
+              <ExtensionRegistrationRow
+                extension={item}
+                key={item.extension_id}
+                onRevoke={() => void monitor.revoke(item.extension_id)}
+                revoking={monitor.revokingExtensionId === item.extension_id}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section aria-label="浏览器操作记录" className="mt-8">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -146,6 +175,73 @@ export function BrowserMonitor({
         )}
       </section>
     </>
+  );
+}
+
+function ExtensionRegistrationRow({
+  extension,
+  onRevoke,
+  revoking,
+}: {
+  extension: BrowserExtensionStatus;
+  onRevoke: () => void;
+  revoking: boolean;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <article className="control-shell min-w-0 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-mono text-xs text-stone-700">
+            {extension.extension_id}
+          </p>
+          <p className="mt-1 text-[11px] text-stone-400">
+            最近心跳 {formatRelativeTime(extension.last_seen_at)}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge tone={extension.online ? "success" : "neutral"}>
+            {extension.online ? "在线" : "离线"}
+          </Badge>
+          <ActionButton
+            disabled={revoking || confirming}
+            onClick={() => setConfirming(true)}
+            variant="outline"
+          >
+            注销
+          </ActionButton>
+        </div>
+      </div>
+      {confirming && (
+        <div
+          aria-label="确认注销扩展登记"
+          className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4"
+          role="alertdialog"
+        >
+          <p className="text-sm font-semibold text-amber-900">
+            确认注销该扩展登记吗？
+          </p>
+          <p className="mt-1 text-xs leading-5 text-amber-700">
+            该实例的能力令牌会立即失效；仍在运行的扩展会在下次连接时自动
+            重新登记。
+          </p>
+          <div className="mt-3 flex gap-2">
+            <ActionButton onClick={() => setConfirming(false)} variant="ghost">
+              取消
+            </ActionButton>
+            <ActionButton
+              disabled={revoking}
+              onClick={() => {
+                setConfirming(false);
+                onRevoke();
+              }}
+            >
+              确认注销
+            </ActionButton>
+          </div>
+        </div>
+      )}
+    </article>
   );
 }
 

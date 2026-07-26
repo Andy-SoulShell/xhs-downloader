@@ -27,3 +27,14 @@ export async function retryBrowserTask(taskId: string): Promise<BrowserTask> {
   );
   return parseResponse<BrowserTask>(response);
 }
+
+/** 注销一条扩展登记使其令牌立即失效；仍在运行的扩展会自动重新登记。 */
+export async function revokeBrowserExtension(
+  extensionId: string,
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/browser/extensions/${encodeURIComponent(extensionId)}`,
+    { method: "DELETE" },
+  );
+  await parseResponse<void>(response);
+}

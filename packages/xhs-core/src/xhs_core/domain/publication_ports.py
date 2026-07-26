@@ -229,6 +229,17 @@ class ExtensionCredentialRepository(Protocol):
         """
         ...
 
+    async def revoke_extension(self, extension_id: str) -> bool:
+        """删除扩展登记，使其令牌立即失效。
+
+        Args:
+            extension_id: 浏览器分配的扩展 ID。
+
+        Returns:
+            存在并成功删除登记时返回真。
+        """
+        ...
+
 
 class PublicationAssetStore(Protocol):
     """发布素材文件存储端口。"""

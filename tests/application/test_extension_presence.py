@@ -21,3 +21,22 @@ async def test_successful_validation_updates_extension_presence(tmp_path) -> Non
     assert await service.validate("synthetic-extension", token)
     refreshed = (await service.list_presence())[0]
     assert refreshed.last_seen_at >= registered.last_seen_at
+
+
+async def test_revocation_invalidates_token_until_reregistration(tmp_path) -> None:
+    """确保注销登记后旧令牌立即失效，重新登记可恢复认证。
+
+    Args:
+        tmp_path: pytest 提供的临时目录。
+    """
+    repository = SqliteExtensionCredentialRepository(tmp_path.joinpath("state.db"))
+    service = ExtensionCredentialService(repository)
+    token = await service.register("synthetic-extension")
+
+    assert await service.revoke("synthetic-extension")
+    assert not await service.validate("synthetic-extension", token)
+    assert await service.list_presence() == []
+    assert not await service.revoke("synthetic-extension")
+
+    renewed = await service.register("synthetic-extension")
+    assert await service.validate("synthetic-extension", renewed)
