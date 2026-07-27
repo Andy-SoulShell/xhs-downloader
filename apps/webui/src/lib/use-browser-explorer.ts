@@ -29,7 +29,12 @@ import {
 } from "./feed-pagination";
 import { useBrowserSession } from "./browser-session";
 
-/** 浏览器探索页面的读取状态和互动操作。 */
+/**
+ * 浏览器探索页面的读取状态和互动操作。
+ *
+ * 所有请求型方法都回报本次是否真的成功应用了结果；调用方据此决定要不要
+ * 清空用户已经输入的内容。
+ */
 export interface BrowserExplorer {
   account: BrowserLoginState | null;
   busy: boolean;
@@ -42,17 +47,17 @@ export interface BrowserExplorer {
   qrCode: LoginQrCodeResult | null;
   sessionMessage: string;
   task: BrowserTask | null;
-  checkLogin: () => Promise<void>;
+  checkLogin: () => Promise<boolean>;
   closeDetail: () => void;
-  deleteBrowserCookies: () => Promise<void>;
-  getLoginQrCode: () => Promise<void>;
-  loadFeeds: () => Promise<void>;
+  deleteBrowserCookies: () => Promise<boolean>;
+  getLoginQrCode: () => Promise<boolean>;
+  loadFeeds: () => Promise<boolean>;
   loadMore: () => Promise<void>;
-  openFeed: (feed: FeedSummary) => Promise<void>;
-  postComment: (content: string) => Promise<void>;
-  replyComment: (commentId: string, content: string) => Promise<void>;
-  search: (keyword: string) => Promise<void>;
-  setInteraction: (kind: "like" | "favorite", active: boolean) => Promise<void>;
+  openFeed: (feed: FeedSummary) => Promise<boolean>;
+  postComment: (content: string) => Promise<boolean>;
+  replyComment: (commentId: string, content: string) => Promise<boolean>;
+  search: (keyword: string) => Promise<boolean>;
+  setInteraction: (kind: "like" | "favorite", active: boolean) => Promise<boolean>;
 }
 
 /** 管理浏览器任务、竞态取消和类型化结果。 */
@@ -74,8 +79,17 @@ export function useBrowserExplorer(): BrowserExplorer {
   // 浏览器能力请求可能长轮询，卸载或新操作时取消旧请求以防陈旧结果覆盖当前页面。
   useEffect(() => () => activeRequest.current?.abort(), []);
 
+  /**
+   * 执行一次浏览器能力请求。
+   *
+   * @returns 是否真的成功应用了结果；失败时调用方据此保留用户已输入的内容，
+   *   此前一律当成功处理，评论失败也会把输入框清空。
+   */
   const runRequest = useCallback(
-    async <T>(request: (signal: AbortSignal) => Promise<T>, apply: (result: T) => void) => {
+    async <T>(
+      request: (signal: AbortSignal) => Promise<T>,
+      apply: (result: T) => void,
+    ): Promise<boolean> => {
       activeRequest.current?.abort();
       const controller = new AbortController();
       activeRequest.current = controller;
@@ -84,11 +98,13 @@ export function useBrowserExplorer(): BrowserExplorer {
       setSessionMessage("");
       try {
         const result = await request(controller.signal);
-        if (activeRequest.current !== controller) return;
+        if (activeRequest.current !== controller) return false;
         apply(result);
+        return true;
       } catch (reason) {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) return false;
         setError(reason instanceof Error ? reason.message : "能力请求执行失败");
+        return false;
       } finally {
         if (activeRequest.current === controller) {
           activeRequest.current = null;
@@ -215,7 +231,7 @@ export function useBrowserExplorer(): BrowserExplorer {
   const setInteraction = useCallback(
     (kind: "like" | "favorite", active: boolean) => {
       const request = desiredStateRequest(detail, kind, active);
-      if (!request) return Promise.resolve();
+      if (!request) return Promise.resolve(false);
       return runBrowser(request.path, request.payload, () =>
         setDetail((current) =>
           current
@@ -237,7 +253,7 @@ export function useBrowserExplorer(): BrowserExplorer {
       const request = commentRequest(detail, content);
       return request
         ? runBrowser(request.path, request.payload, () => undefined)
-        : Promise.resolve();
+        : Promise.resolve(false);
     },
     [detail, runBrowser],
   );
@@ -246,7 +262,7 @@ export function useBrowserExplorer(): BrowserExplorer {
       const request = replyRequest(detail, commentId, content);
       return request
         ? runBrowser(request.path, request.payload, () => undefined)
-        : Promise.resolve();
+        : Promise.resolve(false);
     },
     [detail, runBrowser],
   );

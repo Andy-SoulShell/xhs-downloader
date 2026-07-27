@@ -16,6 +16,8 @@ interface ContentBoardProps {
   filter: Filter;
   link: string;
   parsing: boolean;
+  /** 首次拉取本地帖子中；用于区分“还没读到”和“确实没有”。 */
+  postsLoading: boolean;
   posts: PostRecord[];
   query: string;
   visiblePosts: PostRecord[];
@@ -44,6 +46,7 @@ export function ContentBoard({
   filter,
   link,
   parsing,
+  postsLoading,
   online,
   posts,
   query,
@@ -101,6 +104,7 @@ export function ContentBoard({
                   parsing={parsing}
                   onSelectionChange={onSelectionChange}
                   posts={posts}
+                  postsLoading={postsLoading}
                   visiblePosts={visiblePosts}
                 />
               </div>

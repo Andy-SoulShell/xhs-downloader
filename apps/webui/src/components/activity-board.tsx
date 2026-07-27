@@ -1,9 +1,12 @@
-import { Download, History, Puzzle } from "lucide-react";
+import { Download, History, Puzzle, RotateCcw } from "lucide-react";
 
 import { groupBrowserTasks } from "../lib/browse-task-groups";
+import { humanizeError } from "../lib/terminology";
 import { useBrowserSession } from "../lib/browser-session";
 import type { BrowserMonitorState } from "../lib/use-browser-monitor";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
+import { ActionButton } from "./action-button";
+import { Badge } from "./badge";
 import { BoardTabs } from "./board-tabs";
 import { BrowserTaskRecord } from "./browser-task-record";
 import { EmptyState } from "./empty-state";
@@ -76,6 +79,22 @@ function BrowseActions({ monitor }: { monitor: BrowserMonitorState }) {
       <p className="mb-4 text-xs leading-5 text-stone-600">
         点赞、收藏和评论的执行结果；不记录评论正文和页面内容。
       </p>
+      {/* 读取失败必须说出来。此前 monitor.error 三处写入却无人渲染，
+          列表读不到就退化成“还没有浏览操作”，重试失败更是毫无反应。 */}
+      {monitor.error && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+          <Badge tone="danger">读取失败</Badge>
+          <span className="min-w-0 flex-1">{humanizeError(monitor.error)}</span>
+          <ActionButton
+            disabled={monitor.refreshing}
+            onClick={() => void monitor.refresh()}
+            variant="outline"
+          >
+            <RotateCcw aria-hidden className={monitor.refreshing ? "animate-spin" : ""} size={14} />
+            重新读取
+          </ActionButton>
+        </div>
+      )}
       {monitor.refreshing && !monitor.tasks.length ? (
         <SkeletonRecordList />
       ) : monitor.tasks.length ? (
@@ -95,12 +114,15 @@ function BrowseActions({ monitor }: { monitor: BrowserMonitorState }) {
           ))}
         </div>
       ) : (
-        <EmptyState
-          compact
-          description="点赞、收藏或评论之后，执行结果会显示在这里。"
-          icon={History}
-          title="还没有浏览操作"
-        />
+        // 读不到和确实没有是两回事：出错时上面已给出说明与重试，不再断言“还没有”。
+        !monitor.error && (
+          <EmptyState
+            compact
+            description="点赞、收藏或评论之后，执行结果会显示在这里。"
+            icon={History}
+            title="还没有浏览操作"
+          />
+        )
       )}
     </section>
   );

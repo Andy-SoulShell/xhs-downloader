@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 
 import type { FeedDetailResult } from "../lib/types";
@@ -79,4 +79,34 @@ it("执行器不支持评论时停用输入并说明原因", () => {
   // 点赞与收藏由受管浏览器实现，不受评论限制影响。
   expect(screen.getByRole("button", { name: "点赞" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "收藏" })).toBeEnabled();
+});
+
+it("评论失败保留已写内容，成功才清空", async () => {
+  const onComment = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+  render(
+    <BrowserDetail
+      busy={false}
+      detail={makeDetail()}
+      onClose={vi.fn()}
+      onComment={onComment}
+      onReply={vi.fn()}
+      onSetFavorite={vi.fn()}
+      onSetLike={vi.fn()}
+      writeEnabled
+    />,
+  );
+
+  const input = screen.getByLabelText("发表评论");
+  fireEvent.change(input, { target: { value: "合成评论" } });
+  fireEvent.click(screen.getByRole("button", { name: "评论" }));
+  fireEvent.click(await screen.findByRole("button", { name: "确认执行" }));
+
+  // 失败时清空等于让人白写一遍。
+  await waitFor(() => expect(onComment).toHaveBeenCalledWith("合成评论"));
+  expect(input).toHaveValue("合成评论");
+
+  fireEvent.click(screen.getByRole("button", { name: "评论" }));
+  fireEvent.click(await screen.findByRole("button", { name: "确认执行" }));
+  await waitFor(() => expect(input).toHaveValue(""));
 });

@@ -19,6 +19,8 @@ interface PostLibraryProps {
   online: boolean | null;
   /** 是否正在解析新粘贴的链接。 */
   parsing: boolean;
+  /** 首次拉取本地帖子中；此时显示骨架而不是空态。 */
+  postsLoading: boolean;
   onDownload: (post: PostRecord) => void;
   onFilterChange: (filter: Filter) => void;
   onForceChange: (id: string, force: boolean) => void;
@@ -37,6 +39,7 @@ export function PostLibrary({
   filter,
   online,
   parsing,
+  postsLoading,
   posts,
   visiblePosts,
   onDownload,
@@ -64,7 +67,7 @@ export function PostLibrary({
         ))}
       </SegmentedControl>
 
-      {parsing && !visiblePosts.length ? (
+      {(parsing || postsLoading) && !visiblePosts.length ? (
         <div className="feed-grid">
           <SkeletonFeedCard />
         </div>

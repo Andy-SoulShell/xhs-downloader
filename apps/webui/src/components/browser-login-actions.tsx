@@ -15,9 +15,9 @@ interface BrowserLoginActionsProps {
   managedStatus: ManagedBrowserStatus | null;
   message: string;
   qrCode: LoginQrCodeResult | null;
-  onCheckLogin: () => Promise<void>;
-  onDeleteCookies: () => Promise<void>;
-  onGetQrCode: () => Promise<void>;
+  onCheckLogin: () => Promise<unknown>;
+  onDeleteCookies: () => Promise<unknown>;
+  onGetQrCode: () => Promise<unknown>;
 }
 
 /** 提供浏览器登录检查、扫码登录和站点 Cookie 清理入口。 */

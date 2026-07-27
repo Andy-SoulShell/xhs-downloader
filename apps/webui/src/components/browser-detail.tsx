@@ -12,11 +12,11 @@ interface BrowserDetailProps {
   /** 当前执行器是否实现评论与回复；受管浏览器尚未支持。 */
   commentEnabled?: boolean;
   detail: FeedDetailResult;
-  onComment: (content: string) => Promise<void>;
+  onComment: (content: string) => Promise<boolean>;
   onClose: () => void;
-  onReply: (commentId: string, content: string) => Promise<void>;
-  onSetFavorite: (active: boolean) => Promise<void>;
-  onSetLike: (active: boolean) => Promise<void>;
+  onReply: (commentId: string, content: string) => Promise<boolean>;
+  onSetFavorite: (active: boolean) => Promise<unknown>;
+  onSetLike: (active: boolean) => Promise<unknown>;
   writeEnabled?: boolean;
 }
 
@@ -36,10 +36,10 @@ export function BrowserDetail({
   const [replyTarget, setReplyTarget] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState<{
     label: string;
-    run: () => Promise<void>;
+    run: () => Promise<unknown>;
   } | null>(null);
 
-  const queue = (label: string, run: () => Promise<void>) => setConfirmation({ label, run });
+  const queue = (label: string, run: () => Promise<unknown>) => setConfirmation({ label, run });
   const confirm = async () => {
     const action = confirmation;
     setConfirmation(null);
@@ -186,8 +186,11 @@ export function BrowserDetail({
                   onClick={() => {
                     const content = draft.trim();
                     queue(replyTarget ? "提交回复" : "发表评论", async () => {
-                      if (replyTarget) await onReply(replyTarget, content);
-                      else await onComment(content);
+                      const ok = replyTarget
+                        ? await onReply(replyTarget, content)
+                        : await onComment(content);
+                      // 失败时保留用户写的内容：清空等于让人白写一遍。
+                      if (!ok) return;
                       setDraft("");
                       setReplyTarget(null);
                     });

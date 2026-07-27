@@ -57,7 +57,10 @@ describe("帖子下载工作台", () => {
   it("解析帖子并以紧凑卡片加入瀑布流", async () => {
     render(<App />);
 
-    expect(screen.getByText("帖子列表还是空的")).toBeInTheDocument();
+    // 首屏是骨架不是空态：本地帖子还没读回来就断言“列表还是空的”，
+    // 老用户每次打开都会先被告知自己一个帖子都没有。
+    expect(screen.queryByText("帖子列表还是空的")).not.toBeInTheDocument();
+    expect(await screen.findByText("帖子列表还是空的")).toBeInTheDocument();
     expect(await screen.findAllByText("服务已连接")).toHaveLength(2);
     await addSyntheticPost();
 

@@ -61,6 +61,8 @@ function Workspace() {
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<WorkspaceView>("content");
   const [parsing, setParsing] = useState(false);
+  // 首次拉取本地帖子期间为真；缺了它老用户每次打开都先被告知“列表还是空的”。
+  const [postsLoading, setPostsLoading] = useState(true);
   const { notice, notify, open: toastOpen, setOpen: setToastOpen } = useNotice();
   const {
     createTask,
@@ -105,6 +107,9 @@ function Workspace() {
         if (!active) return;
         setOnline(false);
         notify(describeError(error, "读取本地帖子失败"), "error");
+      })
+      .finally(() => {
+        if (active) setPostsLoading(false);
       });
     return () => {
       active = false;
@@ -115,6 +120,7 @@ function Workspace() {
 
   const retryConnection = () => {
     setOnline(null);
+    setPostsLoading(true);
     void checkHealth().then(setOnline);
     setReloadKey((key) => key + 1);
   };
@@ -241,6 +247,7 @@ function Workspace() {
                   online={effectiveOnline}
                   onSelectionChange={(id, selected) => updatePost(id, { selected })}
                   parsing={parsing}
+                  postsLoading={postsLoading}
                   posts={managedPosts}
                   query={query}
                   visiblePosts={visiblePosts}
