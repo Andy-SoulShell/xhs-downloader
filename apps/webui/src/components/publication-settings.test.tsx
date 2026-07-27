@@ -12,7 +12,7 @@ describe("内容发布配置", () => {
     fireEvent.change(screen.getByLabelText("单个发布素材上限（字节）"), {
       target: { value: "2097152" },
     });
-    fireEvent.change(screen.getByLabelText("发布任务租约（秒）"), {
+    fireEvent.change(screen.getByLabelText("发布卡住多久后自动重试（秒）"), {
       target: { value: "600" },
     });
 

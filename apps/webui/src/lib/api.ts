@@ -100,7 +100,7 @@ function requireSettingsResponse(value: unknown): SettingsResponse {
     !("browser_driver" in values) ||
     !isBrowserDriver(values.browser_driver)
   ) {
-    throw new UserFacingError("本地服务返回了不支持的浏览器执行器");
+    throw new UserFacingError("本地服务返回了不支持的连接方式");
   }
   return value as SettingsResponse;
 }

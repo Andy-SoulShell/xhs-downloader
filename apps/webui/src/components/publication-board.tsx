@@ -78,13 +78,13 @@ export function PublicationBoard({
     return (
       <section aria-label="发布" className="mt-8 min-w-0">
         <PageHeading
-          description="发布任务必须先确认使用浏览器扩展还是受管浏览器。"
+          description="发布任务必须先确认使用浏览器扩展还是软件自带浏览器。"
           meta="等待配置"
           title="发布"
         />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.7fr)]">
           <EmptyState
-            description="暂时无法确认发布执行器，新建和提交已停用；已有任务仍可核对或恢复。"
+            description="暂时无法确认发布方式，新建和提交已停用；已有任务仍可核对或恢复。"
             icon={Send}
             title="尚未确认浏览器模式"
           />
@@ -95,7 +95,7 @@ export function PublicationBoard({
   }
 
   return (
-    <section aria-label="发布中心" className="mt-8 min-w-0">
+    <section aria-label="发布" className="mt-8 min-w-0">
       <PageHeading
         actions={
           <ActionButton disabled={creating} onClick={() => void createDraft()} size="large">
@@ -105,11 +105,11 @@ export function PublicationBoard({
         }
         description={
           confirmedDriver === "managed"
-            ? "由本地服务保存草稿和排期，受管浏览器使用专用用户目录完成私密发布。"
+            ? "由本地服务保存草稿和排期，软件自带浏览器使用专用用户目录完成私密发布。"
             : "由本地服务保存草稿和排期，浏览器扩展使用日常浏览器的已登录创作中心完成发布。"
         }
         meta={`${center.drafts.length} 份草稿 · ${center.tasks.length} 项任务`}
-        title="发布中心"
+        title="发布"
       />
 
       {center.error && (

@@ -104,12 +104,12 @@ describe("发布中心 API 客户端", () => {
     });
   });
 
-  it("只在显式确认后恢复受管浏览器中的原验证任务", async () => {
+  it("只在显式确认后恢复软件自带浏览器中的原验证任务", async () => {
     const result = {
       task_id: "synthetic-publication-task",
       resumed: true as const,
       publish_attempted: true,
-      message: "已确认安全验证完成，受管发布将在原页面继续",
+      message: "已确认安全验证完成，软件自带发布将在原页面继续",
     };
     const fetchMock = vi
       .fn()
@@ -151,7 +151,7 @@ describe("发布中心 API 客户端", () => {
     await expect(deletePublicationDraft("draft")).rejects.toThrow("草稿存在活跃任务");
   });
 
-  it("拒绝发布任务中的未知冻结执行器", async () => {
+  it("拒绝发布任务中的未知冻结连接方式", async () => {
     const invalid = {
       ...makePublicationTask(),
       target_driver: "future-browser-driver",
@@ -165,8 +165,8 @@ describe("发布中心 API 客户端", () => {
     );
 
     await expect(submitPublicationTask("synthetic-draft", "manual")).rejects.toThrow(
-      "发布任务返回了不支持的浏览器执行器",
+      "发布任务返回了不支持的连接方式",
     );
-    await expect(listPublicationTasks()).rejects.toThrow("发布任务返回了不支持的浏览器执行器");
+    await expect(listPublicationTasks()).rejects.toThrow("发布任务返回了不支持的连接方式");
   });
 });

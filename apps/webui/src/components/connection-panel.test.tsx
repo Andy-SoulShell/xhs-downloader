@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { BrowserExtensionStatus } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -100,6 +100,8 @@ describe("连接状态面板", () => {
     );
 
     expect(await screen.findByText("连接状态读取失败")).toBeInTheDocument();
-    expect(screen.getByText("软件自带浏览器")).toBeInTheDocument();
+    // 「软件自带浏览器」同时是上方控制卡的标题，这里只查连接状态那一块。
+    const status = screen.getByLabelText("连接状态");
+    expect(within(status).getByText("软件自带浏览器")).toBeInTheDocument();
   });
 });

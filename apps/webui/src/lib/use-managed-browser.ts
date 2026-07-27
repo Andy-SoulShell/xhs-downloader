@@ -7,7 +7,7 @@ import {
   type ManagedBrowserStatus,
 } from "./managed-browser-api";
 
-/** 受管浏览器控制区可观察的状态和操作。 */
+/** 软件自带浏览器控制区可观察的状态和操作。 */
 export interface ManagedBrowserControl {
   error: string;
   loading: boolean;
@@ -19,7 +19,7 @@ export interface ManagedBrowserControl {
   stop: () => Promise<void>;
 }
 
-/** 同步受管 Chromium 生命周期并阻止重入操作。 */
+/** 同步软件自带的 Chromium 生命周期并阻止重入操作。 */
 export function useManagedBrowser(): ManagedBrowserControl {
   const [status, setStatus] = useState<ManagedBrowserStatus | null>(null);
   const [error, setError] = useState("");
@@ -48,7 +48,7 @@ export function useManagedBrowser(): ManagedBrowserControl {
         }
       } catch (reason) {
         if (mounted.current) {
-          setError(reason instanceof Error ? reason.message : "受管浏览器操作失败");
+          setError(reason instanceof Error ? reason.message : "软件自带浏览器操作失败");
         }
       } finally {
         inFlight.current = false;
@@ -66,7 +66,7 @@ export function useManagedBrowser(): ManagedBrowserControl {
   const start = useCallback(() => run("start", startManagedBrowser), [run]);
   const stop = useCallback(() => run("stop", stopManagedBrowser), [run]);
 
-  // 受管进程可能从服务外退出；定时同步服务端生命周期，避免页面保留陈旧运行态。
+  // 软件自带进程可能从服务外退出；定时同步服务端生命周期，避免页面保留陈旧运行态。
   useEffect(() => {
     mounted.current = true;
     const initial = window.setTimeout(() => void refresh(), 0);

@@ -133,7 +133,7 @@ function loginGuidance(
   }
   if (browserDriver === "managed") {
     if (managedStatus?.state === "running") {
-      return "登录会在已启动的受管浏览器中完成，并保存在独立的本机用户目录。";
+      return "登录会在已启动的软件自带浏览器中完成，并保存在独立的本机用户目录。";
     }
     if (managedStatus && !managedStatus.installed) {
       return "没找到 Chrome 或 Chromium。装好之后到「设置」页顶部的「软件自带浏览器」里启动。";

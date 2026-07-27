@@ -90,7 +90,7 @@ export function DesktopServiceControl({
         <ConfirmDialog
           busy={busy !== null}
           confirmLabel="确认关闭"
-          description="正在进行的下载会中断，受管浏览器也会一并退出。已经下载完成的文件不受影响，下次启动后未完成的任务会重新排队。"
+          description="正在进行的下载会中断，软件自带浏览器也会一并退出。已经下载完成的文件不受影响，下次启动后未完成的任务会重新排队。"
           destructive
           onConfirm={() => void shutdown()}
           title="确认关闭本地服务吗？"

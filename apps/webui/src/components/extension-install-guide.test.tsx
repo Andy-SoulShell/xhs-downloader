@@ -21,7 +21,7 @@ describe("浏览器扩展安装引导", () => {
     ["managed", 0, "hidden"],
     ["extension", 0, "install"],
     ["extension", 2, "connected"],
-  ] as const)("根据执行器和在线数量计算 %s/%s 状态", (driver, count, mode) => {
+  ] as const)("根据连接方式和在线数量计算 %s/%s 状态", (driver, count, mode) => {
     expect(extensionGuideMode(driver, count)).toBe(mode);
   });
 

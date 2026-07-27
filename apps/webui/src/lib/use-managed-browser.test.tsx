@@ -15,7 +15,7 @@ vi.mock("./managed-browser-api", () => ({
   stopManagedBrowser: vi.fn(),
 }));
 
-describe("受管浏览器生命周期 Hook", () => {
+describe("软件自带浏览器生命周期 Hook", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.mocked(getManagedBrowserStatus).mockResolvedValue(makeManagedBrowserStatus());
@@ -70,7 +70,7 @@ describe("受管浏览器生命周期 Hook", () => {
 
   it("保留旧状态并展示结构化操作错误", async () => {
     vi.mocked(startManagedBrowser).mockRejectedValueOnce(
-      new Error("受管浏览器用户目录已由另一个服务实例占用"),
+      new Error("软件自带浏览器用户目录已由另一个服务实例占用"),
     );
     const { result } = renderHook(() => useManagedBrowser());
     await act(() => vi.advanceTimersByTimeAsync(0));

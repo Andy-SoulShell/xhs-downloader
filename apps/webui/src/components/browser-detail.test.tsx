@@ -57,7 +57,7 @@ it("为空资料和评论提供稳定回退文案", () => {
   expect(onClose).toHaveBeenCalled();
 });
 
-it("执行器不支持评论时停用输入并说明原因", () => {
+it("连接方式不支持评论时停用输入并说明原因", () => {
   render(
     <BrowserDetail
       busy={false}
@@ -72,11 +72,11 @@ it("执行器不支持评论时停用输入并说明原因", () => {
   );
 
   expect(
-    screen.getByText("受管浏览器尚未支持评论与回复，请切换到浏览器扩展执行器。"),
+    screen.getByText("软件自带浏览器尚未支持评论与回复，请切换到浏览器扩展连接方式。"),
   ).toBeInTheDocument();
   expect(screen.getByLabelText("发表评论")).toBeDisabled();
   expect(screen.getByRole("button", { name: "评论" })).toBeDisabled();
-  // 点赞与收藏由受管浏览器实现，不受评论限制影响。
+  // 点赞与收藏由软件自带浏览器实现，不受评论限制影响。
   expect(screen.getByRole("button", { name: "点赞" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "收藏" })).toBeEnabled();
 });

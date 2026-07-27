@@ -127,7 +127,7 @@ export function PublicationEditor({
         if (targetDriver === "managed") {
           popup?.close();
           onNotify(
-            mode === "manual" ? "发布任务已交给受管浏览器" : "官方定时任务已交给受管浏览器设置",
+            mode === "manual" ? "发布任务已交给软件自带浏览器" : "官方定时任务已交给软件自带浏览器设置",
           );
         } else {
           if (popup) {

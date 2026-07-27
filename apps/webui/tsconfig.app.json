@@ -15,7 +15,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vite/client", "vitest/globals"]
+    // 术语闸门要读源码目录来查禁用词，因此测试里用得到 node:fs 与 process。
+    "types": ["vite/client", "vitest/globals", "node"]
   },
   "include": ["src"]
 }

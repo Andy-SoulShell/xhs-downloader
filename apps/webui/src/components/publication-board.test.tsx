@@ -38,13 +38,13 @@ describe("发布中心界面", () => {
     render(<PublicationBoard onNotify={vi.fn()} />);
 
     expect(
-      screen.getByText("暂时无法确认发布执行器，新建和提交已停用；已有任务仍可核对或恢复。"),
+      screen.getByText("暂时无法确认发布方式，新建和提交已停用；已有任务仍可核对或恢复。"),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "立即发布" })).not.toBeInTheDocument();
   });
 
-  it("未知执行器阻止新提交但保留冻结任务的恢复入口", async () => {
+  it("未知连接方式阻止新提交但保留冻结任务的恢复入口", async () => {
     vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
     vi.mocked(listPublicationTasks).mockResolvedValue([
       makePublicationTask({
@@ -130,7 +130,7 @@ describe("发布中心界面", () => {
     const task = makePublicationTask({
       status: "awaiting_verification",
       target_driver: "managed",
-      message: "请在受管浏览器完成验证",
+      message: "请在软件自带浏览器完成验证",
     });
     vi.mocked(listPublicationDrafts).mockResolvedValue([draft]);
     vi.mocked(listPublicationTasks).mockResolvedValue([task]);
@@ -138,7 +138,7 @@ describe("发布中心界面", () => {
       task_id: task.task_id,
       resumed: true,
       publish_attempted: false,
-      message: "已确认安全验证完成，受管发布将在原页面继续",
+      message: "已确认安全验证完成，软件自带发布将在原页面继续",
     });
     const onNotify = vi.fn();
     render(<PublicationBoard browserDriver="managed" onNotify={onNotify} />);

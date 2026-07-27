@@ -13,7 +13,7 @@ const STATE_LABELS: Record<ManagedBrowserState, string> = {
   error: "异常",
 };
 
-/** 展示并控制受管 Chromium 的普通用户生命周期。 */
+/** 展示并控制软件自带的 Chromium 的普通用户生命周期。 */
 export function ManagedBrowserPanel({
   control,
   selected,
@@ -33,14 +33,14 @@ export function ManagedBrowserPanel({
   const warning = hintIsWarning(status, control.error);
 
   return (
-    <section aria-label="受管浏览器控制" className="control-shell mt-6 min-w-0 p-4 sm:p-5">
+    <section aria-label="软件自带浏览器控制" className="control-shell mt-6 min-w-0 p-4 sm:p-5">
       <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Monitor aria-hidden className="text-red-500" size={18} />
-            <h2 className="text-sm font-semibold text-stone-900">受管浏览器</h2>
+            <h2 className="text-sm font-semibold text-stone-900">软件自带浏览器</h2>
             <Badge tone={selected ? "accent" : "neutral"}>
-              {selected ? "当前执行器" : "可选执行器"}
+              {selected ? "当前使用" : "可以选用"}
             </Badge>
             <Badge tone={statusTone(status?.state, control.operation)}>
               {control.loading
@@ -56,7 +56,7 @@ export function ManagedBrowserPanel({
           </div>
           <p className="mt-2 break-words text-xs leading-5 text-stone-600">
             {status?.message ||
-              (control.loading ? "正在检测本机 Chrome 或 Chromium。" : "尚未取得受管浏览器状态。")}
+              (control.loading ? "正在检测本机 Chrome 或 Chromium。" : "尚未取得软件自带浏览器状态。")}
           </p>
           <p className="mt-1 break-words text-[11px] leading-5 text-stone-400">
             {installationSummary(status)}
@@ -64,7 +64,7 @@ export function ManagedBrowserPanel({
         </div>
         <div className="flex min-w-0 flex-wrap gap-2">
           <ActionButton
-            aria-label="刷新受管浏览器状态"
+            aria-label="刷新软件自带浏览器状态"
             disabled={busy}
             onClick={() => void control.refresh()}
             variant="outline"
@@ -130,16 +130,16 @@ function statusTone(
 
 function repairHint(status: ManagedBrowserControl["status"], error: string): string {
   if (isLockConflict(error)) {
-    return "请关闭另一个正在使用此受管浏览器目录的 xhs-downloader 服务，再刷新状态。";
+    return "请关闭另一个正在使用此软件自带浏览器目录的 xhs-downloader 服务，再刷新状态。";
   }
   if (error.includes("未检测到")) {
-    return "请安装 Chrome 或 Chromium；若已经安装，请在设置中填写受管浏览器可执行文件。";
+    return "请安装 Chrome 或 Chromium；若已经安装，请在设置中填写软件自带浏览器可执行文件。";
   }
   if (error) {
     return "请先刷新状态；若仍失败，请检查浏览器可执行文件设置和本机服务日志。";
   }
   if (status && !status.installed) {
-    return "请安装 Chrome 或 Chromium；若已经安装，请在设置中填写受管浏览器可执行文件。";
+    return "请安装 Chrome 或 Chromium；若已经安装，请在设置中填写软件自带浏览器可执行文件。";
   }
   if (status?.state === "error") {
     return "请先停止后重新启动；若持续失败，请检查浏览器可执行文件设置和本机服务日志。";

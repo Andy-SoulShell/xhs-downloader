@@ -7,7 +7,7 @@ interface PublicationVerificationResumeProps {
   onResume: () => Promise<void>;
 }
 
-/** 引导用户在受管浏览器完成验证，并在二次确认后恢复原发布页面。 */
+/** 引导用户在软件自带浏览器完成验证，并在二次确认后恢复原发布页面。 */
 export function PublicationVerificationResume({ onResume }: PublicationVerificationResumeProps) {
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +38,7 @@ export function PublicationVerificationResume({ onResume }: PublicationVerificat
         <div className="min-w-0">
           <p className="text-xs font-semibold text-amber-950">原发布任务已暂停，正在等待页面验证</p>
           <p className="mt-1 text-[11px] leading-5 text-amber-900">
-            请切换到受管浏览器，在当前创作页完成扫码或安全验证。不要关闭或刷新该页面。
+            请切换到软件自带浏览器，在当前创作页完成扫码或安全验证。不要关闭或刷新该页面。
           </p>
         </div>
       </div>
@@ -57,7 +57,7 @@ export function PublicationVerificationResume({ onResume }: PublicationVerificat
           className="mt-3 rounded-lg border border-amber-300 bg-white p-3"
           role="alertdialog"
         >
-          <p className="text-xs font-semibold text-stone-900">确认已经在受管浏览器完成验证？</p>
+          <p className="text-xs font-semibold text-stone-900">确认已经在软件自带浏览器完成验证？</p>
           <p className="mt-1 text-[11px] leading-5 text-stone-600">
             确认后只恢复当前暂停页面，不会新建任务。若页面仍显示验证，请先返回完成。
           </p>

@@ -22,7 +22,7 @@ export function normalizePublicationProducts(value: string): string[] {
     .slice(0, 20);
 }
 
-/** 按提交瞬间选定的执行器收紧受管浏览器首期发布能力。 */
+/** 按提交瞬间选定的连接方式收紧软件自带浏览器首期发布能力。 */
 export function preparePublicationSubmission(
   input: PublicationDraftInput,
   driver: BrowserDriver,
@@ -78,17 +78,17 @@ export function publicationCreatorUrl(task: PublicationTask): string {
   return url.toString();
 }
 
-/** 校验发布任务冻结的执行器；未知值直接拒绝，禁止猜测为扩展。 */
+/** 校验发布任务冻结的连接方式；未知值直接拒绝，禁止猜测为扩展。 */
 export function requirePublicationDriver(driver: unknown): BrowserDriver {
   if (!isBrowserDriver(driver)) {
-    throw new UserFacingError("发布任务返回了不支持的浏览器执行器");
+    throw new UserFacingError("发布任务返回了不支持的连接方式");
   }
   return driver;
 }
 
-/** 返回已确认发布执行器的用户文案。 */
+/** 返回已确认发布方式的用户文案。 */
 export function publicationDriverLabel(driver: unknown): string {
-  return requirePublicationDriver(driver) === "managed" ? "受管浏览器" : "浏览器扩展";
+  return requirePublicationDriver(driver) === "managed" ? "软件自带浏览器" : "浏览器扩展";
 }
 
 /** 校验并转换本地定时或平台官方定时的目标时间。 */

@@ -5,7 +5,7 @@ export function capabilityRouteSource(
   route: Pick<CapabilityRoute, "provider" | "browser_driver">,
 ): string {
   if (route.provider === "http") return "Cookie HTTP";
-  if (route.browser_driver === "managed") return "受管浏览器";
+  if (route.browser_driver === "managed") return "软件自带浏览器";
   if (route.browser_driver === "extension") return "浏览器扩展";
   return "浏览器";
 }

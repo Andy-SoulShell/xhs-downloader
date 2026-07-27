@@ -153,7 +153,7 @@ function SettingsForm({
     <section aria-label="配置管理" className="mt-8 min-w-0">
       {/* 这里是设置页里的一节，不是一整页：页面标题由工作台给出，
           此前用 PageHeading 会在同一页排出第二个 h1，而且它排在
-          受管浏览器与连接方式两块之后，页面标题反倒出现在页面中部。 */}
+          软件自带浏览器与连接方式两块之后，页面标题反倒出现在页面中部。 */}
       <div className="mb-4 md:mb-6">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 className="text-xl font-semibold tracking-tight text-stone-950">服务配置</h2>
@@ -234,13 +234,13 @@ const settingLabels: Record<string, string> = {
   server_port: "监听端口",
   log_level: "日志级别",
   publish_max_asset_size: "发布素材上限",
-  publish_lease_seconds: "发布任务租约",
-  browser_task_lease_seconds: "浏览器任务租约",
+  publish_lease_seconds: "发布卡住后自动重试的时间",
+  browser_task_lease_seconds: "浏览操作卡住后自动重试的时间",
   route_strategy: "只读路由策略",
-  browser_driver: "浏览器执行器",
-  managed_browser_executable: "受管 Chromium 可执行文件",
-  managed_browser_headless: "受管浏览器无头模式",
-  managed_browser_offscreen: "受管浏览器窗口移出屏幕",
-  managed_browser_startup_timeout: "受管浏览器启动超时",
-  managed_browser_shutdown_timeout: "受管浏览器关闭超时",
+  browser_driver: "连接方式",
+  managed_browser_executable: "软件自带的 Chromium 可执行文件",
+  managed_browser_headless: "软件自带浏览器无头模式",
+  managed_browser_offscreen: "软件自带浏览器窗口移出屏幕",
+  managed_browser_startup_timeout: "软件自带浏览器启动超时",
+  managed_browser_shutdown_timeout: "软件自带浏览器关闭超时",
 };

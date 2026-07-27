@@ -9,7 +9,7 @@ import { Metric } from "./metric";
 
 interface BrowserDetailProps {
   busy: boolean;
-  /** 当前执行器是否实现评论与回复；受管浏览器尚未支持。 */
+  /** 当前使用是否实现评论与回复；软件自带浏览器尚未支持。 */
   commentEnabled?: boolean;
   detail: FeedDetailResult;
   onComment: (content: string) => Promise<boolean>;
@@ -149,12 +149,12 @@ export function BrowserDetail({
             <div className="mt-5 rounded-2xl border border-stone-200 bg-white p-4">
               {!writeEnabled && (
                 <p className="mb-3 text-xs leading-5 text-amber-700">
-                  浏览器执行器尚未确认，互动、评论和回复已停用。
+                  连接方式尚未确认，互动、评论和回复已停用。
                 </p>
               )}
               {writeEnabled && !commentEnabled && (
                 <p className="mb-3 text-xs leading-5 text-amber-700">
-                  受管浏览器尚未支持评论与回复，请切换到浏览器扩展执行器。
+                  软件自带浏览器尚未支持评论与回复，请切换到浏览器扩展连接方式。
                 </p>
               )}
               <label className="text-sm font-semibold text-stone-900" htmlFor="browser-comment">

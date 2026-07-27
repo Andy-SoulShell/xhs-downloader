@@ -206,7 +206,7 @@ describe("浏览器探索工作台", () => {
     expect(await screen.findByText("能力请求执行失败")).toBeInTheDocument();
   });
 
-  it("执行器未确认时只允许读取并禁用会话与写操作", async () => {
+  it("连接方式未确认时只允许读取并禁用会话与写操作", async () => {
     renderWithSession(<BrowserBoard />);
 
     expect(screen.getByText("还没有选好连接方式，请先到设置里完成")).toBeInTheDocument();

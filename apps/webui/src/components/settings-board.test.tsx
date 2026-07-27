@@ -97,7 +97,7 @@ describe("服务配置界面", () => {
     );
   });
 
-  it("保存受管 Chromium 路径并允许清空恢复自动检测", async () => {
+  it("保存软件自带的 Chromium 路径并允许清空恢复自动检测", async () => {
     const onSave = vi.fn().mockResolvedValue(makeSettingsResponse({ restart_required: true }));
     render(
       <SettingsBoard

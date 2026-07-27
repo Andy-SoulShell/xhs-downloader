@@ -23,8 +23,8 @@ export function PublicationSettings({
         value={values.publish_max_asset_size}
       />
       <NumberSetting
-        help="浏览器执行器无状态回传后重新排队或转为待确认的时间，范围 60–1800 秒。"
-        label="发布任务租约（秒）"
+        help="发布中断后等这么久就自动重新排队；太短会重复发布。范围 60–1800 秒。"
+        label="发布卡住多久后自动重试（秒）"
         max={1800}
         min={60}
         onChange={(value) => onChange("publish_lease_seconds", value)}

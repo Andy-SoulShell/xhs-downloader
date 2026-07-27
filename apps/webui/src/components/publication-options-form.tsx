@@ -64,14 +64,14 @@ export function PublicationOptionsForm({
           disabled={managed}
           onChange={(event) => onProductsChange(event.target.value)}
           placeholder={
-            managed ? "受管浏览器首期不支持绑定商品" : "每行一个商品名称或商品 ID；发布前会再次确认"
+            managed ? "软件自带浏览器暂时不能绑定商品" : "每行一个商品名称或商品 ID；发布前会再次确认"
           }
           value={managed ? "" : products}
         />
       </label>
       <p className="mt-2 text-[11px] leading-5 text-stone-600">
         {managed
-          ? "受管浏览器首期固定为仅自己可见且不绑定商品。"
+          ? "用软件自带浏览器发布时固定为仅自己可见，也不能绑定商品。"
           : "商品搜索只有一个明确匹配时才会绑定；零个或多个匹配都会中止发布。"}
       </p>
     </fieldset>

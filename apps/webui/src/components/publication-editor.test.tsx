@@ -180,7 +180,7 @@ describe("发布草稿编辑器", () => {
     expect(properties.onNotify).toHaveBeenCalledWith("官方定时任务已交给扩展设置");
   });
 
-  it("受管模式不打开日常浏览器并前置限制发布选项", async () => {
+  it("软件自带浏览器模式不打开日常浏览器并前置限制发布选项", async () => {
     const open = vi.spyOn(window, "open");
     const properties = renderEditor({
       browserDriver: "managed",
@@ -194,7 +194,7 @@ describe("发布草稿编辑器", () => {
     expect(screen.getByLabelText("可见范围")).toBeDisabled();
     expect(screen.getByLabelText("可见范围")).toHaveValue("private");
     expect(screen.getByLabelText("绑定商品")).toBeDisabled();
-    expect(screen.getByText("受管浏览器首期固定为仅自己可见且不绑定商品。")).toBeInTheDocument();
+    expect(screen.getByText("用软件自带浏览器发布时固定为仅自己可见，也不能绑定商品。")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "保存草稿" }));
     await waitFor(() => expect(properties.onSave).toHaveBeenCalled());
@@ -216,7 +216,7 @@ describe("发布草稿编辑器", () => {
       expect.objectContaining({ visibility: "private", products: [] }),
     );
     expect(open).not.toHaveBeenCalled();
-    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给受管浏览器");
+    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给软件自带浏览器");
   });
 
   it("视频草稿禁用原创声明，并可撤回发布确认", () => {

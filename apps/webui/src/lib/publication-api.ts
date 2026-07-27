@@ -92,7 +92,7 @@ export async function submitPublicationTask(
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
-/** 读取发布任务并拒绝未知的冻结浏览器执行器。 */
+/** 读取发布任务并拒绝未知的冻结连接方式。 */
 export async function listPublicationTasks(): Promise<PublicationTask[]> {
   const response = await fetch(`${API_BASE}/publication/tasks`);
   const value = await parseResponse<unknown>(response);
@@ -106,7 +106,7 @@ export async function retryPublicationTask(taskId: string): Promise<PublicationT
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
-/** 显式确认验证已完成，并恢复同一受管浏览器页面中的发布任务。 */
+/** 显式确认验证已完成，并恢复同一软件自带浏览器页面中的发布任务。 */
 export async function resumePublicationVerification(
   taskId: string,
 ): Promise<PublicationVerificationResumeResult> {
@@ -148,7 +148,7 @@ function requirePublicationTask(value: unknown): PublicationTask {
     !("target_driver" in value) ||
     !isBrowserDriver(value.target_driver)
   ) {
-    throw new UserFacingError("发布任务返回了不支持的浏览器执行器");
+    throw new UserFacingError("发布任务返回了不支持的连接方式");
   }
   return value as PublicationTask;
 }

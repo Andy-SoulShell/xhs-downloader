@@ -61,7 +61,7 @@ export function StorageSettings({
       />
       <ToggleSetting
         checked={values.download_record}
-        description="使用内容指纹、文件大小和 SHA-256 判断跳过。"
+        description="按文件内容和大小判断是不是已经下过。"
         label="下载记录与校验"
         onChange={(value) => onChange("download_record", value)}
       />

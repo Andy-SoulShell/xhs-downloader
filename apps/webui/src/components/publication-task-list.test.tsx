@@ -89,7 +89,7 @@ describe("发布任务列表", () => {
     expect(screen.getByText("还没有发布任务")).toBeInTheDocument();
   });
 
-  it("受管任务不提供日常浏览器创作页并显示冻结执行器", () => {
+  it("软件自带任务不提供日常浏览器创作页并显示冻结连接方式", () => {
     render(
       <PublicationTaskList
         onCancel={vi.fn()}

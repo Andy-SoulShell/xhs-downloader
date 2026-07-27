@@ -7,7 +7,7 @@ import {
   stopManagedBrowser,
 } from "./managed-browser-api";
 
-describe("受管浏览器 API 客户端", () => {
+describe("软件自带浏览器 API 客户端", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

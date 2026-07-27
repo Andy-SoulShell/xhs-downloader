@@ -98,7 +98,7 @@ export async function executeBrowserOperation<T>(
   if (task.status === "failed" || task.status === "needs_review") {
     throw new UserFacingError(task.message);
   }
-  throw new UserFacingError(`浏览器执行器尚未完成任务 ${task.task_id.slice(0, 8)}`);
+  throw new UserFacingError(`连接方式尚未完成任务 ${task.task_id.slice(0, 8)}`);
 }
 
 /** 显式确认后清理指定登录会话的 Cookie。 */
@@ -122,6 +122,6 @@ export async function deleteCookies(
     throw new UserFacingError(result.message);
   }
   throw new UserFacingError(
-    `浏览器执行器尚未完成 Cookie 清理${result.task_id ? ` ${result.task_id.slice(0, 8)}` : ""}`,
+    `连接方式尚未完成 Cookie 清理${result.task_id ? ` ${result.task_id.slice(0, 8)}` : ""}`,
   );
 }

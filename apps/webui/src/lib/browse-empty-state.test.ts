@@ -13,12 +13,12 @@ describe("浏览结果空状态", () => {
   it("失败时把原因摆到结果区，而不是让人重做刚失败的动作", () => {
     const state = browseEmptyState({
       busy: false,
-      error: "受管浏览器还没启动",
+      error: "软件自带浏览器还没启动",
       fetched: false,
     });
 
     expect(state.title).toBe("没能取到内容");
-    expect(state.description).toBe("受管浏览器还没启动。");
+    expect(state.description).toBe("软件自带浏览器还没启动。");
     // 此前这里写的是“点上面的「看看推荐」”，等于让人把刚失败的那一步再做一遍。
     expect(state.description).not.toContain("看看推荐");
   });

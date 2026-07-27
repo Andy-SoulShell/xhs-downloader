@@ -53,7 +53,7 @@ function localDateTime(instant: Date): string {
     .slice(0, 16);
 }
 
-describe("受管浏览器发布编辑器", () => {
+describe("软件自带浏览器发布编辑器", () => {
   it("本地定时冻结私密无商品任务且不打开日常浏览器", async () => {
     const open = vi.spyOn(window, "open");
     const properties = renderEditor();
@@ -67,11 +67,11 @@ describe("受管浏览器发布编辑器", () => {
     expect(properties.onSave).toHaveBeenCalledWith(
       expect.objectContaining({ visibility: "private", products: [] }),
     );
-    expect(properties.onNotify).toHaveBeenCalledWith("本地定时任务已保存，届时由受管浏览器执行");
+    expect(properties.onNotify).toHaveBeenCalledWith("本地定时任务已保存，届时由软件自带浏览器执行");
     expect(open).not.toHaveBeenCalled();
   });
 
-  it("官方定时交给受管浏览器且不打开扩展创作页", async () => {
+  it("官方定时交给软件自带浏览器且不打开扩展创作页", async () => {
     const open = vi.spyOn(window, "open");
     const properties = renderEditor();
     const scheduled = new Date(Date.now() + 2 * 60 * 60_000);
@@ -85,7 +85,7 @@ describe("受管浏览器发布编辑器", () => {
     expect(properties.onSave).toHaveBeenCalledWith(
       expect.objectContaining({ visibility: "private", products: [] }),
     );
-    expect(properties.onNotify).toHaveBeenCalledWith("官方定时任务已交给受管浏览器设置");
+    expect(properties.onNotify).toHaveBeenCalledWith("官方定时任务已交给软件自带浏览器设置");
     expect(open).not.toHaveBeenCalled();
   });
 
@@ -138,7 +138,7 @@ describe("受管浏览器发布编辑器", () => {
 
     await waitFor(() => expect(popup.close).toHaveBeenCalled());
     expect(popup.location.href).toBe("");
-    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给受管浏览器");
+    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给软件自带浏览器");
   });
 
   it("未知冻结驱动关闭弹窗并停止后续导航", async () => {
@@ -161,7 +161,7 @@ describe("受管浏览器发布编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
 
     await waitFor(() =>
-      expect(properties.onNotify).toHaveBeenCalledWith("发布任务返回了不支持的浏览器执行器"),
+      expect(properties.onNotify).toHaveBeenCalledWith("发布任务返回了不支持的连接方式"),
     );
     expect(popup.close).toHaveBeenCalled();
     expect(popup.location.href).toBe("");

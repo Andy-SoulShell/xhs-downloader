@@ -145,11 +145,11 @@ describe("浏览器登录与会话操作", () => {
     [
       "managed",
       makeManagedBrowserStatus({ state: "running", cdp_port: 9222 }),
-      "登录会在已启动的受管浏览器中完成",
+      "登录会在已启动的软件自带浏览器中完成",
       false,
     ],
     ["managed", makeManagedBrowserStatus({ state: "stopped" }), "软件自带的浏览器还没启动", true],
-  ] as const)("根据 %s 执行器展示首次登录引导", (browserDriver, status, guidance, disabled) => {
+  ] as const)("根据 %s 连接方式展示首次登录引导", (browserDriver, status, guidance, disabled) => {
     vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl({ status }));
     renderWithSession(<BrowserBoard browserDriver={browserDriver} />);
 
