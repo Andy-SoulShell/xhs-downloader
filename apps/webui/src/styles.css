@@ -55,6 +55,30 @@ button {
   backdrop-filter: blur(16px);
 }
 
+/* 列表卡片入场：轻微上浮加淡入，按序错开，让内容像被逐条放下而不是齐刷刷弹出。 */
+@keyframes feed-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feed-card {
+  animation: feed-card-in 320ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  /* 错开量随序号递增但设上限：32 张卡片各等 40ms 会让最后一张迟到一秒多。 */
+  animation-delay: calc(min(var(--enter-index, 0), 9) * 45ms);
+}
+
+/* 首次布局前不要过渡：瀑布流的初始 transform 是 none，
+   直接过渡会让所有卡片从左上角飞向各自位置。 */
+.feed-masonry:not([data-settled]) .feed-masonry-item {
+  transition: none;
+}
+
 /* 分区切换时的入场：轻微上浮加淡入，给出内容已更换的反馈。 */
 @keyframes board-tab-in {
   from {
@@ -73,6 +97,9 @@ button {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    /* 延迟也要清零：只压缩时长会让错开入场变成逐个闪现，比平滑动画更难受。 */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
   }
 }
 

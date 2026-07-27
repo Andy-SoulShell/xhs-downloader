@@ -1,4 +1,5 @@
 import { GalleryVerticalEnd, PlugZap, RefreshCw, Search } from "lucide-react";
+import type { CSSProperties } from "react";
 
 import { libraryEmptyState } from "../lib/library-empty-state";
 import type {
@@ -109,17 +110,21 @@ export function PostLibrary({
         visiblePosts.length <= 5 ? (
           <div className="feed-grid">
             {parsing && <SkeletonFeedCard />}
-            {visiblePosts.map((post) => (
-              <PostCard
+            {visiblePosts.map((post, index) => (
+              <div
                 key={post.id}
-                onDownload={() => onDownload(post)}
-                onForceChange={(force) => onForceChange(post.id, force)}
-                onRemove={() => onRemove(post.id)}
-                onSelectionChange={(selected) =>
-                  onSelectionChange(post.id, selected)
-                }
-                post={post}
-              />
+                style={{ "--enter-index": index } as CSSProperties}
+              >
+                <PostCard
+                  onDownload={() => onDownload(post)}
+                  onForceChange={(force) => onForceChange(post.id, force)}
+                  onRemove={() => onRemove(post.id)}
+                  onSelectionChange={(selected) =>
+                    onSelectionChange(post.id, selected)
+                  }
+                  post={post}
+                />
+              </div>
             ))}
           </div>
         ) : (

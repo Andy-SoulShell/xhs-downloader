@@ -113,6 +113,11 @@ describe("MasonryFeed", () => {
       "[data-masonry-item]",
     );
 
+    // 首次定位完成前不允许过渡：瀑布流初始 transform 是 none，
+    // 直接过渡会让所有卡片从左上角飞向各自位置。
+    expect(feed?.dataset.settled).toBe("");
+    // 错开序号由包裹层承载，卡片本身不必知道自己排第几。
+    expect(items[2].style.getPropertyValue("--enter-index")).toBe("2");
     expect(feed?.style.height).toBe("224px");
     expect(items[0].style.transform).toBe("translate3d(0px, 0px, 0)");
     expect(items[0].style.width).toBe("260px");

@@ -1,5 +1,6 @@
 import {
   Children,
+  type CSSProperties,
   type ReactNode,
   useLayoutEffect,
   useRef,
@@ -62,6 +63,8 @@ export function MasonryFeed({ children }: MasonryFeedProps) {
         item.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
       });
       container.style.height = `${result.height}px`;
+      // 首次定位完成后才允许过渡，否则卡片会从左上角飞向各自位置。
+      container.dataset.settled = "";
     };
 
     const scheduleLayout = () => {
@@ -83,8 +86,12 @@ export function MasonryFeed({ children }: MasonryFeedProps) {
 
   return (
     <div className="feed-masonry" ref={containerRef}>
-      {Children.map(children, (child) => (
-        <div className="feed-masonry-item" data-masonry-item>
+      {Children.map(children, (child, index) => (
+        <div
+          className="feed-masonry-item"
+          data-masonry-item
+          style={{ "--enter-index": index } as CSSProperties}
+        >
           {child}
         </div>
       ))}
