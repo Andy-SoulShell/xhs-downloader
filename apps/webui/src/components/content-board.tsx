@@ -1,5 +1,5 @@
 import { Compass, GalleryVerticalEnd } from "lucide-react";
-import type { CSSProperties, FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import type { Filter, PostRecord } from "../lib/workspace";
 import { BoardTabs } from "./board-tabs";
@@ -7,10 +7,12 @@ import { PageHeading } from "./page-heading";
 import { BrowserBoard } from "./browser-board";
 import { LinkComposer } from "./link-composer";
 import { PostLibrary } from "./post-library";
+import { PostSearch } from "./post-search";
+
+const LIBRARY_TAB = "library";
 
 interface ContentBoardProps {
   browserDriver: unknown;
-  completedCount: number;
   filter: Filter;
   link: string;
   parsing: boolean;
@@ -32,13 +34,6 @@ interface ContentBoardProps {
   onSelectionChange: (id: string, selected: Set<number>) => void;
 }
 
-/** 让列宽跟着卡片数走；下限两列保证粘贴框还读得下去，上限五列不再更宽。 */
-function contentColumn(cards: number): CSSProperties {
-  return {
-    "--content-cards": Math.min(Math.max(cards, 2), 5),
-  } as CSSProperties;
-}
-
 /**
  * 内容工作台：粘贴链接、浏览已采集帖子与实时搜索都在这一页完成。
  *
@@ -46,7 +41,6 @@ function contentColumn(cards: number): CSSProperties {
  */
 export function ContentBoard({
   browserDriver,
-  completedCount,
   filter,
   link,
   parsing,
@@ -66,23 +60,30 @@ export function ContentBoard({
   onRetryConnection,
   onSelectionChange,
 }: ContentBoardProps) {
+  const [tab, setTab] = useState(LIBRARY_TAB);
+  // 搜索只筛我的帖子；浏览小红书时留着它会让人以为能搜到小红书上的内容。
+  const searching = tab === LIBRARY_TAB && posts.length > 0;
+
   return (
     <>
       <PageHeading
+        actions={searching ? <PostSearch onQueryChange={onQueryChange} query={query} /> : undefined}
         description="粘贴链接下载，或者直接浏览小红书找内容。"
         meta={posts.length ? `${posts.length} 个帖子` : ""}
         title="内容"
       />
       <BoardTabs
         ariaLabel="内容分类"
+        onValueChange={setTab}
         tabs={[
           {
-            value: "library",
+            value: LIBRARY_TAB,
             label: "我的帖子",
             icon: GalleryVerticalEnd,
             count: posts.length,
             content: (
-              <div className="content-column" style={contentColumn(visiblePosts.length)}>
+              // 间距取瀑布流的行距：粘贴卡片到首行的距离和卡片之间的一致。
+              <div className="space-y-6">
                 <LinkComposer
                   link={link}
                   onChange={onLinkChange}
@@ -90,19 +91,16 @@ export function ContentBoard({
                   parsing={parsing}
                 />
                 <PostLibrary
-                  completedCount={completedCount}
                   filter={filter}
                   onDownload={onDownload}
                   onFilterChange={onFilterChange}
                   onForceChange={onForceChange}
-                  onQueryChange={onQueryChange}
                   onRemove={onRemove}
                   onRetryConnection={onRetryConnection}
                   online={online}
                   parsing={parsing}
                   onSelectionChange={onSelectionChange}
                   posts={posts}
-                  query={query}
                   visiblePosts={visiblePosts}
                 />
               </div>

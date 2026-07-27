@@ -1,5 +1,5 @@
 import { LogIn, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { BrowserDriver, LoginQrCodeResult } from "../lib/types";
 import type { ManagedBrowserStatus } from "../lib/managed-browser-api";
@@ -8,6 +8,8 @@ import { Badge } from "./badge";
 
 interface BrowserLoginActionsProps {
   browserDriver: BrowserDriver | null;
+  /** 登录与连接状态徽章；它们说的是这张卡的事，不该挂在下面的搜索卡上。 */
+  status?: ReactNode;
   busy: boolean;
   managedStatus: ManagedBrowserStatus | null;
   message: string;
@@ -21,6 +23,7 @@ interface BrowserLoginActionsProps {
 export function BrowserLoginActions({
   browserDriver,
   busy,
+  status,
   managedStatus,
   message,
   qrCode,
@@ -50,7 +53,8 @@ export function BrowserLoginActions({
             {loginGuidance(browserDriver, managedStatus)}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {/* 三个按钮是一组，宽屏下别被说明文字挤到折行 */}
+        <div className="flex flex-wrap gap-2 lg:shrink-0">
           <ActionButton
             disabled={busy || !driverReady}
             onClick={() => void onCheckLogin()}
@@ -77,6 +81,8 @@ export function BrowserLoginActions({
           </ActionButton>
         </div>
       </div>
+
+      {status && <div className="mt-3 flex flex-wrap items-center gap-2">{status}</div>}
 
       {qrCode?.image_data_url && (
         <div className="mt-4 flex min-w-0 flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-4 sm:flex-row sm:items-center">

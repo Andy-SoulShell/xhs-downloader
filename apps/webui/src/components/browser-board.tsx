@@ -8,7 +8,7 @@ import {
   Search,
   Settings,
 } from "lucide-react";
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import type { FeedSummary } from "../lib/types";
 import { isBrowserDriver } from "../lib/types";
@@ -77,13 +77,7 @@ export function BrowserBoard({
   return (
     // 这里不再有自己的页头：外层「内容」已经有 h1，标签名也写着「浏览小红书」，
     // 再放一个同名大标题就是同页两个 h1 加三重同义文案。
-    <section
-      aria-label="浏览小红书"
-      className="content-column"
-      style={
-        { "--content-cards": Math.min(Math.max(explorer.feeds.length, 2), 5) } as CSSProperties
-      }
-    >
+    <section aria-label="浏览小红书">
       <BrowserLoginActions
         browserDriver={confirmedDriver}
         busy={explorer.busy}
@@ -93,6 +87,37 @@ export function BrowserBoard({
         onDeleteCookies={explorer.deleteBrowserCookies}
         onGetQrCode={explorer.getLoginQrCode}
         qrCode={explorer.qrCode}
+        status={
+          <>
+            <Badge
+              tone={
+                explorer.account?.logged_in ? "success" : explorer.account ? "warning" : "neutral"
+              }
+            >
+              {explorer.account?.logged_in
+                ? `已登录${explorer.account.nickname ? ` · ${explorer.account.nickname}` : ""}`
+                : explorer.account
+                  ? "尚未登录"
+                  : "登录状态待检查"}
+            </Badge>
+            {/* 结果区为空时错误由空状态承载，这里再挂一条就是同一句话说两遍。 */}
+            {explorer.error && explorer.feeds.length > 0 && (
+              <Badge icon={CircleAlert} tone="danger">
+                {explorer.error}
+              </Badge>
+            )}
+            {!confirmedDriver && (
+              <Badge icon={CircleAlert} tone="warning">
+                还没有选好连接方式，请先到设置里完成
+              </Badge>
+            )}
+            {hint && (
+              <Badge icon={CircleAlert} tone="warning">
+                {hint}
+              </Badge>
+            )}
+          </>
+        }
       />
 
       <div className="control-shell p-4 sm:p-5">
@@ -131,36 +156,6 @@ export function BrowserBoard({
             看看推荐
           </ActionButton>
         </form>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Badge
-            tone={
-              explorer.account?.logged_in ? "success" : explorer.account ? "warning" : "neutral"
-            }
-          >
-            {explorer.account?.logged_in
-              ? `已登录${explorer.account.nickname ? ` · ${explorer.account.nickname}` : ""}`
-              : explorer.account
-                ? "尚未登录"
-                : "登录状态待检查"}
-          </Badge>
-          {/* 结果区为空时错误由空状态承载，这里再挂一条就是同一句话说两遍。 */}
-          {explorer.error && explorer.feeds.length > 0 && (
-            <Badge icon={CircleAlert} tone="danger">
-              {explorer.error}
-            </Badge>
-          )}
-          {!confirmedDriver && (
-            <Badge icon={CircleAlert} tone="warning">
-              还没有选好连接方式，请先到设置里完成
-            </Badge>
-          )}
-          {hint && (
-            <Badge icon={CircleAlert} tone="warning">
-              {hint}
-            </Badge>
-          )}
-        </div>
       </div>
 
       {explorer.detail && (
