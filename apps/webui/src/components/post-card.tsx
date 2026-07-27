@@ -6,6 +6,7 @@ import {
   Images,
   LoaderCircle,
   MessageCircle,
+  PackageOpen,
   Star,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -39,31 +40,39 @@ export function PostCard({
     () => groupMedia(detail?.媒体 ?? []),
     [detail?.媒体],
   );
-  if (!detail || !media.length) return null;
+  if (!detail) return null;
 
   const title = detail.作品标题 || "未命名帖子";
   const status = postStatus(post);
-  const first = media[0];
+  // 解析不出媒体的帖子仍要占位展示：静默丢弃会让列表数量与实际卡片数对不上，
+  // 用户既看不到这条帖子，也无从知道它为什么消失。
+  const first = media.at(0);
 
   return (
     <>
       <article className="feed-card group">
         <div className="relative overflow-hidden rounded-2xl bg-stone-100">
-          <MediaPreview
-            ariaLabel={`打开帖子：${title}`}
-            index={first.index}
-            onOpen={() => setOpen(true)}
-            resources={first.resources}
-            title={title}
-          />
-          <Badge
-            className="pointer-events-none absolute top-3 left-3"
-            icon={Images}
-            size="floating"
-            tone="overlay"
-          >
-            {media.length} 项
-          </Badge>
+          {first ? (
+            <>
+              <MediaPreview
+                ariaLabel={`打开帖子：${title}`}
+                index={first.index}
+                onOpen={() => setOpen(true)}
+                resources={first.resources}
+                title={title}
+              />
+              <Badge
+                className="pointer-events-none absolute top-3 left-3"
+                icon={Images}
+                size="floating"
+                tone="overlay"
+              >
+                {media.length} 项
+              </Badge>
+            </>
+          ) : (
+            <NoMediaCover onOpen={() => setOpen(true)} title={title} />
+          )}
           <StatusBadge status={status} />
         </div>
 
@@ -119,6 +128,36 @@ export function PostCard({
         post={post}
       />
     </>
+  );
+}
+
+/**
+ * 帖子没有可下载媒体时的封面占位。
+ *
+ * @param props 组件属性。
+ * @param props.title 帖子标题，用于无障碍名称。
+ * @param props.onOpen 打开帖子详情的回调。
+ * @returns 与正常封面等高、可进入详情的说明性占位。
+ */
+function NoMediaCover({
+  title,
+  onOpen,
+}: {
+  title: string;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      aria-label={`打开帖子：${title}`}
+      className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-400 transition hover:text-stone-500"
+      onClick={onOpen}
+      type="button"
+    >
+      <span className="flex flex-col items-center gap-1.5 px-4 text-center">
+        <PackageOpen size={22} strokeWidth={1.5} />
+        <span className="text-[11px] leading-tight">没有解析到可下载媒体</span>
+      </span>
+    </button>
   );
 }
 

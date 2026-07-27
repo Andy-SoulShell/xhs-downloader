@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   Heart,
   MessageCircle,
+  PackageOpen,
   Share2,
   Star,
   Trash2,
@@ -46,11 +47,16 @@ export function PostDetailDialog({
     [detail?.媒体],
   );
 
-  if (!detail || !media.length) return null;
-  const visibleIndex = Math.min(activeIndex, media.length - 1);
+  if (!detail) return null;
+  // 解析不出媒体的帖子依然要能打开：正文、作者、标签仍有价值，
+  // 更重要的是“移除”这条出路必须够得着。
+  const hasMedia = media.length > 0;
+  const visibleIndex = hasMedia ? Math.min(activeIndex, media.length - 1) : 0;
   const current = media[visibleIndex];
-  const allSelected = media.every((item) => post.selected.has(item.index));
+  const allSelected =
+    hasMedia && media.every((item) => post.selected.has(item.index));
   const move = (step: number) => {
+    if (!hasMedia) return;
     setActiveIndex((position) => (position + step + media.length) % media.length);
   };
   return (
@@ -77,13 +83,17 @@ export function PostDetailDialog({
             查看帖子媒体并选择需要下载的资源。
           </Dialog.Description>
 
-          <MediaStage
-            activeIndex={visibleIndex}
-            current={current}
-            media={media}
-            onMove={move}
-            onSelect={setActiveIndex}
-          />
+          {current ? (
+            <MediaStage
+              activeIndex={visibleIndex}
+              current={current}
+              media={media}
+              onMove={move}
+              onSelect={setActiveIndex}
+            />
+          ) : (
+            <MediaUnavailableStage />
+          )}
 
           <div className="flex min-h-0 flex-col border-l border-stone-200/80 bg-white">
             <div className="shrink-0 border-b border-stone-100 px-5 pt-5 pb-4 sm:px-7 sm:pt-7">
@@ -118,8 +128,8 @@ export function PostDetailDialog({
                 <Badge size="regular" tone="dark">
                   {detail.作品类型}
                 </Badge>
-                <Badge size="regular" tone="accent">
-                  {media.length} 项媒体
+                <Badge size="regular" tone={hasMedia ? "accent" : "warning"}>
+                  {hasMedia ? `${media.length} 项媒体` : "无可下载媒体"}
                 </Badge>
               </div>
               <h2 className="mt-4 text-xl leading-snug font-semibold tracking-tight text-stone-950">
@@ -145,23 +155,48 @@ export function PostDetailDialog({
                 <Metric icon={Share2} label="分享" value={detail.分享数量} />
               </div>
             </div>
-            <PostDownloadSelection
-              activeIndex={visibleIndex}
-              allSelected={allSelected}
-              media={media}
-              onPreviewChange={setActiveIndex}
-              onSelectionChange={onSelectionChange}
-              post={post}
-            />
-            <PostDownloadBar
-              onDownload={onDownload}
-              onForceChange={onForceChange}
-              post={post}
-            />
+            {hasMedia ? (
+              <>
+                <PostDownloadSelection
+                  activeIndex={visibleIndex}
+                  allSelected={allSelected}
+                  media={media}
+                  onPreviewChange={setActiveIndex}
+                  onSelectionChange={onSelectionChange}
+                  post={post}
+                />
+                <PostDownloadBar
+                  onDownload={onDownload}
+                  onForceChange={onForceChange}
+                  post={post}
+                />
+              </>
+            ) : (
+              <p className="notice-block m-5 mt-auto text-sm leading-6">
+                这个帖子没有解析到可下载的媒体，可能是链接已失效或需要登录后才能查看。
+                可以重新粘贴链接再试一次，或者用右上角的按钮把它移除。
+              </p>
+            )}
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+/**
+ * 帖子没有可用媒体时，详情左侧展示台的替代内容。
+ *
+ * @returns 与媒体展示台同样占位、说明原因的深色面板。
+ */
+function MediaUnavailableStage() {
+  return (
+    <div className="grid min-h-0 place-items-center bg-stone-950 px-8 py-16 text-center lg:w-[560px]">
+      <span className="flex flex-col items-center gap-3 text-stone-500">
+        <PackageOpen size={34} strokeWidth={1.25} />
+        <span className="text-sm">没有解析到可下载媒体</span>
+      </span>
+    </div>
   );
 }
 

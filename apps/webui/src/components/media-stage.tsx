@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import {
@@ -34,6 +34,8 @@ export function MediaStage({
   onSelect,
 }: MediaStageProps) {
   const [aspectRatio, setAspectRatio] = useState(3 / 4);
+  // 记住失败的地址而不是布尔值：切换到下一项时会自动恢复，无需额外重置。
+  const [failedSource, setFailedSource] = useState<string | null>(null);
   const image = current.resources.find((item) => item.类型 === "图片");
   const live = current.resources.find((item) => item.类型 === "动态图片");
   const video = current.resources.find((item) => item.类型 === "视频");
@@ -78,10 +80,17 @@ export function MediaStage({
           poster={video.预览地址 ?? undefined}
           src={video.地址}
         />
+      ) : image && failedSource === image.地址 ? (
+        // 只留一片纯黑等于什么都没说：媒体地址带签名会过期，必须讲清楚。
+        <p className="flex flex-col items-center gap-3 px-8 text-center text-sm text-stone-400">
+          <ImageOff aria-hidden size={30} strokeWidth={1.25} />
+          这一项的媒体地址已失效，重新解析帖子后可以再试。
+        </p>
       ) : (
         <img
           alt={`第 ${current.index} 项图片预览`}
           className="absolute inset-0 size-full object-contain object-center"
+          onError={() => setFailedSource(image?.地址 ?? null)}
           onLoad={(event) => applyImageRatio(event.currentTarget)}
           referrerPolicy="no-referrer"
           src={image?.地址}

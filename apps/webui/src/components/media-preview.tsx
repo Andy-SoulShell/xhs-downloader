@@ -1,7 +1,33 @@
 import { useRef, useState } from "react";
-import { Maximize2 } from "lucide-react";
+import { ImageOff, Maximize2 } from "lucide-react";
 
 import type { MediaResource } from "../lib/types";
+
+/**
+ * 封面就位前预留的版面。
+ *
+ * 小红书封面比例集中在竖图，这里按 3:4 预留，让卡片在图片到达前就有稳定高度。
+ */
+const COVER_RESERVE = "aspect-3/4 w-full bg-stone-100";
+
+/**
+ * 封面加载失败时的占位。
+ *
+ * 小红书媒体地址带签名会过期，加载失败是常态而非边缘情况。占位必须自带高度，
+ * 否则 `h-auto` 的图片失败后整个媒体区塌陷为零高度，卡片退化成纯文字行。
+ *
+ * @returns 保持封面区尺寸并说明失效原因的占位块。
+ */
+function CoverUnavailable() {
+  return (
+    <div className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-400">
+      <span className="flex flex-col items-center gap-1.5">
+        <ImageOff size={22} strokeWidth={1.5} />
+        <span className="text-[11px] leading-none">封面已失效</span>
+      </span>
+    </div>
+  );
+}
 
 interface MediaPreviewProps {
   ariaLabel?: string;
@@ -31,6 +57,11 @@ export function MediaPreview({
 }: MediaPreviewProps) {
   const liveVideo = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  // 封面必须区分加载中与失败：地址不可达时请求会长时间挂起而不报错，
+  // 只处理 onError 会让封面区无限期停在零高度，卡片看起来像坏掉了。
+  const [coverState, setCoverState] = useState<"loading" | "ready" | "failed">(
+    "loading",
+  );
   const image = resources.find((item) => item.类型 === "图片");
   const live = resources.find((item) => item.类型 === "动态图片");
   const video = resources.find((item) => item.类型 === "视频");
@@ -68,13 +99,23 @@ export function MediaPreview({
         role="button"
         tabIndex={0}
       >
-        <img
-          alt={`${title}的第 ${index} 张图片`}
-          className="block h-auto w-full object-contain"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          src={image.地址}
-        />
+        {coverState === "failed" ? (
+          <CoverUnavailable />
+        ) : (
+          <div className={coverState === "ready" ? "" : COVER_RESERVE}>
+            <img
+              alt={`${title}的第 ${index} 张图片`}
+              className={`block h-auto w-full object-contain transition-opacity duration-300 ${
+                coverState === "ready" ? "opacity-100" : "opacity-0"
+              }`}
+              loading="lazy"
+              onError={() => setCoverState("failed")}
+              onLoad={() => setCoverState("ready")}
+              referrerPolicy="no-referrer"
+              src={image.地址}
+            />
+          </div>
+        )}
         {live && (
           <>
             <video
@@ -122,14 +163,22 @@ export function MediaPreview({
       onClick={onOpen}
       type="button"
     >
-      {video?.预览地址 ? (
-        <img
-          alt={`${title}的第 ${index} 个视频封面`}
-          className="block h-auto w-full bg-stone-950 object-contain"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          src={video.预览地址}
-        />
+      {coverState === "failed" ? (
+        <CoverUnavailable />
+      ) : video?.预览地址 ? (
+        <div className={coverState === "ready" ? "" : COVER_RESERVE}>
+          <img
+            alt={`${title}的第 ${index} 个视频封面`}
+            className={`block h-auto w-full bg-stone-950 object-contain transition-opacity duration-300 ${
+              coverState === "ready" ? "opacity-100" : "opacity-0"
+            }`}
+            loading="lazy"
+            onError={() => setCoverState("failed")}
+            onLoad={() => setCoverState("ready")}
+            referrerPolicy="no-referrer"
+            src={video.预览地址}
+          />
+        </div>
       ) : (
         <video
           aria-label={`${title}的第 ${index} 个视频`}

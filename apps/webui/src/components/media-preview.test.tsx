@@ -89,6 +89,82 @@ describe("媒体预览", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("封面就位前预留版面，就位后交还给图片的原始比例", () => {
+    render(
+      <MediaPreview
+        index={1}
+        onOpen={vi.fn()}
+        resources={[image]}
+        title="合成帖子"
+      />,
+    );
+
+    // 地址不可达时请求会长时间挂起而不报错，只处理 onError 会让封面区
+    // 无限期停在零高度。
+    const cover = screen.getByRole("img");
+    expect(cover.parentElement?.className).toContain("aspect-3/4");
+    expect(cover.className).toContain("opacity-0");
+
+    fireEvent.load(cover);
+    expect(cover.parentElement?.className).not.toContain("aspect-3/4");
+    expect(cover.className).toContain("opacity-100");
+  });
+
+  it("封面加载失败时给出等高占位而不是塌陷成零高度", () => {
+    render(
+      <MediaPreview
+        index={1}
+        onOpen={vi.fn()}
+        resources={[image]}
+        title="合成帖子"
+      />,
+    );
+
+    fireEvent.error(screen.getByRole("img"));
+
+    // 媒体地址带签名会过期，失败是常态；img 用 h-auto，失败后高度归零会让
+    // 整个封面区消失，卡片退化成纯文字行。
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.getByText("封面已失效")).toBeInTheDocument();
+  });
+
+  it("封面失效后仍可进入帖子详情", () => {
+    const onOpen = vi.fn();
+    render(
+      <MediaPreview
+        index={1}
+        onOpen={onOpen}
+        resources={[image]}
+        title="合成帖子"
+      />,
+    );
+
+    fireEvent.error(screen.getByRole("img"));
+    fireEvent.click(screen.getByRole("button", { name: "查看第 1 项大图" }));
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+
+  it("视频封面加载失败时同样给出占位", () => {
+    const video: MediaResource = {
+      序号: 1,
+      类型: "视频",
+      地址: "https://example.invalid/video",
+      扩展名: "mp4",
+      预览地址: "https://example.invalid/poster",
+    };
+    render(
+      <MediaPreview
+        index={1}
+        onOpen={vi.fn()}
+        resources={[video]}
+        title="合成帖子"
+      />,
+    );
+
+    fireEvent.error(screen.getByAltText("合成帖子的第 1 个视频封面"));
+    expect(screen.getByText("封面已失效")).toBeInTheDocument();
+  });
+
   it("视频资源优先使用完整封面并为缺失封面提供回退", () => {
     const video: MediaResource = {
       序号: 1,

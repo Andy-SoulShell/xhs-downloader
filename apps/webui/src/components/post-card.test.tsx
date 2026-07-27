@@ -172,6 +172,82 @@ describe("帖子卡片", () => {
     );
   });
 
+  it("解析不出媒体的帖子仍然占位展示而不是静默消失", () => {
+    const result = makeDetailResponse();
+    result.data!.媒体 = [];
+    const onRemove = vi.fn();
+    render(
+      <PostCard
+        onDownload={vi.fn()}
+        onForceChange={vi.fn()}
+        onRemove={onRemove}
+        onSelectionChange={vi.fn()}
+        post={makePost({ result })}
+      />,
+    );
+
+    // 静默返回 null 会让列表计数与实际卡片数对不上，用户既看不到这条帖子，
+    // 也无从知道它为什么不见了。
+    expect(screen.getByText("合成测试帖子")).toBeInTheDocument();
+    expect(screen.getAllByText("没有解析到可下载媒体")).not.toHaveLength(0);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("无可下载媒体")).toBeInTheDocument();
+    // 详情必须给出出路：不能下载，至少要能移除。
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "移除帖子：合成测试帖子" }),
+    );
+    expect(onRemove).toHaveBeenCalledOnce();
+  });
+
+  it("详情大图加载失败时说明原因而不是留一片纯黑", () => {
+    renderCard();
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "下一项" }));
+
+    const stage = within(dialog).getByAltText("第 2 项图片预览");
+    fireEvent.error(stage);
+
+    expect(
+      within(dialog).getByText(/媒体地址已失效/),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByAltText("第 2 项图片预览"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("下载失败时说明原因并把主按钮变成重试", () => {
+    const result = makeDetailResponse();
+    result.message = "下载目录没有写入权限，请在设置里换一个目录后重试。";
+    renderCard(makePost({ result, status: "error" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
+    );
+    const dialog = screen.getByRole("dialog");
+
+    // 此前失败原因只存在记录里从不展示，用户只能看到一个红色的“失败”。
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("写入权限");
+    expect(
+      within(dialog).getByRole("button", { name: /重试下载/ }),
+    ).toBeEnabled();
+  });
+
+  it("数量未知时不把哨兵值显示给用户", () => {
+    const result = makeDetailResponse();
+    result.data!.点赞数量 = "-1";
+    renderCard(makePost({ result }));
+
+    // 领域模型用 "-1" 表示未取到数量，直接渲染会让界面出现 “♡ -1”。
+    expect(screen.queryByText("-1")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("赞数量未知")).toBeInTheDocument();
+  });
+
   it("没有详情时不渲染无效卡片", () => {
     const { container } = render(
       <PostCard
