@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { detectAccessIntent, presetForIntent, type AccessIntent } from "../lib/access-intent";
 import type { BrowserDriver, RouteStrategy, SettingsValues } from "../lib/types";
-import { SelectSetting, SettingsSection, TextSetting } from "./setting-controls";
+import { SelectSetting, SettingsSection, TextSetting, ToggleSetting } from "./setting-controls";
 import type { SettingsChange } from "./settings-sections";
 
 const routeOptions = [
@@ -125,6 +125,14 @@ export function AccessModeSettings({
             value={values.managed_browser_executable ?? ""}
             wide
           />
+          {values.browser_driver === "managed" && (
+            <ToggleSetting
+              checked={values.managed_browser_headless}
+              description="读取和互动都在后台完成，不再弹窗；扫码登录照常，二维码取回来显示在这个界面上。无头更容易被平台识别，遇到验证或读不到内容就关掉它。保存后要重启本地服务才生效。"
+              label="后台运行，不弹出浏览器窗口"
+              onChange={(checked) => onChange("managed_browser_headless", checked)}
+            />
+          )}
         </>
       )}
     </SettingsSection>
