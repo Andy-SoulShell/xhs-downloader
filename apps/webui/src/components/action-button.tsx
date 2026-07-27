@@ -10,11 +10,11 @@ interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ActionButtonVariant, string> = {
   primary:
-    "bg-red-500 text-white shadow-[0_8px_20px_rgba(239,68,68,0.18)] hover:bg-red-600 hover:shadow-[0_10px_24px_rgba(239,68,68,0.24)] focus-visible:ring-red-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
+    "bg-red-600 text-white shadow-[0_8px_20px_rgba(220,38,38,0.18)] hover:bg-red-700 hover:shadow-[0_10px_24px_rgba(220,38,38,0.24)] focus-visible:ring-red-500/30 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
   outline:
     "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50 focus-visible:ring-stone-900/15 disabled:cursor-not-allowed disabled:opacity-50",
   ghost:
-    "text-stone-500 hover:bg-stone-100 hover:text-stone-950 focus-visible:ring-stone-900/15 disabled:cursor-not-allowed disabled:opacity-50",
+    "text-stone-600 hover:bg-stone-100 hover:text-stone-950 focus-visible:ring-stone-900/15 disabled:cursor-not-allowed disabled:opacity-50",
 };
 
 const sizeClasses: Record<ActionButtonSize, string> = {

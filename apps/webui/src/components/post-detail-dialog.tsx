@@ -117,7 +117,7 @@ export function PostDetailDialog({
                   </button>
                   <Dialog.Close
                     aria-label="关闭详情"
-                    className="grid size-9 place-items-center rounded-full text-stone-500 transition hover:bg-stone-100 hover:text-stone-950"
+                    className="grid size-9 place-items-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-950"
                   >
                     <X aria-hidden size={18} />
                   </Dialog.Close>
@@ -192,7 +192,7 @@ export function PostDetailDialog({
 function MediaUnavailableStage() {
   return (
     <div className="grid min-h-0 place-items-center bg-stone-950 px-8 py-16 text-center lg:w-[560px]">
-      <span className="flex flex-col items-center gap-3 text-stone-500">
+      <span className="flex flex-col items-center gap-3 text-stone-400">
         <PackageOpen size={34} strokeWidth={1.25} />
         <span className="text-sm">没有解析到可下载媒体</span>
       </span>

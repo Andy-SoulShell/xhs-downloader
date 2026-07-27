@@ -34,7 +34,7 @@ export function EmptyState({
         <Icon aria-hidden size={20} strokeWidth={1.75} />
       </span>
       <p className="mt-4 text-sm font-semibold text-stone-700">{title}</p>
-      <p className="mt-1.5 max-w-xs text-xs leading-6 text-stone-500">
+      <p className="mt-1.5 max-w-xs text-xs leading-6 text-stone-600">
         {description}
       </p>
       {action && <div className="mt-5">{action}</div>}

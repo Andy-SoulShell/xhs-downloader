@@ -76,7 +76,7 @@ export function PublicationSubmitControls({
           )}
         </ActionButton>
       </div>
-      <div className="mt-3 space-y-1 text-[11px] leading-5 text-stone-500">
+      <div className="mt-3 space-y-1 text-[11px] leading-5 text-stone-600">
         <p>
           本地定时：到点后需本机服务和{driverLabel(browserDriver)}在线。
         </p>

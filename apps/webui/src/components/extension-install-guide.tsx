@@ -43,7 +43,7 @@ export function ExtensionInstallGuide({
             <p className="text-sm font-semibold text-stone-900">
               浏览器扩展已连接
             </p>
-            <p className="mt-1 break-words text-xs leading-5 text-stone-500">
+            <p className="mt-1 break-words text-xs leading-5 text-stone-600">
               扩展不会读取或上传浏览器 Cookie，只执行你明确发起的小红书任务。
             </p>
           </div>
@@ -78,7 +78,7 @@ export function ExtensionInstallGuide({
             </h2>
             <Badge tone="warning">尚未连接</Badge>
           </div>
-          <p className="mt-1 break-words text-xs leading-5 text-stone-500">
+          <p className="mt-1 break-words text-xs leading-5 text-stone-600">
             Chrome 和 Edge 均可使用，首次加载只需完成下面四步。
           </p>
         </div>
@@ -116,7 +116,7 @@ export function ExtensionInstallGuide({
               <span className="block font-medium text-stone-800">
                 {page.browser} 扩展管理页
               </span>
-              <code className="block break-all text-[11px] text-stone-500">
+              <code className="block break-all text-[11px] text-stone-600">
                 {page.address}
               </code>
             </span>
@@ -126,7 +126,7 @@ export function ExtensionInstallGuide({
       </div>
 
       <div className="mt-4 flex min-w-0 flex-col gap-3 border-t border-stone-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="min-w-0 break-words text-xs leading-5 text-stone-500">
+        <p className="min-w-0 break-words text-xs leading-5 text-stone-600">
           扩展不会读取或上传浏览器 Cookie；登录信息始终留在你的浏览器中。
         </p>
         <ActionButton
@@ -144,7 +144,7 @@ export function ExtensionInstallGuide({
       </div>
       <p
         aria-live="polite"
-        className="mt-2 min-h-5 break-words text-xs text-stone-500"
+        className="mt-2 min-h-5 break-words text-xs text-stone-600"
       >
         {copyMessage}
       </p>

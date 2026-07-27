@@ -81,7 +81,7 @@ function BrowseActions({
 
   return (
     <section aria-label="浏览操作">
-      <p className="mb-4 text-xs leading-5 text-stone-500">
+      <p className="mb-4 text-xs leading-5 text-stone-600">
         点赞、收藏和评论的执行结果；不记录评论正文和页面内容。
       </p>
       {monitor.refreshing && !monitor.tasks.length ? (

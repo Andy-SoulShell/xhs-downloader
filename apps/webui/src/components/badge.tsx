@@ -23,7 +23,7 @@ const toneClasses: Record<BadgeTone, string> = {
   accent: "bg-red-50 text-red-600",
   danger: "bg-red-50 text-red-600",
   dark: "bg-stone-900 text-white",
-  neutral: "bg-stone-100 text-stone-500",
+  neutral: "bg-stone-100 text-stone-600",
   overlay: "bg-stone-950/75 text-white backdrop-blur",
   success: "bg-emerald-50 text-emerald-700",
   surface: "bg-white/92 text-stone-600 backdrop-blur",

@@ -26,7 +26,7 @@ export function NameFormatPicker({ value, onChange }: NameFormatPickerProps) {
   return (
     <div className="min-w-0 sm:col-span-2">
       <p className="text-sm font-semibold text-stone-900">文件名包含</p>
-      <p className="mt-1 text-xs leading-5 text-stone-500">
+      <p className="mt-1 text-xs leading-5 text-stone-600">
         点击选择要放进文件名的信息，按选中顺序排列。
       </p>
 

@@ -42,7 +42,7 @@ export function SegmentedControlItem({
 }) {
   return (
     <ToggleGroup.Item
-      className="inline-flex min-w-0 items-center justify-center rounded-lg px-3 py-2 text-xs font-medium text-stone-500 outline-none transition data-[state=on]:bg-stone-900 data-[state=on]:text-white focus-visible:ring-2 focus-visible:ring-stone-300"
+      className="inline-flex min-w-0 items-center justify-center rounded-lg px-3 py-2 text-xs font-medium text-stone-600 outline-none transition data-[state=on]:bg-stone-900 data-[state=on]:text-white focus-visible:ring-2 focus-visible:ring-stone-300"
       value={value}
     >
       {Icon && <Icon aria-hidden size={14} />}

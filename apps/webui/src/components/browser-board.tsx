@@ -255,7 +255,7 @@ function BrowserFeedCard({
       <h2 className="mt-3 line-clamp-2 text-sm leading-6 font-semibold text-stone-900">
         {title}
       </h2>
-      <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-stone-500">
+      <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-stone-600">
         <span className="truncate">{feed.author.nickname || "未知作者"}</span>
         <span className="flex shrink-0 gap-2">
           <Metric

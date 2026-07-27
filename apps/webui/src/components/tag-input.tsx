@@ -69,7 +69,7 @@ export function TagInput({
         ))}
         <input
           aria-label="话题标签"
-          className="min-w-24 flex-1 bg-transparent px-1 text-sm font-normal text-stone-900 outline-none placeholder:text-stone-400"
+          className="min-w-24 flex-1 bg-transparent px-1 text-sm font-normal text-stone-900 outline-none placeholder:text-stone-500"
           disabled={full}
           onBlur={() => commit(draft)}
           onChange={(event) => setDraft(event.target.value)}

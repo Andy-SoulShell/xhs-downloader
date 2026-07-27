@@ -28,7 +28,7 @@ const TONES = {
   },
   info: {
     icon: Info,
-    accent: "text-stone-500",
+    accent: "text-stone-600",
     ring: "border-stone-200",
     duration: 3600,
   },

@@ -55,7 +55,7 @@ export function PublicationOptionsForm({
           />
           <span>
             <span className="block font-semibold">声明原创</span>
-            <span className="mt-0.5 block text-[11px] text-stone-500">
+            <span className="mt-0.5 block text-[11px] text-stone-600">
               {hasVideo ? "当前仅支持图文笔记" : "发布前会核验官方开关"}
             </span>
           </span>
@@ -75,7 +75,7 @@ export function PublicationOptionsForm({
           value={managed ? "" : products}
         />
       </label>
-      <p className="mt-2 text-[11px] leading-5 text-stone-500">
+      <p className="mt-2 text-[11px] leading-5 text-stone-600">
         {managed
           ? "受管浏览器首期固定为仅自己可见且不绑定商品。"
           : "商品搜索只有一个明确匹配时才会绑定；零个或多个匹配都会中止发布。"}

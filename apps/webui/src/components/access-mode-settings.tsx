@@ -87,7 +87,7 @@ export function AccessModeSettings({
               <p className="text-sm font-semibold text-stone-900">
                 {option.title}
               </p>
-              <p className="mt-1 text-xs leading-5 text-stone-500">
+              <p className="mt-1 text-xs leading-5 text-stone-600">
                 {option.description}
               </p>
             </button>
@@ -104,7 +104,7 @@ export function AccessModeSettings({
       <div className="min-w-0 sm:col-span-2">
         <button
           aria-expanded={showAdvanced}
-          className="text-xs font-medium text-stone-500 hover:text-stone-900"
+          className="text-xs font-medium text-stone-600 hover:text-stone-900"
           onClick={() => setShowAdvanced((current) => !current)}
           type="button"
         >

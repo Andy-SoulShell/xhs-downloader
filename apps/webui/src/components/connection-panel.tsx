@@ -98,13 +98,13 @@ export function ConnectionPanel({
         <section aria-label="已连接的插件" className="mt-8">
           <div className="mb-3">
             <div className="flex items-center gap-2">
-              <ShieldOff aria-hidden className="text-stone-500" size={18} />
+              <ShieldOff aria-hidden className="text-stone-600" size={18} />
               <h2 className="text-lg font-semibold text-stone-950">
                 已连接的插件
               </h2>
               <Badge>{monitor.extensions.length} 个</Badge>
             </div>
-            <p className="mt-1 text-xs leading-5 text-stone-500">
+            <p className="mt-1 text-xs leading-5 text-stone-600">
               断开后这个插件需要重新连接才能继续工作。还在运行的插件会自动
               重新连上；已经卸载的则从此断开。
             </p>
@@ -211,7 +211,7 @@ function StatusCard({
           <Icon aria-hidden size={16} />
         </span>
         <div className="min-w-0">
-          <p className="text-xs text-stone-500">{label}</p>
+          <p className="text-xs text-stone-600">{label}</p>
           <div className="mt-1 flex items-center gap-2">
             <p className="font-semibold text-stone-900">{value}</p>
             <Badge tone={tone}>{tone === "success" ? "正常" : "待处理"}</Badge>

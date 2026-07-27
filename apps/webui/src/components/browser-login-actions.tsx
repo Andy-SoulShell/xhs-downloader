@@ -51,7 +51,7 @@ export function BrowserLoginActions({
               浏览器登录与会话
             </h2>
           </div>
-          <p className="mt-1 text-xs leading-5 text-stone-500">
+          <p className="mt-1 text-xs leading-5 text-stone-600">
             {loginGuidance(browserDriver, managedStatus)}
           </p>
         </div>
@@ -90,7 +90,7 @@ export function BrowserLoginActions({
             className="size-44 shrink-0 rounded-xl border border-stone-100 bg-white object-contain"
             src={qrCode.image_data_url}
           />
-          <div className="min-w-0 text-xs leading-5 text-stone-500">
+          <div className="min-w-0 text-xs leading-5 text-stone-600">
             <Badge tone="warning">等待扫码</Badge>
             <p className="mt-2">请使用小红书 App 扫码并在手机上确认登录。</p>
             <p>登录标签页会保持打开，二维码约在 {formatExpiry(qrCode.expires_at)} 失效。</p>

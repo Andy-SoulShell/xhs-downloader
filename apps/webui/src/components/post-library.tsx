@@ -62,7 +62,7 @@ export function PostLibrary({
     <section aria-label="帖子列表" className="min-w-0">
       {/* 标签条已标明这是我的帖子；此处只保留计数与筛选工具，不再重复标题。 */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-stone-600">
           {posts.length ? (
             <>
               共 {posts.length} 个帖子
@@ -77,7 +77,7 @@ export function PostLibrary({
             <Search aria-hidden size={16} />
             <input
               aria-label="搜索帖子"
-              className="min-w-0 flex-1 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
+              className="min-w-0 flex-1 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-500"
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder="搜索标题或作者"
               type="search"

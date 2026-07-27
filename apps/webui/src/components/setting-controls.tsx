@@ -17,7 +17,7 @@ export function SettingsSection({
   return (
     <section className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6">
       <h2 className="text-base font-semibold text-stone-900">{title}</h2>
-      <p className="mt-1 text-xs leading-5 text-stone-500">{description}</p>
+      <p className="mt-1 text-xs leading-5 text-stone-600">{description}</p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">{children}</div>
     </section>
   );
@@ -50,7 +50,7 @@ function FieldShell({
 }
 
 const fieldClass =
-  "mt-2 h-11 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-400 focus:bg-white focus:ring-4 focus:ring-stone-100";
+  "mt-2 h-11 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 text-sm text-stone-900 outline-none transition placeholder:text-stone-500 focus:border-stone-400 focus:bg-white focus:ring-4 focus:ring-stone-100";
 
 export function TextSetting({
   disabled = false,

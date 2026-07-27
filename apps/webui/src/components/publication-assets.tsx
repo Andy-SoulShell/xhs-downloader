@@ -52,7 +52,7 @@ export function PublicationAssets({
           <legend className="text-sm font-semibold text-stone-800">
             发布素材
           </legend>
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="mt-1 text-xs text-stone-600">
             图文支持 1–18 张图片；视频笔记仅支持一个视频。
           </p>
         </div>

@@ -139,7 +139,8 @@ button {
 .meta-text {
   font-size: 0.6875rem;
   line-height: 1.125rem;
-  color: #a8a29e;
+  /* stone-400 在浅底上只有 2.4:1，远低于 AA；stone-600 可达 6.5:1。 */
+  color: #57534e;
 }
 
 .feed-masonry {

@@ -28,7 +28,7 @@ export function Metric({
   return (
     <span
       aria-label={metricAriaLabel(label, value)}
-      className={`inline-flex items-center ${compact ? "gap-1" : "gap-1.5 text-stone-500"}`}
+      className={`inline-flex items-center ${compact ? "gap-1" : "gap-1.5 text-stone-600"}`}
     >
       <Icon aria-hidden size={compact ? 13 : 15} />
       <span className={compact ? "" : "text-xs font-medium text-stone-700"}>

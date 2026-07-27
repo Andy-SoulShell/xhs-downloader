@@ -36,7 +36,7 @@ export function PostDownloadSelection({
       <div className="flex shrink-0 items-center justify-between px-5 py-3 sm:px-7">
         <h3 className="text-sm font-semibold text-stone-900">选择下载项</h3>
         <button
-          className="text-xs font-medium text-stone-500 hover:text-stone-950"
+          className="text-xs font-medium text-stone-600 hover:text-stone-950"
           onClick={() =>
             onSelectionChange(
               allSelected
@@ -118,7 +118,7 @@ export function PostDownloadBar({
         </p>
       )}
       <div className="flex items-center justify-between gap-4">
-        <label className="flex items-center gap-2 text-xs text-stone-500">
+        <label className="flex items-center gap-2 text-xs text-stone-600">
           <Switch.Root
             aria-label="强制重新下载"
             checked={post.force}

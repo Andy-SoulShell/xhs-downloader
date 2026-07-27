@@ -65,7 +65,7 @@ export function ManagedBrowserPanel({
                       : "状态未知"}
             </Badge>
           </div>
-          <p className="mt-2 break-words text-xs leading-5 text-stone-500">
+          <p className="mt-2 break-words text-xs leading-5 text-stone-600">
             {status?.message ||
               (control.loading
                 ? "正在检测本机 Chrome 或 Chromium。"

@@ -30,7 +30,7 @@ export function LinkComposer({
             <span className="sr-only">帖子链接</span>
             <input
               aria-label="帖子链接"
-              className="w-full bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
+              className="w-full bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-500"
               id="work-url"
               onChange={(event) => onChange(event.target.value)}
               placeholder="粘贴小红书帖子链接"

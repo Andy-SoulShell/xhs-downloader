@@ -73,7 +73,7 @@ export function BrowserTaskRecord({
             </Badge>
           )}
         </div>
-        <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-500">
+        <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-600">
           {humanizeError(task.message)}
         </p>
         <p className="meta-text mt-2 flex flex-wrap items-center gap-x-2">

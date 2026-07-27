@@ -206,7 +206,7 @@ function SettingsForm({
         />
 
         <div className="control-shell flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 text-xs text-stone-500">
+          <div className="min-w-0 text-xs text-stone-600">
             <p className="font-medium text-stone-700">配置文件</p>
             <p className="mt-1 truncate font-mono text-[11px]">
               {settings.config_file}

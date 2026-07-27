@@ -20,7 +20,7 @@ const COVER_RESERVE = "aspect-3/4 w-full bg-stone-100";
  */
 function CoverUnavailable() {
   return (
-    <div className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-400">
+    <div className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-600">
       <span className="flex flex-col items-center gap-1.5">
         <ImageOff size={22} strokeWidth={1.5} />
         <span className="text-[11px] leading-none">封面已失效</span>

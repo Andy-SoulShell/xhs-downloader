@@ -59,7 +59,7 @@ export function BrowserDetail({
               <p className="truncate text-sm font-semibold text-stone-900">
                 {detail.author.nickname || "未知作者"}
               </p>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-stone-600">
                 {detail.ip_location || "位置未知"}
               </p>
             </div>
@@ -181,7 +181,7 @@ export function BrowserDetail({
         <div className="mt-3 flex items-center justify-between gap-3">
           {replyTarget ? (
             <button
-              className="text-xs text-stone-500 hover:text-stone-900"
+              className="text-xs text-stone-600 hover:text-stone-900"
               onClick={() => setReplyTarget(null)}
               type="button"
             >
@@ -238,7 +238,7 @@ export function BrowserDetail({
             </article>
           ))
         ) : (
-          <p className="text-sm text-stone-500">当前没有已加载评论。</p>
+          <p className="text-sm text-stone-600">当前没有已加载评论。</p>
         )}
       </div>
     </section>

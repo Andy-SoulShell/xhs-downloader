@@ -43,7 +43,7 @@ export function BoardTabs({ ariaLabel, tabs, defaultValue }: BoardTabsProps) {
           const active = value === tab.value;
           return (
             <Tabs.Trigger
-              className="group inline-flex min-w-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium text-stone-500 outline-none transition-all duration-200 hover:text-stone-900 data-[state=active]:bg-white data-[state=active]:text-stone-950 data-[state=active]:shadow-[0_1px_2px_rgb(28_25_23/0.08),0_4px_12px_rgb(28_25_23/0.06)] focus-visible:ring-2 focus-visible:ring-stone-900/15"
+              className="group inline-flex min-w-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium text-stone-600 outline-none transition-all duration-200 hover:text-stone-900 data-[state=active]:bg-white data-[state=active]:text-stone-950 data-[state=active]:shadow-[0_1px_2px_rgb(28_25_23/0.08),0_4px_12px_rgb(28_25_23/0.06)] focus-visible:ring-2 focus-visible:ring-stone-900/15"
               key={tab.value}
               value={tab.value}
             >
@@ -61,7 +61,7 @@ export function BoardTabs({ ariaLabel, tabs, defaultValue }: BoardTabsProps) {
                   className={`ml-0.5 min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] leading-4 font-semibold tabular-nums transition-colors ${
                     active
                       ? "bg-stone-900 text-white"
-                      : "bg-stone-900/[0.06] text-stone-500"
+                      : "bg-stone-900/[0.06] text-stone-600"
                   }`}
                 >
                   {tab.count > 99 ? "99+" : tab.count}

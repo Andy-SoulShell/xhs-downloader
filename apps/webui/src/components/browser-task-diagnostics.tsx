@@ -109,7 +109,7 @@ export function BrowserTaskDiagnostics({
       />
       <p
         aria-live="polite"
-        className="mt-2 min-h-4 break-words text-[11px] text-stone-500"
+        className="mt-2 min-h-4 break-words text-[11px] text-stone-600"
       >
         {copyMessage}
       </p>

@@ -26,7 +26,7 @@ export function CookieSetupGuide() {
             混合路由要求它与浏览器模式使用同一账号。
           </li>
         </ol>
-        <p className="text-stone-500">
+        <p className="text-stone-600">
           Cookie 只保存在本机且不会再次显示。不要把它发送到聊天、截图或日志中；如有泄露，请立即在设置中清除并退出对应网页账号。
         </p>
       </div>

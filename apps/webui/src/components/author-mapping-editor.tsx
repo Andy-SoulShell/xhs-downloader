@@ -24,7 +24,7 @@ export function AuthorMappingEditor({
   return (
     <div className="min-w-0 sm:col-span-2">
       <p className="text-sm font-semibold text-stone-900">作者名称替换</p>
-      <p className="mt-1 text-xs leading-5 text-stone-500">
+      <p className="mt-1 text-xs leading-5 text-stone-600">
         把某个作者的目录名换成你自己的叫法；不填就用原昵称。
       </p>
 

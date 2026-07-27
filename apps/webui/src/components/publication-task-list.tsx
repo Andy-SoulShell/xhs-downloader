@@ -39,7 +39,7 @@ export function PublicationTaskList({
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
           <h2 className="text-base font-semibold text-stone-900">发布任务</h2>
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="mt-1 text-xs text-stone-600">
             自动刷新执行进度与待确认状态
           </p>
         </div>
@@ -106,7 +106,7 @@ function TaskRow({
         </div>
         <TaskBadge task={task} />
       </div>
-      <p className="mt-3 text-xs leading-5 text-stone-500">{task.message}</p>
+      <p className="mt-3 text-xs leading-5 text-stone-600">{task.message}</p>
       {task.status === "awaiting_verification" &&
         task.target_driver === "managed" && (
           <PublicationVerificationResume onResume={onResumeVerification} />

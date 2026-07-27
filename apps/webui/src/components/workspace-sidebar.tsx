@@ -56,7 +56,7 @@ export function WorkspaceSidebar({
               {item.sidebarLabel}
             </span>
             {viewCounts[item.view] !== undefined && (
-              <span className="text-stone-600">{viewCounts[item.view]}</span>
+              <span className="text-stone-400">{viewCounts[item.view]}</span>
             )}
           </Tabs.Trigger>
         ))}
@@ -86,7 +86,7 @@ export function WorkspaceSidebar({
         <div className="mt-3">
           <StatusPill online={online} />
         </div>
-        <p className="mt-3 text-[11px] leading-5 text-stone-500">
+        <p className="mt-3 text-[11px] leading-5 text-stone-400">
           浏览和发布都用你自己的登录状态，软件不会读取你的账号密码。
         </p>
       </div>
@@ -120,7 +120,7 @@ function SidebarButton({
       <Icon aria-hidden size={17} />
       <span className="flex-1 text-left font-medium">{label}</span>
       {count !== undefined && (
-        <span className={active ? "text-stone-400" : "text-stone-600"}>
+        <span className={active ? "text-stone-500" : "text-stone-400"}>
           {count}
         </span>
       )}

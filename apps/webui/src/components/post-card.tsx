@@ -89,7 +89,7 @@ export function PostCard({
           {post.status === "downloading" && post.progress && (
             <DownloadProgressBar progress={post.progress} />
           )}
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-stone-500">
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-stone-600">
             <div className="flex min-w-0 items-center gap-2">
               <AuthorAvatar
                 name={detail.作者.作者昵称}
@@ -153,7 +153,7 @@ function NoMediaCover({
   return (
     <button
       aria-label={`打开帖子：${title}`}
-      className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-400 transition hover:text-stone-500"
+      className="grid aspect-3/4 w-full place-items-center bg-stone-100 text-stone-600 transition hover:text-stone-700"
       onClick={onOpen}
       type="button"
     >

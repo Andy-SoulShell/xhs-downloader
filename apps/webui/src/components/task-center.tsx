@@ -78,7 +78,7 @@ export function TaskBoard({
                     </ActionButton>
                   )}
                 </div>
-                <p className="mt-0.5 text-xs leading-5 text-stone-500">
+                <p className="mt-0.5 text-xs leading-5 text-stone-600">
                   {humanizeError(task.message)}
                 </p>
                 {task.status === "running" && (
@@ -152,7 +152,7 @@ export function RecordBoard({
                     : downloadStatusCopy.failed.label}
                 </Badge>
               </div>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-stone-500">
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-stone-600">
                 {humanizeError(record.message)}
               </p>
               <p className="meta-text mt-2.5 flex flex-wrap items-center gap-x-2">
@@ -196,7 +196,7 @@ function ManagementSection({
 }) {
   return (
     <section aria-label={title}>
-      <p className="mb-4 text-xs leading-5 text-stone-500">{description}</p>
+      <p className="mb-4 text-xs leading-5 text-stone-600">{description}</p>
       {children}
     </section>
   );
