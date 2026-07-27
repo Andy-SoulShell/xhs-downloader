@@ -28,14 +28,17 @@ import { Metric } from "./metric";
  *
  * @param browserDriver 当前连接方式；未确认时停用登录与互动。
  * @param onDownload 把一条浏览结果交给下载；由内容工作台提供。
+ * @param headless 自带浏览器是否后台运行；无头下取不到登录二维码。
  * @param onOpenSettings 跳到设置工作台；浏览受阻时的出路都在那里。
  */
 export function BrowserBoard({
   browserDriver = null,
+  headless = false,
   onDownload,
   onOpenSettings,
 }: {
   browserDriver?: unknown;
+  headless?: boolean;
   onDownload?: (url: string, title: string) => Promise<void>;
   onOpenSettings?: () => void;
 }) {
@@ -81,6 +84,7 @@ export function BrowserBoard({
       <BrowserLoginActions
         browserDriver={confirmedDriver}
         busy={explorer.busy}
+        headless={headless}
         managedStatus={managedBrowser.status}
         message={explorer.sessionMessage}
         onCheckLogin={explorer.checkLogin}

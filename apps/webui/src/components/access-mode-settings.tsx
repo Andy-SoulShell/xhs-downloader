@@ -129,7 +129,7 @@ export function AccessModeSettings({
             <>
               <ToggleSetting
                 checked={values.managed_browser_headless}
-                description="根本不画窗口，读取和互动都在后台完成。扫码登录照常——二维码是取回来显示在这个界面上的，不需要看见浏览器。代价是无头更容易被平台识别，遇到验证码或读不到内容就关掉它。"
+                description="根本不画窗口，读取和互动都在后台完成。但小红书不会在无窗口的浏览器里给出登录二维码——首次登录要先关掉这一项，扫完码再开回来。无头也更容易被平台识别，遇到验证码或读不到内容就关掉它。"
                 label="不显示浏览器窗口"
                 onChange={(checked) => onChange("managed_browser_headless", checked)}
               />

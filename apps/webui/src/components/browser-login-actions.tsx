@@ -8,6 +8,8 @@ import { Badge } from "./badge";
 
 interface BrowserLoginActionsProps {
   browserDriver: BrowserDriver | null;
+  /** 自带浏览器是否以无头方式运行；无头下小红书不会渲染登录二维码。 */
+  headless?: boolean;
   /** 登录与连接状态徽章；它们说的是这张卡的事，不该挂在下面的搜索卡上。 */
   status?: ReactNode;
   busy: boolean;
@@ -23,6 +25,7 @@ interface BrowserLoginActionsProps {
 export function BrowserLoginActions({
   browserDriver,
   busy,
+  headless = false,
   status,
   managedStatus,
   message,
@@ -35,6 +38,9 @@ export function BrowserLoginActions({
   const driverReady =
     browserDriver === "extension" ||
     (browserDriver === "managed" && managedStatus?.state === "running");
+  // 实测：无头 Chrome 打开小红书登录页时，页面根本不渲染二维码，任务只会失败。
+  // 与其让人点了等一场空，不如直接挡住并说清怎么绕过去。
+  const qrBlocked = browserDriver === "managed" && headless;
 
   const confirmDelete = async () => {
     await onDeleteCookies();
@@ -50,7 +56,9 @@ export function BrowserLoginActions({
             <h2 className="text-sm font-semibold text-stone-900">浏览器登录与会话</h2>
           </div>
           <p className="mt-1 text-xs leading-5 text-stone-600">
-            {loginGuidance(browserDriver, managedStatus)}
+            {qrBlocked
+              ? "现在是后台运行，小红书不会在无窗口的浏览器里给出二维码。先到「设置 → 连接方式」关掉「不显示浏览器窗口」，扫码登录一次，之后再开回来。"
+              : loginGuidance(browserDriver, managedStatus)}
           </p>
         </div>
         {/* 三个按钮是一组，宽屏下别被说明文字挤到折行 */}
@@ -64,7 +72,7 @@ export function BrowserLoginActions({
             检查登录
           </ActionButton>
           <ActionButton
-            disabled={busy || !driverReady}
+            disabled={busy || !driverReady || qrBlocked}
             onClick={() => void onGetQrCode()}
             variant="outline"
           >

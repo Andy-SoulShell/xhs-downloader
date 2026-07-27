@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from secrets import token_urlsafe
 
+from loguru import logger
 from pydantic import JsonValue
 
 from xhs_core.domain import (
@@ -114,6 +115,7 @@ class BrowserExecutionService:
         if status is BrowserTaskStatus.SUCCEEDED and result is None:
             raise BrowserTaskError("成功任务必须返回结构化结果")
         normalized_result = _normalize_terminal_result(task, status, result)
+        _log_discarded_reason(task_id, status, message)
         now = datetime.now(UTC)
         terminal = status in _TERMINAL
         updated = task.model_copy(
@@ -219,3 +221,30 @@ def _normalize_terminal_result(
     if status in {BrowserTaskStatus.FAILED, BrowserTaskStatus.NEEDS_REVIEW}:
         return sanitize_browser_page_diagnostics(result)
     return None
+
+
+def _log_discarded_reason(
+    task_id: str,
+    status: BrowserTaskStatus,
+    message: str,
+) -> None:
+    """把即将被脱敏掉的失败原因留在本地日志里。
+
+    对外的消息必须白名单化, 执行器返回的原文可能夹带页面内容。但整条原因连本地
+    日志都不留, 出问题时连开发者也无从查起——界面上只剩一句通用失败。这里只写本机
+    日志文件, 不进入任何 API 响应。
+
+    Args:
+        task_id: 浏览器任务标识。
+        status: 任务即将进入的状态。
+        message: 执行器返回的原始消息。
+    """
+    safe = sanitize_browser_task_message(status, message)
+    if safe == message:
+        return
+    logger.warning(
+        "浏览器任务 {} 进入 {} 的原始原因：{}",
+        task_id,
+        status.value,
+        message[:500],
+    )
