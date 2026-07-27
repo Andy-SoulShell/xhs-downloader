@@ -7,6 +7,8 @@ import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 
 interface PublicationSubmitControlsProps {
+  /** 当前挡着发布的问题；非空时三个提交按钮都停用并说明缺什么。 */
+  blockers: string[];
   browserDriver: BrowserDriver;
   busy: string;
   onScheduledAtChange: (value: string) => void;
@@ -23,6 +25,7 @@ const LABELS: Record<PublicationMode, string> = {
 
 /** 提供三种发布方式，并在执行前显示不可跳过的二次确认。 */
 export function PublicationSubmitControls({
+  blockers,
   browserDriver,
   busy,
   onScheduledAtChange,
@@ -31,6 +34,9 @@ export function PublicationSubmitControls({
   scheduledAt,
 }: PublicationSubmitControlsProps) {
   const [pending, setPending] = useState<PublicationMode | null>(null);
+  // 渲染期就知道能不能发；缺东西时根本不该走到确认那一步。
+  const blocked = blockers.length > 0;
+  const disabledReason = blocked ? blockers.join("；") : undefined;
   const confirm = async () => {
     if (!pending) return;
     await onSubmit(pending);
@@ -51,7 +57,8 @@ export function PublicationSubmitControls({
       </label>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         <ActionButton
-          disabled={Boolean(busy)}
+          disabled={Boolean(busy) || blocked}
+          title={disabledReason}
           onClick={() => setPending("scheduled")}
           variant="outline"
         >
@@ -59,19 +66,31 @@ export function PublicationSubmitControls({
           本地定时
         </ActionButton>
         <ActionButton
-          disabled={Boolean(busy)}
+          disabled={Boolean(busy) || blocked}
+          title={disabledReason}
           onClick={() => setPending("platform_scheduled")}
           variant="outline"
         >
           <CalendarClock aria-hidden size={15} />
           官方定时
         </ActionButton>
-        <ActionButton disabled={Boolean(busy)} onClick={() => setPending("manual")}>
+        <ActionButton
+          disabled={Boolean(busy) || blocked}
+          onClick={() => setPending("manual")}
+          title={disabledReason}
+        >
           <Send aria-hidden size={15} />
           立即发布
           {browserDriver === "extension" && <ExternalLink aria-hidden size={13} />}
         </ActionButton>
       </div>
+      {blocked && (
+        <ul className="notice-block mt-3 space-y-1 text-[11px] leading-5" role="alert">
+          {blockers.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
       <div className="mt-3 space-y-1 text-[11px] leading-5 text-stone-600">
         <p>本地定时：到点后需本机服务和{driverLabel(browserDriver)}在线。</p>
         <p>

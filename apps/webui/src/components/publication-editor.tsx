@@ -16,6 +16,7 @@ import {
   publicationCreatorUrl,
   publicationDriverLabel,
   requirePublicationDriver,
+  publicationBlockers,
   validatePublicationDraft,
   validatePublicationSchedule,
 } from "../lib/publication-editor-rules";
@@ -90,6 +91,7 @@ export function PublicationEditor({
     busy === "",
   );
   const submissionInput = () => preparePublicationSubmission(input(), browserDriver);
+  const blockers = publicationBlockers(submissionInput(), draft);
   const saveSubmission = async () => {
     const saved = await onSave(submissionInput());
     if (browserDriver === "managed") {
@@ -215,6 +217,7 @@ export function PublicationEditor({
       />
 
       <PublicationSubmitControls
+        blockers={blockers}
         browserDriver={browserDriver}
         busy={busy}
         onScheduledAtChange={setScheduledAt}

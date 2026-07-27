@@ -30,15 +30,42 @@ export function preparePublicationSubmission(
   return driver === "managed" ? { ...input, visibility: "private", products: [] } : input;
 }
 
-/** 校验草稿具备创建发布任务所需的最小内容和素材。 */
+/**
+ * 列出当前还挡着发布的问题。
+ *
+ * 渲染期就要知道能不能发，才能把按钮停用并说清缺什么。此前校验只在点完
+ * “确认发布”之后才跑，新用户第一次进来必然经历“被吓唬 → 确认 → 收到一句
+ * 请至少添加一个发布素材”，用完一次就学会无脑点确认，真正不可逆的那一次
+ * 也就没了保护。
+ *
+ * @param input 当前编辑中的草稿内容。
+ * @param draft 草稿本体，用于读取素材。
+ * @returns 面向用户的问题描述；可以发布时为空数组。
+ */
+export function publicationBlockers(
+  input: PublicationDraftInput,
+  draft: PublicationDraft,
+): string[] {
+  const blockers: string[] = [];
+  if (!input.title && !input.body) blockers.push("标题和正文不能同时为空");
+  if (!draft.assets.length) blockers.push("请至少添加一个发布素材");
+  return blockers;
+}
+
+/**
+ * 校验草稿具备创建发布任务所需的最小内容和素材。
+ *
+ * 只是 {@link publicationBlockers} 的抛错版；两者共用同一份规则，实时校验
+ * 与提交校验因此不会各说各话。
+ *
+ * @throws UserFacingError 存在阻塞问题时抛出第一条。
+ */
 export function validatePublicationDraft(
   input: PublicationDraftInput,
   draft: PublicationDraft,
 ): void {
-  if (!input.title && !input.body) {
-    throw new UserFacingError("标题和正文不能同时为空");
-  }
-  if (!draft.assets.length) throw new UserFacingError("请至少添加一个发布素材");
+  const [blocker] = publicationBlockers(input, draft);
+  if (blocker) throw new UserFacingError(blocker);
 }
 
 /** 为扩展任务生成只包含任务标识和媒体类型的官方创作页地址。 */

@@ -103,20 +103,20 @@ describe("发布草稿编辑器", () => {
   });
 
   it("校验空内容、缺失素材和被阻止的弹窗", async () => {
+    // 缺东西时按钮就该是停用的，并且当场说清缺什么。此前要先点开那张写着
+    // “发出去之后这边撤不回来”的确认卡，确认之后才收到一句“请至少添加素材”，
+    // 用完一次就学会无脑点确认，真正不可逆的那次也就没了保护。
     const noContent = makePublicationDraft({ title: "", body: "" });
-    const properties = renderEditor({ draft: noContent });
-    fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
-    await waitFor(() => expect(properties.onNotify).toHaveBeenCalledWith("标题和正文不能同时为空"));
+    renderEditor({ draft: noContent });
+    expect(screen.getByRole("button", { name: "立即发布" })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("标题和正文不能同时为空");
+    expect(screen.queryByRole("button", { name: "确认立即发布" })).not.toBeInTheDocument();
     cleanup();
 
     const empty = makePublicationDraft({ assets: [] });
-    const emptyProperties = renderEditor({ draft: empty });
-    fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
-    await waitFor(() =>
-      expect(emptyProperties.onNotify).toHaveBeenCalledWith("请至少添加一个发布素材"),
-    );
+    renderEditor({ draft: empty });
+    expect(screen.getByRole("button", { name: "本地定时" })).toBeDisabled();
+    expect(screen.getByRole("alert")).toHaveTextContent("请至少添加一个发布素材");
     cleanup();
 
     vi.spyOn(window, "open").mockReturnValue(null);
