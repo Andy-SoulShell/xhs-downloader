@@ -12,7 +12,14 @@ afterEach(() => {
 });
 
 describe("calculateMasonryLayout", () => {
-  it("按从左到右的顺序分配高低不同的帖子卡片", () => {
+  it("首行按从左到右的顺序铺开高低不同的帖子卡片", () => {
+    const layout = calculateMasonryLayout([200, 440, 440, 200, 200], 5, 260, 20, 24);
+
+    expect(layout.positions.map((position) => position.x)).toEqual([0, 280, 560, 840, 1120]);
+    expect(layout.positions.every((position) => position.y === 0)).toBe(true);
+  });
+
+  it("首行之后每张卡都补进当前最矮的一列", () => {
     const layout = calculateMasonryLayout(
       [200, 440, 440, 200, 200, 200, 200, 200, 440, 440, 200, 200],
       5,
@@ -22,15 +29,26 @@ describe("calculateMasonryLayout", () => {
     );
 
     expect(layout.positions[5]).toEqual({ x: 0, y: 224 });
-    expect(layout.positions[11]).toEqual({ x: 280, y: 688 });
+    // 第 12 张卡该去 464 高的第二列，而不是排在第二列已有卡片的下方等着。
+    expect(layout.positions[11]).toEqual({ x: 280, y: 464 });
     expect(layout.height).toBe(888);
   });
 
-  it("不会因为中间列较短而改变下一行的阅读顺序", () => {
+  it("一张高卡不会把整列拖长，后面的卡片会绕开它", () => {
     const layout = calculateMasonryLayout([500, 100, 100, 100, 100, 100, 100], 3, 260, 20, 24);
 
-    expect(layout.positions[3]).toEqual({ x: 0, y: 524 });
-    expect(layout.positions[6]).toEqual({ x: 0, y: 648 });
+    // 首列被 500 高的卡占住后，剩下六张都堆在另外两列，首列不再进新卡。
+    expect(layout.positions[3]).toEqual({ x: 280, y: 124 });
+    expect(layout.positions[6]).toEqual({ x: 560, y: 248 });
+    expect(layout.height).toBe(500);
+  });
+
+  it("列高只差零点几像素时仍取最左，不被测量抖动带偏", () => {
+    // 两列分别是 124.4 和 124：右列确实矮一点点，但这点差距来自高度测量，
+    // 跟着它走会让本该并排的卡片左右横跳。
+    const layout = calculateMasonryLayout([100.4, 100, 100], 2, 260, 20, 24);
+
+    expect(layout.positions[2]).toEqual({ x: 0, y: 124.4 });
   });
 
   it("空列表不会产生负数容器高度", () => {
@@ -123,5 +141,23 @@ describe("MasonryFeed", () => {
 
     view.unmount();
     expect(disconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it("不给条件渲染出来的空节点留位置", () => {
+    const parsing = false;
+    const view = render(
+      <MasonryFeed>
+        {parsing ? <article>骨架卡</article> : null}
+        <article>第一张帖子</article>
+        <article>第二张帖子</article>
+      </MasonryFeed>,
+    );
+
+    // 给 null 也生成包裹层的话，首列会被一张零高度的卡占住：
+    // 整列往下挪一个行距，末尾还会少排一张。
+    const items = view.container.querySelectorAll<HTMLElement>("[data-masonry-item]");
+    expect(items).toHaveLength(2);
+    expect(items[0].textContent).toBe("第一张帖子");
+    expect(items[0].style.getPropertyValue("--enter-index")).toBe("0");
   });
 });

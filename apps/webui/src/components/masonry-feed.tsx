@@ -1,4 +1,11 @@
-import { Children, type CSSProperties, type ReactNode, useLayoutEffect, useRef } from "react";
+import {
+  Children,
+  type CSSProperties,
+  isValidElement,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+} from "react";
 
 import { calculateMasonryLayout } from "../lib/masonry";
 
@@ -70,12 +77,18 @@ export function MasonryFeed({ children }: MasonryFeedProps) {
     };
   }, [children]);
 
+  /* 必须先过滤掉空节点。调用方常写 `{parsing ? <骨架卡 /> : null}`，
+     而 Children.map 会照样为这个 null 生成一层包裹，
+     于是首列被一张零高度的卡占住：整列往下挪一个行距，还白白少排一张。 */
+  const items = Children.toArray(children);
+
   return (
     <div className="feed-masonry" ref={containerRef}>
-      {Children.map(children, (child, index) => (
+      {items.map((child, index) => (
         <div
           className="feed-masonry-item"
           data-masonry-item
+          key={isValidElement(child) ? child.key : index}
           style={{ "--enter-index": index } as CSSProperties}
         >
           {child}
