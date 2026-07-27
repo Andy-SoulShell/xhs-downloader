@@ -61,7 +61,7 @@ describe("帖子下载工作台", () => {
     expect(await screen.findAllByText("服务已连接")).toHaveLength(2);
     await addSyntheticPost();
 
-    expect(screen.getByText("共 1 个帖子")).toBeInTheDocument();
+    expect(screen.getByText("1 个帖子")).toBeInTheDocument();
     expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
     expect(screen.getByLabelText("帖子链接")).toHaveValue("");
     expect(submitDetail).toHaveBeenCalledWith({
@@ -102,7 +102,11 @@ describe("帖子下载工作台", () => {
         request_id: expect.any(String),
       }),
     );
-    expect(await screen.findByText("共 1 个帖子，已下载 1 个")).toBeInTheDocument();
+    // 下载完成要同时反映到左边栏的“已下载”计数和帖子自己的状态上。
+    // 详情弹窗把背景整片标成 aria-hidden，查左边栏得放行隐藏节点。
+    expect(
+      await screen.findByRole("button", { hidden: true, name: /^已下载\s*1$/ }),
+    ).toBeInTheDocument();
     expect(within(dialog).getByText("已下载")).toBeInTheDocument();
   });
 

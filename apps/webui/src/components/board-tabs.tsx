@@ -17,6 +17,8 @@ interface BoardTabsProps {
   tabs: BoardTab[];
   /** 初始分区；省略时停在第一个。 */
   defaultValue?: string;
+  /** 切换分区时的回调，供页头一类标签条之外的位置跟着当前分区变化。 */
+  onValueChange?: (value: string) => void;
 }
 
 /**
@@ -26,15 +28,20 @@ interface BoardTabsProps {
  * 内容宽度收缩而不是横跨整行，否则右侧会留下大片与内容无关的空白。
  * 与顶层工作台标签使用各自独立的 `Tabs.Root`，互不影响。
  */
-export function BoardTabs({ ariaLabel, tabs, defaultValue }: BoardTabsProps) {
+export function BoardTabs({ ariaLabel, tabs, defaultValue, onValueChange }: BoardTabsProps) {
   const [value, setValue] = useState(defaultValue ?? tabs[0]?.value ?? "");
 
   if (tabs.length <= 1) {
     return <>{tabs[0]?.content}</>;
   }
 
+  const selectTab = (next: string) => {
+    setValue(next);
+    onValueChange?.(next);
+  };
+
   return (
-    <Tabs.Root onValueChange={setValue} value={value}>
+    <Tabs.Root onValueChange={selectTab} value={value}>
       <Tabs.List
         aria-label={ariaLabel}
         className="inline-flex max-w-full flex-wrap gap-0.5 rounded-2xl bg-stone-950/[0.04] p-1"
