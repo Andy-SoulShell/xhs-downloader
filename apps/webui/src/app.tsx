@@ -6,6 +6,7 @@ import { ActivityBoard } from "./components/activity-board";
 import { ConnectionPanel } from "./components/connection-panel";
 import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
+import { PageHeading } from "./components/page-heading";
 import { PublicationBoard } from "./components/publication-board";
 import { SettingsBoard } from "./components/settings-board";
 import { AppToast } from "./components/app-toast";
@@ -238,6 +239,14 @@ export default function App() {
               </Tabs.Content>
               <Tabs.Content value="settings">
                 <>
+                  {/* 页面标题必须排在最前：此前它在服务配置那一节里，
+                      于是受管浏览器和连接方式两块反而排在页面标题之前。
+                      标题也跟侧栏统一叫「设置」，不再一个叫设置一个叫服务配置。 */}
+                  <PageHeading
+                    description="决定这个程序用什么方式打开小红书、文件下载到哪里，以及本地服务怎么跑。"
+                    meta=""
+                    title="设置"
+                  />
                   <ConnectionPanel
                     account={null}
                     browserDriver={

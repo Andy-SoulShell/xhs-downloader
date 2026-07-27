@@ -12,7 +12,6 @@ import { settingsTabs } from "./settings-tabs";
 import { Badge } from "./badge";
 import { DesktopServiceControl } from "./desktop-service-control";
 import { EmptyState } from "./empty-state";
-import { PageHeading } from "./page-heading";
 
 interface SettingsBoardProps {
   error: string;
@@ -152,11 +151,20 @@ function SettingsForm({
 
   return (
     <section aria-label="配置管理" className="mt-8 min-w-0">
-      <PageHeading
-        description="统一维护本地服务配置；Cookie 与代理只写入服务端配置文件，不会回传或保存到浏览器。"
-        meta={settings.restart_required ? "有修改等待重启" : "全部已生效"}
-        title="服务配置"
-      />
+      {/* 这里是设置页里的一节，不是一整页：页面标题由工作台给出，
+          此前用 PageHeading 会在同一页排出第二个 h1，而且它排在
+          受管浏览器与连接方式两块之后，页面标题反倒出现在页面中部。 */}
+      <div className="mb-4 md:mb-6">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="text-xl font-semibold tracking-tight text-stone-950">服务配置</h2>
+          <span className="text-xs text-stone-600">
+            {settings.restart_required ? "有修改等待重启" : "全部已生效"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-stone-600">
+          统一维护本地服务配置；Cookie 与代理只写入服务端配置文件，不会回传或保存到浏览器。
+        </p>
+      </div>
 
       {settings.restart_required && (
         <Notice tone="warning">
