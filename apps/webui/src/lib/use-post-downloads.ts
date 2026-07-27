@@ -4,10 +4,11 @@ import { submitDetail } from "./api";
 import type { TaskRequest, DownloadTask } from "./types";
 import { postFromResponse, type PostRecord } from "./workspace";
 import { describeError } from "./error-message";
+import type { NoticeTone } from "../components/app-toast";
 
 interface PostDownloadsOptions {
   createTask: (request: TaskRequest) => Promise<DownloadTask>;
-  notify: (message: string) => void;
+  notify: (message: string, tone?: NoticeTone) => void;
   setOnline: (online: boolean) => void;
   setPosts: (update: (current: PostRecord[]) => PostRecord[]) => void;
   updatePost: (id: string, change: Partial<PostRecord>) => void;
@@ -39,7 +40,7 @@ export function usePostDownloads({
       const detail = post.result.data;
       if (!detail) return;
       if (!post.selected.size) {
-        notify("请至少选择一张图片或视频");
+        notify("请至少选择一张图片或视频", "info");
         return;
       }
       updatePost(post.id, { status: "downloading" });
@@ -51,7 +52,7 @@ export function usePostDownloads({
           request_id: crypto.randomUUID(),
         });
         setOnline(true);
-        notify("已开始下载，可以在动态里查看进度");
+        notify("已开始下载，可以在动态里查看进度", "success");
       } catch (error) {
         // 原因必须落到记录上：toast 会消失，用户回头再打开详情就无从判断。
         const message = describeError(error, "下载失败");
@@ -60,7 +61,7 @@ export function usePostDownloads({
           result: { ...post.result, message },
         });
         setOnline(false);
-        notify(message);
+        notify(message, "error");
       }
     },
     [createTask, notify, setOnline, updatePost],
@@ -82,10 +83,10 @@ export function usePostDownloads({
           request_id: crypto.randomUUID(),
         });
         setOnline(true);
-        notify(`已开始下载「${title}」`);
+        notify(`已开始下载「${title}」`, "success");
       } catch (error) {
         setOnline(false);
-        notify(describeError(error, "下载失败"));
+        notify(describeError(error, "下载失败"), "error");
       }
     },
     [createTask, notify, setOnline, setPosts],

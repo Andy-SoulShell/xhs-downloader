@@ -8,6 +8,7 @@ import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
 import { PublicationBoard } from "./components/publication-board";
 import { SettingsBoard } from "./components/settings-board";
+import { AppToast, type NoticeTone } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import {
@@ -22,6 +23,7 @@ import { useSettings } from "./lib/use-settings";
 import { usePostDownloads } from "./lib/use-post-downloads";
 import { useTaskCenter } from "./lib/use-task-center";
 import { describeError } from "./lib/error-message";
+import { useDownloadCompletion } from "./lib/use-download-completion";
 import {
   mergeTaskResults,
   postFromDetail,
@@ -39,7 +41,10 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<WorkspaceView>("content");
   const [parsing, setParsing] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ message: string; tone: NoticeTone }>({
+    message: "",
+    tone: "info",
+  });
   const [toastOpen, setToastOpen] = useState(false);
   const {
     createTask,
@@ -84,7 +89,10 @@ export default function App() {
       .catch((error: unknown) => {
         if (!active) return;
         setOnline(false);
-        setNotice(describeError(error, "读取本地帖子失败"));
+        setNotice({
+          message: describeError(error, "读取本地帖子失败"),
+          tone: "error",
+        });
         setToastOpen(true);
       });
     return () => {
@@ -92,10 +100,12 @@ export default function App() {
     };
   }, [reloadKey]);
 
-  const notify = (message: string) => {
-    setNotice(message);
+  const notify = (message: string, tone: NoticeTone = "info") => {
+    setNotice({ message, tone });
     setToastOpen(true);
   };
+
+  useDownloadCompletion(tasks, notify);
 
   const retryConnection = () => {
     setOnline(null);
@@ -120,10 +130,10 @@ export default function App() {
       ]);
       setLink("");
       setOnline(true);
-      notify(`已添加「${post.result.data?.作品标题 || "未命名帖子"}」`);
+      notify(`已添加「${post.result.data?.作品标题 || "未命名帖子"}」`, "success");
     } catch (error) {
       setOnline(false);
-      notify(describeError(error, "解析失败"));
+      notify(describeError(error, "解析失败"), "error");
     } finally {
       setParsing(false);
     }
@@ -150,7 +160,7 @@ export default function App() {
       notify("已重新开始下载");
     } catch (error) {
       setOnline(false);
-      notify(describeError(error, "任务重试失败"));
+      notify(describeError(error, "任务重试失败"), "error");
     }
   };
 
@@ -160,7 +170,7 @@ export default function App() {
       setPosts((current) => current.filter((item) => item.id !== id));
       notify("帖子已从列表移除");
     } catch (error) {
-      notify(describeError(error, "帖子移除失败"));
+      notify(describeError(error, "帖子移除失败"), "error");
     }
   };
 
@@ -278,16 +288,12 @@ export default function App() {
       </div>
       </Tabs.Root>
 
-      <Toast.Root
-        className="rounded-2xl border border-stone-200 bg-white p-4 shadow-2xl data-[state=open]:animate-[toast-in_180ms_ease-out]"
-        duration={3600}
+      <AppToast
+        message={notice.message}
         onOpenChange={setToastOpen}
         open={toastOpen}
-      >
-        <Toast.Title className="text-sm font-semibold text-stone-900">
-          {notice}
-        </Toast.Title>
-      </Toast.Root>
+        tone={notice.tone}
+      />
       <Toast.Viewport className="fixed right-4 bottom-4 z-50 w-[calc(100vw-2rem)] max-w-sm outline-none" />
     </Toast.Provider>
   );
