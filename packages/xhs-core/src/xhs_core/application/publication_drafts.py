@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterable
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from xhs_core.domain import (
@@ -213,6 +214,30 @@ class PublicationDraftService:
         await self._drafts.save_draft(updated)
         await self._assets.delete(draft_id, asset)
         return updated
+
+    async def asset_path(self, draft_id: str, asset_id: str) -> Path:
+        """返回草稿素材的本地文件路径。
+
+        管理端要给草稿列表和素材区显示缩略图，只能读自己这台机器上的原文件。
+
+        Args:
+            draft_id: 草稿唯一标识。
+            asset_id: 素材唯一标识。
+
+        Returns:
+            确认存在且大小与记录一致的素材路径。
+
+        Raises:
+            PublicationError: 草稿或素材不存在，或文件已缺失。
+        """
+        draft = await self.require(draft_id)
+        asset = next((item for item in draft.assets if item.asset_id == asset_id), None)
+        if not asset:
+            raise PublicationError("发布素材不存在")
+        path = self._assets.path_for(draft_id, asset)
+        if not path.is_file() or path.stat().st_size != asset.size:
+            raise PublicationError("发布素材缺失或大小校验失败")
+        return path
 
     async def delete(self, draft_id: str) -> None:
         """删除没有活跃任务的草稿和素材。

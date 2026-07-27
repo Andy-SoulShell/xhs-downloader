@@ -5,7 +5,7 @@ from enum import StrEnum
 from hashlib import sha256
 from json import dumps
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from .browser_tasks import BrowserDriver
 
@@ -135,6 +135,19 @@ class PublicationDraft(BaseModel):
             separators=(",", ":"),
         )
         return sha256(canonical.encode("utf-8")).hexdigest()
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def content_fingerprint(self) -> str:
+        """随草稿一同下发的内容指纹。
+
+        管理端要拿它和任务的 ``package_fingerprint`` 比对，才能分辨"已发布"
+        说的是当前这份内容，还是发布之后又改过的旧内容。
+
+        Returns:
+            与 :meth:`fingerprint` 相同的摘要。
+        """
+        return self.fingerprint()
 
 
 class PublicationTask(BaseModel):

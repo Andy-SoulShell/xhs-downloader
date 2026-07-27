@@ -4,6 +4,7 @@ import {
   cancelPublicationTask,
   createPublicationDraft,
   deletePublicationDraft,
+  DRAFT_PAGE_LIMIT,
   listPublicationDrafts,
   listPublicationTasks,
   removePublicationAsset,
@@ -44,7 +45,7 @@ describe("发布中心 API 客户端", () => {
     await expect(deletePublicationDraft(draft.draft_id)).resolves.toBeUndefined();
 
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
-      "/api/publication/drafts",
+      `/api/publication/drafts?limit=${DRAFT_PAGE_LIMIT}`,
       "/api/publication/drafts",
       "/api/publication/drafts/synthetic-draft",
       "/api/publication/drafts/synthetic-draft",

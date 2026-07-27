@@ -9,9 +9,24 @@ import type {
 import { isBrowserDriver } from "./types";
 import { UserFacingError } from "./error-message";
 
-export async function listPublicationDrafts(): Promise<PublicationDraft[]> {
-  const response = await fetch(`${API_BASE}/publication/drafts`);
+/**
+ * 一次能取回的草稿上限。
+ *
+ * 服务端默认只给 100 份、最多给 500 份，超出的部分不会有任何提示地消失。
+ * 显式要 200 份，界面才知道自己拿到的是不是全部（返回条数等于上限即为截断）。
+ */
+export const DRAFT_PAGE_LIMIT = 200;
+
+export async function listPublicationDrafts(
+  limit = DRAFT_PAGE_LIMIT,
+): Promise<PublicationDraft[]> {
+  const response = await fetch(`${API_BASE}/publication/drafts?limit=${limit}`);
   return parseResponse<PublicationDraft[]>(response);
+}
+
+/** 本机管理端读取草稿素材原文件的地址，用于封面和缩略图。 */
+export function publicationAssetUrl(draftId: string, assetId: string): string {
+  return `${API_BASE}/publication/drafts/${draftId}/assets/${assetId}`;
 }
 
 export async function createPublicationDraft(): Promise<PublicationDraft> {

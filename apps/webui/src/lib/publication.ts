@@ -37,6 +37,13 @@ export interface PublicationDraft {
   assets: PublicationAsset[];
   created_at: string;
   updated_at: string;
+  /**
+   * 当前内容的摘要，与任务冻结的 `package_fingerprint` 同源。
+   *
+   * 两者不同就说明这份草稿在那次提交之后又被改过，界面才能把"已发布"
+   * 说成"已发布 · 内容已改动"。老版本服务端不下发这个字段。
+   */
+  content_fingerprint?: string;
 }
 
 /** 后端冻结执行驱动并持久化的发布任务快照。 */

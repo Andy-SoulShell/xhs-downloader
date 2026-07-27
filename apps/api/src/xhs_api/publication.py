@@ -153,6 +153,15 @@ def create_publication_router(
         _require_management(request, management_access)
         return await drafts.remove_asset(draft_id, asset_id)
 
+    @router.get("/drafts/{draft_id}/assets/{asset_id}")
+    async def get_draft_asset(
+        draft_id: str,
+        asset_id: str,
+        request: Request,
+    ) -> FileResponse:
+        _require_management(request, management_access)
+        return FileResponse(await drafts.asset_path(draft_id, asset_id))
+
     @router.post(
         "/drafts/{draft_id}/submit",
         response_model=PublicationTask,

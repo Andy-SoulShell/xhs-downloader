@@ -141,6 +141,7 @@ export function makePublicationDraft(overrides: Partial<PublicationDraft> = {}):
     ],
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:01Z",
+    content_fingerprint: "c".repeat(64),
     ...overrides,
   };
 }
@@ -150,7 +151,8 @@ export function makePublicationTask(overrides: Partial<PublicationTask> = {}): P
   return {
     task_id: "synthetic-publication-task",
     package: draft,
-    package_fingerprint: "b".repeat(64),
+    // 与草稿当前内容一致：默认情况下不应被判定为"提交后又改过"。
+    package_fingerprint: draft.content_fingerprint ?? "",
     mode: "manual",
     target_driver: "extension",
     status: "ready",
