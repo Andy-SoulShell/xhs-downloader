@@ -139,6 +139,7 @@ class ChromiumController(ManagedBrowserController):
                     executable,
                     self._settings.managed_browser_profile_dir,
                     self._settings.managed_browser_headless,
+                    self._settings.managed_browser_offscreen,
                 )
                 self._process = await self._launcher(command)
                 self._port = await self._wait_for_endpoint()

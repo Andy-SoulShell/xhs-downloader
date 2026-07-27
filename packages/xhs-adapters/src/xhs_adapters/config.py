@@ -49,6 +49,7 @@ class AppSettings(BaseSettings):
         browser_driver: 浏览器能力使用扩展还是受管浏览器执行。
         managed_browser_executable: 受管 Chromium 可执行文件；为空时自动检测。
         managed_browser_headless: 是否隐藏受管浏览器窗口。
+        managed_browser_offscreen: 是否把受管浏览器窗口挪到可视区之外。
     """
 
     model_config = SettingsConfigDict(
@@ -94,6 +95,7 @@ class AppSettings(BaseSettings):
     browser_driver: BrowserDriver = BrowserDriver.EXTENSION
     managed_browser_executable: Path | None = None
     managed_browser_headless: bool = False
+    managed_browser_offscreen: bool = False
     managed_browser_startup_timeout: float = Field(default=15, gt=0, le=120)
     managed_browser_shutdown_timeout: float = Field(default=5, gt=0, le=30)
 

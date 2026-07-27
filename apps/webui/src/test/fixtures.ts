@@ -107,6 +107,7 @@ export function makeSettingsResponse(overrides: Partial<SettingsResponse> = {}):
       browser_driver: "extension",
       managed_browser_executable: null,
       managed_browser_headless: false,
+      managed_browser_offscreen: false,
       managed_browser_startup_timeout: 15,
       managed_browser_shutdown_timeout: 5,
     },

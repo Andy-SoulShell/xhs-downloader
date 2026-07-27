@@ -96,4 +96,40 @@ describe("连接方式配置", () => {
 
     expect(onChange).toHaveBeenCalledWith("managed_browser_executable", null);
   });
+
+  it("两种隐藏窗口的方式各自可切换", () => {
+    const onChange = vi.fn();
+    render(
+      <AccessModeSettings onChange={onChange} values={{ ...values, browser_driver: "managed" }} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "展开高级选项" }));
+    fireEvent.click(screen.getByRole("switch", { name: "不显示浏览器窗口" }));
+    expect(onChange).toHaveBeenCalledWith("managed_browser_headless", true);
+
+    fireEvent.click(screen.getByRole("switch", { name: "窗口移到屏幕外" }));
+    expect(onChange).toHaveBeenCalledWith("managed_browser_offscreen", true);
+  });
+
+  it("选了不显示窗口之后，移出屏幕这一项作废", () => {
+    render(
+      <AccessModeSettings
+        onChange={vi.fn()}
+        values={{
+          ...values,
+          browser_driver: "managed",
+          managed_browser_headless: true,
+          managed_browser_offscreen: true,
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "展开高级选项" }));
+    // 无头时窗口根本不存在，这一项即使配置为真也不该显示成生效。
+    expect(screen.getByRole("switch", { name: "窗口移到屏幕外" })).toHaveAttribute(
+      "data-state",
+      "unchecked",
+    );
+    expect(screen.getByText("上面已经选了不显示窗口，这一项用不上。")).toBeInTheDocument();
+  });
 });

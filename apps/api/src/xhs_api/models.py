@@ -109,6 +109,7 @@ class SettingsValues(BaseModel):
     browser_driver: BrowserDriver
     managed_browser_executable: str | None
     managed_browser_headless: bool
+    managed_browser_offscreen: bool
     managed_browser_startup_timeout: float
     managed_browser_shutdown_timeout: float
 
@@ -161,6 +162,7 @@ class SettingsUpdate(BaseModel):
     browser_driver: BrowserDriver | None = None
     managed_browser_executable: str | None = None
     managed_browser_headless: bool | None = None
+    managed_browser_offscreen: bool | None = None
     managed_browser_startup_timeout: float | None = Field(
         default=None,
         gt=0,

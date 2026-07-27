@@ -126,12 +126,25 @@ export function AccessModeSettings({
             wide
           />
           {values.browser_driver === "managed" && (
-            <ToggleSetting
-              checked={values.managed_browser_headless}
-              description="读取和互动都在后台完成，不再弹窗；扫码登录照常，二维码取回来显示在这个界面上。无头更容易被平台识别，遇到验证或读不到内容就关掉它。保存后要重启本地服务才生效。"
-              label="后台运行，不弹出浏览器窗口"
-              onChange={(checked) => onChange("managed_browser_headless", checked)}
-            />
+            <>
+              <ToggleSetting
+                checked={values.managed_browser_headless}
+                description="根本不画窗口，读取和互动都在后台完成。扫码登录照常——二维码是取回来显示在这个界面上的，不需要看见浏览器。代价是无头更容易被平台识别，遇到验证码或读不到内容就关掉它。"
+                label="不显示浏览器窗口"
+                onChange={(checked) => onChange("managed_browser_headless", checked)}
+              />
+              {/* 两项是互斥的：无头时窗口根本不存在，再谈窗口位置没有意义。 */}
+              <ToggleSetting
+                checked={values.managed_browser_offscreen && !values.managed_browser_headless}
+                description={
+                  values.managed_browser_headless
+                    ? "上面已经选了不显示窗口，这一项用不上。"
+                    : "窗口照常打开，但挪到可视区之外，不会挡住你正在看的东西，平台看到的仍是一个正常的有头浏览器。启动那一下浏览器可能还是会切到前台一次，之后就不再打扰你；接了多显示器时窗口可能落到副屏上。"
+                }
+                label="窗口移到屏幕外"
+                onChange={(checked) => onChange("managed_browser_offscreen", checked)}
+              />
+            </>
           )}
         </>
       )}

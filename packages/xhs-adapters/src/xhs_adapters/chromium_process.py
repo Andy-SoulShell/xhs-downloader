@@ -38,10 +38,16 @@ ProcessLauncher = Callable[[Sequence[str]], Awaitable[ChromiumProcess]]
 EndpointProbe = Callable[[int], Awaitable[bool]]
 
 
+# 挪出可视区用的坐标。给一个远超任何屏幕排布的负值, 让窗口管理器把它钳到
+# 主屏左侧之外; 实测 macOS 会钳成 -(主屏宽度), 窗口整扇落在屏幕外。
+_OFFSCREEN_POSITION = "--window-position=-32000,-32000"
+
+
 def build_launch_command(
     executable: Path,
     profile_dir: Path,
     headless: bool,
+    offscreen: bool = False,
 ) -> tuple[str, ...]:
     """构造限定专用目录和回环 CDP 的 Chromium 命令。
 
@@ -49,6 +55,7 @@ def build_launch_command(
         executable: 已检测的浏览器可执行文件。
         profile_dir: 与日常浏览器隔离的用户目录。
         headless: 是否隐藏浏览器窗口。
+        offscreen: 是否把窗口挪到可视区之外；无头时该项没有意义。
 
     Returns:
         不包含 Cookie 或页面凭据的启动参数。
@@ -63,6 +70,8 @@ def build_launch_command(
     ]
     if headless:
         args.append("--headless=new")
+    elif offscreen:
+        args.append(_OFFSCREEN_POSITION)
     args.append(START_PAGE)
     return tuple(args)
 

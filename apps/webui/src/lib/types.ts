@@ -146,6 +146,7 @@ export interface SettingsValues {
   /** 受管 Chromium 可执行文件完整路径；为空时由服务自动检测。 */
   managed_browser_executable: string | null;
   managed_browser_headless: boolean;
+  managed_browser_offscreen: boolean;
   managed_browser_startup_timeout: number;
   managed_browser_shutdown_timeout: number;
 }
