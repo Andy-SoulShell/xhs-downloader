@@ -2,6 +2,7 @@ import { CalendarClock, ExternalLink, Send, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
 import type { PublicationMode } from "../lib/publication";
+import { connectionCopy } from "../lib/terminology";
 import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 
@@ -87,11 +88,12 @@ export function PublicationSubmitControls({
           <div className="flex items-start gap-2">
             <ShieldCheck aria-hidden className="mt-0.5 shrink-0 text-amber-700" size={16} />
             <div className="min-w-0 text-xs leading-5 text-amber-900">
-              <p className="font-semibold">确认执行“{LABELS[pending]}”吗？</p>
-              <p>
-                {driverLabel(browserDriver)}
-                将使用当前选定浏览器中的登录账号操作小红书创作平台。
-              </p>
+              {/* 二次确认要说清点下去会发生什么、还能不能撤回。三种方式后果完全
+                  不同，此前却共用同一句“将使用当前选定浏览器中的登录账号操作”，
+                  除了标题里的名字之外没有任何区别，等于白确认一次。 */}
+              <p className="font-semibold">{confirmTitle(pending)}</p>
+              <p>{confirmDetail(pending, browserDriver, scheduledAt)}</p>
+              <p className="mt-2">会用{driverLabel(browserDriver)}里你已经登录的账号操作小红书。</p>
               {products.length > 0 && (
                 <p className="mt-2 break-words">将绑定商品：{products.join("、")}</p>
               )}
@@ -118,6 +120,27 @@ function minimumSchedule(): string {
   return local.toISOString().slice(0, 16);
 }
 
+/** 确认框标题：直接说这一步会做什么，而不是复述按钮名。 */
+function confirmTitle(mode: PublicationMode): string {
+  if (mode === "manual") return "现在就发出去？";
+  if (mode === "scheduled") return "交给本机到点发布？";
+  return "交给小红书平台定时发布？";
+}
+
+/** 确认框正文：写清后果与前提，尤其是能不能撤回。 */
+function confirmDetail(mode: PublicationMode, driver: BrowserDriver, scheduledAt: string): string {
+  const label = driverLabel(driver);
+  if (mode === "manual") {
+    return `点确认就立刻用${label}打开创作页提交，发出去之后这边撤不回来。`;
+  }
+  const when = scheduledAt ? scheduledAt.replace("T", " ") : "你选定的时间";
+  if (mode === "scheduled") {
+    return `到 ${when} 由本机服务唤起${label}发布。这段时间本机服务和${label}都要在线，否则会错过。`;
+  }
+  return `现在就用${label}打开创作页，把 ${when} 的定时交给小红书。之后不需要本机在线，但时间必须落在平台允许的 1 小时到 14 天内。`;
+}
+
+/** 连接方式的叫法与设置页保持一致，不再另起“受管浏览器”“浏览器扩展”两套。 */
 function driverLabel(driver: BrowserDriver): string {
-  return driver === "managed" ? "受管浏览器" : "浏览器扩展";
+  return connectionCopy[driver].label;
 }

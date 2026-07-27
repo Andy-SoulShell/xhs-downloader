@@ -75,16 +75,17 @@ export function PostCard({
         </div>
 
         <div className="px-1 pt-3">
-          <button
-            aria-label={`打开帖子详情：${title}`}
-            className="w-full text-left text-[15px] leading-6 font-semibold tracking-tight text-stone-900 transition group-hover:text-red-600"
+          {/* 标题只做鼠标点击目标，不再占第二个 Tab 停留点：封面已经是这张卡
+              可聚焦的入口，名称「打开帖子：标题」里也带着标题。此前两个停留点
+              指向同一个动作，键盘过一张卡要按两次 Tab。 */}
+          <p
+            className="w-full cursor-pointer text-left text-[15px] leading-6 font-semibold tracking-tight text-stone-900 transition group-hover:text-red-600"
             onClick={() => setOpen(true)}
-            type="button"
           >
-            {/* 截断必须落在按钮内部的元素上：WebKit 会把按钮内容塞进匿名盒，
-                直接写在 button 上的 -webkit-line-clamp 不生效，超长标题会整段铺开。 */}
+            {/* 截断落在内层元素上：WebKit 会把按钮内容塞进匿名盒，
+                写在外层上的 -webkit-line-clamp 不生效，超长标题会整段铺开。 */}
             <span className="line-clamp-2">{title}</span>
-          </button>
+          </p>
           {post.status === "downloading" && post.progress && (
             <DownloadProgressBar progress={post.progress} />
           )}

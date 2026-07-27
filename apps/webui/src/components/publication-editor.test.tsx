@@ -207,7 +207,8 @@ describe("发布草稿编辑器", () => {
     vi.clearAllMocks();
 
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
-    expect(screen.getByText(/受管浏览器将使用当前选定浏览器中的登录账号/)).toBeInTheDocument();
+    // 三种发布方式的确认文案现在各不相同，这里盯住“不可撤回”这个关键后果。
+    expect(screen.getByText(/发出去之后这边撤不回来/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
 
     await waitFor(() => expect(properties.onSubmitManual).toHaveBeenCalled());
