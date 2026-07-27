@@ -35,6 +35,28 @@ export function SkeletonRecordCard() {
 }
 
 /**
+ * 与帖子卡片同构的骨架：封面、两行标题、作者与数量行。
+ *
+ * 解析要等好几秒，而用户点完“添加到列表”后视线就落在列表上；
+ * 这里先占一个位置，让人看得见“有一条正在路上”。
+ */
+export function SkeletonFeedCard() {
+  return (
+    <article className="feed-card" role="status" aria-label="正在解析">
+      <span className="block aspect-3/4 w-full rounded-2xl bg-stone-950/[0.06]" />
+      <div className="space-y-2.5 px-1 pt-3">
+        <SkeletonLine width="88%" />
+        <SkeletonLine width="54%" />
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <SkeletonLine className="h-2.5" width="40%" />
+          <SkeletonLine className="h-2.5" width="26%" />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
  * 一组记录骨架。
  *
  * @param count 占位条数；接近首屏可见条数即可，过多会造成加载很慢的错觉。

@@ -1,12 +1,15 @@
-import { GalleryVerticalEnd, Search } from "lucide-react";
+import { GalleryVerticalEnd, PlugZap, RefreshCw, Search } from "lucide-react";
 
+import { libraryEmptyState } from "../lib/library-empty-state";
 import type {
   Filter,
   PostRecord,
 } from "../lib/workspace";
+import { ActionButton } from "./action-button";
 import { EmptyState } from "./empty-state";
 import { MasonryFeed } from "./masonry-feed";
 import { PostCard } from "./post-card";
+import { SkeletonFeedCard } from "./skeleton";
 import {
   SegmentedControl,
   SegmentedControlItem,
@@ -19,11 +22,16 @@ interface PostLibraryProps {
   posts: PostRecord[];
   query: string;
   visiblePosts: PostRecord[];
+  /** 本地服务连通状态；null 表示仍在探测。 */
+  online: boolean | null;
+  /** 是否正在解析新粘贴的链接。 */
+  parsing: boolean;
   onDownload: (post: PostRecord) => void;
   onFilterChange: (filter: Filter) => void;
   onForceChange: (id: string, force: boolean) => void;
   onQueryChange: (query: string) => void;
   onRemove: (id: string) => void;
+  onRetryConnection: () => void;
   onSelectionChange: (id: string, selected: Set<number>) => void;
 }
 
@@ -36,6 +44,8 @@ interface PostLibraryProps {
 export function PostLibrary({
   completedCount,
   filter,
+  online,
+  parsing,
   posts,
   query,
   visiblePosts,
@@ -44,6 +54,7 @@ export function PostLibrary({
   onForceChange,
   onQueryChange,
   onRemove,
+  onRetryConnection,
   onSelectionChange,
 }: PostLibraryProps) {
   return (
@@ -90,9 +101,14 @@ export function PostLibrary({
         </div>
       </div>
 
-      {visiblePosts.length ? (
+      {parsing && !visiblePosts.length ? (
+        <div className="feed-grid">
+          <SkeletonFeedCard />
+        </div>
+      ) : visiblePosts.length ? (
         visiblePosts.length <= 5 ? (
           <div className="feed-grid">
+            {parsing && <SkeletonFeedCard />}
             {visiblePosts.map((post) => (
               <PostCard
                 key={post.id}
@@ -108,6 +124,7 @@ export function PostLibrary({
           </div>
         ) : (
           <MasonryFeed>
+            {parsing ? <SkeletonFeedCard /> : null}
             {visiblePosts.map((post) => (
               <PostCard
                 key={post.id}
@@ -123,15 +140,24 @@ export function PostLibrary({
           </MasonryFeed>
         )
       ) : (
-        <EmptyState
-          description={
-            posts.length
-              ? "换一个关键词或筛选条件试试。"
-              : "在上方粘贴链接，解析完成后帖子会出现在这里。"
-          }
-          icon={GalleryVerticalEnd}
-          title={posts.length ? "没有符合条件的帖子" : "帖子列表还是空的"}
-        />
+        (() => {
+          const empty = libraryEmptyState({ online, totalPosts: posts.length });
+          return (
+            <EmptyState
+              action={
+                empty.offline ? (
+                  <ActionButton onClick={onRetryConnection} type="button">
+                    <RefreshCw aria-hidden size={16} />
+                    重试连接
+                  </ActionButton>
+                ) : undefined
+              }
+              description={empty.description}
+              icon={empty.offline ? PlugZap : GalleryVerticalEnd}
+              title={empty.title}
+            />
+          );
+        })()
       )}
     </section>
   );

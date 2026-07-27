@@ -6,10 +6,9 @@ import { ActivityBoard } from "./components/activity-board";
 import { ConnectionPanel } from "./components/connection-panel";
 import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
-import { ProductBrand } from "./components/product-brand";
 import { PublicationBoard } from "./components/publication-board";
 import { SettingsBoard } from "./components/settings-board";
-import { StatusPill } from "./components/status-pill";
+import { MobileHeader } from "./components/mobile-header";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import {
   checkHealth,
@@ -22,6 +21,7 @@ import { useManagedBrowser } from "./lib/use-managed-browser";
 import { useSettings } from "./lib/use-settings";
 import { usePostDownloads } from "./lib/use-post-downloads";
 import { useTaskCenter } from "./lib/use-task-center";
+import { describeError } from "./lib/error-message";
 import {
   mergeTaskResults,
   postFromDetail,
@@ -65,6 +65,9 @@ export default function App() {
     return () => controller.abort();
   }, []);
 
+  // 递增即重新拉取本地帖子，供服务恢复后的“重试”使用。
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     let active = true;
     void listCollectedPosts()
@@ -81,17 +84,23 @@ export default function App() {
       .catch((error: unknown) => {
         if (!active) return;
         setOnline(false);
-        setNotice(error instanceof Error ? error.message : "读取本地帖子失败");
+        setNotice(describeError(error, "读取本地帖子失败"));
         setToastOpen(true);
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const notify = (message: string) => {
     setNotice(message);
     setToastOpen(true);
+  };
+
+  const retryConnection = () => {
+    setOnline(null);
+    void checkHealth().then(setOnline);
+    setReloadKey((key) => key + 1);
   };
 
   const handleAdd = async (event: FormEvent) => {
@@ -114,7 +123,7 @@ export default function App() {
       notify(`已添加「${post.result.data?.作品标题 || "未命名帖子"}」`);
     } catch (error) {
       setOnline(false);
-      notify(error instanceof Error ? error.message : "解析失败");
+      notify(describeError(error, "解析失败"));
     } finally {
       setParsing(false);
     }
@@ -141,7 +150,7 @@ export default function App() {
       notify("已重新开始下载");
     } catch (error) {
       setOnline(false);
-      notify(error instanceof Error ? error.message : "任务重试失败");
+      notify(describeError(error, "任务重试失败"));
     }
   };
 
@@ -151,7 +160,7 @@ export default function App() {
       setPosts((current) => current.filter((item) => item.id !== id));
       notify("帖子已从列表移除");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "帖子移除失败");
+      notify(describeError(error, "帖子移除失败"));
     }
   };
 
@@ -220,6 +229,8 @@ export default function App() {
                 onLinkSubmit={handleAdd}
                 onQueryChange={setQuery}
                 onRemove={(id) => void handleRemove(id)}
+                onRetryConnection={retryConnection}
+                online={effectiveOnline}
                 onSelectionChange={(id, selected) =>
                   updatePost(id, { selected })
                 }
@@ -279,16 +290,5 @@ export default function App() {
       </Toast.Root>
       <Toast.Viewport className="fixed right-4 bottom-4 z-50 w-[calc(100vw-2rem)] max-w-sm outline-none" />
     </Toast.Provider>
-  );
-}
-
-function MobileHeader({ online }: { online: boolean | null }) {
-  return (
-    <header className="border-b border-stone-200/80 bg-[#f4f1eb]/90 backdrop-blur lg:hidden">
-      <div className="flex items-center justify-between px-5 py-4 sm:px-8">
-        <ProductBrand compact />
-        <StatusPill online={online} />
-      </div>
-    </header>
   );
 }

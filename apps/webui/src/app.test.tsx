@@ -8,6 +8,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
+import { UserFacingError } from "./lib/error-message";
 import {
   checkHealth,
   deleteCollectedPost,
@@ -156,6 +157,32 @@ describe("帖子下载工作台", () => {
     ).toBeInTheDocument();
   });
 
+  it("解析期间在列表里占位，不让用户对着不动的列表干等", async () => {
+    let resolveDetail: (value: ReturnType<typeof makeDetailResponse>) => void =
+      () => {};
+    vi.mocked(submitDetail).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveDetail = resolve;
+      }),
+    );
+    render(<App />);
+    fireEvent.change(screen.getByLabelText("帖子链接"), {
+      target: { value: "https://example.invalid/work" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
+
+    // 解析要好几秒，而用户点完按钮后视线就落在列表上。
+    expect(await screen.findByRole("status", { name: "正在解析" })).toBeInTheDocument();
+
+    resolveDetail(makeDetailResponse());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("status", { name: "正在解析" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("合成测试帖子")).toBeInTheDocument();
+  });
+
   it("为空链接和接口错误提供明确反馈", async () => {
     render(<App />);
 
@@ -165,7 +192,7 @@ describe("帖子下载工作台", () => {
     fireEvent.change(screen.getByLabelText("帖子链接"), {
       target: { value: "invalid" },
     });
-    vi.mocked(submitDetail).mockRejectedValue(new Error("链接无效"));
+    vi.mocked(submitDetail).mockRejectedValue(new UserFacingError("链接无效"));
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
     expect(await screen.findByText("链接无效")).toBeInTheDocument();
     expect(await screen.findAllByText("服务未连接")).toHaveLength(2);
@@ -212,18 +239,21 @@ describe("帖子下载工作台", () => {
     fireEvent.click(await addSyntheticPost());
     const dialog = screen.getByRole("dialog");
 
-    vi.mocked(submitTask).mockRejectedValueOnce(new Error("下载异常"));
+    vi.mocked(submitTask).mockRejectedValueOnce(new UserFacingError("下载异常"));
     fireEvent.click(
       within(dialog).getByRole("button", { name: "下载 2 项" }),
     );
-    expect(await screen.findByText("下载异常")).toBeInTheDocument();
+    // 原因既进 toast 也落到记录上，因此会出现两处。
+    expect(await screen.findAllByText("下载异常")).not.toHaveLength(0);
     expect(within(dialog).getAllByText("失败")).toHaveLength(2);
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("下载异常");
 
+    // 失败之后主按钮改成“重试下载”，让用户知道再点一次是重试而不是重复下载。
     vi.mocked(submitTask).mockRejectedValueOnce("未知异常");
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "下载 2 项" }),
+      within(dialog).getByRole("button", { name: "重试下载 2 项" }),
     );
-    expect(await screen.findByText("下载失败")).toBeInTheDocument();
+    expect(await screen.findAllByText("下载失败")).not.toHaveLength(0);
   });
 
   it("统一展示后台任务和独立下载记录", async () => {

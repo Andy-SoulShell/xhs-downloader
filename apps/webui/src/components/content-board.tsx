@@ -17,6 +17,8 @@ interface ContentBoardProps {
   posts: PostRecord[];
   query: string;
   visiblePosts: PostRecord[];
+  /** 本地服务连通状态；null 表示仍在探测。 */
+  online: boolean | null;
   onDownload: (post: PostRecord) => void;
   onDownloadFeed: (url: string, title: string) => Promise<void>;
   onFilterChange: (filter: Filter) => void;
@@ -25,6 +27,7 @@ interface ContentBoardProps {
   onLinkSubmit: (event: FormEvent) => void;
   onQueryChange: (query: string) => void;
   onRemove: (id: string) => void;
+  onRetryConnection: () => void;
   onSelectionChange: (id: string, selected: Set<number>) => void;
 }
 
@@ -39,6 +42,7 @@ export function ContentBoard({
   filter,
   link,
   parsing,
+  online,
   posts,
   query,
   visiblePosts,
@@ -50,6 +54,7 @@ export function ContentBoard({
   onLinkSubmit,
   onQueryChange,
   onRemove,
+  onRetryConnection,
   onSelectionChange,
 }: ContentBoardProps) {
   return (
@@ -83,6 +88,9 @@ export function ContentBoard({
                 onForceChange={onForceChange}
                 onQueryChange={onQueryChange}
                 onRemove={onRemove}
+                onRetryConnection={onRetryConnection}
+                online={online}
+                parsing={parsing}
                 onSelectionChange={onSelectionChange}
                 posts={posts}
                 query={query}
