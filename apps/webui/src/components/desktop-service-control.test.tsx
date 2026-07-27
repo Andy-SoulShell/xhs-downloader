@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -25,18 +31,39 @@ describe("桌面服务控制", () => {
     );
     vi.mocked(restartDesktopService).mockResolvedValue("本地服务正在重启");
     vi.mocked(waitForServiceReady).mockResolvedValue(true);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
   });
 
-  it("只在桌面模式显示并允许确认退出", async () => {
+  it("关闭服务前就地确认并说明后果", async () => {
     render(<DesktopServiceControl />);
 
     fireEvent.click(await screen.findByRole("button", { name: "关闭服务" }));
 
+    // 原本用的是原生 window.confirm：说不清后果，也和界面语言脱节。
+    const dialog = screen.getByRole("alertdialog", {
+      name: "确认关闭本地服务",
+    });
+    expect(dialog).toHaveTextContent("正在进行的下载会中断");
+    expect(shutdownDesktopService).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "确认关闭" }),
+    );
     await waitFor(() =>
       expect(shutdownDesktopService).toHaveBeenCalledOnce(),
     );
     expect(screen.getByText("本地服务正在安全退出")).toBeInTheDocument();
+  });
+
+  it("取消确认后不执行关闭", async () => {
+    render(<DesktopServiceControl />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "关闭服务" }));
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+
+    expect(
+      screen.queryByRole("alertdialog", { name: "确认关闭本地服务" }),
+    ).not.toBeInTheDocument();
+    expect(shutdownDesktopService).not.toHaveBeenCalled();
   });
 
   it("开发 API 不显示服务控制入口", async () => {

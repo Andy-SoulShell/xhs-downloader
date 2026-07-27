@@ -1,6 +1,8 @@
 import { Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { autosaveLabel, useDraftAutosave } from "../lib/use-draft-autosave";
+
 import type {
   PublicationDraft,
   PublicationDraftInput,
@@ -80,6 +82,8 @@ export function PublicationEditor({
     ...(assetOrder ? { asset_order: assetOrder } : {}),
   });
   const save = async (assetOrder?: string[]) => onSave(input(assetOrder));
+  // 手动提交期间暂停：两条写入并发会互相覆盖。
+  const autosave = useDraftAutosave(input(), save, busy === "");
   const submissionInput = () =>
     preparePublicationSubmission(input(), browserDriver);
   const saveSubmission = async () => {
@@ -238,6 +242,16 @@ export function PublicationEditor({
         }
         scheduledAt={scheduledAt}
       />
+
+      {/* 写到一半切走就丢内容是创作界面最不可接受的损失；存没存上要说清楚。 */}
+      <p
+        aria-live="polite"
+        className={`min-h-5 text-xs leading-5 ${
+          autosave === "failed" ? "text-red-600" : "text-stone-600"
+        }`}
+      >
+        {autosaveLabel(autosave)}
+      </p>
 
       <div className="flex flex-wrap justify-between gap-3 border-t border-stone-200 pt-4">
         <ActionButton
