@@ -4,7 +4,7 @@ import { Tabs } from "radix-ui";
 import type { Filter, WorkspaceView } from "../lib/workspace";
 import { ProductBrand } from "./product-brand";
 import { StatusPill } from "./status-pill";
-import { managementViewItems, postFilterItems } from "./workspace-navigation";
+import { postFilterItems, workspaceViewItems } from "./workspace-navigation";
 
 interface WorkspaceSidebarProps {
   activityCount: number;
@@ -14,7 +14,6 @@ interface WorkspaceSidebarProps {
   postCount: number;
   view: WorkspaceView;
   onFilterChange: (filter: Filter) => void;
-  onViewChange: (view: WorkspaceView) => void;
 }
 
 export function WorkspaceSidebar({
@@ -25,7 +24,6 @@ export function WorkspaceSidebar({
   postCount,
   view,
   onFilterChange,
-  onViewChange,
 }: WorkspaceSidebarProps) {
   const pendingCount = postCount - completedCount;
   const filterCounts: Record<Filter, number> = {
@@ -43,28 +41,11 @@ export function WorkspaceSidebar({
         <ProductBrand />
       </div>
 
-      <nav aria-label="我的帖子" className="mt-9 space-y-1">
-        {postFilterItems.map((item) => (
-          <SidebarButton
-            active={view === "content" && filter === item.filter}
-            count={filterCounts[item.filter]}
-            icon={item.icon}
-            key={item.filter}
-            label={item.sidebarLabel}
-            onClick={() => {
-              onViewChange("content");
-              onFilterChange(item.filter);
-            }}
-          />
-        ))}
-      </nav>
-
-      <Tabs.List
-        aria-label="工作台"
-        // 宽屏侧栏与窄屏标签栏是同一组标签的两种排布。
-        className="mt-6 space-y-1 border-t border-stone-800 pt-6"
-      >
-        {managementViewItems.map((item) => (
+      {/* 四个工作台必须都在这一组里。此前"内容"由上方三个筛选按钮代劳，
+          没有对应的 Trigger，导致漫游 tabindex 无处落脚、内容面板的
+          aria-labelledby 指向不存在的元素，键盘也永远走不进主内容区。 */}
+      <Tabs.List aria-label="工作台" className="mt-9 space-y-1">
+        {workspaceViewItems.map((item) => (
           <Tabs.Trigger
             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-stone-400 outline-none transition hover:bg-stone-900 hover:text-white data-[state=active]:bg-white data-[state=active]:text-stone-950 focus-visible:ring-2 focus-visible:ring-stone-600"
             key={item.view}
@@ -80,6 +61,25 @@ export function WorkspaceSidebar({
           </Tabs.Trigger>
         ))}
       </Tabs.List>
+
+      {/* 筛选是内容工作台内部的事，切到其它工作台就不该继续占位。 */}
+      {view === "content" && (
+        <nav
+          aria-label="帖子筛选"
+          className="mt-4 space-y-1 border-t border-stone-800 pt-4"
+        >
+          {postFilterItems.map((item) => (
+            <SidebarButton
+              active={filter === item.filter}
+              count={filterCounts[item.filter]}
+              icon={item.icon}
+              key={item.filter}
+              label={item.sidebarLabel}
+              onClick={() => onFilterChange(item.filter)}
+            />
+          ))}
+        </nav>
+      )}
 
       <div className="mt-auto rounded-2xl border border-stone-800 bg-stone-900 p-4">
         <p className="text-xs font-medium text-stone-300">本地服务</p>

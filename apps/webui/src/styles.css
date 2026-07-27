@@ -55,6 +55,13 @@ button {
   backdrop-filter: blur(16px);
 }
 
+/* Radix 会给标签面板 tabindex=0 以便键盘滚动，可聚焦就必须看得见焦点。 */
+[role="tabpanel"]:focus-visible {
+  outline: 2px solid var(--color-stone-400, #a8a29e);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
 /* 列表卡片入场：轻微上浮加淡入，按序错开，让内容像被逐条放下而不是齐刷刷弹出。 */
 @keyframes feed-card-in {
   from {

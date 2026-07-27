@@ -203,7 +203,10 @@ export default function App() {
   return (
     <Toast.Provider swipeDirection="right">
       {/* 四个工作台是同一组标签；侧栏与窄屏标签栏是它的两种排布。 */}
+      {/* 手动激活：默认的自动激活会让键盘用户一路 Tab 过去就把工作台换掉，
+          既切走了正在看的内容，也永远走不到当前工作台的正文。 */}
       <Tabs.Root
+        activationMode="manual"
         asChild
         onValueChange={(next) => setView(next as WorkspaceView)}
         value={view}
@@ -214,7 +217,6 @@ export default function App() {
           completedCount={completedCount}
           filter={filter}
           onFilterChange={setFilter}
-          onViewChange={setView}
           online={effectiveOnline}
           postCount={managedPosts.length}
           view={view}

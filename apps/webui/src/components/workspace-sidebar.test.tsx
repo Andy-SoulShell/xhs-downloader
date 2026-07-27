@@ -33,10 +33,6 @@ function Harness({
           setFilter(next);
           onFilterChange(next);
         }}
-        onViewChange={(next) => {
-          setView(next);
-          onViewChange(next);
-        }}
         online={online}
         postCount={5}
         view={view}
@@ -52,11 +48,13 @@ describe("宽屏工作台侧栏", () => {
     render(<Harness />);
     const list = screen.getByRole("tablist", { name: "工作台" });
 
+    // 四个工作台必须都在这一组里。此前"内容"由筛选按钮代劳、没有对应
+    // Trigger，导致漫游 tabindex 无处落脚，键盘走不进主内容区。
     expect(
       within(list)
         .getAllByRole("tab")
         .map((tab) => tab.textContent),
-    ).toEqual(["动态3", "发布", "设置"]);
+    ).toEqual(["内容", "动态3", "发布", "设置"]);
   });
 
   it("点击标签切换工作台", () => {
@@ -77,7 +75,7 @@ describe("宽屏工作台侧栏", () => {
   it("帖子筛选按未下载与已下载给出计数", () => {
     const onFilterChange = vi.fn();
     render(<Harness onFilterChange={onFilterChange} />);
-    const nav = screen.getByRole("navigation", { name: "我的帖子" });
+    const nav = screen.getByRole("navigation", { name: "帖子筛选" });
 
     fireEvent.click(within(nav).getByRole("button", { name: /未下载/ }));
 
@@ -89,6 +87,21 @@ describe("宽屏工作台侧栏", () => {
     expect(within(nav).getByRole("button", { name: /已下载/ })).toHaveTextContent(
       "2",
     );
+  });
+
+  it("切到其它工作台后不再占位显示帖子筛选", () => {
+    render(<Harness />);
+
+    fireEvent.mouseDown(
+      within(screen.getByRole("tablist", { name: "工作台" })).getByRole("tab", {
+        name: /动态/,
+      }),
+    );
+
+    // 筛选是内容工作台内部的事，留在侧栏只会干扰。
+    expect(
+      screen.queryByRole("navigation", { name: "帖子筛选" }),
+    ).not.toBeInTheDocument();
   });
 
   it("离线时提示本地服务状态", () => {
