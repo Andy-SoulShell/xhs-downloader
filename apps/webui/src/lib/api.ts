@@ -12,6 +12,7 @@ import type {
 import { isBrowserDriver } from "./types";
 
 import { API_BASE, parseResponse } from "./http";
+import { UserFacingError } from "./error-message";
 
 export async function checkHealth(signal?: AbortSignal): Promise<boolean> {
   try {
@@ -97,7 +98,7 @@ export async function updateSettings(
 
 function requireSettingsResponse(value: unknown): SettingsResponse {
   if (!value || typeof value !== "object" || !("values" in value)) {
-    throw new Error("本地服务返回的配置结构无效");
+    throw new UserFacingError("本地服务返回的配置结构无效");
   }
   const values = value.values;
   if (
@@ -106,7 +107,7 @@ function requireSettingsResponse(value: unknown): SettingsResponse {
     !("browser_driver" in values) ||
     !isBrowserDriver(values.browser_driver)
   ) {
-    throw new Error("本地服务返回了不支持的浏览器执行器");
+    throw new UserFacingError("本地服务返回了不支持的浏览器执行器");
   }
   return value as SettingsResponse;
 }

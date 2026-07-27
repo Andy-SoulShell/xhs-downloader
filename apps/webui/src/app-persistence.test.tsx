@@ -11,6 +11,7 @@ import {
   listTasks,
 } from "./lib/api";
 import { makeDetailResponse, makeSettingsResponse } from "./test/fixtures";
+import { UserFacingError } from "./lib/error-message";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
@@ -59,8 +60,10 @@ describe("采集帖子持久化", () => {
   });
 
   it("帖子库读取失败时显示错误", async () => {
+    // 真实接口经 parseResponse 抛出的是 UserFacingError，
+    // 用普通 Error 模拟会绕开“只有面向用户的消息才透出”这条规则。
     vi.mocked(listCollectedPosts).mockRejectedValue(
-      new Error("帖子库暂时不可用"),
+      new UserFacingError("帖子库暂时不可用"),
     );
     render(<App />);
 
@@ -68,7 +71,7 @@ describe("采集帖子持久化", () => {
   });
 
   it.each([
-    [new Error("帖子删除被拒绝"), "帖子删除被拒绝"],
+    [new UserFacingError("帖子删除被拒绝"), "帖子删除被拒绝"],
     ["未知异常", "帖子移除失败"],
   ])("帖子删除失败时保留列表并显示反馈", async (reason, message) => {
     vi.mocked(deleteCollectedPost).mockRejectedValue(reason);

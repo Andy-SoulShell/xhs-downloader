@@ -3,6 +3,7 @@ import type {
   DownloadTask,
   WorkDetail,
 } from "./types";
+import { UserFacingError } from "./error-message";
 
 export type PostStatus = "ready" | "downloading" | "done" | "error";
 export type Filter = "all" | "ready" | "done";
@@ -52,7 +53,7 @@ export function postFromDetail(detail: WorkDetail): PostRecord {
  * @throws Error 接口没有返回详情数据。
  */
 export function postFromResponse(result: DetailResponse): PostRecord {
-  if (!result.data) throw new Error("没有解析到帖子内容，请确认链接是否正确");
+  if (!result.data) throw new UserFacingError("没有解析到帖子内容，请确认链接是否正确");
   return {
     id: result.data.作品ID,
     result,

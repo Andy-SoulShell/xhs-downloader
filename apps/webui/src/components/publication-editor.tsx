@@ -24,6 +24,7 @@ import { PublicationAssets } from "./publication-assets";
 import { TagInput } from "./tag-input";
 import { PublicationOptionsForm } from "./publication-options-form";
 import { PublicationSubmitControls } from "./publication-submit-controls";
+import { describeError } from "../lib/error-message";
 
 interface PublicationEditorProps {
   browserDriver: BrowserDriver;
@@ -94,7 +95,7 @@ export function PublicationEditor({
     try {
       await operation();
     } catch (error) {
-      onNotify(error instanceof Error ? error.message : "发布操作失败");
+      onNotify(describeError(error, "发布操作失败"));
     } finally {
       setBusy("");
     }

@@ -7,6 +7,7 @@ import type {
   PublicationVerificationResumeResult,
 } from "./publication";
 import { isBrowserDriver } from "./types";
+import { UserFacingError } from "./error-message";
 
 export async function listPublicationDrafts(): Promise<PublicationDraft[]> {
   const response = await fetch(`${API_BASE}/publication/drafts`);
@@ -90,7 +91,7 @@ export async function submitPublicationTask(
 export async function listPublicationTasks(): Promise<PublicationTask[]> {
   const response = await fetch(`${API_BASE}/publication/tasks`);
   const value = await parseResponse<unknown>(response);
-  if (!Array.isArray(value)) throw new Error("发布任务列表结构无效");
+  if (!Array.isArray(value)) throw new UserFacingError("发布任务列表结构无效");
   return value.map(requirePublicationTask);
 }
 
@@ -156,7 +157,7 @@ function requirePublicationTask(value: unknown): PublicationTask {
     !("target_driver" in value) ||
     !isBrowserDriver(value.target_driver)
   ) {
-    throw new Error("发布任务返回了不支持的浏览器执行器");
+    throw new UserFacingError("发布任务返回了不支持的浏览器执行器");
   }
   return value as PublicationTask;
 }

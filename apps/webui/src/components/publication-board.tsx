@@ -11,6 +11,7 @@ import { BoardTabs } from "./board-tabs";
 import { SkeletonForm } from "./skeleton";
 import { PublicationEditor } from "./publication-editor";
 import { PublicationTaskList } from "./publication-task-list";
+import { describeError } from "../lib/error-message";
 
 /** 组合发布草稿编辑、任务状态和需要用户确认的安全操作。 */
 export function PublicationBoard({
@@ -42,7 +43,7 @@ export function PublicationBoard({
       setSelectedId(draft.draft_id);
       onNotify("已新建发布草稿");
     } catch (error) {
-      onNotify(error instanceof Error ? error.message : "草稿创建失败");
+      onNotify(describeError(error, "草稿创建失败"));
     } finally {
       setCreating(false);
     }
@@ -55,7 +56,7 @@ export function PublicationBoard({
       await operation();
       onNotify(message);
     } catch (error) {
-      onNotify(error instanceof Error ? error.message : "任务操作失败");
+      onNotify(describeError(error, "任务操作失败"));
     }
   };
   const resumeVerification = async (taskId: string) => {
@@ -63,7 +64,7 @@ export function PublicationBoard({
       await center.resumeVerification(taskId);
       onNotify("已确认验证完成，原发布任务正在继续");
     } catch (error) {
-      onNotify(error instanceof Error ? error.message : "验证恢复请求失败");
+      onNotify(describeError(error, "验证恢复请求失败"));
       throw error;
     }
   };

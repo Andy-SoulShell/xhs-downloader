@@ -1,19 +1,25 @@
 """可持久化后台下载任务协调器。"""
 
-import re
-from asyncio import Lock, Semaphore, Task, create_task, gather
+from asyncio import Lock, Semaphore, Task, create_task, gather, sleep
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from loguru import logger
 
 from xhs_core.domain.errors import TaskStateError
-from xhs_core.domain.models import DownloadTask, DownloadTaskStatus
+from xhs_core.domain.models import (
+    DownloadProgress,
+    DownloadTask,
+    DownloadTaskStatus,
+)
 from xhs_core.domain.ports import TaskRepository
 
 from .download import DownloadService
+from .failure_messages import describe_download_failure
 
-SENSITIVE_QUERY = re.compile(r"(https?://[^?\s]+)\?\S+")
+_PROGRESS_FLUSH_SECONDS = 0.4
+"""进度落库间隔。比采集节流略慢一档, 让界面轮询看到连续变化又不压垮数据库。"""
 
 
 class DownloadTaskCoordinator:
@@ -180,20 +186,30 @@ class DownloadTaskCoordinator:
             self._workers.pop(task_id, None)
 
     async def _execute(self, task: DownloadTask) -> None:
+        # 进度先写进内存快照, 由后台协程按节奏落库, 避免每个分块都写数据库
+        latest = DownloadProgress()
+
+        def remember(progress: DownloadProgress) -> None:
+            nonlocal latest
+            latest = progress
+
+        publisher = create_task(self._publish_progress(task.task_id, lambda: latest))
         try:
             outcome = await self._service.download(
                 task.source_url,
                 set(task.media_indexes),
                 task.force,
                 None,
+                on_progress=remember,
             )
         except Exception as error:
-            message = _safe_error_message(error)
+            message = describe_download_failure(error)
             logger.error("后台任务 {} 执行失败：{}", task.task_id, message)
             completed = task.model_copy(
                 update={
                     "status": DownloadTaskStatus.FAILED,
                     "message": message,
+                    "progress": latest,
                     "updated_at": datetime.now(UTC),
                 }
             )
@@ -202,14 +218,41 @@ class DownloadTaskCoordinator:
                 update={
                     "status": DownloadTaskStatus.COMPLETED,
                     "message": outcome.message,
+                    "progress": latest,
                     "detail": outcome.detail,
                     "artifacts": outcome.artifacts,
                     "updated_at": datetime.now(UTC),
                 }
             )
+        finally:
+            # 必须等发布协程真正结束再写终态, 否则它的落库可能后到并覆盖结果
+            publisher.cancel()
+            await gather(publisher, return_exceptions=True)
         await self._repository.save(completed)
 
+    async def _publish_progress(
+        self,
+        task_id: str,
+        read: Callable[[], DownloadProgress],
+    ) -> None:
+        """按固定节奏把内存中的进度写入仓储, 供界面轮询读取。
 
-def _safe_error_message(error: Exception) -> str:
-    message = str(error) or type(error).__name__
-    return SENSITIVE_QUERY.sub(r"\1?<redacted>", message)[:1000]
+        Args:
+            task_id: 目标任务标识。
+            read: 读取当前进度快照的闭包。
+        """
+        previous = DownloadProgress()
+        while True:
+            await sleep(_PROGRESS_FLUSH_SECONDS)
+            snapshot = read()
+            if snapshot == previous:
+                continue
+            previous = snapshot
+            current = await self._repository.get(task_id)
+            if current is None or current.status is not DownloadTaskStatus.RUNNING:
+                return
+            await self._repository.save(
+                current.model_copy(
+                    update={"progress": snapshot, "updated_at": datetime.now(UTC)}
+                )
+            )

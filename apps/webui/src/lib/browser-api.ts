@@ -7,6 +7,7 @@ import type {
   RouteStrategy,
 } from "./types";
 import { API_BASE, parseResponse } from "./http";
+import { UserFacingError } from "./error-message";
 
 /** 统一只读能力实际使用的提供方。 */
 export type CapabilityProvider = "http" | "browser";
@@ -104,9 +105,9 @@ export async function executeBrowserOperation<T>(
     return { task, data: task.result as T };
   }
   if (task.status === "failed" || task.status === "needs_review") {
-    throw new Error(task.message);
+    throw new UserFacingError(task.message);
   }
-  throw new Error(`浏览器执行器尚未完成任务 ${task.task_id.slice(0, 8)}`);
+  throw new UserFacingError(`浏览器执行器尚未完成任务 ${task.task_id.slice(0, 8)}`);
 }
 
 /** 显式确认后清理指定登录会话的 Cookie。 */
@@ -130,9 +131,9 @@ export async function deleteCookies(
   const result = await parseResponse<CookieDeletionResult>(response);
   if (result.status === "succeeded" && result.deleted) return result;
   if (result.status === "failed" || result.status === "needs_review") {
-    throw new Error(result.message);
+    throw new UserFacingError(result.message);
   }
-  throw new Error(
+  throw new UserFacingError(
     `浏览器执行器尚未完成 Cookie 清理${result.task_id ? ` ${result.task_id.slice(0, 8)}` : ""}`,
   );
 }

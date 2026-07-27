@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { submitDetail } from "./api";
 import type { TaskRequest, DownloadTask } from "./types";
 import { postFromResponse, type PostRecord } from "./workspace";
+import { describeError } from "./error-message";
 
 interface PostDownloadsOptions {
   createTask: (request: TaskRequest) => Promise<DownloadTask>;
@@ -52,9 +53,14 @@ export function usePostDownloads({
         setOnline(true);
         notify("已开始下载，可以在动态里查看进度");
       } catch (error) {
-        updatePost(post.id, { status: "error" });
+        // 原因必须落到记录上：toast 会消失，用户回头再打开详情就无从判断。
+        const message = describeError(error, "下载失败");
+        updatePost(post.id, {
+          status: "error",
+          result: { ...post.result, message },
+        });
         setOnline(false);
-        notify(error instanceof Error ? error.message : "下载失败");
+        notify(message);
       }
     },
     [createTask, notify, setOnline, updatePost],
@@ -79,7 +85,7 @@ export function usePostDownloads({
         notify(`已开始下载「${title}」`);
       } catch (error) {
         setOnline(false);
-        notify(error instanceof Error ? error.message : "下载失败");
+        notify(describeError(error, "下载失败"));
       }
     },
     [createTask, notify, setOnline, setPosts],

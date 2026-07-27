@@ -6,6 +6,7 @@ import type {
   BrowserLoginState,
 } from "@xhs-downloader/contracts";
 
+import { formatRelativeTime } from "../lib/format-time";
 import { connectionCopy } from "../lib/terminology";
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
 import type { ManagedBrowserControl } from "../lib/use-managed-browser";
@@ -222,14 +223,4 @@ function StatusCard({
       </div>
     </article>
   );
-}
-
-function formatRelativeTime(value: string): string {
-  const seconds = Math.max(
-    0,
-    Math.round((Date.now() - new Date(value).getTime()) / 1000),
-  );
-  if (seconds < 10) return "刚刚";
-  if (seconds < 60) return `${seconds} 秒前`;
-  return `${Math.floor(seconds / 60)} 分钟前`;
 }

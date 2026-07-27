@@ -104,8 +104,15 @@ export function PostDownloadBar({
   onForceChange: (force: boolean) => void;
   post: PostRecord;
 }) {
+  const failure = post.status === "error" ? post.result.message : "";
   return (
     <div className="border-t border-stone-200 bg-white p-4 sm:p-5">
+      {/* 失败原因此前只存在记录里从不展示，用户只能看到一个红色的“失败”。 */}
+      {failure && (
+        <p className="notice-block mb-3 text-xs leading-5" role="alert">
+          {failure}
+        </p>
+      )}
       <div className="flex items-center justify-between gap-4">
         <label className="flex items-center gap-2 text-xs text-stone-500">
           <Switch.Root
@@ -127,9 +134,11 @@ export function PostDownloadBar({
           <DownloadIcon aria-hidden size={16} />
           {post.status === "downloading"
             ? "正在下载…"
-            : post.selected.size
-              ? `下载 ${post.selected.size} 项`
-              : "请选择媒体"}
+            : !post.selected.size
+              ? "请选择媒体"
+              : failure
+                ? `重试下载 ${post.selected.size} 项`
+                : `下载 ${post.selected.size} 项`}
         </ActionButton>
       </div>
     </div>

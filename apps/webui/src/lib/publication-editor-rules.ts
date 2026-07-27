@@ -6,6 +6,7 @@ import type {
 } from "./publication";
 import type { BrowserDriver } from "./types";
 import { isBrowserDriver } from "./types";
+import { UserFacingError } from "./error-message";
 
 /** 把用户输入的话题文本规范化为去重且有界的标签列表。 */
 export function normalizePublicationTags(value: string): string[] {
@@ -37,9 +38,9 @@ export function validatePublicationDraft(
   draft: PublicationDraft,
 ): void {
   if (!input.title && !input.body) {
-    throw new Error("标题和正文不能同时为空");
+    throw new UserFacingError("标题和正文不能同时为空");
   }
-  if (!draft.assets.length) throw new Error("请至少添加一个发布素材");
+  if (!draft.assets.length) throw new UserFacingError("请至少添加一个发布素材");
 }
 
 /** 为扩展任务生成只包含任务标识和媒体类型的官方创作页地址。 */
@@ -55,7 +56,7 @@ export function publicationCreatorUrl(task: PublicationTask): string {
 /** 校验发布任务冻结的执行器；未知值直接拒绝，禁止猜测为扩展。 */
 export function requirePublicationDriver(driver: unknown): BrowserDriver {
   if (!isBrowserDriver(driver)) {
-    throw new Error("发布任务返回了不支持的浏览器执行器");
+    throw new UserFacingError("发布任务返回了不支持的浏览器执行器");
   }
   return driver;
 }
@@ -74,15 +75,15 @@ export function validatePublicationSchedule(
 ): string {
   const instant = new Date(value);
   if (!value || !Number.isFinite(instant.getTime())) {
-    throw new Error("请选择有效的计划发布时间");
+    throw new UserFacingError("请选择有效的计划发布时间");
   }
   const delay = instant.getTime() - Date.now();
-  if (delay <= 0) throw new Error("计划发布时间必须晚于当前时间");
+  if (delay <= 0) throw new UserFacingError("计划发布时间必须晚于当前时间");
   if (mode === "platform_scheduled" && delay < 60 * 60_000) {
-    throw new Error("官方定时发布时间必须至少在 1 小时后");
+    throw new UserFacingError("官方定时发布时间必须至少在 1 小时后");
   }
   if (mode === "platform_scheduled" && delay > 14 * 24 * 60 * 60_000) {
-    throw new Error("官方定时发布时间不能超过 14 天");
+    throw new UserFacingError("官方定时发布时间不能超过 14 天");
   }
   return instant.toISOString();
 }
