@@ -50,6 +50,10 @@ from .errors import (
     TaskStateError,
     XhsError,
 )
+from .extension_identity import (
+    build_extension_identity,
+    split_extension_identity,
+)
 from .extension_presence import ExtensionPresence
 from .feeds import (
     BrowserAccount,
@@ -168,8 +172,10 @@ __all__ = [
     "XhsError",
     "browser_driver_supports",
     "browser_task_may_write_platform",
+    "build_extension_identity",
     "can_retry_browser_task",
     "sanitize_browser_page_diagnostics",
     "sanitize_browser_task_message",
     "sanitize_stored_browser_task",
+    "split_extension_identity",
 ]

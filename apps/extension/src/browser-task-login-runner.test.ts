@@ -32,6 +32,8 @@ beforeEach(() => {
     extensionCredential: {
       extensionId: "synthetic-extension",
       token: "synthetic-token",
+      // 没有安装标识的旧凭据会被强制重新登记一次, 那是升级路径不是常态
+      installationId: "synthetic-installation",
     },
   };
   vi.stubGlobal("chrome", {

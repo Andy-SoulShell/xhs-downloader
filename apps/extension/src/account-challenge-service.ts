@@ -111,6 +111,9 @@ function extensionHeaders(
   return {
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
+    ...(credential.installationId
+      ? { "X-Extension-Installation": credential.installationId }
+      : {}),
   };
 }
 

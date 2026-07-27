@@ -50,11 +50,18 @@ class BrowserTaskResultRequest(BaseModel):
 
 
 class BrowserExtensionRegisterRequest(BaseModel):
-    """浏览器任务扩展登记请求。"""
+    """浏览器任务扩展登记请求。
+
+    Attributes:
+        extension_id: 浏览器分配的扩展 ID。
+        installation_id: 扩展首次运行时生成并持久化的安装标识；
+            旧版本不携带时沿用按扩展 ID 的单槽行为。
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     extension_id: str = Field(min_length=1, max_length=128)
+    installation_id: str | None = Field(default=None, min_length=1, max_length=128)
 
 
 class BrowserExtensionTokenResponse(BaseModel):
@@ -67,11 +74,22 @@ class BrowserExtensionTokenResponse(BaseModel):
 
 
 class BrowserExtensionStatus(BaseModel):
-    """供本机管理界面展示的扩展在线状态。"""
+    """供本机管理界面展示的扩展在线状态。
+
+    Attributes:
+        extension_id: 浏览器分配的扩展 ID；同一目录在不同浏览器中加载会相同。
+        installation_id: 区分同一扩展的多个安装实例；旧版本为空。
+        identity: 服务端存储与吊销所用的完整身份。
+        registered_at: 最近一次签发能力令牌的时间。
+        last_seen_at: 最近一次通过能力令牌校验的时间。
+        online: 最近心跳是否落在在线窗口内。
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     extension_id: str
+    installation_id: str | None = None
+    identity: str
     registered_at: datetime
     last_seen_at: datetime
     online: bool

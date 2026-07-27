@@ -126,9 +126,16 @@ describe("浏览器任务扩展登记超时", () => {
         BROWSER_TASK_REGISTER_TIMEOUT_MS,
       );
     }
+    // 凭据必须带安装标识: 同一个未打包目录在两个浏览器里扩展 ID 相同,
+    // 只按扩展 ID 存会让两边互相顶掉令牌并陷入登记循环
     expect(values.extensionCredential).toEqual({
       extensionId: "synthetic-extension",
       token: "renewed-token",
+      installationId: expect.any(String),
     });
+    // 重新登记不该换掉安装标识, 否则服务端会当成又一个新实例
+    expect(values.installationId).toBe(
+      (values.extensionCredential as { installationId: string }).installationId,
+    );
   });
 });

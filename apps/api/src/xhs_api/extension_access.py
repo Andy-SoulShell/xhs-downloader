@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 
 from fastapi import HTTPException, Request
 from xhs_core.application import ExtensionCredentialService
+from xhs_core.domain import build_extension_identity
 
 _EXTENSION_SCHEMES = {
     "chrome-extension",
@@ -43,23 +44,29 @@ async def require_extension(
         credentials: 扩展能力凭据服务。
 
     Returns:
-        已认证扩展标识。
+        已认证的扩展安装身份, 可直接用作任务领取者。
 
     Raises:
         HTTPException: 请求不是本机连接或能力令牌无效。
     """
     _require_loopback_client(request, "扩展接口仅允许连接本机服务")
     extension_id = request.headers.get("x-extension-id", "")
+    # 安装标识把凭据细到实例。同一个未打包目录在两个浏览器里加载会得到相同的
+    # 扩展 ID, 只按扩展 ID 存凭据会让两边永远互相顶掉对方的令牌。
+    identity = build_extension_identity(
+        extension_id,
+        request.headers.get("x-extension-installation") or None,
+    )
     authorization = request.headers.get("authorization", "")
     scheme, _, token = authorization.partition(" ")
     if (
         not extension_id
         or scheme.casefold() != "bearer"
         or not token
-        or not await credentials.validate(extension_id, token)
+        or not await credentials.validate(identity, token)
     ):
         raise HTTPException(status_code=401, detail="扩展能力令牌无效")
-    return extension_id
+    return identity
 
 
 def _require_loopback_client(request: Request, detail: str) -> None:

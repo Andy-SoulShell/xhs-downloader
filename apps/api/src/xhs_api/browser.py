@@ -10,7 +10,14 @@ from xhs_core.application import (
     ExtensionAccountChallengeChannel,
     ExtensionCredentialService,
 )
-from xhs_core.domain import AccountProof, BrowserDriver, BrowserTask, BrowserTaskClaim
+from xhs_core.domain import (
+    AccountProof,
+    BrowserDriver,
+    BrowserTask,
+    BrowserTaskClaim,
+    build_extension_identity,
+    split_extension_identity,
+)
 
 from .browser_models import (
     BrowserAccountChallengeAnswerRequest,
@@ -81,12 +88,7 @@ def create_browser_router(
         _require_management(request, management_access)
         now = datetime.now(UTC)
         return [
-            BrowserExtensionStatus(
-                extension_id=item.extension_id,
-                registered_at=item.registered_at,
-                last_seen_at=item.last_seen_at,
-                online=now - item.last_seen_at <= _ONLINE_GRACE,
-            )
+            _presence_status(item, now)
             for item in await credentials.list_presence()
         ]
 
@@ -125,7 +127,9 @@ def create_browser_router(
         request: Request,
     ) -> BrowserExtensionTokenResponse:
         _require_extension_origin(request, payload.extension_id)
-        token = await credentials.register(payload.extension_id)
+        token = await credentials.register(
+            build_extension_identity(payload.extension_id, payload.installation_id)
+        )
         return BrowserExtensionTokenResponse(
             extension_id=payload.extension_id,
             token=token,
@@ -253,3 +257,24 @@ def _account_proof(payload: BrowserAccountChallengeAnswerRequest) -> AccountProo
     if payload.status != "proved" or payload.proof is None:
         return AccountProof.unverified()
     return AccountProof.proved(bytes.fromhex(payload.proof))
+
+
+def _presence_status(item, now) -> BrowserExtensionStatus:
+    """把存储身份还原成便于展示的在线状态。
+
+    Args:
+        item: 仓储给出的扩展登记与心跳。
+        now: 判定在线所用的当前时间。
+
+    Returns:
+        拆出扩展 ID 与安装标识的在线状态。
+    """
+    extension_id, installation_id = split_extension_identity(item.extension_id)
+    return BrowserExtensionStatus(
+        extension_id=extension_id,
+        installation_id=installation_id,
+        identity=item.extension_id,
+        registered_at=item.registered_at,
+        last_seen_at=item.last_seen_at,
+        online=now - item.last_seen_at <= _ONLINE_GRACE,
+    )

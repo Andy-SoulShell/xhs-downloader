@@ -38,17 +38,21 @@ export async function supportsPublication(baseUrl: string): Promise<boolean> {
 export async function registerPublicationExtension(
   baseUrl: string,
   extensionId: string,
+  installationId?: string,
 ): Promise<ExtensionCredential> {
   const payload = await requestJson<{ token?: string }>(
     `${normalizeBase(baseUrl)}/publication/extension/register`,
     {
       method: "POST",
-      body: JSON.stringify({ extension_id: extensionId }),
+      body: JSON.stringify({
+        extension_id: extensionId,
+        ...(installationId ? { installation_id: installationId } : {}),
+      }),
       headers: { "Content-Type": "application/json" },
     },
   );
   if (!payload.token) throw new Error("本地服务没有返回扩展能力令牌");
-  return { extensionId, token: payload.token };
+  return { extensionId, token: payload.token, installationId };
 }
 
 export async function claimPublicationTask(
@@ -144,6 +148,9 @@ function extensionHeaders(
     ...(json ? { "Content-Type": "application/json" } : {}),
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
+    ...(credential.installationId
+      ? { "X-Extension-Installation": credential.installationId }
+      : {}),
   };
 }
 

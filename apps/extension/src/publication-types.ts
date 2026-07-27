@@ -61,6 +61,8 @@ export interface PublicationClaim {
 export interface ExtensionCredential {
   extensionId: string;
   token: string;
+  /** 区分同一扩展在不同浏览器中的安装实例；旧凭据可能没有。 */
+  installationId?: string;
 }
 
 export interface PublicationAssetChunk {

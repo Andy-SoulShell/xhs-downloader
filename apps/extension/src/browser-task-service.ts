@@ -48,18 +48,22 @@ export async function supportsBrowserTasks(baseUrl: string): Promise<boolean> {
 export async function registerBrowserExtension(
   baseUrl: string,
   extensionId: string,
+  installationId?: string,
 ): Promise<ExtensionCredential> {
   const payload = await requestJson<{ token?: string }>(
     `${normalizeBase(baseUrl)}/browser/extension/register`,
     {
       method: "POST",
-      body: JSON.stringify({ extension_id: extensionId }),
+      body: JSON.stringify({
+        extension_id: extensionId,
+        ...(installationId ? { installation_id: installationId } : {}),
+      }),
       headers: { "Content-Type": "application/json" },
       signal: AbortSignal.timeout(BROWSER_TASK_REGISTER_TIMEOUT_MS),
     },
   );
   if (!payload.token) throw new Error("本地服务没有返回扩展能力令牌");
-  return { extensionId, token: payload.token };
+  return { extensionId, token: payload.token, installationId };
 }
 
 /** 长轮询领取最早排队的浏览器任务，默认最多等待二十五秒。 */
@@ -152,6 +156,9 @@ function extensionHeaders(
     ...(json ? { "Content-Type": "application/json" } : {}),
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
+    ...(credential.installationId
+      ? { "X-Extension-Installation": credential.installationId }
+      : {}),
   };
 }
 
