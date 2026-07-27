@@ -30,13 +30,7 @@ export type PublishStatusKey =
 
 /** 浏览操作在界面上的状态。 */
 export type BrowseStatusKey =
-  | "queued"
-  | "claimed"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "needs_review"
-  | "canceled";
+  "queued" | "claimed" | "running" | "succeeded" | "failed" | "needs_review" | "canceled";
 
 /**
  * 一条状态的完整表达。
@@ -55,7 +49,8 @@ export const downloadStatusCopy: Record<DownloadStatusKey, StatusCopy> = {
   completed: { label: "已下载" },
   failed: {
     label: "下载失败",
-    hint: "可以重新下载；如果多次失败，检查网络或稍后再试。",
+    // “可以重新下载”与旁边常驻的重试按钮重复，只留真正补充信息的那半句。
+    hint: "多次失败就检查一下网络，或者过一会儿再试。",
   },
 };
 
@@ -92,10 +87,7 @@ export const browseStatusCopy: Record<BrowseStatusKey, StatusCopy> = {
 };
 
 /** 帖子卡片上的下载状态，与下载任务共用同一套说法。 */
-export const postStatusCopy: Record<
-  "ready" | "downloading" | "done" | "error",
-  StatusCopy
-> = {
+export const postStatusCopy: Record<"ready" | "downloading" | "done" | "error", StatusCopy> = {
   ready: { label: "未下载" },
   downloading: { label: "下载中" },
   done: { label: "已下载" },

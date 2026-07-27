@@ -9,6 +9,7 @@ import {
   reviewBrowserTask,
   revokeBrowserExtension,
 } from "../lib/browser-management-api";
+import { makeDownloadTask } from "../test/fixtures";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
 import { ActivityBoard } from "./activity-board";
 
@@ -21,20 +22,17 @@ vi.mock("../lib/browser-management-api", () => ({
 }));
 
 function downloadTask(status: DownloadTask["status"]): DownloadTask {
-  return {
+  return makeDownloadTask({
     task_id: `download-${status}`,
     client_request_id: null,
     source_url: "https://www.xiaohongshu.com/explore/synthetic",
     media_indexes: [],
-    force: false,
     status,
-    attempts: 1,
     message: "合成下载状态",
     detail: null,
-    artifacts: [],
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
-  };
+  });
 }
 
 function clientRecord(): ClientDownloadRecord {
@@ -89,14 +87,24 @@ describe("动态工作台", () => {
 
     const tabs = await screen.findAllByRole("tab");
 
-    expect(tabs.map((tab) => tab.textContent)).toEqual([
-      "下载1",
-      "浏览操作1",
-      "插件下载1",
-    ]);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["下载1", "浏览操作1", "插件下载1"]);
     // 默认停在下载，其余分类要切换后才呈现，不再串成一页长滚动。
     expect(screen.getByRole("tabpanel")).toHaveTextContent("合成下载状态");
     expect(screen.queryByText("合成插件记录")).not.toBeInTheDocument();
+  });
+
+  it("图文帖在下载记录里也用第一张图当封面", async () => {
+    // 曾经只读 `预览地址`，那是视频专属字段，图文帖一律退化成状态图标，
+    // 同为“已下载”的两条记录长得完全不一样。
+    const { container } = render(
+      <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[makeDownloadTask()]} />,
+    );
+
+    await screen.findAllByRole("tab");
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "https://example.invalid/image-1",
+    );
   });
 
   it("切换到插件下载与浏览操作分组", async () => {
@@ -110,9 +118,7 @@ describe("动态工作台", () => {
       />,
     );
 
-    fireEvent.mouseDown(
-      await screen.findByRole("tab", { name: /插件下载/ }),
-    );
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /插件下载/ }));
     expect(screen.getByText("合成插件记录")).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole("tab", { name: /浏览操作/ }));
@@ -120,9 +126,7 @@ describe("动态工作台", () => {
   });
 
   it("各分组为空时给出各自的空状态", async () => {
-    render(
-      <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
-    );
+    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
     expect(await screen.findByText("还没有下载记录")).toBeInTheDocument();
 
@@ -142,19 +146,13 @@ describe("动态工作台", () => {
       message: "已由用户确认操作未生效",
     });
 
-    render(
-      <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
-    );
+    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
-    fireEvent.mouseDown(
-      await screen.findByRole("tab", { name: /浏览操作/ }),
-    );
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /浏览操作/ }));
     (await screen.findByRole("button", { name: "没有生效" })).click();
     (await screen.findByRole("button", { name: "确认" })).click();
 
-    await waitFor(() =>
-      expect(reviewBrowserTask).toHaveBeenCalledWith(reviewed.task_id, false),
-    );
+    await waitFor(() => expect(reviewBrowserTask).toHaveBeenCalledWith(reviewed.task_id, false));
   });
 
   it("失败的浏览操作提供重试", async () => {
@@ -165,18 +163,12 @@ describe("动态工作台", () => {
       status: "queued",
     });
 
-    render(
-      <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />,
-    );
+    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
-    fireEvent.mouseDown(
-      await screen.findByRole("tab", { name: /浏览操作/ }),
-    );
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /浏览操作/ }));
     (await screen.findByRole("button", { name: "重试" })).click();
 
-    await waitFor(() =>
-      expect(retryBrowserTask).toHaveBeenCalledWith(failed.task_id),
-    );
+    await waitFor(() => expect(retryBrowserTask).toHaveBeenCalledWith(failed.task_id));
     expect(revokeBrowserExtension).not.toHaveBeenCalled();
   });
 });

@@ -1,22 +1,14 @@
-import {
-  CheckCircle2,
-  CircleAlert,
-  Clock3,
-  MonitorDown,
-  RefreshCw,
-  RotateCcw,
-} from "lucide-react";
+import { CheckCircle2, CircleAlert, Clock3, MonitorDown, RefreshCw, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 
-import {
-  formatFullTime,
-  formatRelativeTime,
-} from "../lib/format-time";
+import { formatFullTime, formatRelativeTime } from "../lib/format-time";
+import { groupMedia, mediaCover } from "../lib/media";
 import { downloadStatusCopy, humanizeError } from "../lib/terminology";
 import type {
   ClientDownloadRecord,
   DownloadTask,
   DownloadTaskStatus,
+  MediaResource,
 } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
@@ -35,10 +27,7 @@ export function TaskBoard({
   onRetry: (taskId: string) => void;
 }) {
   return (
-    <ManagementSection
-      description="下载在后台进行，关掉这个页面也不会中断。"
-      title="下载"
-    >
+    <ManagementSection description="下载在后台进行，关掉这个页面也不会中断。" title="下载">
       {loading && !tasks.length ? (
         <SkeletonRecordList />
       ) : tasks.length ? (
@@ -51,7 +40,7 @@ export function TaskBoard({
               <MediaThumbnail
                 alt=""
                 fallback={<TaskStatusIcon status={task.status} />}
-                src={task.detail?.媒体?.[0]?.预览地址}
+                src={taskCover(task.detail?.媒体)}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-3">
@@ -81,9 +70,7 @@ export function TaskBoard({
                 <p className="mt-0.5 text-xs leading-5 text-stone-600">
                   {humanizeError(task.message)}
                 </p>
-                {task.status === "running" && (
-                  <DownloadProgressBar progress={task.progress} />
-                )}
+                {task.status === "running" && <DownloadProgressBar progress={task.progress} />}
                 {downloadStatusCopy[task.status].hint && (
                   <p className="mt-1.5 text-xs leading-5 text-amber-700">
                     {downloadStatusCopy[task.status].hint}
@@ -143,10 +130,7 @@ export function RecordBoard({
                 <h2 className="min-w-0 truncate text-sm leading-6 font-semibold text-stone-900">
                   {record.title || record.work_id}
                 </h2>
-                <Badge
-                  size="regular"
-                  tone={record.status === "completed" ? "success" : "danger"}
-                >
+                <Badge size="regular" tone={record.status === "completed" ? "success" : "danger"}>
                   {record.status === "completed"
                     ? downloadStatusCopy.completed.label
                     : downloadStatusCopy.failed.label}
@@ -156,10 +140,7 @@ export function RecordBoard({
                 {humanizeError(record.message)}
               </p>
               <p className="meta-text mt-2.5 flex flex-wrap items-center gap-x-2">
-                <time
-                  dateTime={record.created_at}
-                  title={formatFullTime(record.created_at)}
-                >
+                <time dateTime={record.created_at} title={formatFullTime(record.created_at)}>
                   {formatRelativeTime(record.created_at)}
                 </time>
                 <Dot />
@@ -207,13 +188,7 @@ function ManagementSection({
  *
  * @param bare 只渲染图标本身，供缩略图在没有封面时作为备用内容使用。
  */
-function TaskStatusIcon({
-  bare = false,
-  status,
-}: {
-  bare?: boolean;
-  status: DownloadTaskStatus;
-}) {
+function TaskStatusIcon({ bare = false, status }: { bare?: boolean; status: DownloadTaskStatus }) {
   const styles = {
     queued: ["bg-amber-50 text-amber-600", Clock3],
     running: ["bg-blue-50 text-blue-600", RefreshCw],
@@ -222,17 +197,11 @@ function TaskStatusIcon({
   } as const;
   const [className, Icon] = styles[status];
   const icon = (
-    <Icon
-      aria-hidden
-      className={status === "running" ? "animate-spin" : ""}
-      size={17}
-    />
+    <Icon aria-hidden className={status === "running" ? "animate-spin" : ""} size={17} />
   );
   if (bare) return icon;
   return (
-    <span
-      className={`grid size-10 shrink-0 place-items-center rounded-xl ${className}`}
-    >
+    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${className}`}>
       {icon}
     </span>
   );
@@ -254,5 +223,23 @@ function workId(value: string): string {
 
 /** 元信息之间的分隔点；比顿号更轻，不打断扫读。 */
 function Dot() {
-  return <span aria-hidden className="text-stone-300">·</span>;
+  return (
+    <span aria-hidden className="text-stone-300">
+      ·
+    </span>
+  );
+}
+
+/**
+ * 取一条下载记录的列表封面。
+ *
+ * 此前只读第一项的 `预览地址`，而这个字段只有视频才有，
+ * 于是所有图文帖在动态列表里都退化成状态图标，同为“已下载”的两条长得不一样。
+ *
+ * @param media 记录里解析出的媒体资源。
+ * @returns 可用的封面地址；没有则返回 undefined 交给备用图标。
+ */
+function taskCover(media: MediaResource[] | undefined): string | undefined {
+  const [first] = groupMedia(media ?? []);
+  return first ? mediaCover(first) : undefined;
 }
