@@ -1,10 +1,5 @@
 import type { SettingsValues } from "../lib/types";
-import {
-  NumberSetting,
-  SelectSetting,
-  SettingsSection,
-  TextSetting,
-} from "./setting-controls";
+import { NumberSetting, SelectSetting, SettingsSection, TextSetting } from "./setting-controls";
 import type { SettingsChange } from "./settings-sections";
 
 export function ServiceSettings({
@@ -15,10 +10,7 @@ export function ServiceSettings({
   values: SettingsValues;
 }) {
   return (
-    <SettingsSection
-      description="修改监听地址、端口或日志级别后必须重启服务。"
-      title="本地服务"
-    >
+    <SettingsSection description="修改监听地址、端口或日志级别后必须重启服务。" title="本地服务">
       <TextSetting
         help="仅本机使用建议填写 127.0.0.1。"
         label="监听地址"

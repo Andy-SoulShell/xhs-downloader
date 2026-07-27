@@ -59,9 +59,7 @@ export function BoardTabs({ ariaLabel, tabs, defaultValue }: BoardTabsProps) {
               {tab.count !== undefined && tab.count > 0 && (
                 <span
                   className={`ml-0.5 min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] leading-4 font-semibold tabular-nums transition-colors ${
-                    active
-                      ? "bg-stone-900 text-white"
-                      : "bg-stone-900/[0.06] text-stone-600"
+                    active ? "bg-stone-900 text-white" : "bg-stone-900/[0.06] text-stone-600"
                   }`}
                 >
                   {tab.count > 99 ? "99+" : tab.count}

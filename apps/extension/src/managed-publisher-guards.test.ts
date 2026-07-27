@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { installManagedPublisherAdapter } from "./managed-publisher-adapter";
-import type {
-  PublicationAsset,
-  PublicationTask,
-} from "./publication-types";
+import type { PublicationAsset, PublicationTask } from "./publication-types";
 
 const adapter = installManagedPublisherAdapter();
 
@@ -18,40 +15,30 @@ describe("受管发布边界与结果判定", () => {
     installImageForm(false);
 
     // 受管发布只做仅自己可见、无商品绑定的任务，越界一律在准备阶段拒绝。
-    await expect(
-      adapter.prepareUpload(createTask({ visibility: "public" })),
-    ).resolves.toEqual({
+    await expect(adapter.prepareUpload(createTask({ visibility: "public" }))).resolves.toEqual({
+      ok: false,
+      message: "创作页素材入口准备失败",
+    });
+    await expect(adapter.prepareUpload(createTask({ withProduct: true }))).resolves.toEqual({
+      ok: false,
+      message: "创作页素材入口准备失败",
+    });
+    await expect(adapter.prepareUpload(createTask({ targetDriver: "extension" }))).resolves.toEqual(
+      {
+        ok: false,
+        message: "创作页素材入口准备失败",
+      },
+    );
+    await expect(adapter.prepareUpload(createTask({ assetCount: 0 }))).resolves.toEqual({
+      ok: false,
+      message: "创作页素材入口准备失败",
+    });
+    await expect(adapter.prepareUpload(createTask({ assetCount: 19 }))).resolves.toEqual({
       ok: false,
       message: "创作页素材入口准备失败",
     });
     await expect(
-      adapter.prepareUpload(createTask({ withProduct: true })),
-    ).resolves.toEqual({
-      ok: false,
-      message: "创作页素材入口准备失败",
-    });
-    await expect(
-      adapter.prepareUpload(createTask({ targetDriver: "extension" })),
-    ).resolves.toEqual({
-      ok: false,
-      message: "创作页素材入口准备失败",
-    });
-    await expect(
-      adapter.prepareUpload(createTask({ assetCount: 0 })),
-    ).resolves.toEqual({
-      ok: false,
-      message: "创作页素材入口准备失败",
-    });
-    await expect(
-      adapter.prepareUpload(createTask({ assetCount: 19 })),
-    ).resolves.toEqual({
-      ok: false,
-      message: "创作页素材入口准备失败",
-    });
-    await expect(
-      adapter.prepareUpload(
-        createTask({ mediaKind: "video", isOriginal: true }),
-      ),
+      adapter.prepareUpload(createTask({ mediaKind: "video", isOriginal: true })),
     ).resolves.toEqual({
       ok: false,
       message: "创作页素材入口准备失败",
@@ -172,9 +159,7 @@ function installImageForm(withOriginal: boolean): void {
       </div>
     `,
   );
-  const toggle = document.querySelector<HTMLElement>(
-    ".custom-switch-card .d-switch",
-  )!;
+  const toggle = document.querySelector<HTMLElement>(".custom-switch-card .d-switch")!;
   const state = toggle.querySelector<HTMLInputElement>("input")!;
   toggle.addEventListener("click", () => {
     const dialog = document.createElement("div");
@@ -218,9 +203,7 @@ function createTask(
     mediaKind === "mixed"
       ? [createAsset("image", 0), createAsset("video", 1)]
       : options.assetCount !== undefined
-        ? Array.from({ length: options.assetCount }, (_, index) =>
-            createAsset(mediaKind, index),
-          )
+        ? Array.from({ length: options.assetCount }, (_, index) => createAsset(mediaKind, index))
         : [createAsset(mediaKind, 0)];
   const timestamp = "2026-07-25T12:34:00.000Z";
   return {
@@ -250,10 +233,7 @@ function createTask(
   };
 }
 
-function createAsset(
-  kind: "image" | "video",
-  position: number,
-): PublicationAsset {
+function createAsset(kind: "image" | "video", position: number): PublicationAsset {
   return {
     asset_id: `synthetic-${kind}-${position}`,
     filename: `synthetic-${position}.${kind === "image" ? "png" : "mp4"}`,

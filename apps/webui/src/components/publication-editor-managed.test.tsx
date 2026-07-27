@@ -1,17 +1,8 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { PublicationDraftInput } from "../lib/publication";
-import {
-  makePublicationDraft,
-  makePublicationTask,
-} from "../test/fixtures";
+import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 import { PublicationEditor } from "./publication-editor";
 
 type EditorProps = Parameters<typeof PublicationEditor>[0];
@@ -35,9 +26,7 @@ function renderEditor(overrides: Partial<EditorProps> = {}) {
       ...makePublicationDraft(),
       ...input,
     })),
-    onSubmitManual: vi.fn().mockResolvedValue(
-      makePublicationTask({ target_driver: "managed" }),
-    ),
+    onSubmitManual: vi.fn().mockResolvedValue(makePublicationTask({ target_driver: "managed" })),
     onSubmitPlatformScheduled: vi.fn().mockResolvedValue(
       makePublicationTask({
         mode: "platform_scheduled",
@@ -59,9 +48,7 @@ function renderEditor(overrides: Partial<EditorProps> = {}) {
 }
 
 function localDateTime(instant: Date): string {
-  return new Date(
-    instant.getTime() - instant.getTimezoneOffset() * 60_000,
-  )
+  return new Date(instant.getTime() - instant.getTimezoneOffset() * 60_000)
     .toISOString()
     .slice(0, 16);
 }
@@ -76,15 +63,11 @@ describe("受管浏览器发布编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "本地定时" }));
     fireEvent.click(screen.getByRole("button", { name: "确认本地定时" }));
 
-    await waitFor(() =>
-      expect(properties.onSubmitScheduled).toHaveBeenCalled(),
-    );
+    await waitFor(() => expect(properties.onSubmitScheduled).toHaveBeenCalled());
     expect(properties.onSave).toHaveBeenCalledWith(
       expect.objectContaining({ visibility: "private", products: [] }),
     );
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "本地定时任务已保存，届时由受管浏览器执行",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("本地定时任务已保存，届时由受管浏览器执行");
     expect(open).not.toHaveBeenCalled();
   });
 
@@ -98,15 +81,11 @@ describe("受管浏览器发布编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "官方定时" }));
     fireEvent.click(screen.getByRole("button", { name: "确认官方定时" }));
 
-    await waitFor(() =>
-      expect(properties.onSubmitPlatformScheduled).toHaveBeenCalled(),
-    );
+    await waitFor(() => expect(properties.onSubmitPlatformScheduled).toHaveBeenCalled());
     expect(properties.onSave).toHaveBeenCalledWith(
       expect.objectContaining({ visibility: "private", products: [] }),
     );
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "官方定时任务已交给受管浏览器设置",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("官方定时任务已交给受管浏览器设置");
     expect(open).not.toHaveBeenCalled();
   });
 
@@ -128,9 +107,7 @@ describe("受管浏览器发布编辑器", () => {
       }),
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "下移 synthetic.jpeg" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "下移 synthetic.jpeg" }));
 
     await waitFor(() => expect(properties.onSave).toHaveBeenCalled());
     expect(properties.onSave).toHaveBeenCalledWith({
@@ -153,9 +130,7 @@ describe("受管浏览器发布编辑器", () => {
     vi.spyOn(window, "open").mockReturnValue(popup as unknown as Window);
     const properties = renderEditor({
       browserDriver: "extension",
-      onSubmitManual: vi.fn().mockResolvedValue(
-        makePublicationTask({ target_driver: "managed" }),
-      ),
+      onSubmitManual: vi.fn().mockResolvedValue(makePublicationTask({ target_driver: "managed" })),
     });
 
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
@@ -163,9 +138,7 @@ describe("受管浏览器发布编辑器", () => {
 
     await waitFor(() => expect(popup.close).toHaveBeenCalled());
     expect(popup.location.href).toBe("");
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "发布任务已交给受管浏览器",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给受管浏览器");
   });
 
   it("未知冻结驱动关闭弹窗并停止后续导航", async () => {
@@ -188,9 +161,7 @@ describe("受管浏览器发布编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
 
     await waitFor(() =>
-      expect(properties.onNotify).toHaveBeenCalledWith(
-        "发布任务返回了不支持的浏览器执行器",
-      ),
+      expect(properties.onNotify).toHaveBeenCalledWith("发布任务返回了不支持的浏览器执行器"),
     );
     expect(popup.close).toHaveBeenCalled();
     expect(popup.location.href).toBe("");

@@ -23,8 +23,7 @@ const claim: PublicationClaim = {
           filename: "synthetic.png",
           media_type: "image/png",
           size: 1,
-          sha256:
-            "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+          sha256: "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
           position: 0,
         },
       ],
@@ -126,15 +125,12 @@ describe("创作页自动发布流程", () => {
       expect(events).toContain("published");
     });
 
-    expect((document.querySelector("input[placeholder]") as HTMLInputElement).value)
-      .toBe("合成标题");
-    expect(document.querySelector(".ProseMirror")?.textContent).toBe(
-      "合成正文\n#自动化",
+    expect((document.querySelector("input[placeholder]") as HTMLInputElement).value).toBe(
+      "合成标题",
     );
+    expect(document.querySelector(".ProseMirror")?.textContent).toBe("合成正文\n#自动化");
     expect(events).toEqual(["filling", "publishing", "click", "published"]);
-    expect(document.querySelector("#xhd-publish-status")?.textContent).toBe(
-      "发布成功",
-    );
+    expect(document.querySelector("#xhd-publish-status")?.textContent).toBe("发布成功");
   });
 
   it("按素材顺序组装并上传多张图片", async () => {
@@ -179,10 +175,7 @@ describe("创作页自动发布流程", () => {
 
     await import("./publisher");
     await vi.waitFor(() => {
-      expect(transferred.map((file) => file.name)).toEqual([
-        "first.png",
-        "second.png",
-      ]);
+      expect(transferred.map((file) => file.name)).toEqual(["first.png", "second.png"]);
       expect(sendMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           status: "published",

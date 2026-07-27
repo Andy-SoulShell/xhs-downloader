@@ -16,9 +16,7 @@ export function prepareManagedPublishControl(): {
   message: string;
 } {
   try {
-    const result = (globalThis as PublishControlScope)[PUBLISH_CONTROL]?.(
-      "prepare",
-    );
+    const result = (globalThis as PublishControlScope)[PUBLISH_CONTROL]?.("prepare");
     if (result?.ok === true && result.message === PREPARED_MESSAGE) {
       return { ok: true, message: result.message };
     }

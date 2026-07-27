@@ -6,11 +6,7 @@ interface AuthorAvatarProps {
   size?: "small" | "medium";
 }
 
-export function AuthorAvatar({
-  name,
-  src,
-  size = "medium",
-}: AuthorAvatarProps) {
+export function AuthorAvatar({ name, src, size = "medium" }: AuthorAvatarProps) {
   const [failed, setFailed] = useState(false);
   const sizeClass = size === "small" ? "size-6 text-[10px]" : "size-10 text-sm";
   const className = `${sizeClass} shrink-0 rounded-full`;

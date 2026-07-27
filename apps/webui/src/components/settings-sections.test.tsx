@@ -3,11 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { makeSettingsResponse } from "../test/fixtures";
 import { ServiceSettings } from "./service-settings";
-import {
-  DownloadSettings,
-  NetworkSettings,
-  StorageSettings,
-} from "./settings-sections";
+import { DownloadSettings, NetworkSettings, StorageSettings } from "./settings-sections";
 
 const values = makeSettingsResponse().values;
 
@@ -84,10 +80,7 @@ describe("配置分组控件", () => {
       target: { value: "updated-agent" },
     });
 
-    expect(screen.getByLabelText("小红书 Cookie")).toHaveAttribute(
-      "type",
-      "password",
-    );
+    expect(screen.getByLabelText("小红书 Cookie")).toHaveAttribute("type", "password");
     expect(onCookieChange).toHaveBeenCalledOnce();
     expect(onProxyChange).toHaveBeenCalledOnce();
     expect(onClearCookieChange).toHaveBeenCalledWith(false);
@@ -120,15 +113,9 @@ describe("配置分组控件", () => {
     fireEvent.click(summary);
 
     expect(disclosure).toHaveAttribute("open");
-    expect(
-      screen.getByText(/普通用户优先选择浏览器扩展或受管浏览器/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/分别复制 Cookie 和 User-Agent 后面的值/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/不要复制 Set-Cookie、整条 cURL 或其他请求头/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/普通用户优先选择浏览器扩展或受管浏览器/)).toBeInTheDocument();
+    expect(screen.getByText(/分别复制 Cookie 和 User-Agent 后面的值/)).toBeInTheDocument();
+    expect(screen.getByText(/不要复制 Set-Cookie、整条 cURL 或其他请求头/)).toBeInTheDocument();
     expect(screen.getByText(/Cookie 只保存在本机且不会再次显示/)).toBeInTheDocument();
   });
 

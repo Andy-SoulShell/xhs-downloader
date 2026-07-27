@@ -1,20 +1,8 @@
 import { useState } from "react";
 
-import {
-  detectAccessIntent,
-  presetForIntent,
-  type AccessIntent,
-} from "../lib/access-intent";
-import type {
-  BrowserDriver,
-  RouteStrategy,
-  SettingsValues,
-} from "../lib/types";
-import {
-  SelectSetting,
-  SettingsSection,
-  TextSetting,
-} from "./setting-controls";
+import { detectAccessIntent, presetForIntent, type AccessIntent } from "../lib/access-intent";
+import type { BrowserDriver, RouteStrategy, SettingsValues } from "../lib/types";
+import { SelectSetting, SettingsSection, TextSetting } from "./setting-controls";
 import type { SettingsChange } from "./settings-sections";
 
 const routeOptions = [
@@ -84,12 +72,8 @@ export function AccessModeSettings({
               onClick={() => chooseIntent(option.value)}
               type="button"
             >
-              <p className="text-sm font-semibold text-stone-900">
-                {option.title}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-stone-600">
-                {option.description}
-              </p>
+              <p className="text-sm font-semibold text-stone-900">{option.title}</p>
+              <p className="mt-1 text-xs leading-5 text-stone-600">{option.description}</p>
             </button>
           );
         })}
@@ -117,18 +101,14 @@ export function AccessModeSettings({
           <SelectSetting
             help="只影响推荐、搜索、详情等读取；点赞、评论和发布不受此项影响。"
             label="读取方式"
-            onChange={(value) =>
-              onChange("route_strategy", value as RouteStrategy)
-            }
+            onChange={(value) => onChange("route_strategy", value as RouteStrategy)}
             options={routeOptions}
             value={values.route_strategy}
           />
           <SelectSetting
             help="读取和互动都使用这里选定的浏览器。"
             label="使用哪个浏览器"
-            onChange={(value) =>
-              onChange("browser_driver", value as BrowserDriver)
-            }
+            onChange={(value) => onChange("browser_driver", value as BrowserDriver)}
             options={browserOptions}
             value={values.browser_driver}
           />
@@ -140,9 +120,7 @@ export function AccessModeSettings({
                 : "当前使用浏览器扩展，不需要这一项。"
             }
             label="自带浏览器位置"
-            onChange={(value) =>
-              onChange("managed_browser_executable", value || null)
-            }
+            onChange={(value) => onChange("managed_browser_executable", value || null)}
             placeholder="留空时自动检测本机浏览器"
             value={values.managed_browser_executable ?? ""}
             wide

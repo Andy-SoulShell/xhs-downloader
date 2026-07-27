@@ -1,12 +1,7 @@
 import type { JsonValue } from "@xhs-downloader/contracts";
 
 import type { CapabilityRoute } from "../lib/browser-api";
-import type {
-  BrowserTask,
-  FeedDetailResult,
-  FeedListResult,
-  FeedSummary,
-} from "../lib/types";
+import type { BrowserTask, FeedDetailResult, FeedListResult, FeedSummary } from "../lib/types";
 
 /** 浏览器探索测试使用的完全合成帖子摘要。 */
 export const browserFeedFixture: FeedSummary = {
@@ -78,9 +73,7 @@ export const browserDetailFixture: FeedDetailResult = {
 };
 
 /** 创建浏览器探索测试使用的推荐列表结果。 */
-export function makeBrowserFeedList(
-  items: FeedSummary[] = [browserFeedFixture],
-): FeedListResult {
+export function makeBrowserFeedList(items: FeedSummary[] = [browserFeedFixture]): FeedListResult {
   return {
     items,
     source: "home",
@@ -91,9 +84,7 @@ export function makeBrowserFeedList(
 }
 
 /** 创建带指定结构化结果的已完成浏览器任务。 */
-export function makeCompletedBrowserTask(
-  result: Record<string, JsonValue>,
-): BrowserTask {
+export function makeCompletedBrowserTask(result: Record<string, JsonValue>): BrowserTask {
   return {
     task_id: "synthetic-browser-task",
     request_id: "synthetic-request",

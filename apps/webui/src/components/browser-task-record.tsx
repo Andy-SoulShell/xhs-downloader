@@ -1,15 +1,8 @@
 import { Check, RotateCcw, X } from "lucide-react";
 import { useState } from "react";
-import type {
-  BrowserDriver,
-  BrowserTask,
-  BrowserTaskKind,
-} from "@xhs-downloader/contracts";
+import type { BrowserDriver, BrowserTask, BrowserTaskKind } from "@xhs-downloader/contracts";
 
-import {
-  formatFullTime,
-  formatRelativeTime,
-} from "../lib/format-time";
+import { formatFullTime, formatRelativeTime } from "../lib/format-time";
 import {
   browseStatusCopy,
   connectionCopy,
@@ -55,22 +48,17 @@ export function BrowserTaskRecord({
 }) {
   const [decision, setDecision] = useState<boolean | null>(null);
   const status = browseStatusCopy[task.status as BrowseStatusKey];
-  const hasFailureDiagnostics =
-    task.status === "failed" || task.status === "needs_review";
+  const hasFailureDiagnostics = task.status === "failed" || task.status === "needs_review";
   const needsReview = task.status === "needs_review";
 
   return (
     <article className="record-card flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-stone-900">
-            {KIND_LABELS[task.kind]}
-          </h3>
+          <h3 className="text-sm font-semibold text-stone-900">{KIND_LABELS[task.kind]}</h3>
           <TaskStatusBadge status={task.status as BrowseStatusKey} />
           {showConnection && (
-            <Badge>
-              {connectionCopy[task.target_driver as BrowserDriver].label}
-            </Badge>
+            <Badge>{connectionCopy[task.target_driver as BrowserDriver].label}</Badge>
           )}
         </div>
         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-600">
@@ -82,16 +70,16 @@ export function BrowserTaskRecord({
           </time>
           {task.attempts > 1 && (
             <>
-              <span aria-hidden className="text-stone-300">·</span>第{" "}
-              {task.attempts} 次尝试
+              <span aria-hidden className="text-stone-300">
+                ·
+              </span>
+              第 {task.attempts} 次尝试
             </>
           )}
         </p>
         {needsReview && (
           <div className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
-            <p className="break-words text-[11px] leading-5 text-amber-900">
-              {status.hint}
-            </p>
+            <p className="break-words text-[11px] leading-5 text-amber-900">{status.hint}</p>
             {onResolve &&
               (decision === null ? (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -117,15 +105,10 @@ export function BrowserTaskRecord({
               ) : (
                 <div aria-label="确认操作结果" className="mt-2">
                   <p className="text-xs font-semibold text-amber-950">
-                    {decision
-                      ? "确认这次操作已经生效？"
-                      : "确认这次操作没有生效？确认后可以重试。"}
+                    {decision ? "确认这次操作已经生效？" : "确认这次操作没有生效？确认后可以重试。"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <ActionButton
-                      onClick={() => setDecision(null)}
-                      variant="ghost"
-                    >
+                    <ActionButton onClick={() => setDecision(null)} variant="ghost">
                       再看看
                     </ActionButton>
                     <ActionButton
@@ -142,17 +125,11 @@ export function BrowserTaskRecord({
               ))}
           </div>
         )}
-        {hasFailureDiagnostics && (
-          <BrowserTaskDiagnostics result={task.result} />
-        )}
+        {hasFailureDiagnostics && <BrowserTaskDiagnostics result={task.result} />}
       </div>
       {task.status === "failed" && (
         <ActionButton disabled={retrying} onClick={onRetry} variant="outline">
-          <RotateCcw
-            aria-hidden
-            className={retrying ? "animate-spin" : ""}
-            size={14}
-          />
+          <RotateCcw aria-hidden className={retrying ? "animate-spin" : ""} size={14} />
           重试
         </ActionButton>
       )}

@@ -9,8 +9,7 @@ export type InteractionKind = "like" | "favorite";
 
 /** 互动预检结果：已满足目标，或等待浏览器级可信输入。 */
 export type DesiredInteractionPreparation =
-  | { result: DesiredStateResult; selector: null }
-  | { result: null; selector: string };
+  { result: DesiredStateResult; selector: null } | { result: null; selector: string };
 
 const SELECTORS: Record<InteractionKind, string> = {
   like: ".interact-container .left .like-lottie",
@@ -27,12 +26,7 @@ export async function setDesiredInteraction(
   active: boolean,
   activate?: () => Promise<void>,
 ): Promise<DesiredStateResult> {
-  const preparation = await prepareDesiredInteraction(
-    page,
-    feedId,
-    kind,
-    active,
-  );
+  const preparation = await prepareDesiredInteraction(page, feedId, kind, active);
   if (preparation.result) return preparation.result;
   if (activate) await activate();
   else clickInteractionControl(page, preparation.selector);
@@ -46,11 +40,7 @@ export async function prepareDesiredInteraction(
   kind: InteractionKind,
   active: boolean,
 ): Promise<DesiredInteractionPreparation> {
-  const before = interactionState(
-    await readLiveInitialState(page),
-    feedId,
-    kind,
-  );
+  const before = interactionState(await readLiveInitialState(page), feedId, kind);
   if (before === active) {
     return {
       result: {
@@ -79,11 +69,7 @@ export async function verifyDesiredInteraction(
 ): Promise<DesiredStateResult> {
   for (let attempt = 0; attempt < 16; attempt += 1) {
     try {
-      const current = interactionState(
-        await readLiveInitialState(page),
-        feedId,
-        kind,
-      );
+      const current = interactionState(await readLiveInitialState(page), feedId, kind);
       if (current === active) {
         return {
           feed_id: feedId,
@@ -99,9 +85,7 @@ export async function verifyDesiredInteraction(
     await delay(250);
   }
   const action = kind === "like" ? "点赞" : "收藏";
-  throw new UncertainBrowserActionError(
-    `${action}操作已触发，但未能确认最终状态，请人工核对`,
-  );
+  throw new UncertainBrowserActionError(`${action}操作已触发，但未能确认最终状态，请人工核对`);
 }
 
 async function waitForInteractionControl(

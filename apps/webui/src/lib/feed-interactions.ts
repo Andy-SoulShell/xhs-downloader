@@ -9,12 +9,8 @@ export interface FeedInteractionRequest {
 }
 
 /** 当前详情的访问上下文；没有打开详情时为空。 */
-function targetOf(
-  detail: FeedDetailResult | null,
-): Record<string, JsonValue> | null {
-  return detail
-    ? { feed_id: detail.feed_id, xsec_token: detail.xsec_token }
-    : null;
+function targetOf(detail: FeedDetailResult | null): Record<string, JsonValue> | null {
+  return detail ? { feed_id: detail.feed_id, xsec_token: detail.xsec_token } : null;
 }
 
 /**
@@ -51,9 +47,7 @@ export function commentRequest(
   content: string,
 ): FeedInteractionRequest | null {
   const target = targetOf(detail);
-  return target
-    ? { path: "/xhs/feeds/comment", payload: { ...target, content } }
-    : null;
+  return target ? { path: "/xhs/feeds/comment", payload: { ...target, content } } : null;
 }
 
 /**

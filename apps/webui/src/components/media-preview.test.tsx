@@ -22,20 +22,9 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("媒体预览", () => {
   it("支持悬停和点击播放动态图片", () => {
-    const play = vi
-      .spyOn(HTMLMediaElement.prototype, "play")
-      .mockResolvedValue();
-    const pause = vi
-      .spyOn(HTMLMediaElement.prototype, "pause")
-      .mockImplementation(() => undefined);
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[image, live]}
-        title="合成帖子"
-      />,
-    );
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
+    render(<MediaPreview index={1} onOpen={vi.fn()} resources={[image, live]} title="合成帖子" />);
 
     const preview = screen.getByLabelText("合成帖子的第 1 个动态图片预览");
     const button = screen.getByRole("button", { name: "动态图片" });
@@ -51,53 +40,26 @@ describe("媒体预览", () => {
   });
 
   it("播放失败时恢复静态预览", async () => {
-    vi.spyOn(HTMLMediaElement.prototype, "play").mockRejectedValue(
-      new Error("媒体不可用"),
-    );
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[image, live]}
-        title="合成帖子"
-      />,
-    );
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockRejectedValue(new Error("媒体不可用"));
+    render(<MediaPreview index={1} onOpen={vi.fn()} resources={[image, live]} title="合成帖子" />);
 
     const button = screen.getByRole("button", { name: "动态图片" });
     fireEvent.click(button);
-    await waitFor(() =>
-      expect(button).toHaveAttribute("aria-pressed", "false"),
-    );
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
   });
 
   it("普通图片不创建动态控件", () => {
     const onOpen = vi.fn();
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={onOpen}
-        resources={[image]}
-        title="合成帖子"
-      />,
-    );
+    render(<MediaPreview index={1} onOpen={onOpen} resources={[image]} title="合成帖子" />);
 
     expect(screen.getByRole("img")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "查看第 1 项大图" }));
     expect(onOpen).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByRole("button", { name: "动态图片" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "动态图片" })).not.toBeInTheDocument();
   });
 
   it("封面就位前预留版面，就位后交还给图片的原始比例", () => {
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[image]}
-        title="合成帖子"
-      />,
-    );
+    render(<MediaPreview index={1} onOpen={vi.fn()} resources={[image]} title="合成帖子" />);
 
     // 地址不可达时请求会长时间挂起而不报错，只处理 onError 会让封面区
     // 无限期停在零高度。
@@ -111,14 +73,7 @@ describe("媒体预览", () => {
   });
 
   it("封面加载失败时给出等高占位而不是塌陷成零高度", () => {
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[image]}
-        title="合成帖子"
-      />,
-    );
+    render(<MediaPreview index={1} onOpen={vi.fn()} resources={[image]} title="合成帖子" />);
 
     fireEvent.error(screen.getByRole("img"));
 
@@ -130,14 +85,7 @@ describe("媒体预览", () => {
 
   it("封面失效后仍可进入帖子详情", () => {
     const onOpen = vi.fn();
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={onOpen}
-        resources={[image]}
-        title="合成帖子"
-      />,
-    );
+    render(<MediaPreview index={1} onOpen={onOpen} resources={[image]} title="合成帖子" />);
 
     fireEvent.error(screen.getByRole("img"));
     fireEvent.click(screen.getByRole("button", { name: "查看第 1 项大图" }));
@@ -152,14 +100,7 @@ describe("媒体预览", () => {
       扩展名: "mp4",
       预览地址: "https://example.invalid/poster",
     };
-    render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[video]}
-        title="合成帖子"
-      />,
-    );
+    render(<MediaPreview index={1} onOpen={vi.fn()} resources={[video]} title="合成帖子" />);
 
     fireEvent.error(screen.getByAltText("合成帖子的第 1 个视频封面"));
     expect(screen.getByText("封面已失效")).toBeInTheDocument();
@@ -174,34 +115,16 @@ describe("媒体预览", () => {
       预览地址: "https://example.invalid/poster",
     };
     const { rerender } = render(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[video]}
-        title="合成帖子"
-      />,
+      <MediaPreview index={1} onOpen={vi.fn()} resources={[video]} title="合成帖子" />,
     );
 
-    expect(screen.getByAltText("合成帖子的第 1 个视频封面")).toHaveAttribute(
-      "src",
-      video.预览地址,
-    );
+    expect(screen.getByAltText("合成帖子的第 1 个视频封面")).toHaveAttribute("src", video.预览地址);
     expect(screen.getByAltText("合成帖子的第 1 个视频封面")).toHaveAttribute(
       "referrerpolicy",
       "no-referrer",
     );
 
-    rerender(
-      <MediaPreview
-        index={1}
-        onOpen={vi.fn()}
-        resources={[live]}
-        title="合成帖子"
-      />,
-    );
-    expect(screen.getByLabelText("合成帖子的第 1 个视频")).toHaveAttribute(
-      "src",
-      live.地址,
-    );
+    rerender(<MediaPreview index={1} onOpen={vi.fn()} resources={[live]} title="合成帖子" />);
+    expect(screen.getByLabelText("合成帖子的第 1 个视频")).toHaveAttribute("src", live.地址);
   });
 });

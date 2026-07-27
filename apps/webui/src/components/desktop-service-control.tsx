@@ -45,11 +45,7 @@ export function DesktopServiceControl({
     try {
       await restartDesktopService();
       const ready = await waitForServiceReady();
-      setMessage(
-        ready
-          ? "已重启，全部配置都已生效。"
-          : "重启用时较长，请刷新页面确认服务状态。",
-      );
+      setMessage(ready ? "已重启，全部配置都已生效。" : "重启用时较长，请刷新页面确认服务状态。");
       if (ready) onRestarted?.();
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : "本地服务重启失败");
@@ -90,9 +86,7 @@ export function DesktopServiceControl({
           className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:order-last sm:w-full"
           role="alertdialog"
         >
-          <p className="text-sm font-semibold text-amber-900">
-            确认关闭本地服务吗？
-          </p>
+          <p className="text-sm font-semibold text-amber-900">确认关闭本地服务吗？</p>
           <p className="mt-1 text-xs leading-5 text-amber-700">
             正在进行的下载会中断，受管浏览器也会一并退出。已经下载完成的文件
             不受影响，下次启动后未完成的任务会重新排队。
@@ -113,11 +107,7 @@ export function DesktopServiceControl({
           onClick={() => void restart()}
           variant={restartRequired ? "primary" : "outline"}
         >
-          <RotateCw
-            aria-hidden
-            className={busy === "restart" ? "animate-spin" : ""}
-            size={15}
-          />
+          <RotateCw aria-hidden className={busy === "restart" ? "animate-spin" : ""} size={15} />
           {busy === "restart" ? "正在重启…" : "重启服务"}
         </ActionButton>
         <ActionButton

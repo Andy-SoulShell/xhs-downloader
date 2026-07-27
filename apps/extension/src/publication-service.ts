@@ -5,10 +5,7 @@ import type {
   PublicationTask,
   PublicationTaskStatus,
 } from "./publication-types";
-import {
-  supportsCapability,
-  type ServiceCapabilities,
-} from "./capability-negotiation";
+import { supportsCapability, type ServiceCapabilities } from "./capability-negotiation";
 
 const ASSET_CHUNK_SIZE = 256 * 1024;
 
@@ -16,20 +13,13 @@ export class PublicationUnauthorizedError extends Error {}
 
 export async function supportsPublication(baseUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${normalizeBase(baseUrl)}/extension/capabilities`,
-      {
-        cache: "no-store",
-        credentials: "omit",
-        signal: AbortSignal.timeout(1200),
-      },
-    );
+    const response = await fetch(`${normalizeBase(baseUrl)}/extension/capabilities`, {
+      cache: "no-store",
+      credentials: "omit",
+      signal: AbortSignal.timeout(1200),
+    });
     if (!response.ok) return false;
-    return supportsCapability(
-      (await response.json()) as ServiceCapabilities,
-      2,
-      "publication",
-    );
+    return supportsCapability((await response.json()) as ServiceCapabilities, 2, "publication");
   } catch {
     return false;
   }
@@ -140,17 +130,12 @@ export async function fetchPublicationAssetChunk(
   };
 }
 
-function extensionHeaders(
-  credential: ExtensionCredential,
-  json = false,
-): Record<string, string> {
+function extensionHeaders(credential: ExtensionCredential, json = false): Record<string, string> {
   return {
     ...(json ? { "Content-Type": "application/json" } : {}),
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
-    ...(credential.installationId
-      ? { "X-Extension-Installation": credential.installationId }
-      : {}),
+    ...(credential.installationId ? { "X-Extension-Installation": credential.installationId } : {}),
   };
 }
 
@@ -159,17 +144,12 @@ async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   if (response.status === 401) throw new PublicationUnauthorizedError();
   const payload = (await response.json().catch(() => null)) as T | null;
   if (!response.ok) {
-    throw new Error(
-      messageFromPayload(payload) || `本地发布服务错误（HTTP ${response.status}）`,
-    );
+    throw new Error(messageFromPayload(payload) || `本地发布服务错误（HTTP ${response.status}）`);
   }
   return payload as T;
 }
 
-async function responseMessage(
-  response: Response,
-  fallback: string,
-): Promise<string> {
+async function responseMessage(response: Response, fallback: string): Promise<string> {
   const payload = (await response.json().catch(() => null)) as unknown;
   return messageFromPayload(payload) || `${fallback}（HTTP ${response.status}）`;
 }

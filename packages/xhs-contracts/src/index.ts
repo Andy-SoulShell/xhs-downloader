@@ -26,12 +26,7 @@ export interface ClientDownloadRecord {
 
 /** 可跨 HTTP 与扩展消息边界传输的 JSON 值。 */
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 /** 浏览器驱动当前支持的任务类型。 */
 export type BrowserTaskKind =
@@ -53,12 +48,7 @@ export type BrowserDriver = "extension" | "managed";
 
 /** 服务端持久化的浏览器任务状态。 */
 export type BrowserTaskStatus =
-  | "queued"
-  | "claimed"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "needs_review";
+  "queued" | "claimed" | "running" | "succeeded" | "failed" | "needs_review";
 
 /** 服务端与浏览器驱动共享的浏览器任务快照。 */
 export interface BrowserTask {

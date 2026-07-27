@@ -1,8 +1,4 @@
-import {
-  appendDownloadBatch,
-  loadDownloadBatches,
-  removeDownloadBatches,
-} from "./storage";
+import { appendDownloadBatch, loadDownloadBatches, removeDownloadBatches } from "./storage";
 import type { BrowserDownloadBatch, ClientDownloadRecord } from "./types";
 
 /** 一批浏览器下载的最终结果。 */
@@ -29,9 +25,7 @@ export function resolveBatchOutcome(
 ): BrowserDownloadOutcome | null {
   if (items.some((item) => item?.state === "in_progress")) return null;
   const missing = items.filter((item) => item === undefined).length;
-  const interrupted = items.filter(
-    (item) => item?.state === "interrupted",
-  ).length;
+  const interrupted = items.filter((item) => item?.state === "interrupted").length;
   const total = batch.download_ids.length;
   if (!missing && !interrupted) {
     return {
@@ -51,9 +45,7 @@ export function resolveBatchOutcome(
 }
 
 /** 登记一批已交给浏览器、等待确认结果的下载。 */
-export async function trackDownloadBatch(
-  batch: BrowserDownloadBatch,
-): Promise<void> {
+export async function trackDownloadBatch(batch: BrowserDownloadBatch): Promise<void> {
   await appendDownloadBatch(batch);
 }
 
@@ -62,16 +54,12 @@ export async function trackDownloadBatch(
  *
  * 已确定结果的批次会从持久化状态中移除，因此同一批次只会返回一次。
  */
-export async function settleDownloadBatches(): Promise<
-  BrowserDownloadOutcome[]
-> {
+export async function settleDownloadBatches(): Promise<BrowserDownloadOutcome[]> {
   const batches = await loadDownloadBatches();
   if (!batches.length) return [];
   const outcomes: BrowserDownloadOutcome[] = [];
   for (const batch of batches) {
-    const items = await Promise.all(
-      batch.download_ids.map((id) => findDownloadItem(id)),
-    );
+    const items = await Promise.all(batch.download_ids.map((id) => findDownloadItem(id)));
     const outcome = resolveBatchOutcome(batch, items);
     if (outcome) outcomes.push(outcome);
   }
@@ -102,9 +90,7 @@ export function installDownloadTracking(
   void settle();
 }
 
-async function findDownloadItem(
-  id: number,
-): Promise<chrome.downloads.DownloadItem | undefined> {
+async function findDownloadItem(id: number): Promise<chrome.downloads.DownloadItem | undefined> {
   try {
     const items = await chrome.downloads.search({ id });
     return items[0];

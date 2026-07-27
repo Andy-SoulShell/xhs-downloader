@@ -43,13 +43,7 @@ export function ActivityBoard({
             label: "下载",
             icon: Download,
             count: tasks.length,
-            content: (
-              <TaskBoard
-                loading={loading}
-                onRetry={onRetryDownload}
-                tasks={tasks}
-              />
-            ),
+            content: <TaskBoard loading={loading} onRetry={onRetryDownload} tasks={tasks} />,
           },
           {
             value: "actions",
@@ -71,11 +65,7 @@ export function ActivityBoard({
   );
 }
 
-function BrowseActions({
-  monitor,
-}: {
-  monitor: ReturnType<typeof useBrowserMonitor>;
-}) {
+function BrowseActions({ monitor }: { monitor: ReturnType<typeof useBrowserMonitor> }) {
   // 全部记录来自同一连接方式时不必逐条标注。
   const drivers = new Set(monitor.tasks.map((task) => task.target_driver));
 
@@ -91,9 +81,7 @@ function BrowseActions({
           {monitor.tasks.map((task) => (
             <BrowserTaskRecord
               key={task.task_id}
-              onResolve={(succeeded) =>
-                void monitor.review(task.task_id, succeeded)
-              }
+              onResolve={(succeeded) => void monitor.review(task.task_id, succeeded)}
               onRetry={() => void monitor.retry(task.task_id)}
               resolving={monitor.reviewingTaskId === task.task_id}
               showConnection={drivers.size > 1}

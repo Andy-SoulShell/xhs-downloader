@@ -11,9 +11,7 @@ export async function bindConfirmedProducts(
   if (!trigger) throw new Error("没有找到添加商品入口，账号可能未开通商品功能");
   trigger.click();
   const modal = await waitForValue(
-    () =>
-      root.querySelector<HTMLElement>(".multi-goods-selector-modal") ??
-      undefined,
+    () => root.querySelector<HTMLElement>(".multi-goods-selector-modal") ?? undefined,
     timeout,
     "商品选择窗口未能打开",
   );
@@ -35,42 +33,28 @@ async function selectUniqueProduct(
   keyword: string,
   timeout: number,
 ): Promise<void> {
-  const input = modal.querySelector<HTMLInputElement>(
-    "input[placeholder*='搜索商品']",
-  );
+  const input = modal.querySelector<HTMLInputElement>("input[placeholder*='搜索商品']");
   if (!input) throw new Error("商品选择窗口没有搜索框");
   setInputValue(input, keyword);
-  input.dispatchEvent(
-    new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }),
-  );
-  input.dispatchEvent(
-    new KeyboardEvent("keyup", { bubbles: true, key: "Enter" }),
-  );
+  input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+  input.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true, key: "Enter" }));
   const expected = normalize(keyword);
   const matches = await waitForValue(
     () => {
       if (isLoading(modal)) return undefined;
       const current = [
-        ...modal.querySelectorAll<HTMLElement>(
-          ".goods-list-normal .good-card-container",
-        ),
+        ...modal.querySelectorAll<HTMLElement>(".goods-list-normal .good-card-container"),
       ];
-      const matching = current.filter((card) =>
-        normalize(normalizedText(card)).includes(expected),
-      );
+      const matching = current.filter((card) => normalize(normalizedText(card)).includes(expected));
       return matching.length > 0 ? matching : undefined;
     },
     timeout,
     `没有找到商品“${keyword}”`,
   );
   if (matches.length !== 1) {
-    throw new Error(
-      `商品“${keyword}”匹配到 ${matches.length} 个结果，请提供更精确的名称或 ID`,
-    );
+    throw new Error(`商品“${keyword}”匹配到 ${matches.length} 个结果，请提供更精确的名称或 ID`);
   }
-  const checkbox = matches[0].querySelector<HTMLElement>(
-    ".d-checkbox, input[type='checkbox']",
-  );
+  const checkbox = matches[0].querySelector<HTMLElement>(".d-checkbox, input[type='checkbox']");
   if (!checkbox) throw new Error(`商品“${keyword}”没有可用的选择框`);
   if (!readToggle(checkbox)) checkbox.click();
   await waitForValue(
@@ -82,13 +66,9 @@ async function selectUniqueProduct(
 
 function findAddProductTrigger(root: ParentNode): HTMLElement | undefined {
   const text = [
-    ...root.querySelectorAll<HTMLElement>(
-      "button, [role='button'], .d-button, span",
-    ),
+    ...root.querySelectorAll<HTMLElement>("button, [role='button'], .d-button, span"),
   ].find((item) => normalizedText(item) === "添加商品");
-  return (
-    text?.closest<HTMLElement>("button, [role='button'], .d-button") ?? text
-  );
+  return text?.closest<HTMLElement>("button, [role='button'], .d-button") ?? text;
 }
 
 function findButton(root: ParentNode, label: string): HTMLElement | undefined {
@@ -104,17 +84,14 @@ function readToggle(element: HTMLElement): boolean {
       : element.querySelector<HTMLInputElement>("input[type='checkbox']");
   return Boolean(
     input?.checked ||
-      element.getAttribute("aria-checked") === "true" ||
-      element.classList.contains("checked") ||
-      element.querySelector(".checked"),
+    element.getAttribute("aria-checked") === "true" ||
+    element.classList.contains("checked") ||
+    element.querySelector(".checked"),
   );
 }
 
 function setInputValue(input: HTMLInputElement, value: string): void {
-  const setter = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
-    "value",
-  )?.set;
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new InputEvent("input", { bubbles: true, data: value }));
   input.dispatchEvent(new Event("change", { bubbles: true }));

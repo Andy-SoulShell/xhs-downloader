@@ -2,10 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BrowserPageTaskResponse } from "./browser-page-runner";
 import { executeBrowserTaskClaim } from "./browser-task-claim-execution";
-import {
-  heartbeatIntervalMilliseconds,
-  startBrowserTaskHeartbeat,
-} from "./browser-task-heartbeat";
+import { heartbeatIntervalMilliseconds, startBrowserTaskHeartbeat } from "./browser-task-heartbeat";
 import { BrowserTaskLeaseLostError } from "./browser-task-service";
 import { makeBrowserTaskClaim } from "./browser-task-test-helpers";
 import type { ExtensionCredential } from "./publication-types";
@@ -39,12 +36,7 @@ describe("浏览器任务周期续租", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const running = executeBrowserTaskClaim(
-      "http://service",
-      claim,
-      execute,
-      withCredential,
-    );
+    const running = executeBrowserTaskClaim("http://service", claim, execute, withCredential);
     await vi.advanceTimersByTimeAsync(70);
     action.resolve({
       ok: true,
@@ -66,9 +58,7 @@ describe("浏览器任务周期续租", () => {
     const claim = makeBrowserTaskClaim();
     claim.lease_seconds = 0.09;
     const action = deferred<BrowserPageTaskResponse>();
-    const fetchMock = vi.fn(async () =>
-      new Response(JSON.stringify({ status: "running" })),
-    );
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ status: "running" })));
     vi.stubGlobal("fetch", fetchMock);
     const running = executeBrowserTaskClaim(
       "http://service",
@@ -116,12 +106,7 @@ describe("浏览器任务周期续租", () => {
       assertLeaseActive();
       return action.promise;
     });
-    const running = executeBrowserTaskClaim(
-      "http://service",
-      claim,
-      execute,
-      withCredential,
-    );
+    const running = executeBrowserTaskClaim("http://service", claim, execute, withCredential);
     await vi.advanceTimersByTimeAsync(35);
     action.resolve({
       ok: true,
@@ -229,7 +214,7 @@ function callsEndingWith(
   fetchMock: ReturnType<typeof vi.fn>,
   suffix: string,
 ): Array<[string, RequestInit | undefined]> {
-  return fetchMock.mock.calls.filter(([input]) =>
-    input.toString().endsWith(suffix),
-  ) as Array<[string, RequestInit | undefined]>;
+  return fetchMock.mock.calls.filter(([input]) => input.toString().endsWith(suffix)) as Array<
+    [string, RequestInit | undefined]
+  >;
 }

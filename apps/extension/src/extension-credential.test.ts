@@ -17,10 +17,7 @@ beforeEach(() => {
       local: {
         get: vi.fn(async (keys: string | string[]) =>
           Object.fromEntries(
-            (Array.isArray(keys) ? keys : [keys]).map((key) => [
-              key,
-              values[key],
-            ]),
+            (Array.isArray(keys) ? keys : [keys]).map((key) => [key, values[key]]),
           ),
         ),
         set: vi.fn(async (next: Record<string, unknown>) => {

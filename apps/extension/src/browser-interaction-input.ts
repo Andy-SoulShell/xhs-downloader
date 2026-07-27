@@ -32,9 +32,9 @@ const CLICK_SETTLE_MS = 250;
 const authorized = new Map<number, AuthorizedInteraction>();
 
 /** 判断运行时消息是否为可信互动点击请求。 */
-export function isBrowserInteractionRequest(
-  request: { type?: string },
-): request is BrowserInteractionRequest {
+export function isBrowserInteractionRequest(request: {
+  type?: string;
+}): request is BrowserInteractionRequest {
   return request.type === "browser-interaction-activate";
 }
 
@@ -45,11 +45,7 @@ export function authorizeBrowserTaskInteraction(
   taskKind: string,
 ): () => void {
   const kind =
-    taskKind === "set_like"
-      ? "like"
-      : taskKind === "set_favorite"
-        ? "favorite"
-        : undefined;
+    taskKind === "set_like" ? "like" : taskKind === "set_favorite" ? "favorite" : undefined;
   if (!kind) return () => undefined;
   authorized.set(tabId, { taskId, kind });
   return () => {
@@ -78,11 +74,7 @@ export async function handleBrowserInteractionRequest(
 ): Promise<BrowserInteractionResponse> {
   if (senderTabId === undefined) throw new Error("无法确认互动任务标签");
   const active = authorized.get(senderTabId);
-  if (
-    !active ||
-    active.taskId !== request.taskId ||
-    active.kind !== request.kind
-  ) {
+  if (!active || active.taskId !== request.taskId || active.kind !== request.kind) {
     throw new Error("互动任务授权无效");
   }
   validateXhsFeedPage(senderUrl);
@@ -90,14 +82,9 @@ export async function handleBrowserInteractionRequest(
   return { ok: true, message: "已通过受控输入触发互动" };
 }
 
-async function clickInteractionControl(
-  tabId: number,
-  kind: BrowserInteractionKind,
-): Promise<void> {
+async function clickInteractionControl(tabId: number, kind: BrowserInteractionKind): Promise<void> {
   const target = { tabId };
-  const previousTabId = (
-    await chrome.tabs.query({ active: true, currentWindow: true })
-  )[0]?.id;
+  const previousTabId = (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
   await chrome.debugger.attach(target, "1.3");
   try {
     await chrome.debugger.sendCommand(target, "Page.bringToFront");
@@ -109,9 +96,7 @@ async function clickInteractionControl(
   } finally {
     await chrome.debugger.detach(target).catch(() => undefined);
     if (previousTabId !== undefined && previousTabId !== tabId) {
-      await chrome.tabs
-        .update(previousTabId, { active: true })
-        .catch(() => undefined);
+      await chrome.tabs.update(previousTabId, { active: true }).catch(() => undefined);
     }
   }
 }
@@ -137,11 +122,10 @@ async function locateControl(
       y:rect.top + rect.height / 2
     };
   })()`;
-  const response = await chrome.debugger.sendCommand(
-    target,
-    "Runtime.evaluate",
-    { expression, returnByValue: true },
-  );
+  const response = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
+    expression,
+    returnByValue: true,
+  });
   const value = (
     response as {
       result?: {

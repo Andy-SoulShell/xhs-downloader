@@ -46,27 +46,18 @@ describe("评论与回复执行器", () => {
       const comment = document.createElement("article");
       comment.className = "parent-comment";
       comment.id = "comment-new-comment";
-      comment.textContent =
-        document.querySelector(".content-input")?.textContent ?? "";
+      comment.textContent = document.querySelector(".content-input")?.textContent ?? "";
       document.querySelector(".comments-container")?.append(comment);
     });
 
-    const result = await postComment(
-      document,
-      "synthetic-feed",
-      "合成评论内容",
-    );
+    const result = await postComment(document, "synthetic-feed", "合成评论内容");
 
     expect(result).toEqual({
       feed_id: "synthetic-feed",
       comment_id: "new-comment",
       verified: true,
     });
-    expect(document.execCommand).toHaveBeenCalledWith(
-      "insertText",
-      false,
-      "合成评论内容",
-    );
+    expect(document.execCommand).toHaveBeenCalledWith("insertText", false, "合成评论内容");
   });
 
   it("按评论 ID 定位并回复", async () => {
@@ -84,17 +75,14 @@ describe("评论与回复执行器", () => {
       const comment = document.createElement("article");
       comment.className = "comment-item";
       comment.dataset.commentId = "synthetic-reply";
-      comment.textContent =
-        document.querySelector(".content-input")?.textContent ?? "";
+      comment.textContent = document.querySelector(".content-input")?.textContent ?? "";
       document.querySelector(".comments-container")?.append(comment);
     });
 
-    const result = await replyComment(
-      document,
-      "synthetic-feed",
-      "合成回复内容",
-      { commentId: "target", userId: null },
-    );
+    const result = await replyComment(document, "synthetic-feed", "合成回复内容", {
+      commentId: "target",
+      userId: null,
+    });
 
     expect(reply).toHaveBeenCalledOnce();
     expect(result.comment_id).toBe("synthetic-reply");
@@ -151,17 +139,14 @@ describe("评论与回复执行器", () => {
     document.querySelector(".submit")?.addEventListener("click", () => {
       const reply = document.createElement("article");
       reply.className = "comment-item";
-      reply.textContent =
-        document.querySelector(".content-input")?.textContent ?? "";
+      reply.textContent = document.querySelector(".content-input")?.textContent ?? "";
       document.querySelector(".comments-container")?.append(reply);
     });
     vi.useFakeTimers();
-    const operation = replyComment(
-      document,
-      "synthetic-feed",
-      "延迟加载回复",
-      { commentId: "late", userId: null },
-    );
+    const operation = replyComment(document, "synthetic-feed", "延迟加载回复", {
+      commentId: "late",
+      userId: null,
+    });
     await vi.runAllTimersAsync();
 
     await expect(operation).resolves.toMatchObject({ verified: true });
@@ -178,17 +163,12 @@ describe("评论与回复执行器", () => {
       document.querySelector(".submit")?.addEventListener("click", () => {
         const comment = document.createElement("article");
         comment.className = "parent-comment";
-        comment.textContent =
-          document.querySelector(".content-input")?.textContent ?? "";
+        comment.textContent = document.querySelector(".content-input")?.textContent ?? "";
         document.querySelector(".comments-container")?.append(comment);
       });
     }, 300);
 
-    const operation = postComment(
-      document,
-      "synthetic-feed",
-      "延迟输入框评论",
-    );
+    const operation = postComment(document, "synthetic-feed", "延迟输入框评论");
     await vi.runAllTimersAsync();
 
     await expect(operation).resolves.toMatchObject({ verified: true });
@@ -200,14 +180,8 @@ describe("评论与回复执行器", () => {
       <div class="bottom"><button class="submit">发送</button></div>
     `;
     vi.useFakeTimers();
-    const missingInput = postComment(
-      document,
-      "synthetic-feed",
-      "合成评论",
-    );
-    const missingRejection = expect(missingInput).rejects.toThrow(
-      "没有可用的评论输入框",
-    );
+    const missingInput = postComment(document, "synthetic-feed", "合成评论");
+    const missingRejection = expect(missingInput).rejects.toThrow("没有可用的评论输入框");
     await vi.runAllTimersAsync();
     await missingRejection;
 
@@ -216,14 +190,8 @@ describe("评论与回复执行器", () => {
       ${editor()}
     `;
     document.querySelector<HTMLButtonElement>(".submit")!.disabled = true;
-    const disabledSubmit = postComment(
-      document,
-      "synthetic-feed",
-      "合成评论",
-    );
-    const disabledRejection = expect(disabledSubmit).rejects.toThrow(
-      "提交按钮当前不可用",
-    );
+    const disabledSubmit = postComment(document, "synthetic-feed", "合成评论");
+    const disabledRejection = expect(disabledSubmit).rejects.toThrow("提交按钮当前不可用");
     await vi.runAllTimersAsync();
     await disabledRejection;
   });
@@ -235,9 +203,7 @@ describe("评论与回复执行器", () => {
     `;
     vi.useFakeTimers();
     const operation = postComment(document, "synthetic-feed", "无法确认的评论");
-    const rejection = expect(operation).rejects.toBeInstanceOf(
-      UncertainBrowserActionError,
-    );
+    const rejection = expect(operation).rejects.toBeInstanceOf(UncertainBrowserActionError);
 
     await vi.runAllTimersAsync();
     await rejection;

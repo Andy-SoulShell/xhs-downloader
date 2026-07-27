@@ -1,14 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type {
-  BrowserExtensionStatus,
-  BrowserTask,
-} from "@xhs-downloader/contracts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { BrowserExtensionStatus, BrowserTask } from "@xhs-downloader/contracts";
 
 import {
   listBrowserExtensions,
@@ -42,9 +33,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
   const [refreshing, setRefreshing] = useState(false);
   const [retryingTaskId, setRetryingTaskId] = useState<string | null>(null);
   const [reviewingTaskId, setReviewingTaskId] = useState<string | null>(null);
-  const [revokingExtensionId, setRevokingExtensionId] = useState<
-    string | null
-  >(null);
+  const [revokingExtensionId, setRevokingExtensionId] = useState<string | null>(null);
   const mounted = useRef(true);
   // 版本号阻止较慢的旧轮询覆盖用户刚刷新得到的新快照。
   const refreshVersion = useRef(0);
@@ -64,9 +53,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
       }
     } catch (reason) {
       if (mounted.current && version === refreshVersion.current) {
-        setError(
-          reason instanceof Error ? reason.message : "浏览器状态读取失败",
-        );
+        setError(reason instanceof Error ? reason.message : "浏览器状态读取失败");
       }
     } finally {
       if (mounted.current && version === refreshVersion.current) {
@@ -93,16 +80,12 @@ export function useBrowserMonitor(): BrowserMonitorState {
     try {
       const task = await retryBrowserTask(taskId);
       if (mounted.current) {
-        setTasks((current) =>
-          current.map((item) => (item.task_id === task.task_id ? task : item)),
-        );
+        setTasks((current) => current.map((item) => (item.task_id === task.task_id ? task : item)));
         setError("");
       }
     } catch (reason) {
       if (mounted.current) {
-        setError(
-          reason instanceof Error ? reason.message : "浏览器任务重试失败",
-        );
+        setError(reason instanceof Error ? reason.message : "浏览器任务重试失败");
       }
     } finally {
       if (mounted.current) setRetryingTaskId(null);
@@ -114,9 +97,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
     try {
       const task = await reviewBrowserTask(taskId, succeeded);
       if (mounted.current) {
-        setTasks((current) =>
-          current.map((item) => (item.task_id === task.task_id ? task : item)),
-        );
+        setTasks((current) => current.map((item) => (item.task_id === task.task_id ? task : item)));
         setError("");
       }
     } catch (reason) {
@@ -137,9 +118,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
         await refresh();
       } catch (reason) {
         if (mounted.current) {
-          setError(
-            reason instanceof Error ? reason.message : "扩展登记注销失败",
-          );
+          setError(reason instanceof Error ? reason.message : "扩展登记注销失败");
         }
       } finally {
         if (mounted.current) setRevokingExtensionId(null);
@@ -148,10 +127,7 @@ export function useBrowserMonitor(): BrowserMonitorState {
     [refresh],
   );
 
-  const onlineCount = useMemo(
-    () => extensions.filter((item) => item.online).length,
-    [extensions],
-  );
+  const onlineCount = useMemo(() => extensions.filter((item) => item.online).length, [extensions]);
 
   return {
     error,

@@ -23,9 +23,7 @@ describe("浏览器登录状态解析", () => {
       },
     });
 
-    expect(
-      detectLoginState(page, "https://www.xiaohongshu.com/explore"),
-    ).toEqual({
+    expect(detectLoginState(page, "https://www.xiaohongshu.com/explore")).toEqual({
       logged_in: true,
       user_id: "synthetic-user",
       nickname: "模拟账号",
@@ -38,9 +36,7 @@ describe("浏览器登录状态解析", () => {
       '<div class="login-container"></div>',
     );
 
-    expect(
-      detectLoginState(page, "https://www.xiaohongshu.com/login"),
-    ).toEqual({
+    expect(detectLoginState(page, "https://www.xiaohongshu.com/login")).toEqual({
       logged_in: false,
       user_id: null,
       nickname: null,
@@ -49,8 +45,7 @@ describe("浏览器登录状态解析", () => {
 
   it("初始状态缺失时使用同源账号主页导航作为降级证据", () => {
     const page = document.implementation.createHTMLDocument();
-    page.head.innerHTML =
-      '<base href="https://www.xiaohongshu.com/explore">';
+    page.head.innerHTML = '<base href="https://www.xiaohongshu.com/explore">';
     page.body.innerHTML = `
       <main class="main-container">
         <div class="user">
@@ -61,9 +56,7 @@ describe("浏览器登录状态解析", () => {
       </main>
     `;
 
-    expect(
-      detectLoginState(page, "https://www.xiaohongshu.com/explore"),
-    ).toEqual({
+    expect(detectLoginState(page, "https://www.xiaohongshu.com/explore")).toEqual({
       logged_in: true,
       user_id: "synthetic-navigation-user",
       nickname: null,
@@ -82,9 +75,7 @@ describe("浏览器登录状态解析", () => {
       `,
     );
 
-    expect(
-      detectLoginState(page, "https://www.xiaohongshu.com/explore"),
-    ).toEqual({
+    expect(detectLoginState(page, "https://www.xiaohongshu.com/explore")).toEqual({
       logged_in: false,
       user_id: null,
       nickname: null,
@@ -101,9 +92,7 @@ describe("浏览器登录状态解析", () => {
     invalid.textContent = "window.__INITIAL_STATE__={invalid";
     page.head.append(invalid);
 
-    expect(
-      detectLoginState(page, "https://www.xiaohongshu.com/explore"),
-    ).toMatchObject({
+    expect(detectLoginState(page, "https://www.xiaohongshu.com/explore")).toMatchObject({
       logged_in: true,
       user_id: "42",
       nickname: "模拟备用账号",

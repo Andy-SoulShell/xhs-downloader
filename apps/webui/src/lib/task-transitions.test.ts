@@ -21,7 +21,9 @@ describe("任务状态跃迁", () => {
     // 一直是完成态的任务不该反复触发。
     expect(detectSettledTasks([settle()], [settle()])).toEqual([]);
     // 仍在跑的不算。
-    expect(detectSettledTasks([queued], [makeDownloadTask({ ...queued, status: "running" })])).toEqual([]);
+    expect(
+      detectSettledTasks([queued], [makeDownloadTask({ ...queued, status: "running" })]),
+    ).toEqual([]);
   });
 
   it("上一轮没见过的任务不触发通知", () => {
@@ -43,11 +45,12 @@ describe("落定结果文案", () => {
   });
 
   it("单条成功点名标题", () => {
-    const notice = describeSettled([
-      { taskId: "a", title: "合成帖子", settledAs: "completed" },
-    ]);
+    const notice = describeSettled([{ taskId: "a", title: "合成帖子", settledAs: "completed" }]);
 
-    expect(notice).toEqual({ message: "「合成帖子」下载完成", tone: "success" });
+    expect(notice).toEqual({
+      message: "「合成帖子」下载完成",
+      tone: "success",
+    });
   });
 
   it("多条成功只报数量", () => {
@@ -61,9 +64,7 @@ describe("落定结果文案", () => {
   });
 
   it("失败要指出重试去哪里找", () => {
-    const notice = describeSettled([
-      { taskId: "a", title: "合成帖子", settledAs: "failed" },
-    ]);
+    const notice = describeSettled([{ taskId: "a", title: "合成帖子", settledAs: "failed" }]);
 
     expect(notice?.message).toContain("动态里重试");
     expect(notice?.tone).toBe("error");

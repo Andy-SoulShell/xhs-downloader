@@ -91,14 +91,11 @@ export function usePublicationCenter() {
     return draft;
   }, []);
 
-  const saveDraft = useCallback(
-    async (draftId: string, input: PublicationDraftInput) => {
-      const draft = await updatePublicationDraft(draftId, input);
-      replaceDraft(setDrafts, draft);
-      return draft;
-    },
-    [],
-  );
+  const saveDraft = useCallback(async (draftId: string, input: PublicationDraftInput) => {
+    const draft = await updatePublicationDraft(draftId, input);
+    replaceDraft(setDrafts, draft);
+    return draft;
+  }, []);
 
   const uploadAsset = useCallback(async (draftId: string, file: File) => {
     const draft = await uploadPublicationAsset(draftId, file);
@@ -114,9 +111,7 @@ export function usePublicationCenter() {
 
   const deleteDraft = useCallback(async (draftId: string) => {
     await deletePublicationDraft(draftId);
-    setDrafts((current) =>
-      current.filter((item) => item.draft_id !== draftId),
-    );
+    setDrafts((current) => current.filter((item) => item.draft_id !== draftId));
   }, []);
 
   const submitTask = useCallback(
@@ -139,9 +134,7 @@ export function usePublicationCenter() {
       const result = await resumePublicationVerification(taskId);
       setTasks((current) =>
         current.map((task) =>
-          task.task_id === result.task_id
-            ? { ...task, message: result.message }
-            : task,
+          task.task_id === result.task_id ? { ...task, message: result.message } : task,
         ),
       );
       return result;
@@ -184,19 +177,14 @@ function replaceDraft(
   update: Dispatch<SetStateAction<PublicationDraft[]>>,
   draft: PublicationDraft,
 ): void {
-  update((current) =>
-    current.map((item) => (item.draft_id === draft.draft_id ? draft : item)),
-  );
+  update((current) => current.map((item) => (item.draft_id === draft.draft_id ? draft : item)));
 }
 
 function replaceTask(
   update: Dispatch<SetStateAction<PublicationTask[]>>,
   task: PublicationTask,
 ): void {
-  update((current) => [
-    task,
-    ...current.filter((item) => item.task_id !== task.task_id),
-  ]);
+  update((current) => [task, ...current.filter((item) => item.task_id !== task.task_id)]);
 }
 
 function errorMessage(reason: unknown, fallback: string): string {

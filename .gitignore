@@ -9,6 +9,7 @@ __pycache__/
 /apps/*/node_modules/
 /apps/*/dist/
 /apps/*/coverage/
+/apps/*/.coverage
 /apps/webui/.env
 /apps/*/*.tsbuildinfo
 # 旧工作区残留可能包含失效的 pnpm 链接，迁移完成前保持忽略。

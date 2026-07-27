@@ -62,10 +62,9 @@ describe("宽屏工作台侧栏", () => {
     render(<Harness onViewChange={onViewChange} />);
 
     fireEvent.mouseDown(
-      within(screen.getByRole("tablist", { name: "工作台" })).getByRole(
-        "tab",
-        { name: /动态/ },
-      ),
+      within(screen.getByRole("tablist", { name: "工作台" })).getByRole("tab", {
+        name: /动态/,
+      }),
     );
 
     expect(onViewChange).toHaveBeenCalledWith("activity");
@@ -81,12 +80,8 @@ describe("宽屏工作台侧栏", () => {
 
     expect(onFilterChange).toHaveBeenCalledWith("ready");
     // 5 个帖子中 2 个已下载，未下载应为 3。
-    expect(within(nav).getByRole("button", { name: /未下载/ })).toHaveTextContent(
-      "3",
-    );
-    expect(within(nav).getByRole("button", { name: /已下载/ })).toHaveTextContent(
-      "2",
-    );
+    expect(within(nav).getByRole("button", { name: /未下载/ })).toHaveTextContent("3");
+    expect(within(nav).getByRole("button", { name: /已下载/ })).toHaveTextContent("2");
   });
 
   it("切到其它工作台后不再占位显示帖子筛选", () => {
@@ -99,9 +94,7 @@ describe("宽屏工作台侧栏", () => {
     );
 
     // 筛选是内容工作台内部的事，留在侧栏只会干扰。
-    expect(
-      screen.queryByRole("navigation", { name: "帖子筛选" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "帖子筛选" })).not.toBeInTheDocument();
   });
 
   it("离线时提示本地服务状态", () => {

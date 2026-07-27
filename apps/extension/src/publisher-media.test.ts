@@ -30,8 +30,6 @@ describe("发布素材处理状态", () => {
 
   it("图片无需等待，视频超时给出可操作提示", async () => {
     await expect(waitForMediaReady(document, "image", 1)).resolves.toBeUndefined();
-    await expect(waitForMediaReady(document, "video", 1)).rejects.toThrow(
-      "视频上传或平台处理超时",
-    );
+    await expect(waitForMediaReady(document, "video", 1)).rejects.toThrow("视频上传或平台处理超时");
   });
 });

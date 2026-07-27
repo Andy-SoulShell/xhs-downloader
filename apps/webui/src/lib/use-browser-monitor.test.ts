@@ -57,7 +57,10 @@ describe("浏览器状态与操作", () => {
   });
 
   it("重试后就地更新该条记录", async () => {
-    const retried = { ...makeCompletedBrowserTask({}), status: "queued" as const };
+    const retried = {
+      ...makeCompletedBrowserTask({}),
+      status: "queued" as const,
+    };
     vi.mocked(retryBrowserTask).mockResolvedValue(retried);
     const { result } = renderHook(() => useBrowserMonitor());
     await waitFor(() => expect(result.current.tasks).toHaveLength(1));
@@ -125,16 +128,12 @@ describe("浏览器状态与操作", () => {
       await result.current.revoke(extension.extension_id);
     });
 
-    expect(revokeBrowserExtension).toHaveBeenCalledWith(
-      extension.extension_id,
-    );
+    expect(revokeBrowserExtension).toHaveBeenCalledWith(extension.extension_id);
     await waitFor(() => expect(result.current.onlineCount).toBe(0));
   });
 
   it("注销失败时给出原因", async () => {
-    vi.mocked(revokeBrowserExtension).mockRejectedValue(
-      new Error("扩展登记不存在"),
-    );
+    vi.mocked(revokeBrowserExtension).mockRejectedValue(new Error("扩展登记不存在"));
     const { result } = renderHook(() => useBrowserMonitor());
     await waitFor(() => expect(result.current.extensions).toHaveLength(1));
 

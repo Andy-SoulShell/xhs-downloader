@@ -69,11 +69,7 @@ describe("发布任务领取与归属", () => {
       preferredTaskId: "task",
     });
     expect(response.claim).toEqual(claim);
-    expect(mocks.claim).toHaveBeenCalledWith(
-      "http://service",
-      credential,
-      "task",
-    );
+    expect(mocks.claim).toHaveBeenCalledWith("http://service", credential, "task");
     expect(mocks.saveActive).toHaveBeenCalledWith(claim);
   });
 
@@ -135,10 +131,7 @@ describe("发布任务领取与归属", () => {
   it("页面未指名任务时不领取新任务", async () => {
     mocks.claim.mockResolvedValue(makeClaim());
 
-    const response = await handlePublicationRequest(
-      { type: "publication-prepare" },
-      41,
-    );
+    const response = await handlePublicationRequest({ type: "publication-prepare" }, 41);
 
     expect(response.ok).toBe(false);
     expect(response.claim).toBeUndefined();
@@ -150,17 +143,11 @@ describe("发布任务领取与归属", () => {
     mocks.loadActive.mockResolvedValue(claim);
     mocks.loadOwner.mockResolvedValue(41);
 
-    const owned = await handlePublicationRequest(
-      { type: "publication-prepare" },
-      41,
-    );
+    const owned = await handlePublicationRequest({ type: "publication-prepare" }, 41);
     expect(owned.claim).toEqual(claim);
 
     mocks.loadOwner.mockResolvedValue(undefined);
-    const anonymous = await handlePublicationRequest(
-      { type: "publication-prepare" },
-      52,
-    );
+    const anonymous = await handlePublicationRequest({ type: "publication-prepare" }, 52);
     expect(anonymous.ok).toBe(false);
     expect(anonymous.claim).toBeUndefined();
     expect(mocks.claim).not.toHaveBeenCalled();
@@ -179,10 +166,7 @@ describe("发布任务领取与归属", () => {
 
     expect(response.ok).toBe(true);
     expect(mocks.clearCredential).toHaveBeenCalledOnce();
-    expect(mocks.ensureCredential).toHaveBeenCalledWith(
-      "http://service",
-      mocks.register,
-    );
+    expect(mocks.ensureCredential).toHaveBeenCalledWith("http://service", mocks.register);
     expect(mocks.ensureCredential).toHaveBeenCalledTimes(2);
     expect(mocks.claim).toHaveBeenCalledTimes(2);
   });

@@ -39,9 +39,7 @@ export function PublicationTaskList({
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
           <h2 className="text-base font-semibold text-stone-900">发布任务</h2>
-          <p className="mt-1 text-xs text-stone-600">
-            自动刷新执行进度与待确认状态
-          </p>
+          <p className="mt-1 text-xs text-stone-600">自动刷新执行进度与待确认状态</p>
         </div>
         <Badge size="regular">{tasks.length} 条</Badge>
       </div>
@@ -89,9 +87,7 @@ function TaskRow({
   const cancelable = ["scheduled", "ready"].includes(task.status);
   const retryable = task.status === "failed";
   const extensionReady =
-    task.mode !== "scheduled" &&
-    task.status === "ready" &&
-    task.target_driver === "extension";
+    task.mode !== "scheduled" && task.status === "ready" && task.target_driver === "extension";
   return (
     <article className="rounded-2xl border border-stone-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -100,17 +96,15 @@ function TaskRow({
             {task.package.title || "未命名发布"}
           </p>
           <p className="meta-text mt-1">
-            {modeLabel(task.mode)} ·{" "}
-            {formatTime(task.scheduled_at)}
+            {modeLabel(task.mode)} · {formatTime(task.scheduled_at)}
           </p>
         </div>
         <TaskBadge task={task} />
       </div>
       <p className="mt-3 text-xs leading-5 text-stone-600">{task.message}</p>
-      {task.status === "awaiting_verification" &&
-        task.target_driver === "managed" && (
-          <PublicationVerificationResume onResume={onResumeVerification} />
-        )}
+      {task.status === "awaiting_verification" && task.target_driver === "managed" && (
+        <PublicationVerificationResume onResume={onResumeVerification} />
+      )}
       {task.status === "needs_review" && (
         <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
           <p className="text-[11px] leading-5 text-amber-900">
@@ -118,16 +112,10 @@ function TaskRow({
           </p>
           {reviewDecision === null ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              <ActionButton
-                onClick={() => setReviewDecision(true)}
-                variant="outline"
-              >
+              <ActionButton onClick={() => setReviewDecision(true)} variant="outline">
                 发出去了
               </ActionButton>
-              <ActionButton
-                onClick={() => setReviewDecision(false)}
-                variant="outline"
-              >
+              <ActionButton onClick={() => setReviewDecision(false)} variant="outline">
                 没发出去
               </ActionButton>
             </div>
@@ -139,10 +127,7 @@ function TaskRow({
                   : "确认这篇没有发出去？确认后可以重新发布。"}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <ActionButton
-                  onClick={() => setReviewDecision(null)}
-                  variant="ghost"
-                >
+                <ActionButton onClick={() => setReviewDecision(null)} variant="ghost">
                   再看看
                 </ActionButton>
                 <ActionButton

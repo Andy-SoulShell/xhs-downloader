@@ -37,15 +37,13 @@ describe("发布选项目标状态", () => {
       </div>
     `;
 
-    await expect(
-      setPublicationVisibility(document, "public", 100),
-    ).resolves.toBeUndefined();
+    await expect(setPublicationVisibility(document, "public", 100)).resolves.toBeUndefined();
   });
 
   it("缺少可见范围控件时返回明确错误", async () => {
-    await expect(
-      setPublicationVisibility(document, "public", 1),
-    ).rejects.toThrow("没有找到可见范围控件");
+    await expect(setPublicationVisibility(document, "public", 1)).rejects.toThrow(
+      "没有找到可见范围控件",
+    );
   });
 
   it("处理原创须知并确认开关状态", async () => {
@@ -74,15 +72,11 @@ describe("发布选项目标状态", () => {
     await setOriginalDeclaration(document, true, 100);
 
     expect(state.checked).toBe(true);
-    expect(
-      document.querySelector<HTMLInputElement>("[role='dialog'] input")?.checked,
-    ).toBe(true);
+    expect(document.querySelector<HTMLInputElement>("[role='dialog'] input")?.checked).toBe(true);
   });
 
   it("未请求原创时允许页面没有原创控件", async () => {
-    await expect(
-      setOriginalDeclaration(document, false, 10),
-    ).resolves.toBeUndefined();
+    await expect(setOriginalDeclaration(document, false, 10)).resolves.toBeUndefined();
     await expect(setOriginalDeclaration(document, true, 10)).rejects.toThrow(
       "没有找到原创声明控件",
     );
@@ -108,9 +102,9 @@ describe("发布选项目标状态", () => {
       <div class="custom-switch-card"><span>原创声明</span></div>
     `;
 
-    await expect(
-      setOriginalDeclaration(document, true, 100),
-    ).rejects.toThrow("原创声明控件结构已经变化");
+    await expect(setOriginalDeclaration(document, true, 100)).rejects.toThrow(
+      "原创声明控件结构已经变化",
+    );
   });
 
   it("开启官方定时并按北京时间写入平台控件", async () => {
@@ -130,17 +124,15 @@ describe("发布选项目标状态", () => {
       timeout: 100,
     });
 
-    expect(
-      document.querySelector<HTMLInputElement>(
-        ".date-picker-container input",
-      )?.value,
-    ).toBe("2026-07-25 20:34");
+    expect(document.querySelector<HTMLInputElement>(".date-picker-container input")?.value).toBe(
+      "2026-07-25 20:34",
+    );
   });
 
   it("拒绝无效官方定时时间", async () => {
-    await expect(
-      setPlatformSchedule(document, "not-a-date", { timeout: 100 }),
-    ).rejects.toThrow("官方定时时间格式无效");
+    await expect(setPlatformSchedule(document, "not-a-date", { timeout: 100 })).rejects.toThrow(
+      "官方定时时间格式无效",
+    );
   });
 
   it("允许通过浏览器级可信输入填写官方定时时间", async () => {
@@ -151,9 +143,7 @@ describe("发布选项目标状态", () => {
       <div class="date-picker-container"><input /></div>
     `;
     const write = vi.fn(async (value: string) => {
-      document.querySelector<HTMLInputElement>(
-        ".date-picker-container input",
-      )!.value = value;
+      document.querySelector<HTMLInputElement>(".date-picker-container input")!.value = value;
     });
 
     await setPlatformSchedule(document, "2026-07-25T12:34:00.000Z", {

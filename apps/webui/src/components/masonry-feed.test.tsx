@@ -27,13 +27,7 @@ describe("calculateMasonryLayout", () => {
   });
 
   it("不会因为中间列较短而改变下一行的阅读顺序", () => {
-    const layout = calculateMasonryLayout(
-      [500, 100, 100, 100, 100, 100, 100],
-      3,
-      260,
-      20,
-      24,
-    );
+    const layout = calculateMasonryLayout([500, 100, 100, 100, 100, 100, 100], 3, 260, 20, 24);
 
     expect(layout.positions[3]).toEqual({ x: 0, y: 524 });
     expect(layout.positions[6]).toEqual({ x: 0, y: 648 });
@@ -93,11 +87,7 @@ describe("MasonryFeed", () => {
       y: 0,
       toJSON: () => ({}),
     });
-    vi.spyOn(
-      HTMLElement.prototype,
-      "clientWidth",
-      "get",
-    ).mockReturnValue(540);
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(540);
 
     const view = render(
       <MasonryFeed>
@@ -109,9 +99,7 @@ describe("MasonryFeed", () => {
     expect(animationCallback).toBeTypeOf("function");
     act(() => animationCallback?.(0));
     const feed = view.container.querySelector<HTMLElement>(".feed-masonry");
-    const items = view.container.querySelectorAll<HTMLElement>(
-      "[data-masonry-item]",
-    );
+    const items = view.container.querySelectorAll<HTMLElement>("[data-masonry-item]");
 
     // 首次定位完成前不允许过渡：瀑布流初始 transform 是 none，
     // 直接过渡会让所有卡片从左上角飞向各自位置。
@@ -130,9 +118,7 @@ describe("MasonryFeed", () => {
       </MasonryFeed>,
     );
     act(() => animationCallback?.(0));
-    const defaultItem = view.container.querySelector<HTMLElement>(
-      "[data-masonry-item]",
-    );
+    const defaultItem = view.container.querySelector<HTMLElement>("[data-masonry-item]");
     expect(defaultItem?.style.width).toBe("260px");
 
     view.unmount();

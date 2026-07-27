@@ -55,11 +55,9 @@ describe("官方定时可信输入", () => {
       "https://creator.xiaohongshu.com/publish/publish",
     );
 
-    expect(mocks.sendCommand).toHaveBeenCalledWith(
-      { tabId: 42 },
-      "Input.insertText",
-      { text: "2026-07-25 16:42" },
-    );
+    expect(mocks.sendCommand).toHaveBeenCalledWith({ tabId: 42 }, "Input.insertText", {
+      text: "2026-07-25 16:42",
+    });
     expect(mocks.sendCommand).toHaveBeenCalledWith(
       { tabId: 42 },
       "Input.dispatchKeyEvent",
@@ -70,11 +68,7 @@ describe("官方定时可信输入", () => {
 
   it("拒绝非法定时时间且不附加调试会话", async () => {
     await expect(
-      typePublicationSchedule(
-        42,
-        "tomorrow",
-        "https://creator.xiaohongshu.com/publish/publish",
-      ),
+      typePublicationSchedule(42, "tomorrow", "https://creator.xiaohongshu.com/publish/publish"),
     ).rejects.toThrow("格式无效");
     expect(mocks.attach).not.toHaveBeenCalled();
   });

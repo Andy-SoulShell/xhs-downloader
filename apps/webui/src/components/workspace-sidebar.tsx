@@ -52,9 +52,7 @@ export function WorkspaceSidebar({
             value={item.view}
           >
             <item.icon aria-hidden size={17} />
-            <span className="flex-1 text-left font-medium">
-              {item.sidebarLabel}
-            </span>
+            <span className="flex-1 text-left font-medium">{item.sidebarLabel}</span>
             {viewCounts[item.view] !== undefined && (
               <span className="text-stone-400">{viewCounts[item.view]}</span>
             )}
@@ -64,10 +62,7 @@ export function WorkspaceSidebar({
 
       {/* 筛选是内容工作台内部的事，切到其它工作台就不该继续占位。 */}
       {view === "content" && (
-        <nav
-          aria-label="帖子筛选"
-          className="mt-4 space-y-1 border-t border-stone-800 pt-4"
-        >
+        <nav aria-label="帖子筛选" className="mt-4 space-y-1 border-t border-stone-800 pt-4">
           {postFilterItems.map((item) => (
             <SidebarButton
               active={filter === item.filter}
@@ -110,9 +105,7 @@ function SidebarButton({
   return (
     <button
       className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition ${
-        active
-          ? "bg-white text-stone-950"
-          : "text-stone-400 hover:bg-stone-900 hover:text-white"
+        active ? "bg-white text-stone-950" : "text-stone-400 hover:bg-stone-900 hover:text-white"
       }`}
       onClick={onClick}
       type="button"
@@ -120,9 +113,7 @@ function SidebarButton({
       <Icon aria-hidden size={17} />
       <span className="flex-1 text-left font-medium">{label}</span>
       {count !== undefined && (
-        <span className={active ? "text-stone-500" : "text-stone-400"}>
-          {count}
-        </span>
+        <span className={active ? "text-stone-500" : "text-stone-400"}>{count}</span>
       )}
     </button>
   );

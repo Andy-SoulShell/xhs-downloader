@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildDownloadFilename,
-  resolveDownloadMode,
-} from "./mode";
+import { buildDownloadFilename, resolveDownloadMode } from "./mode";
 
 describe("下载模式", () => {
   it("自动模式按服务状态选择执行位置", () => {

@@ -27,9 +27,7 @@ export function preparePublicationSubmission(
   input: PublicationDraftInput,
   driver: BrowserDriver,
 ): PublicationDraftInput {
-  return driver === "managed"
-    ? { ...input, visibility: "private", products: [] }
-    : input;
+  return driver === "managed" ? { ...input, visibility: "private", products: [] } : input;
 }
 
 /** 校验草稿具备创建发布任务所需的最小内容和素材。 */
@@ -63,9 +61,7 @@ export function requirePublicationDriver(driver: unknown): BrowserDriver {
 
 /** 返回已确认发布执行器的用户文案。 */
 export function publicationDriverLabel(driver: unknown): string {
-  return requirePublicationDriver(driver) === "managed"
-    ? "受管浏览器"
-    : "浏览器扩展";
+  return requirePublicationDriver(driver) === "managed" ? "受管浏览器" : "浏览器扩展";
 }
 
 /** 校验并转换本地定时或平台官方定时的目标时间。 */

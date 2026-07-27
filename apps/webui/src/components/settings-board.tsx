@@ -50,9 +50,7 @@ export function SettingsBoard({
       <>
         <section className="mt-8" aria-label="配置管理">
           <EmptyState
-            description={
-              error || "请确认本地服务已启动，并从本机打开管理后台。"
-            }
+            description={error || "请确认本地服务已启动，并从本机打开管理后台。"}
             icon={CircleAlert}
             title="暂时无法读取配置"
           />
@@ -77,10 +75,7 @@ export function SettingsBoard({
         saving={saving}
         settings={settings}
       />
-      <DesktopServiceControl
-        onRestarted={onRefresh}
-        restartRequired={settings.restart_required}
-      />
+      <DesktopServiceControl onRestarted={onRefresh} restartRequired={settings.restart_required} />
     </>
   );
 }
@@ -99,9 +94,7 @@ function SettingsForm({
   onSaved: (message: string) => void;
 }) {
   const [draft, setDraft] = useState(settings.values);
-  const [mappingRows, setMappingRows] = useState(() =>
-    toMappingRows(settings.values.mapping_data),
-  );
+  const [mappingRows, setMappingRows] = useState(() => toMappingRows(settings.values.mapping_data));
   const [cookie, setCookie] = useState("");
   const [proxy, setProxy] = useState("");
   const [clearCookie, setClearCookie] = useState(false);
@@ -147,11 +140,7 @@ function SettingsForm({
       setClearCookie(false);
       setClearProxy(false);
       setFormError("");
-      onSaved(
-        result.restart_required
-          ? "已保存；部分修改要重启服务才生效"
-          : "已保存并生效",
-      );
+      onSaved(result.restart_required ? "已保存；部分修改要重启服务才生效" : "已保存并生效");
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : "配置保存失败");
     }
@@ -177,13 +166,10 @@ function SettingsForm({
       )}
       {overridden && (
         <Notice tone="danger">
-          以下字段被启动参数或进程环境覆盖：{overridden}。修改 .env
-          可能不会改变这些字段的最终值。
+          以下字段被启动参数或进程环境覆盖：{overridden}。修改 .env 可能不会改变这些字段的最终值。
         </Notice>
       )}
-      {(error || formError) && (
-        <Notice tone="danger">{formError || error}</Notice>
-      )}
+      {(error || formError) && <Notice tone="danger">{formError || error}</Notice>}
 
       <form className="space-y-5" onSubmit={(event) => void submit(event)}>
         <BoardTabs
@@ -208,16 +194,9 @@ function SettingsForm({
         <div className="control-shell flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 text-xs text-stone-600">
             <p className="font-medium text-stone-700">配置文件</p>
-            <p className="mt-1 truncate font-mono text-[11px]">
-              {settings.config_file}
-            </p>
+            <p className="mt-1 truncate font-mono text-[11px]">{settings.config_file}</p>
           </div>
-          <ActionButton
-            className="sm:min-w-36"
-            disabled={saving}
-            size="large"
-            type="submit"
-          >
+          <ActionButton className="sm:min-w-36" disabled={saving} size="large" type="submit">
             <Save aria-hidden size={16} />
             {saving ? "正在保存…" : "保存配置"}
           </ActionButton>
@@ -227,13 +206,7 @@ function SettingsForm({
   );
 }
 
-function Notice({
-  children,
-  tone,
-}: {
-  children: ReactNode;
-  tone: "danger" | "warning";
-}) {
+function Notice({ children, tone }: { children: ReactNode; tone: "danger" | "warning" }) {
   return (
     <div className="mb-5 flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6 text-stone-600">
       <Badge tone={tone}>{tone === "danger" ? "注意" : "待生效"}</Badge>

@@ -1,9 +1,6 @@
 import type { BrowserTaskClaim } from "@xhs-downloader/contracts";
 
-import type {
-  BrowserPageTaskRequest,
-  BrowserPageTaskResponse,
-} from "./browser-page-runner";
+import type { BrowserPageTaskRequest, BrowserPageTaskResponse } from "./browser-page-runner";
 import { executeBrowserTaskClaim } from "./browser-task-claim-execution";
 import { captureRedactedFailure } from "./browser-failure-artifacts";
 import { authorizeBrowserTaskInteraction } from "./browser-interaction-input";
@@ -15,10 +12,7 @@ import {
   supportsBrowserTasks,
 } from "./browser-task-service";
 import { executeBrowserSessionTask } from "./browser-session-runner";
-import {
-  clearExtensionCredential,
-  ensureExtensionCredential,
-} from "./extension-credential";
+import { clearExtensionCredential, ensureExtensionCredential } from "./extension-credential";
 import type { ExtensionCredential } from "./publication-types";
 import { loadSettings } from "./storage";
 
@@ -73,10 +67,7 @@ async function performPoll(): Promise<void> {
   }
 }
 
-async function executeClaim(
-  baseUrl: string,
-  claim: BrowserTaskClaim,
-): Promise<void> {
+async function executeClaim(baseUrl: string, claim: BrowserTaskClaim): Promise<void> {
   await executeBrowserTaskClaim(
     baseUrl,
     claim,
@@ -154,11 +145,7 @@ async function executeInNewTab(
     }
     if (!response.ok) {
       assertLeaseActive();
-      const artifact = await captureRedactedFailure(
-        tab.id,
-        request.task.task_id,
-        response.result,
-      );
+      const artifact = await captureRedactedFailure(tab.id, request.task.task_id, response.result);
       assertLeaseActive();
       if (artifact) {
         response.result = { ...(response.result ?? {}), ...artifact };
@@ -179,10 +166,7 @@ async function sendToTab(
   tabId: number,
   request: BrowserPageTaskRequest,
 ): Promise<BrowserPageTaskResponse> {
-  return chrome.tabs.sendMessage<
-    BrowserPageTaskRequest,
-    BrowserPageTaskResponse
-  >(tabId, request);
+  return chrome.tabs.sendMessage<BrowserPageTaskRequest, BrowserPageTaskResponse>(tabId, request);
 }
 
 async function sendWhenReady(
@@ -205,9 +189,7 @@ async function sendWhenReady(
       await delay(250);
     }
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("小红书页面未能及时加载");
+  throw lastError instanceof Error ? lastError : new Error("小红书页面未能及时加载");
 }
 
 function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
@@ -242,10 +224,7 @@ function taskTargetUrl(task: BrowserTaskClaim["task"]): string {
   throw new Error(`当前扩展版本尚未接入任务 ${task.kind}`);
 }
 
-function taskPayloadText(
-  payload: BrowserTaskClaim["task"]["payload"],
-  field: string,
-): string {
+function taskPayloadText(payload: BrowserTaskClaim["task"]["payload"], field: string): string {
   const value = payload[field];
   if (typeof value !== "string" || !value) {
     throw new Error(`浏览器任务缺少参数 ${field}`);
@@ -276,9 +255,7 @@ async function withCredential<T>(
   }
 }
 
-async function ensureCredential(
-  baseUrl: string,
-): Promise<ExtensionCredential> {
+async function ensureCredential(baseUrl: string): Promise<ExtensionCredential> {
   return ensureExtensionCredential(baseUrl, registerBrowserExtension);
 }
 

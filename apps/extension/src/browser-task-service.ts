@@ -6,10 +6,7 @@ import type {
 } from "@xhs-downloader/contracts";
 
 import type { ExtensionCredential } from "./publication-types";
-import {
-  supportsCapability,
-  type ServiceCapabilities,
-} from "./capability-negotiation";
+import { supportsCapability, type ServiceCapabilities } from "./capability-negotiation";
 
 /** 扩展首个任务领取请求的默认长轮询秒数。 */
 export const BROWSER_TASK_CLAIM_WAIT_SECONDS = 25;
@@ -25,20 +22,13 @@ export class BrowserTaskLeaseLostError extends Error {}
 /** 检查本地服务是否支持通用浏览器任务协议。 */
 export async function supportsBrowserTasks(baseUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${normalizeBase(baseUrl)}/extension/capabilities`,
-      {
-        cache: "no-store",
-        credentials: "omit",
-        signal: AbortSignal.timeout(1200),
-      },
-    );
+    const response = await fetch(`${normalizeBase(baseUrl)}/extension/capabilities`, {
+      cache: "no-store",
+      credentials: "omit",
+      signal: AbortSignal.timeout(1200),
+    });
     if (!response.ok) return false;
-    return supportsCapability(
-      (await response.json()) as ServiceCapabilities,
-      4,
-      "browser_tasks",
-    );
+    return supportsCapability((await response.json()) as ServiceCapabilities, 4, "browser_tasks");
   } catch {
     return false;
   }
@@ -80,9 +70,7 @@ export async function claimBrowserTask(
     {
       method: "POST",
       headers: extensionHeaders(credential, true),
-      signal: AbortSignal.timeout(
-        waitSeconds * 1000 + CLAIM_REQUEST_TIMEOUT_PADDING_MS,
-      ),
+      signal: AbortSignal.timeout(waitSeconds * 1000 + CLAIM_REQUEST_TIMEOUT_PADDING_MS),
     },
   );
   if (claim && claim.task?.target_driver !== "extension") {
@@ -119,10 +107,7 @@ export async function reportBrowserTaskResult(
   credential: ExtensionCredential,
   taskId: string,
   leaseToken: string,
-  status: Extract<
-    BrowserTaskStatus,
-    "succeeded" | "failed" | "needs_review"
-  >,
+  status: Extract<BrowserTaskStatus, "succeeded" | "failed" | "needs_review">,
   message: string,
   result?: Record<string, JsonValue>,
   signal?: AbortSignal,
@@ -148,17 +133,12 @@ function leasedHeaders(
   };
 }
 
-function extensionHeaders(
-  credential: ExtensionCredential,
-  json = false,
-): Record<string, string> {
+function extensionHeaders(credential: ExtensionCredential, json = false): Record<string, string> {
   return {
     ...(json ? { "Content-Type": "application/json" } : {}),
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
-    ...(credential.installationId
-      ? { "X-Extension-Installation": credential.installationId }
-      : {}),
+    ...(credential.installationId ? { "X-Extension-Installation": credential.installationId } : {}),
   };
 }
 
@@ -168,8 +148,7 @@ async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | null;
   if (!response.ok) {
     const message =
-      messageFromPayload(payload) ||
-      `本地浏览器任务服务错误（HTTP ${response.status}）`;
+      messageFromPayload(payload) || `本地浏览器任务服务错误（HTTP ${response.status}）`;
     if (response.status === 409) throw new BrowserTaskLeaseLostError(message);
     throw new Error(message);
   }

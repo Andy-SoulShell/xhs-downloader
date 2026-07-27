@@ -34,9 +34,7 @@ function installProductDialog(names: string[]): void {
 
 describe("商品绑定", () => {
   it("没有商品时不触碰页面", async () => {
-    await expect(
-      bindConfirmedProducts(document, [], 100),
-    ).resolves.toBeUndefined();
+    await expect(bindConfirmedProducts(document, [], 100)).resolves.toBeUndefined();
   });
 
   it("只绑定唯一匹配且等待保存结果", async () => {
@@ -50,9 +48,9 @@ describe("商品绑定", () => {
   it("有多个匹配项时中止，避免绑定错误商品", async () => {
     installProductDialog(["合成面膜 A", "合成面膜 B"]);
 
-    await expect(
-      bindConfirmedProducts(document, ["合成面膜"], 100),
-    ).rejects.toThrow("匹配到 2 个结果");
+    await expect(bindConfirmedProducts(document, ["合成面膜"], 100)).rejects.toThrow(
+      "匹配到 2 个结果",
+    );
   });
 
   it("唯一商品缺少选择框时中止", async () => {
@@ -72,9 +70,9 @@ describe("商品绑定", () => {
       );
     });
 
-    await expect(
-      bindConfirmedProducts(document, ["唯一合成商品"], 100),
-    ).rejects.toThrow("没有可用的选择框");
+    await expect(bindConfirmedProducts(document, ["唯一合成商品"], 100)).rejects.toThrow(
+      "没有可用的选择框",
+    );
   });
 
   it("商品窗口缺少搜索框或保存按钮时中止", async () => {
@@ -85,14 +83,12 @@ describe("商品绑定", () => {
         `<div class="multi-goods-selector-modal"></div>`,
       );
     });
-    await expect(
-      bindConfirmedProducts(document, ["合成商品"], 100),
-    ).rejects.toThrow("商品选择窗口没有搜索框");
+    await expect(bindConfirmedProducts(document, ["合成商品"], 100)).rejects.toThrow(
+      "商品选择窗口没有搜索框",
+    );
 
     document.querySelector(".multi-goods-selector-modal")?.remove();
-    document.querySelector("#add")?.replaceWith(
-      document.querySelector("#add")!.cloneNode(true),
-    );
+    document.querySelector("#add")?.replaceWith(document.querySelector("#add")!.cloneNode(true));
     const add = document.querySelector("#add");
     add?.addEventListener("click", () => {
       document.body.insertAdjacentHTML(
@@ -110,9 +106,9 @@ describe("商品绑定", () => {
         `,
       );
     });
-    await expect(
-      bindConfirmedProducts(document, ["合成商品"], 100),
-    ).rejects.toThrow("没有可用的保存按钮");
+    await expect(bindConfirmedProducts(document, ["合成商品"], 100)).rejects.toThrow(
+      "没有可用的保存按钮",
+    );
   });
 
   it("等待商品加载完成后再选择", async () => {
@@ -140,22 +136,20 @@ describe("商品绑定", () => {
       }, 0);
     });
 
-    await expect(
-      bindConfirmedProducts(document, ["合成商品"], 100),
-    ).resolves.toBeUndefined();
+    await expect(bindConfirmedProducts(document, ["合成商品"], 100)).resolves.toBeUndefined();
   });
 
   it("商品窗口未出现时超时退出", async () => {
     document.body.innerHTML = `<button>添加商品</button>`;
 
-    await expect(
-      bindConfirmedProducts(document, ["合成商品"], 1),
-    ).rejects.toThrow("商品选择窗口未能打开");
+    await expect(bindConfirmedProducts(document, ["合成商品"], 1)).rejects.toThrow(
+      "商品选择窗口未能打开",
+    );
   });
 
   it("账号没有商品入口时返回明确原因", async () => {
-    await expect(
-      bindConfirmedProducts(document, ["合成商品"], 100),
-    ).rejects.toThrow("账号可能未开通商品功能");
+    await expect(bindConfirmedProducts(document, ["合成商品"], 100)).rejects.toThrow(
+      "账号可能未开通商品功能",
+    );
   });
 });

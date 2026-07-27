@@ -13,10 +13,7 @@ export function needsCommentLoading(options: CommentLoadOptions): boolean {
 }
 
 /** 在明确上限内滚动评论区并展开适量回复。 */
-export async function loadComments(
-  page: Document,
-  options: CommentLoadOptions,
-): Promise<void> {
+export async function loadComments(page: Document, options: CommentLoadOptions): Promise<void> {
   if (!needsCommentLoading(options) || options.commentLimit === 0) return;
   const container = await waitForCommentContainer(page);
   if (!container) throw new Error("详情页评论区尚未加载");
@@ -28,14 +25,10 @@ export async function loadComments(
     if (options.includeReplies) {
       expandReplies(comments, options.replyLimit);
     }
-    if (
-      comments.length >= options.commentLimit ||
-      page.querySelector(END_SELECTOR)
-    ) {
+    if (comments.length >= options.commentLimit || page.querySelector(END_SELECTOR)) {
       return;
     }
-    stagnantRounds =
-      comments.length === previousCount ? stagnantRounds + 1 : 0;
+    stagnantRounds = comments.length === previousCount ? stagnantRounds + 1 : 0;
     if (stagnantRounds >= 4) return;
     previousCount = comments.length;
     const last = comments.at(-1);
@@ -46,13 +39,9 @@ export async function loadComments(
   }
 }
 
-async function waitForCommentContainer(
-  page: Document,
-): Promise<HTMLElement | null> {
+async function waitForCommentContainer(page: Document): Promise<HTMLElement | null> {
   const findContainer = () =>
-    page.querySelector<HTMLElement>(
-      ".comments-container, [class*='comments-container']",
-    );
+    page.querySelector<HTMLElement>(".comments-container, [class*='comments-container']");
   let container = findContainer();
   if (container || !page.defaultView) return container;
   page.defaultView.scrollBy(0, page.defaultView.innerHeight * 0.8);

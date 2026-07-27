@@ -82,9 +82,9 @@ describe("创作页主世界按钮桥接", () => {
 
   it("发布控件不可用时返回明确错误且不触发点击", () => {
     const restore = installPublisherBridge();
-    const locate = (
-      globalThis as Record<symbol, (() => unknown) | undefined>
-    )[Symbol.for("xhs-downloader.publisher-control")];
+    const locate = (globalThis as Record<symbol, (() => unknown) | undefined>)[
+      Symbol.for("xhs-downloader.publisher-control")
+    ];
 
     expect(locate?.()).toEqual({
       ok: false,
@@ -210,9 +210,7 @@ describe("创作页主世界按钮桥接", () => {
   });
 });
 
-function readBridge():
-  | ((action?: "locate" | "prepare" | "activate") => unknown)
-  | undefined {
+function readBridge(): ((action?: "locate" | "prepare" | "activate") => unknown) | undefined {
   return (
     globalThis as Record<
       symbol,

@@ -1,7 +1,4 @@
-import type {
-  BrowserTask,
-  JsonValue,
-} from "@xhs-downloader/contracts";
+import type { BrowserTask, JsonValue } from "@xhs-downloader/contracts";
 
 import {
   proveBrowserAccount,
@@ -10,10 +7,7 @@ import {
 } from "./account-proof";
 import { UncertainBrowserActionError } from "./browser-action-errors";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
-import {
-  executeBrowserPageTask,
-  type BrowserPageTaskResponse,
-} from "./browser-page-runner";
+import { executeBrowserPageTask, type BrowserPageTaskResponse } from "./browser-page-runner";
 import { installBrowserStateBridge } from "./browser-state-main";
 import {
   prepareDesiredInteraction,
@@ -22,8 +16,7 @@ import {
 } from "./interaction-runner";
 
 /** 受管浏览器在页面主世界读取的稳定全局对象名。 */
-export const MANAGED_PAGE_ADAPTER_GLOBAL =
-  "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
+export const MANAGED_PAGE_ADAPTER_GLOBAL = "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__";
 
 /** 受管浏览器页面适配器协议版本。 */
 export const MANAGED_PAGE_ADAPTER_VERSION = "3";
@@ -38,8 +31,7 @@ export interface ManagedInteractionAction {
 }
 
 /** 互动预检响应，可直接成功或请求一次可信输入。 */
-export interface ManagedInteractionPreparationResponse
-  extends BrowserPageTaskResponse {
+export interface ManagedInteractionPreparationResponse extends BrowserPageTaskResponse {
   action?: ManagedInteractionAction;
 }
 
@@ -48,9 +40,7 @@ export interface ManagedPageAdapter {
   version: string;
   proveAccount(challenge: BrowserAccountChallenge): Promise<BrowserAccountProof>;
   execute(task: BrowserTask): Promise<BrowserPageTaskResponse>;
-  prepareInteraction(
-    task: BrowserTask,
-  ): Promise<ManagedInteractionPreparationResponse>;
+  prepareInteraction(task: BrowserTask): Promise<ManagedInteractionPreparationResponse>;
   verifyInteraction(task: BrowserTask): Promise<BrowserPageTaskResponse>;
   diagnostics(): Record<string, JsonValue>;
 }
@@ -73,8 +63,7 @@ export function installManagedPageAdapter(
     execute: (task) => executeSafely(task, scope),
     prepareInteraction: (task) => prepareInteractionSafely(task, scope),
     verifyInteraction: (task) => verifyInteractionSafely(task, scope),
-    diagnostics: () =>
-      buildPageCompatibilityDiagnostics(scope.document, scope.location.href),
+    diagnostics: () => buildPageCompatibilityDiagnostics(scope.document, scope.location.href),
   };
   Object.defineProperty(scope, MANAGED_PAGE_ADAPTER_GLOBAL, {
     configurable: true,
@@ -90,17 +79,10 @@ async function executeSafely(
   scope: AdapterScope,
 ): Promise<BrowserPageTaskResponse> {
   if (isInteractionTask(task)) {
-    return failure(
-      new Error("受管浏览器互动必须通过可信输入流程执行"),
-      scope,
-    );
+    return failure(new Error("受管浏览器互动必须通过可信输入流程执行"), scope);
   }
   try {
-    return await executeBrowserPageTask(
-      task,
-      scope.document,
-      scope.location.href,
-    );
+    return await executeBrowserPageTask(task, scope.document, scope.location.href);
   } catch (error) {
     return failure(error, scope);
   }
@@ -145,12 +127,7 @@ async function verifyInteractionSafely(
     const input = interactionInput(task);
     return success(
       "互动状态已通过页面实时数据确认",
-      await verifyDesiredInteraction(
-        scope.document,
-        input.feedId,
-        input.kind,
-        input.active,
-      ),
+      await verifyDesiredInteraction(scope.document, input.feedId, input.kind, input.active),
     );
   } catch (error) {
     return failure(error, scope);
@@ -186,10 +163,7 @@ function isInteractionTask(
   return task.kind === "set_like" || task.kind === "set_favorite";
 }
 
-function success(
-  message: string,
-  result: object,
-): BrowserPageTaskResponse {
+function success(message: string, result: object): BrowserPageTaskResponse {
   return {
     ok: true,
     message,
@@ -197,21 +171,12 @@ function success(
   };
 }
 
-function failure(
-  error: unknown,
-  scope: AdapterScope,
-): BrowserPageTaskResponse {
+function failure(error: unknown, scope: AdapterScope): BrowserPageTaskResponse {
   return {
     ok: false,
     message: error instanceof Error ? error.message : "页面数据解析失败",
-    status:
-      error instanceof UncertainBrowserActionError
-        ? "needs_review"
-        : "failed",
-    result: buildPageCompatibilityDiagnostics(
-      scope.document,
-      scope.location.href,
-    ),
+    status: error instanceof UncertainBrowserActionError ? "needs_review" : "failed",
+    result: buildPageCompatibilityDiagnostics(scope.document, scope.location.href),
   };
 }
 

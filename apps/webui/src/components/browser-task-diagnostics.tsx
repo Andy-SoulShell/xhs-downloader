@@ -35,15 +35,8 @@ const ANCHOR_LABELS: Record<string, string> = {
 };
 
 /** 展示并复制经过严格白名单过滤的页面兼容性诊断。 */
-export function BrowserTaskDiagnostics({
-  result,
-}: {
-  result: Record<string, JsonValue> | null;
-}) {
-  const diagnostics = useMemo(
-    () => safeBrowserTaskDiagnostics(result),
-    [result],
-  );
+export function BrowserTaskDiagnostics({ result }: { result: Record<string, JsonValue> | null }) {
+  const diagnostics = useMemo(() => safeBrowserTaskDiagnostics(result), [result]);
   const [copyMessage, setCopyMessage] = useState("");
 
   // 没有可公开诊断时不占位：这行提示对用户没有任何可操作价值。
@@ -51,9 +44,7 @@ export function BrowserTaskDiagnostics({
 
   const copyDiagnostics = async () => {
     try {
-      await navigator.clipboard.writeText(
-        serializeSafeBrowserTaskDiagnostics(diagnostics),
-      );
+      await navigator.clipboard.writeText(serializeSafeBrowserTaskDiagnostics(diagnostics));
       setCopyMessage("安全诊断已复制");
     } catch {
       setCopyMessage("复制失败，请稍后重试");
@@ -61,10 +52,7 @@ export function BrowserTaskDiagnostics({
   };
 
   return (
-    <section
-      aria-label="安全页面诊断"
-      className="mt-3 min-w-0 rounded-xl bg-stone-50 p-3"
-    >
+    <section aria-label="安全页面诊断" className="mt-3 min-w-0 rounded-xl bg-stone-50 p-3">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <p className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-stone-600">
           <ShieldCheck aria-hidden className="shrink-0" size={13} />
@@ -107,10 +95,7 @@ export function BrowserTaskDiagnostics({
         label="缺失语义锚点"
         tone="warning"
       />
-      <p
-        aria-live="polite"
-        className="mt-2 min-h-4 break-words text-[11px] text-stone-600"
-      >
+      <p aria-live="polite" className="mt-2 min-h-4 break-words text-[11px] text-stone-600">
         {copyMessage}
       </p>
     </section>
@@ -129,9 +114,7 @@ function AnchorList({
   tone: "success" | "warning";
 }) {
   const toneClass =
-    tone === "success"
-      ? "bg-emerald-50 text-emerald-700"
-      : "bg-amber-50 text-amber-700";
+    tone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700";
   return (
     <div className="mt-2 min-w-0">
       <p className="meta-text">{label}</p>

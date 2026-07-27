@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  installBrowserTaskAutomation,
-  runBrowserTaskPoll,
-} from "./browser-task-runner";
+import { installBrowserTaskAutomation, runBrowserTaskPoll } from "./browser-task-runner";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,9 +9,7 @@ afterEach(() => {
 
 describe("浏览器任务轮询调度", () => {
   it("保留三十秒 Alarm 兜底且同一长轮询期间不重入", async () => {
-    let alarmListener:
-      | ((alarm: { name: string }) => void)
-      | undefined;
+    let alarmListener: ((alarm: { name: string }) => void) | undefined;
     const fetchResolvers: Array<(response: Response) => void> = [];
     const fetchMock = vi.fn(
       () =>
@@ -32,11 +27,9 @@ describe("浏览器任务轮询调度", () => {
       alarms: {
         create: vi.fn(async () => undefined),
         onAlarm: {
-          addListener: vi.fn(
-            (listener: (alarm: { name: string }) => void) => {
-              alarmListener = listener;
-            },
-          ),
+          addListener: vi.fn((listener: (alarm: { name: string }) => void) => {
+            alarmListener = listener;
+          }),
         },
       },
       storage: {

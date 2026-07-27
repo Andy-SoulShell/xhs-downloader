@@ -3,9 +3,7 @@ import { browserStateEvents } from "./browser-state-bridge";
 type StateScope = Window & { __INITIAL_STATE__?: unknown };
 
 /** 在页面主世界安装只读状态桥接。 */
-export function installBrowserStateBridge(
-  scope: StateScope = window,
-): () => void {
+export function installBrowserStateBridge(scope: StateScope = window): () => void {
   const events = browserStateEvents();
   const onRequest = (event: Event) => {
     const requestId = requestIdFromDetail((event as CustomEvent).detail);
@@ -52,12 +50,6 @@ function requestIdFromDetail(value: unknown): string {
   }
 }
 
-function respond(
-  scope: Window,
-  eventName: string,
-  value: Record<string, unknown>,
-): void {
-  scope.dispatchEvent(
-    new CustomEvent(eventName, { detail: JSON.stringify(value) }),
-  );
+function respond(scope: Window, eventName: string, value: Record<string, unknown>): void {
+  scope.dispatchEvent(new CustomEvent(eventName, { detail: JSON.stringify(value) }));
 }

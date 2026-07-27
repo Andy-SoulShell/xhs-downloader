@@ -32,10 +32,7 @@ describe("发布任务列表", () => {
           makePublicationTask({
             task_id: status,
             status,
-            result_url:
-              status === "published"
-                ? "https://example.invalid/published"
-                : null,
+            result_url: status === "published" ? "https://example.invalid/published" : null,
           }),
         )}
       />,
@@ -72,9 +69,10 @@ describe("发布任务列表", () => {
       "href",
       "https://example.invalid/published",
     );
-    expect(
-      screen.getByRole("link", { name: /打开创作页/ }),
-    ).toHaveAttribute("href", expect.stringContaining("xhd_task=ready"));
+    expect(screen.getByRole("link", { name: /打开创作页/ })).toHaveAttribute(
+      "href",
+      expect.stringContaining("xhd_task=ready"),
+    );
   });
 
   it("复用紧凑空状态", () => {
@@ -108,12 +106,8 @@ describe("发布任务列表", () => {
     );
 
     expect(screen.getByText("准备发布")).toBeInTheDocument();
-    expect(
-      screen.getByText("软件自带浏览器"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", { name: /打开创作页/ }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText("软件自带浏览器")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /打开创作页/ })).not.toBeInTheDocument();
   });
 
   it("为被拦截或重试后的扩展官方定时任务保留创作页入口", () => {

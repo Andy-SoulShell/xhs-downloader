@@ -34,14 +34,12 @@ export async function loadPendingRecords(): Promise<ClientDownloadRecord[]> {
   return Array.isArray(records) ? (records as ClientDownloadRecord[]) : [];
 }
 
-export async function appendPendingRecord(
-  record: ClientDownloadRecord,
-): Promise<void> {
+export async function appendPendingRecord(record: ClientDownloadRecord): Promise<void> {
   const records = await loadPendingRecords();
-  const next = [
-    record,
-    ...records.filter((item) => item.record_id !== record.record_id),
-  ].slice(0, MAX_PENDING_RECORDS);
+  const next = [record, ...records.filter((item) => item.record_id !== record.record_id)].slice(
+    0,
+    MAX_PENDING_RECORDS,
+  );
   await chrome.storage.local.set({ [RECORDS_KEY]: next });
 }
 
@@ -61,21 +59,17 @@ export async function loadDownloadBatches(): Promise<BrowserDownloadBatch[]> {
 }
 
 /** 登记一个等待浏览器回报结果的下载批次。 */
-export async function appendDownloadBatch(
-  batch: BrowserDownloadBatch,
-): Promise<void> {
+export async function appendDownloadBatch(batch: BrowserDownloadBatch): Promise<void> {
   const batches = await loadDownloadBatches();
-  const next = [
-    batch,
-    ...batches.filter((item) => item.batch_id !== batch.batch_id),
-  ].slice(0, MAX_TRACKED_BATCHES);
+  const next = [batch, ...batches.filter((item) => item.batch_id !== batch.batch_id)].slice(
+    0,
+    MAX_TRACKED_BATCHES,
+  );
   await chrome.storage.local.set({ [BATCHES_KEY]: next });
 }
 
 /** 移除已经确认结果的下载批次。 */
-export async function removeDownloadBatches(
-  batchIds: string[],
-): Promise<void> {
+export async function removeDownloadBatches(batchIds: string[]): Promise<void> {
   const ids = new Set(batchIds);
   const batches = await loadDownloadBatches();
   await chrome.storage.local.set({

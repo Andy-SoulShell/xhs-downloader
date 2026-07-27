@@ -16,9 +16,7 @@ interface MediaThumbnailProps {
  * 破图会比没有图更糟。加载完成前保持占位底色，避免图片逐个弹入。
  */
 export function MediaThumbnail({ src, alt, fallback }: MediaThumbnailProps) {
-  const [state, setState] = useState<"loading" | "ready" | "failed">(
-    src ? "loading" : "failed",
-  );
+  const [state, setState] = useState<"loading" | "ready" | "failed">(src ? "loading" : "failed");
 
   // 没有封面时交还给备用内容自行呈现：套一层灰底会让彩色状态图标失色。
   if (!src) return <>{fallback}</>;

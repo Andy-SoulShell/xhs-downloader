@@ -1,11 +1,6 @@
 import type { JsonValue } from "@xhs-downloader/contracts";
 
-import type {
-  BrowserDriver,
-  BrowserTask,
-  BrowserTaskStatus,
-  RouteStrategy,
-} from "./types";
+import type { BrowserDriver, BrowserTask, BrowserTaskStatus, RouteStrategy } from "./types";
 import { API_BASE, parseResponse } from "./http";
 import { UserFacingError } from "./error-message";
 
@@ -13,11 +8,7 @@ import { UserFacingError } from "./error-message";
 export type CapabilityProvider = "http" | "browser";
 
 /** 跨提供方回退前的脱敏账号比较结论。 */
-export type AccountConsistencyStatus =
-  | "matched"
-  | "different"
-  | "logged_out"
-  | "unverified";
+export type AccountConsistencyStatus = "matched" | "different" | "logged_out" | "unverified";
 
 /** 首选提供方安全回退前的结构化失败。 */
 export interface RouteFallbackReason {
@@ -115,19 +106,16 @@ export async function deleteCookies(
   target: "browser" | "http",
   signal?: AbortSignal,
 ): Promise<CookieDeletionResult> {
-  const response = await fetch(
-    `${API_BASE}/xhs/login/cookies/delete?wait_seconds=60`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        target,
-        confirmed: true,
-        request_id: crypto.randomUUID(),
-      }),
-      signal,
-    },
-  );
+  const response = await fetch(`${API_BASE}/xhs/login/cookies/delete?wait_seconds=60`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      target,
+      confirmed: true,
+      request_id: crypto.randomUUID(),
+    }),
+    signal,
+  });
   const result = await parseResponse<CookieDeletionResult>(response);
   if (result.status === "succeeded" && result.deleted) return result;
   if (result.status === "failed" || result.status === "needs_review") {

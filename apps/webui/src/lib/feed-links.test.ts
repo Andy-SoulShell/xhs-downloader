@@ -16,12 +16,8 @@ describe("浏览结果的下载链接", () => {
 
   it("缺少访问上下文时不构造必定失败的链接", () => {
     // 去掉 xsec_token 后连公开帖子也可能解析不到内容，宁可不给链接。
-    expect(
-      feedPostUrl({ feed_id: "synthetic-feed", xsec_token: "" }),
-    ).toBeNull();
-    expect(
-      feedPostUrl({ feed_id: "", xsec_token: "synthetic-token" }),
-    ).toBeNull();
+    expect(feedPostUrl({ feed_id: "synthetic-feed", xsec_token: "" })).toBeNull();
+    expect(feedPostUrl({ feed_id: "", xsec_token: "synthetic-token" })).toBeNull();
   });
 
   it("对访问上下文做转义", () => {

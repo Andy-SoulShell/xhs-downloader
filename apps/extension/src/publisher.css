@@ -6,7 +6,9 @@
   box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
   color: #fff;
   display: flex;
-  font: 500 13px/1.4 system-ui, sans-serif;
+  font:
+    500 13px/1.4 system-ui,
+    sans-serif;
   gap: 8px;
   max-width: min(420px, calc(100vw - 32px));
   padding: 10px 14px;

@@ -16,15 +16,8 @@ const mocks = vi.hoisted(() => ({
     ],
   })),
   set: vi.fn(async () => undefined),
-  sendCommand: vi.fn(
-    async (
-      _target: unknown,
-      method: string,
-      _params?: Record<string, unknown>,
-    ) =>
-      method === "Page.captureScreenshot"
-        ? { data: "c3ludGhldGljLXJlZGFjdGVk" }
-        : {},
+  sendCommand: vi.fn(async (_target: unknown, method: string, _params?: Record<string, unknown>) =>
+    method === "Page.captureScreenshot" ? { data: "c3ludGhldGljLXJlZGFjdGVk" } : {},
   ),
 }));
 
@@ -64,8 +57,7 @@ describe("浏览任务失败证据", () => {
       browserFailureArtifacts: [
         expect.objectContaining({
           taskId: "synthetic-task",
-          screenshot:
-            "data:image/jpeg;base64,c3ludGhldGljLXJlZGFjdGVk",
+          screenshot: "data:image/jpeg;base64,c3ludGhldGljLXJlZGFjdGVk",
         }),
         expect.objectContaining({ taskId: "old-task" }),
       ],
@@ -76,9 +68,7 @@ describe("浏览任务失败证据", () => {
   it("调试器不可用时不影响原始失败处理", async () => {
     mocks.attach.mockRejectedValueOnce(new Error("unavailable"));
 
-    await expect(
-      captureRedactedFailure(42, "synthetic-task"),
-    ).resolves.toBeUndefined();
+    await expect(captureRedactedFailure(42, "synthetic-task")).resolves.toBeUndefined();
     expect(mocks.set).not.toHaveBeenCalled();
   });
 });

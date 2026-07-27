@@ -16,12 +16,8 @@ const BODY_SELECTORS = [
   ".ql-editor[contenteditable='true']",
 ];
 
-export function choosePublicationMode(
-  root: ParentNode,
-  kind: PublicationMediaKind,
-): void {
-  const labels =
-    kind === "video" ? ["上传视频", "视频笔记"] : ["上传图文", "图文笔记"];
+export function choosePublicationMode(root: ParentNode, kind: PublicationMediaKind): void {
+  const labels = kind === "video" ? ["上传视频", "视频笔记"] : ["上传图文", "图文笔记"];
   const candidates = root.querySelectorAll<HTMLElement>(
     "button, [role='tab'], [role='button'], [class*='tab'], [class*='upload']",
   );
@@ -36,10 +32,14 @@ export async function waitForUploadInput(
   kind: PublicationMediaKind,
   timeout = 30_000,
 ): Promise<HTMLInputElement> {
-  return waitForValue(() => {
-    const inputs = [...root.querySelectorAll<HTMLInputElement>("input[type=file]")];
-    return inputs.find((input) => acceptsKind(input.accept, kind));
-  }, timeout, "没有找到创作页素材上传入口");
+  return waitForValue(
+    () => {
+      const inputs = [...root.querySelectorAll<HTMLInputElement>("input[type=file]")];
+      return inputs.find((input) => acceptsKind(input.accept, kind));
+    },
+    timeout,
+    "没有找到创作页素材上传入口",
+  );
 }
 
 export function attachFiles(input: HTMLInputElement, files: File[]): void {
@@ -74,24 +74,25 @@ export async function waitForPublishControl(
   root: ParentNode,
   timeout = 90_000,
 ): Promise<HTMLElement> {
-  return waitForValue(() => {
-    const custom = root.querySelector<HTMLElement>(CUSTOM_PUBLISH_CONTROL);
-    if (
-      custom?.getAttribute("is-publish") === "true" &&
-      custom.getAttribute("submit-disabled") !== "true" &&
-      custom.getAttribute("submit-loading") !== "true"
-    ) {
-      return custom;
-    }
-    const buttons = [...root.querySelectorAll<HTMLButtonElement>("button")];
-    return buttons.find((button) => {
-      const text = normalizedText(button);
-      return (
-        !button.disabled &&
-        (text === "发布" || text === "发布笔记" || text === "立即发布")
-      );
-    });
-  }, timeout, "没有找到可用的发布按钮");
+  return waitForValue(
+    () => {
+      const custom = root.querySelector<HTMLElement>(CUSTOM_PUBLISH_CONTROL);
+      if (
+        custom?.getAttribute("is-publish") === "true" &&
+        custom.getAttribute("submit-disabled") !== "true" &&
+        custom.getAttribute("submit-loading") !== "true"
+      ) {
+        return custom;
+      }
+      const buttons = [...root.querySelectorAll<HTMLButtonElement>("button")];
+      return buttons.find((button) => {
+        const text = normalizedText(button);
+        return !button.disabled && (text === "发布" || text === "发布笔记" || text === "立即发布");
+      });
+    },
+    timeout,
+    "没有找到可用的发布按钮",
+  );
 }
 
 export function isCustomPublishControl(control: HTMLElement): boolean {
@@ -129,18 +130,11 @@ export async function waitForPublishOutcome(
   getPathname: () => string,
   timeout = 120_000,
 ): Promise<{ status: "published" | "failed"; message: string }> {
-  return waitForValue(
-    () => readPublishOutcome(root, getPathname()),
-    timeout,
-    "发布结果未能确认",
-  );
+  return waitForValue(() => readPublishOutcome(root, getPathname()), timeout, "发布结果未能确认");
 }
 
 function setEditorValue(element: HTMLElement, value: string): void {
-  if (
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement
-  ) {
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
     const prototype =
       element instanceof HTMLInputElement
         ? HTMLInputElement.prototype
@@ -161,10 +155,7 @@ function setEditorValue(element: HTMLElement, value: string): void {
   element.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function queryFirst<T extends Element>(
-  root: ParentNode,
-  selectors: string[],
-): T | undefined {
+function queryFirst<T extends Element>(root: ParentNode, selectors: string[]): T | undefined {
   for (const selector of selectors) {
     const result = root.querySelector<T>(selector);
     if (result) return result;

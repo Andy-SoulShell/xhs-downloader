@@ -20,8 +20,7 @@ const INSTALL_REDACTION = `(() => {
   \`;
   document.documentElement.append(style);
 })()`;
-const REMOVE_REDACTION =
-  'document.getElementById("xhd-failure-redaction")?.remove()';
+const REMOVE_REDACTION = 'document.getElementById("xhd-failure-redaction")?.remove()';
 
 interface StoredFailureArtifact {
   taskId: string;
@@ -45,16 +44,12 @@ export async function captureRedactedFailure(
     await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
       expression: INSTALL_REDACTION,
     });
-    const response = (await chrome.debugger.sendCommand(
-      target,
-      "Page.captureScreenshot",
-      {
-        captureBeyondViewport: false,
-        format: "jpeg",
-        fromSurface: true,
-        quality: 25,
-      },
-    )) as { data?: string };
+    const response = (await chrome.debugger.sendCommand(target, "Page.captureScreenshot", {
+      captureBeyondViewport: false,
+      format: "jpeg",
+      fromSurface: true,
+      quality: 25,
+    })) as { data?: string };
     if (!response.data || response.data.length > MAX_SCREENSHOT_LENGTH) {
       return undefined;
     }

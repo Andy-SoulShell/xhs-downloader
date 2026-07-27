@@ -1,12 +1,7 @@
 import { API_BASE, parseResponse } from "./http";
 
 /** 受管 Chromium 的生命周期状态。 */
-export type ManagedBrowserState =
-  | "stopped"
-  | "starting"
-  | "running"
-  | "stopping"
-  | "error";
+export type ManagedBrowserState = "stopped" | "starting" | "running" | "stopping" | "error";
 
 /** 受管浏览器管理接口返回的脱敏状态。 */
 export interface ManagedBrowserStatus {
@@ -20,9 +15,7 @@ export interface ManagedBrowserStatus {
 }
 
 /** 读取受管浏览器当前生命周期快照。 */
-export async function getManagedBrowserStatus(
-  signal?: AbortSignal,
-): Promise<ManagedBrowserStatus> {
+export async function getManagedBrowserStatus(signal?: AbortSignal): Promise<ManagedBrowserStatus> {
   const response = await fetch(`${API_BASE}/browser/managed/status`, {
     signal,
   });

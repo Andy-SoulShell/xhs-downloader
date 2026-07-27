@@ -41,9 +41,7 @@ describe("配置状态管理", () => {
       .mockResolvedValueOnce(settings);
     const { result } = renderHook(() => useSettings());
 
-    await waitFor(() =>
-      expect(result.current.error).toBe("配置读取中断"),
-    );
+    await waitFor(() => expect(result.current.error).toBe("配置读取中断"));
     await act(async () => {
       await result.current.refresh();
     });
@@ -77,9 +75,7 @@ describe("配置状态管理", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
-      await expect(result.current.save(settings.values)).rejects.toBe(
-        "synthetic failure",
-      );
+      await expect(result.current.save(settings.values)).rejects.toBe("synthetic failure");
     });
 
     expect(result.current.error).toBe("配置保存失败");

@@ -57,65 +57,62 @@ export function settingsTabs(input: SettingsTabsInput): BoardTab[] {
   } = input;
 
   return [
-
-      {
-        value: "access",
-        label: "连接方式",
-        icon: Plug,
-        content: (
-          <AccessModeSettings onChange={onChange} values={draft} />
-        ),
-      },
-      {
-        value: "download",
-        label: "下载",
-        icon: Download,
-        content: <DownloadSettings onChange={onChange} values={draft} />,
-      },
-      {
-        value: "storage",
-        label: "文件与目录",
-        icon: FolderTree,
-        content: (
-          <StorageSettings
-            mappingRows={mappingRows}
-            onChange={onChange}
-            onMappingChange={onMappingChange}
-            values={draft}
-          />
-        ),
-      },
-      {
-        value: "network",
-        label: "网络与凭据",
-        icon: Globe,
-        content: (
-          <NetworkSettings
-            clearCookie={clearCookie}
-            clearProxy={clearProxy}
-            cookie={cookie}
-            cookieConfigured={settings.cookie_configured}
-            onChange={onChange}
-            onClearCookieChange={onClearCookieChange}
-            onClearProxyChange={onClearProxyChange}
-            onCookieChange={onCookieChange}
-            onProxyChange={onProxyChange}
-            proxy={proxy}
-            proxyConfigured={settings.proxy_configured}
-            values={draft}
-          />
-        ),
-      },
-      {
-        value: "service",
-        label: "服务与发布",
-        icon: Server,
-        content: (
-          <>
-            <PublicationSettings onChange={onChange} values={draft} />
-            <ServiceSettings onChange={onChange} values={draft} />
-          </>
-        ),
-      },
+    {
+      value: "access",
+      label: "连接方式",
+      icon: Plug,
+      content: <AccessModeSettings onChange={onChange} values={draft} />,
+    },
+    {
+      value: "download",
+      label: "下载",
+      icon: Download,
+      content: <DownloadSettings onChange={onChange} values={draft} />,
+    },
+    {
+      value: "storage",
+      label: "文件与目录",
+      icon: FolderTree,
+      content: (
+        <StorageSettings
+          mappingRows={mappingRows}
+          onChange={onChange}
+          onMappingChange={onMappingChange}
+          values={draft}
+        />
+      ),
+    },
+    {
+      value: "network",
+      label: "网络与凭据",
+      icon: Globe,
+      content: (
+        <NetworkSettings
+          clearCookie={clearCookie}
+          clearProxy={clearProxy}
+          cookie={cookie}
+          cookieConfigured={settings.cookie_configured}
+          onChange={onChange}
+          onClearCookieChange={onClearCookieChange}
+          onClearProxyChange={onClearProxyChange}
+          onCookieChange={onCookieChange}
+          onProxyChange={onProxyChange}
+          proxy={proxy}
+          proxyConfigured={settings.proxy_configured}
+          values={draft}
+        />
+      ),
+    },
+    {
+      value: "service",
+      label: "服务与发布",
+      icon: Server,
+      content: (
+        <>
+          <PublicationSettings onChange={onChange} values={draft} />
+          <ServiceSettings onChange={onChange} values={draft} />
+        </>
+      ),
+    },
   ];
 }

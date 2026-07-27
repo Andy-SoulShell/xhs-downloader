@@ -52,24 +52,20 @@ describe("扩展发布服务客户端", () => {
   it("登记能力令牌并校验缺失响应", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ token: "issued-token" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "issued-token" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({})));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      registerPublicationExtension("http://service", "extension"),
-    ).resolves.toEqual({
+    await expect(registerPublicationExtension("http://service", "extension")).resolves.toEqual({
       extensionId: "extension",
       token: "issued-token",
     });
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       extension_id: "extension",
     });
-    await expect(
-      registerPublicationExtension("http://service", "extension"),
-    ).rejects.toThrow("没有返回扩展能力令牌");
+    await expect(registerPublicationExtension("http://service", "extension")).rejects.toThrow(
+      "没有返回扩展能力令牌",
+    );
   });
 
   it("领取任务并回传执行状态", async () => {
@@ -81,18 +77,11 @@ describe("扩展发布服务客户端", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify(task)));
     vi.stubGlobal("fetch", fetchMock);
 
+    await expect(claimPublicationTask("http://service", credential, "task")).resolves.toEqual(
+      claim,
+    );
     await expect(
-      claimPublicationTask("http://service", credential, "task"),
-    ).resolves.toEqual(claim);
-    await expect(
-      reportPublicationStatus(
-        "http://service",
-        credential,
-        "task",
-        "lease",
-        "filling",
-        "正在填充",
-      ),
+      reportPublicationStatus("http://service", credential, "task", "lease", "filling", "正在填充"),
     ).resolves.toEqual(task);
     expect(fetchMock.mock.calls[0][1].headers).toMatchObject({
       Authorization: "Bearer synthetic-token",
@@ -116,9 +105,9 @@ describe("扩展发布服务客户端", () => {
       ),
     );
 
-    await expect(
-      claimPublicationTask("http://service", credential),
-    ).rejects.toThrow("不属于扩展驱动");
+    await expect(claimPublicationTask("http://service", credential)).rejects.toThrow(
+      "不属于扩展驱动",
+    );
   });
 
   it("读取并验证素材分段", async () => {
@@ -153,9 +142,7 @@ describe("扩展发布服务客户端", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ detail: "合成错误" }), { status: 400 }),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: "合成错误" }), { status: 400 }))
       .mockResolvedValueOnce(
         new Response(Uint8Array.from([1]), {
           status: 206,
@@ -164,28 +151,14 @@ describe("扩展发布服务客户端", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
+    await expect(claimPublicationTask("http://service", credential)).rejects.toBeInstanceOf(
+      PublicationUnauthorizedError,
+    );
     await expect(
-      claimPublicationTask("http://service", credential),
-    ).rejects.toBeInstanceOf(PublicationUnauthorizedError);
-    await expect(
-      fetchPublicationAssetChunk(
-        "http://service",
-        credential,
-        "task",
-        "lease",
-        "asset",
-        0,
-      ),
+      fetchPublicationAssetChunk("http://service", credential, "task", "lease", "asset", 0),
     ).rejects.toThrow("合成错误");
     await expect(
-      fetchPublicationAssetChunk(
-        "http://service",
-        credential,
-        "task",
-        "lease",
-        "asset",
-        0,
-      ),
+      fetchPublicationAssetChunk("http://service", credential, "task", "lease", "asset", 0),
     ).rejects.toThrow("无效的素材分段");
   });
 });

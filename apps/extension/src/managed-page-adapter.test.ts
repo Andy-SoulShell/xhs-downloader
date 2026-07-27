@@ -6,10 +6,7 @@ import {
   installManagedPageAdapter,
   type ManagedPageAdapter,
 } from "./managed-page-adapter";
-import {
-  feedState,
-  pageTask,
-} from "./browser-page-test-helpers";
+import { feedState, pageTask } from "./browser-page-test-helpers";
 
 type AdapterWindow = Window & {
   __INITIAL_STATE__?: unknown;
@@ -28,9 +25,7 @@ describe("受管浏览器页面适配器", () => {
     const scope = window as AdapterWindow;
     const installed = scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
 
-    expect(MANAGED_PAGE_ADAPTER_GLOBAL).toBe(
-      "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__",
-    );
+    expect(MANAGED_PAGE_ADAPTER_GLOBAL).toBe("__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__");
     expect(installed?.version).toBe(MANAGED_PAGE_ADAPTER_VERSION);
     expect(installManagedPageAdapter(scope)).toBe(installed);
     expect(typeof installed?.proveAccount).toBe("function");
@@ -45,13 +40,12 @@ describe("受管浏览器页面适配器", () => {
       search: { feeds: { value: [feedState()] } },
     };
 
-    const response =
-      await scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__?.execute(
-        pageTask("search_feeds", {
-          keyword: "合成关键词",
-          filters: {},
-        }),
-      );
+    const response = await scope.__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__?.execute(
+      pageTask("search_feeds", {
+        keyword: "合成关键词",
+        filters: {},
+      }),
+    );
 
     expect(response).toMatchObject({
       ok: true,
@@ -64,8 +58,7 @@ describe("受管浏览器页面适配器", () => {
 
   it("返回脱敏诊断并将执行异常转换为结构化失败", async () => {
     document.body.innerHTML = '<main class="main-container"></main>';
-    const adapter = (window as AdapterWindow)
-      .__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
+    const adapter = (window as AdapterWindow).__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
 
     const response = await adapter?.execute(pageTask("search_feeds"));
 
@@ -152,8 +145,7 @@ describe("受管浏览器页面适配器", () => {
   });
 
   it("通用入口拒绝绕过受管浏览器可信互动流程", async () => {
-    const adapter = (window as AdapterWindow)
-      .__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
+    const adapter = (window as AdapterWindow).__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTER__;
 
     const response = await adapter?.execute(
       pageTask("set_favorite", {

@@ -25,9 +25,7 @@ export async function checkHealth(signal?: AbortSignal): Promise<boolean> {
   }
 }
 
-export async function submitDetail(
-  request: DetailRequest,
-): Promise<DetailResponse> {
+export async function submitDetail(request: DetailRequest): Promise<DetailResponse> {
   const response = await fetch(`${API_BASE}/xhs/detail`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,10 +40,9 @@ export async function listCollectedPosts(): Promise<WorkDetail[]> {
 }
 
 export async function deleteCollectedPost(workId: string): Promise<void> {
-  const response = await fetch(
-    `${API_BASE}/posts/${encodeURIComponent(workId)}`,
-    { method: "DELETE" },
-  );
+  const response = await fetch(`${API_BASE}/posts/${encodeURIComponent(workId)}`, {
+    method: "DELETE",
+  });
   await parseResponse<void>(response);
 }
 
@@ -58,9 +55,7 @@ export async function submitTask(request: TaskRequest): Promise<DownloadTask> {
   return parseResponse<DownloadTask>(response);
 }
 
-export async function listTasks(
-  status?: DownloadTaskStatus,
-): Promise<DownloadTask[]> {
+export async function listTasks(status?: DownloadTaskStatus): Promise<DownloadTask[]> {
   const query = status ? `?status=${status}` : "";
   const response = await fetch(`${API_BASE}/tasks${query}`);
   return parseResponse<DownloadTask[]>(response);
@@ -85,9 +80,7 @@ export async function getSettings(): Promise<SettingsResponse> {
 }
 
 /** 保存配置，并验证原子切换后返回的新配置快照。 */
-export async function updateSettings(
-  values: SettingsUpdate,
-): Promise<SettingsResponse> {
+export async function updateSettings(values: SettingsUpdate): Promise<SettingsResponse> {
   const response = await fetch(`${API_BASE}/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

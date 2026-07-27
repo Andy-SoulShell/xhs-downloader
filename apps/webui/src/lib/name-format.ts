@@ -56,9 +56,7 @@ export function formatNameFields(fields: NameField[]): string {
  * @returns 不含扩展名的示例文件名。
  */
 export function previewFileName(fields: NameField[]): string {
-  const effective = fields.length
-    ? fields
-    : (["发布时间", "作者昵称", "作品标题"] as NameField[]);
+  const effective = fields.length ? fields : (["发布时间", "作者昵称", "作品标题"] as NameField[]);
   return effective.map((field) => SAMPLE[field]).join("_");
 }
 

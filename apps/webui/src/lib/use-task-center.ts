@@ -1,21 +1,7 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  listClientRecords,
-  listTasks,
-  retryTask,
-  submitTask,
-} from "./api";
-import type {
-  ClientDownloadRecord,
-  DownloadTask,
-  TaskRequest,
-} from "./types";
+import { listClientRecords, listTasks, retryTask, submitTask } from "./api";
+import type { ClientDownloadRecord, DownloadTask, TaskRequest } from "./types";
 
 export function useTaskCenter() {
   const [tasks, setTasks] = useState<DownloadTask[]>([]);
@@ -75,19 +61,14 @@ export function useTaskCenter() {
   const createTask = useCallback(async (request: TaskRequest) => {
     const task = await submitTask(request);
     setError("");
-    setTasks((current) => [
-      task,
-      ...current.filter((item) => item.task_id !== task.task_id),
-    ]);
+    setTasks((current) => [task, ...current.filter((item) => item.task_id !== task.task_id)]);
     return task;
   }, []);
 
   const restartTask = useCallback(async (taskId: string) => {
     const task = await retryTask(taskId);
     setError("");
-    setTasks((current) =>
-      current.map((item) => (item.task_id === task.task_id ? task : item)),
-    );
+    setTasks((current) => current.map((item) => (item.task_id === task.task_id ? task : item)));
     return task;
   }, []);
 

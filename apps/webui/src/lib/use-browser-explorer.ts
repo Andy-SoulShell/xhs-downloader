@@ -51,10 +51,7 @@ export interface BrowserExplorer {
   postComment: (content: string) => Promise<void>;
   replyComment: (commentId: string, content: string) => Promise<void>;
   search: (keyword: string) => Promise<void>;
-  setInteraction: (
-    kind: "like" | "favorite",
-    active: boolean,
-  ) => Promise<void>;
+  setInteraction: (kind: "like" | "favorite", active: boolean) => Promise<void>;
 }
 
 /** 管理浏览器任务、竞态取消和类型化结果。 */
@@ -76,10 +73,7 @@ export function useBrowserExplorer(): BrowserExplorer {
   useEffect(() => () => activeRequest.current?.abort(), []);
 
   const runRequest = useCallback(
-    async <T,>(
-      request: (signal: AbortSignal) => Promise<T>,
-      apply: (result: T) => void,
-    ) => {
+    async <T>(request: (signal: AbortSignal) => Promise<T>, apply: (result: T) => void) => {
       activeRequest.current?.abort();
       const controller = new AbortController();
       activeRequest.current = controller;
@@ -104,11 +98,7 @@ export function useBrowserExplorer(): BrowserExplorer {
   );
 
   const runBrowser = useCallback(
-    <T,>(
-      path: string,
-      payload: Record<string, JsonValue>,
-      apply: (data: T) => void,
-    ) =>
+    <T>(path: string, payload: Record<string, JsonValue>, apply: (data: T) => void) =>
       runRequest(
         (signal) => executeBrowserOperation<T>(path, payload, signal),
         (result) => {
@@ -119,11 +109,7 @@ export function useBrowserExplorer(): BrowserExplorer {
     [runRequest],
   );
   const runRead = useCallback(
-    <T,>(
-      path: string,
-      payload: Record<string, JsonValue>,
-      apply: (data: T) => void,
-    ) =>
+    <T>(path: string, payload: Record<string, JsonValue>, apply: (data: T) => void) =>
       runRequest(
         (signal) => executeReadCapability<T>(path, payload, signal),
         (result) => {
@@ -177,15 +163,11 @@ export function useBrowserExplorer(): BrowserExplorer {
   );
   const search = useCallback(
     (keyword: string) =>
-      runRead<FeedListResult>(
-        "/xhs/feeds/search",
-        { keyword, filters: {} },
-        (data) => {
-          setDetail(null);
-          setFeeds(data.items);
-          setContext(feedContextFrom("search", keyword, data));
-        },
-      ),
+      runRead<FeedListResult>("/xhs/feeds/search", { keyword, filters: {} }, (data) => {
+        setDetail(null);
+        setFeeds(data.items);
+        setContext(feedContextFrom("search", keyword, data));
+      }),
     [runRead],
   );
 

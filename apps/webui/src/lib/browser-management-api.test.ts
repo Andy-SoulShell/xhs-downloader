@@ -1,7 +1,4 @@
-import type {
-  BrowserExtensionStatus,
-  BrowserTask,
-} from "@xhs-downloader/contracts";
+import type { BrowserExtensionStatus, BrowserTask } from "@xhs-downloader/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -41,9 +38,7 @@ describe("浏览器管理 API 客户端", () => {
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify([extension])))
       .mockResolvedValueOnce(new Response(JSON.stringify([task])))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ...task, status: "queued" })),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...task, status: "queued" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(listBrowserExtensions()).resolves.toEqual([extension]);
@@ -70,15 +65,9 @@ describe("浏览器管理 API 客户端", () => {
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      revokeBrowserExtension("synthetic-extension"),
-    ).resolves.toBeUndefined();
-    await expect(revokeBrowserExtension("missing")).rejects.toThrow(
-      "扩展登记不存在",
-    );
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      "/api/browser/extensions/synthetic-extension",
-    );
+    await expect(revokeBrowserExtension("synthetic-extension")).resolves.toBeUndefined();
+    await expect(revokeBrowserExtension("missing")).rejects.toThrow("扩展登记不存在");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/browser/extensions/synthetic-extension");
     expect(fetchMock.mock.calls[0][1]).toEqual({ method: "DELETE" });
   });
 });

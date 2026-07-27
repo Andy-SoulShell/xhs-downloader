@@ -1,10 +1,4 @@
-import {
-  Children,
-  type CSSProperties,
-  type ReactNode,
-  useLayoutEffect,
-  useRef,
-} from "react";
+import { Children, type CSSProperties, type ReactNode, useLayoutEffect, useRef } from "react";
 
 import { calculateMasonryLayout } from "../lib/masonry";
 
@@ -28,25 +22,17 @@ export function MasonryFeed({ children }: MasonryFeedProps) {
     let animationFrame = 0;
 
     const layout = () => {
-      const items = Array.from(
-        container.querySelectorAll<HTMLElement>("[data-masonry-item]"),
-      );
+      const items = Array.from(container.querySelectorAll<HTMLElement>("[data-masonry-item]"));
       const styles = getComputedStyle(container);
-      const columnGap =
-        Number.parseFloat(styles.getPropertyValue("--feed-column-gap")) || 20;
-      const rowGap =
-        Number.parseFloat(styles.getPropertyValue("--feed-row-gap")) || 24;
+      const columnGap = Number.parseFloat(styles.getPropertyValue("--feed-column-gap")) || 20;
+      const rowGap = Number.parseFloat(styles.getPropertyValue("--feed-row-gap")) || 24;
       const minimumWidth =
-        Number.parseFloat(styles.getPropertyValue("--feed-min-card-width")) ||
-        260;
+        Number.parseFloat(styles.getPropertyValue("--feed-min-card-width")) || 260;
       const columns = Math.max(
         1,
-        Math.floor(
-          (container.clientWidth + columnGap) / (minimumWidth + columnGap),
-        ),
+        Math.floor((container.clientWidth + columnGap) / (minimumWidth + columnGap)),
       );
-      const columnWidth =
-        (container.clientWidth - columnGap * (columns - 1)) / columns;
+      const columnWidth = (container.clientWidth - columnGap * (columns - 1)) / columns;
 
       items.forEach((item) => {
         item.style.width = `${columnWidth}px`;

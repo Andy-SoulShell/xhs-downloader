@@ -11,11 +11,7 @@ import type { DownloadProgress } from "../lib/types";
  * @param props.progress 任务上报的实时进度。
  * @returns 带无障碍语义的进度条与说明文字；尚未开始时不渲染。
  */
-export function DownloadProgressBar({
-  progress,
-}: {
-  progress: DownloadProgress;
-}) {
+export function DownloadProgressBar({ progress }: { progress: DownloadProgress }) {
   const view = describeProgress(progress);
   if (!view.started) return null;
 

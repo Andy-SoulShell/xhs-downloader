@@ -73,8 +73,7 @@ describe("页面写任务路由", () => {
     document.querySelector(".submit")?.addEventListener("click", () => {
       const item = document.createElement("article");
       item.className = "parent-comment";
-      item.textContent =
-        document.querySelector(".content-input")?.textContent ?? "";
+      item.textContent = document.querySelector(".content-input")?.textContent ?? "";
       document.querySelector(".comments-container")?.append(item);
     });
 
@@ -105,8 +104,7 @@ describe("页面写任务路由", () => {
     document.querySelector(".submit")?.addEventListener("click", () => {
       const item = document.createElement("article");
       item.className = "comment-item";
-      item.textContent =
-        document.querySelector(".content-input")?.textContent ?? "";
+      item.textContent = document.querySelector(".content-input")?.textContent ?? "";
       document.querySelector(".comments-container")?.append(item);
     });
 

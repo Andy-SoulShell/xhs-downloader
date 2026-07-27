@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  applySearchFilters,
-  hasCustomSearchFilters,
-} from "./search-filters";
+import { applySearchFilters, hasCustomSearchFilters } from "./search-filters";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -73,16 +70,12 @@ describe("搜索筛选交互", () => {
   });
 
   it("拒绝缺失入口和不存在的标签", async () => {
-    await expect(
-      applySearchFilters(document, { sort_by: "最新" }),
-    ).rejects.toThrow("没有筛选入口");
+    await expect(applySearchFilters(document, { sort_by: "最新" })).rejects.toThrow("没有筛选入口");
     document.body.innerHTML = `
       <div class="filter"></div>
       <div class="filter-panel"><div class="filters"></div></div>
     `;
-    await expect(
-      applySearchFilters(document, { sort_by: "最新" }),
-    ).rejects.toThrow("没有筛选选项");
+    await expect(applySearchFilters(document, { sort_by: "最新" })).rejects.toThrow("没有筛选选项");
   });
 
   it("筛选面板未出现时在有界等待后失败", async () => {

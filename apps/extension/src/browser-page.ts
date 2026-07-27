@@ -16,9 +16,7 @@ chrome.runtime.onMessage.addListener(
   (
     message: { type?: string },
     _sender,
-    sendResponse: (
-      response: BrowserPageTaskResponse | BrowserAccountProof,
-    ) => void,
+    sendResponse: (response: BrowserPageTaskResponse | BrowserAccountProof) => void,
   ) => {
     if (isBrowserAccountChallengeRequest(message)) {
       void proveBrowserAccount(document, message.challenge)
@@ -35,10 +33,7 @@ chrome.runtime.onMessage.addListener(
         sendResponse({
           ok: false,
           message: error instanceof Error ? error.message : "页面数据解析失败",
-          status:
-            error instanceof UncertainBrowserActionError
-              ? "needs_review"
-              : "failed",
+          status: error instanceof UncertainBrowserActionError ? "needs_review" : "failed",
           result: buildPageCompatibilityDiagnostics(document, location.href),
         }),
       );

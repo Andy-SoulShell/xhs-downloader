@@ -45,10 +45,7 @@ export async function restartDesktopService(): Promise<string> {
  * @param intervalMs 两次探测之间的间隔。
  * @returns 服务在超时前恢复时返回真。
  */
-export async function waitForServiceReady(
-  timeoutMs = 30_000,
-  intervalMs = 500,
-): Promise<boolean> {
+export async function waitForServiceReady(timeoutMs = 30_000, intervalMs = 500): Promise<boolean> {
   const deadline = Date.now() + timeoutMs;
   // 先让出一个间隔，避免在服务尚未开始停止时就探测到旧进程。
   while (Date.now() < deadline) {

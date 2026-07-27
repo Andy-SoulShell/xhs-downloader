@@ -26,26 +26,18 @@ describe("受管浏览器 API 客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
 
-    await expect(
-      getManagedBrowserStatus(controller.signal),
-    ).resolves.toEqual(stopped);
+    await expect(getManagedBrowserStatus(controller.signal)).resolves.toEqual(stopped);
     await expect(startManagedBrowser()).resolves.toEqual(running);
     await expect(stopManagedBrowser()).resolves.toEqual(stopped);
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      "/api/browser/managed/status",
-      { signal: controller.signal },
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      "/api/browser/managed/start",
-      { method: "POST" },
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      "/api/browser/managed/stop",
-      { method: "POST" },
-    );
+    expect(fetchMock).toHaveBeenNthCalledWith(1, "/api/browser/managed/status", {
+      signal: controller.signal,
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/browser/managed/start", {
+      method: "POST",
+    });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/browser/managed/stop", {
+      method: "POST",
+    });
   });
 });

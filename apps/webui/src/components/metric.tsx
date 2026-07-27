@@ -19,12 +19,7 @@ interface MetricProps {
  * @param props.compact 是否用于卡片内的紧凑排布。
  * @returns 数量未知时显示占位符而非哨兵值的数量项。
  */
-export function Metric({
-  compact = false,
-  icon: Icon,
-  label,
-  value,
-}: MetricProps) {
+export function Metric({ compact = false, icon: Icon, label, value }: MetricProps) {
   return (
     <span
       aria-label={metricAriaLabel(label, value)}

@@ -10,12 +10,7 @@ interface LinkComposerProps {
   onSubmit: (event: FormEvent) => void;
 }
 
-export function LinkComposer({
-  link,
-  parsing,
-  onChange,
-  onSubmit,
-}: LinkComposerProps) {
+export function LinkComposer({ link, parsing, onChange, onSubmit }: LinkComposerProps) {
   return (
     <section aria-label="链接解析" className="control-shell p-3">
       {/* 窄屏也保持单行：堆成两行会多吃约 56px，把首条内容挤出首屏。 */}

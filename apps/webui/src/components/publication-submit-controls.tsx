@@ -65,21 +65,14 @@ export function PublicationSubmitControls({
           <CalendarClock aria-hidden size={15} />
           官方定时
         </ActionButton>
-        <ActionButton
-          disabled={Boolean(busy)}
-          onClick={() => setPending("manual")}
-        >
+        <ActionButton disabled={Boolean(busy)} onClick={() => setPending("manual")}>
           <Send aria-hidden size={15} />
           立即发布
-          {browserDriver === "extension" && (
-            <ExternalLink aria-hidden size={13} />
-          )}
+          {browserDriver === "extension" && <ExternalLink aria-hidden size={13} />}
         </ActionButton>
       </div>
       <div className="mt-3 space-y-1 text-[11px] leading-5 text-stone-600">
-        <p>
-          本地定时：到点后需本机服务和{driverLabel(browserDriver)}在线。
-        </p>
+        <p>本地定时：到点后需本机服务和{driverLabel(browserDriver)}在线。</p>
         <p>
           官方定时：现在由{driverLabel(browserDriver)}
           打开创作页，提交给平台在 1 小时至 14 天内发布。
@@ -92,38 +85,23 @@ export function PublicationSubmitControls({
           className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"
         >
           <div className="flex items-start gap-2">
-            <ShieldCheck
-              aria-hidden
-              className="mt-0.5 shrink-0 text-amber-700"
-              size={16}
-            />
+            <ShieldCheck aria-hidden className="mt-0.5 shrink-0 text-amber-700" size={16} />
             <div className="min-w-0 text-xs leading-5 text-amber-900">
-              <p className="font-semibold">
-                确认执行“{LABELS[pending]}”吗？
-              </p>
+              <p className="font-semibold">确认执行“{LABELS[pending]}”吗？</p>
               <p>
                 {driverLabel(browserDriver)}
                 将使用当前选定浏览器中的登录账号操作小红书创作平台。
               </p>
               {products.length > 0 && (
-                <p className="mt-2 break-words">
-                  将绑定商品：{products.join("、")}
-                </p>
+                <p className="mt-2 break-words">将绑定商品：{products.join("、")}</p>
               )}
             </div>
           </div>
           <div className="mt-3 flex flex-wrap justify-end gap-2">
-            <ActionButton
-              disabled={Boolean(busy)}
-              onClick={() => setPending(null)}
-              variant="ghost"
-            >
+            <ActionButton disabled={Boolean(busy)} onClick={() => setPending(null)} variant="ghost">
               返回修改
             </ActionButton>
-            <ActionButton
-              disabled={Boolean(busy)}
-              onClick={() => void confirm()}
-            >
+            <ActionButton disabled={Boolean(busy)} onClick={() => void confirm()}>
               {busy ? "正在处理…" : `确认${LABELS[pending]}`}
             </ActionButton>
           </div>

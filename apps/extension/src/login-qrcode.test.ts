@@ -32,14 +32,11 @@ describe("登录二维码读取", () => {
 
   it("已登录时不返回二维码", () => {
     const page = document.implementation.createHTMLDocument();
-    page.head.innerHTML =
-      '<base href="https://www.xiaohongshu.com/explore">';
+    page.head.innerHTML = '<base href="https://www.xiaohongshu.com/explore">';
     page.body.innerHTML =
       '<div class="main-container"><div class="user"><a class="link-wrapper" href="/user/profile/synthetic-account"><i class="channel"></i></a></div></div>';
 
-    expect(
-      readLoginQrCode(page, "https://www.xiaohongshu.com/explore"),
-    ).toEqual({
+    expect(readLoginQrCode(page, "https://www.xiaohongshu.com/explore")).toEqual({
       is_logged_in: true,
       image_data_url: null,
       expires_at: null,
@@ -65,12 +62,7 @@ describe("登录二维码读取", () => {
   it("等待登录页异步生成二维码", async () => {
     const page = document.implementation.createHTMLDocument();
     page.body.innerHTML = '<section class="login-container"></section>';
-    const pending = waitForLoginQrCode(
-      page,
-      "https://www.xiaohongshu.com/explore",
-      100,
-      2,
-    );
+    const pending = waitForLoginQrCode(page, "https://www.xiaohongshu.com/explore", 100, 2);
 
     setTimeout(() => {
       const image = page.createElement("img");

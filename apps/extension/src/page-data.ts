@@ -40,9 +40,7 @@ export function unwrapState(value: unknown): unknown {
 
 /** 将字符串或数值转换为界面文本。 */
 export function dataText(value: unknown): string {
-  return typeof value === "string" || typeof value === "number"
-    ? String(value)
-    : "";
+  return typeof value === "string" || typeof value === "number" ? String(value) : "";
 }
 
 /** 将有限数值转换为非负整数，否则返回空值。 */
@@ -61,9 +59,7 @@ export function dataUrl(value: unknown): string | null {
   const raw = dataText(value);
   try {
     const url = new URL(raw);
-    return url.protocol === "http:" || url.protocol === "https:"
-      ? url.toString()
-      : null;
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
   } catch {
     return null;
   }

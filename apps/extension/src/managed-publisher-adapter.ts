@@ -105,9 +105,7 @@ async function fill(task: PublicationTask): Promise<StepResponse> {
     const mediaKind = validateTask(task);
     await waitForMediaReady(document, mediaKind);
     const draft = task.package;
-    const body = [draft.body, ...draft.tags.map((tag) => `#${tag}`)]
-      .filter(Boolean)
-      .join("\n");
+    const body = [draft.body, ...draft.tags.map((tag) => `#${tag}`)].filter(Boolean).join("\n");
     await fillPublicationForm(document, draft.title, body);
     await setPublicationVisibility(document, "private");
     await setOriginalDeclaration(document, draft.is_original);
@@ -116,10 +114,7 @@ async function fill(task: PublicationTask): Promise<StepResponse> {
     if (task.mode !== "platform_scheduled") {
       return { ok: true, message: "创作页内容和发布选项已核验" };
     }
-    const prepared = await preparePlatformSchedule(
-      document,
-      task.scheduled_at,
-    );
+    const prepared = await preparePlatformSchedule(document, task.scheduled_at);
     clearMarker(SCHEDULE_ATTRIBUTE);
     prepared.input.setAttribute(SCHEDULE_ATTRIBUTE, "true");
     prepared.input.dataset.xhdExpectedValue = prepared.value;
@@ -197,18 +192,13 @@ function observeOutcome(): Observation {
   const resultUrl =
     outcome.status === "published" &&
     window.location.hostname === "www.xiaohongshu.com" &&
-    /^\/(?:explore|discovery\/item)\/[a-z0-9]+\/?$/i.test(
-      window.location.pathname,
-    )
+    /^\/(?:explore|discovery\/item)\/[a-z0-9]+\/?$/i.test(window.location.pathname)
       ? `https://www.xiaohongshu.com${window.location.pathname}`
       : undefined;
   return {
     ok: true,
     state: outcome.status,
-    message:
-      outcome.status === "published"
-        ? "创作平台已确认发布成功"
-        : "创作平台明确报告发布失败",
+    message: outcome.status === "published" ? "创作平台已确认发布成功" : "创作平台明确报告发布失败",
     resultUrl,
   };
 }
@@ -221,12 +211,8 @@ function validateTask(task: PublicationTask): "image" | "video" {
   if (task.package.products.length) throw new Error("受管发布不支持绑定商品");
   const assets = task.package.assets;
   if (!assets.length) throw new Error("发布任务没有素材");
-  const videoAssets = assets.filter((asset) =>
-    asset.media_type.startsWith("video/"),
-  );
-  const imageAssets = assets.filter((asset) =>
-    asset.media_type.startsWith("image/"),
-  );
+  const videoAssets = assets.filter((asset) => asset.media_type.startsWith("video/"));
+  const imageAssets = assets.filter((asset) => asset.media_type.startsWith("image/"));
   if (videoAssets.length) {
     if (videoAssets.length !== 1 || assets.length !== 1) {
       throw new Error("视频笔记素材组合无效");
@@ -244,9 +230,7 @@ function validateTask(task: PublicationTask): "image" | "video" {
 
 function verificationStep(): StepResponse | undefined {
   const message = readPublicationVerification(document);
-  return message
-    ? { ok: false, message, verification: true }
-    : undefined;
+  return message ? { ok: false, message, verification: true } : undefined;
 }
 
 function clearMarker(attribute: string): void {

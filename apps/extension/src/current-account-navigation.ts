@@ -1,5 +1,4 @@
-const CURRENT_USER_CHANNEL_SELECTOR =
-  ".main-container .user .link-wrapper .channel";
+const CURRENT_USER_CHANNEL_SELECTOR = ".main-container .user .link-wrapper .channel";
 const PROFILE_PATH = /^\/user\/profile\/([^/?#]+)\/?$/;
 
 /** 判断账号标识是否满足页面导航允许的长度边界。 */

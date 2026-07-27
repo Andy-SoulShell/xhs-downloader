@@ -33,8 +33,7 @@ describe("草稿自动保存", () => {
   it("停止输入后落盘并报告状态", async () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const { rerender, result } = renderHook(
-      ({ title }: { title: string }) =>
-        useDraftAutosave(makeInput(title), save),
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save),
       { initialProps: { title: "初始" } },
     );
 
@@ -54,8 +53,7 @@ describe("草稿自动保存", () => {
   it("连续输入只在停下来之后写一次", async () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const { rerender } = renderHook(
-      ({ title }: { title: string }) =>
-        useDraftAutosave(makeInput(title), save),
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save),
       { initialProps: { title: "初始" } },
     );
 
@@ -77,8 +75,7 @@ describe("草稿自动保存", () => {
   it("保存失败要说出来，而不是假装存上了", async () => {
     const save = vi.fn().mockRejectedValue(new Error("写入失败"));
     const { rerender, result } = renderHook(
-      ({ title }: { title: string }) =>
-        useDraftAutosave(makeInput(title), save),
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save),
       { initialProps: { title: "初始" } },
     );
 
@@ -94,8 +91,7 @@ describe("草稿自动保存", () => {
   it("停用时完全不写", async () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const { rerender } = renderHook(
-      ({ title }: { title: string }) =>
-        useDraftAutosave(makeInput(title), save, false),
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save, false),
       { initialProps: { title: "初始" } },
     );
 

@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import {
-  loadComments,
-  needsCommentLoading,
-} from "./comment-loader";
+import { loadComments, needsCommentLoading } from "./comment-loader";
 
 describe("详情评论加载器", () => {
   it("在结束标记前展开受限数量的回复", async () => {
@@ -16,9 +13,7 @@ describe("详情评论加载器", () => {
     `;
     const buttons = [...document.querySelectorAll(".show-more")];
     const clicks = buttons.map(() => vi.fn());
-    buttons.forEach((button, index) =>
-      button.addEventListener("click", clicks[index]),
-    );
+    buttons.forEach((button, index) => button.addEventListener("click", clicks[index]));
 
     await loadComments(document, {
       commentLimit: 20,
@@ -72,9 +67,7 @@ describe("详情评论加载器", () => {
     await vi.runAllTimersAsync();
 
     await expect(operation).resolves.toBeUndefined();
-    expect(
-      document.querySelector(".show-more")?.getAttribute("data-xhd-expanded"),
-    ).toBeNull();
+    expect(document.querySelector(".show-more")?.getAttribute("data-xhd-expanded")).toBeNull();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });

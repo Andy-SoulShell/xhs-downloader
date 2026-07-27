@@ -48,20 +48,12 @@ interface MediaPreviewProps {
  * @param props.onOpen 打开帖子详情的回调。
  * @returns 保持资源原始宽高比的媒体封面。
  */
-export function MediaPreview({
-  ariaLabel,
-  index,
-  resources,
-  title,
-  onOpen,
-}: MediaPreviewProps) {
+export function MediaPreview({ ariaLabel, index, resources, title, onOpen }: MediaPreviewProps) {
   const liveVideo = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   // 封面必须区分加载中与失败：地址不可达时请求会长时间挂起而不报错，
   // 只处理 onError 会让封面区无限期停在零高度，卡片看起来像坏掉了。
-  const [coverState, setCoverState] = useState<"loading" | "ready" | "failed">(
-    "loading",
-  );
+  const [coverState, setCoverState] = useState<"loading" | "ready" | "failed">("loading");
   const image = resources.find((item) => item.类型 === "图片");
   const live = resources.find((item) => item.类型 === "动态图片");
   const video = resources.find((item) => item.类型 === "视频");

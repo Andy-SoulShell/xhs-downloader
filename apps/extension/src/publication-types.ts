@@ -109,8 +109,6 @@ export interface PublicationResponse {
   chunk?: PublicationAssetChunk;
 }
 
-export function isPublicationRequest(
-  request: { type?: string },
-): request is PublicationRequest {
+export function isPublicationRequest(request: { type?: string }): request is PublicationRequest {
   return request.type?.startsWith("publication-") ?? false;
 }

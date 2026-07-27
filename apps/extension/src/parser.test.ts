@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  parseCurrentDocument,
-  parseInitialStateScript,
-} from "./parser";
+import { parseCurrentDocument, parseInitialStateScript } from "./parser";
 
 const WORK_ID = "synthetic000000000000000001";
 const SOURCE_URL = `https://www.xiaohongshu.com/explore/${WORK_ID}`;
@@ -28,24 +25,22 @@ describe("帖子页面解析", () => {
       },
       imageList: [
         {
-          urlDefault: (
+          urlDefault:
             "https://sns-webpic-qc.xhscdn.com/" +
             "202607232303/0123456789abcdef0123456789abcdef/" +
-            "notes_pre_post/synthetic!nd_dft_wlteh_webp_3"
-          ),
+            "notes_pre_post/synthetic!nd_dft_wlteh_webp_3",
           stream: {
             h264: [
-              { masterUrl: "https:\\u002F\\u002Fexample.invalid\\u002Flive.mp4" },
+              {
+                masterUrl: "https:\\u002F\\u002Fexample.invalid\\u002Flive.mp4",
+              },
             ],
           },
         },
       ],
     };
 
-    const work = parseInitialStateScript(
-      stateScript(note),
-      SOURCE_URL,
-    );
+    const work = parseInitialStateScript(stateScript(note), SOURCE_URL);
 
     expect(work.title).toBe("合成测试作品");
     expect(work.authorName).toBe("合成作者");
@@ -59,8 +54,7 @@ describe("帖子页面解析", () => {
       {
         index: 1,
         kind: "live",
-        previewUrl:
-          "https://sns-img-bd.xhscdn.com/notes_pre_post/synthetic",
+        previewUrl: "https://sns-img-bd.xhscdn.com/notes_pre_post/synthetic",
         suffix: "mp4",
         url: "https://example.invalid/live.mp4",
       },
@@ -80,9 +74,7 @@ describe("帖子页面解析", () => {
       title: "包含 undefined 文本",
       desc: "undefined 应保留在字符串中",
       user: { userId: "selected-author", nickname: "选中作者" },
-      imageList: [
-        { url: "https://sns-img-bd.xhscdn.com/synthetic.jpeg" },
-      ],
+      imageList: [{ url: "https://sns-img-bd.xhscdn.com/synthetic.jpeg" }],
       optional: null,
     };
     const raw = JSON.stringify({
@@ -94,10 +86,7 @@ describe("帖子页面解析", () => {
       },
     }).replace('"optional":null', '"optional":undefined');
 
-    const work = parseInitialStateScript(
-      `window.__INITIAL_STATE__=${raw};`,
-      SOURCE_URL,
-    );
+    const work = parseInitialStateScript(`window.__INITIAL_STATE__=${raw};`, SOURCE_URL);
 
     expect(work.workId).toBe(WORK_ID);
     expect(work.authorName).toBe("选中作者");
@@ -109,9 +98,7 @@ describe("帖子页面解析", () => {
       noteId: WORK_ID,
       type: "video",
       user: { userId: "synthetic-author" },
-      imageList: [
-        { url: "https://sns-img-bd.xhscdn.com/synthetic-cover" },
-      ],
+      imageList: [{ url: "https://sns-img-bd.xhscdn.com/synthetic-cover" }],
       video: {
         media: {
           stream: {
@@ -230,18 +217,14 @@ describe("帖子页面解析", () => {
               type: "normal",
               title: "旧帖子",
               user: { userId: "stale-author" },
-              imageList: [
-                { url: "https://sns-img-bd.xhscdn.com/stale.jpeg" },
-              ],
+              imageList: [{ url: "https://sns-img-bd.xhscdn.com/stale.jpeg" }],
             },
           },
         },
       },
     })};`;
 
-    expect(() => parseInitialStateScript(staleScript, SOURCE_URL)).toThrow(
-      "与当前链接不一致",
-    );
+    expect(() => parseInitialStateScript(staleScript, SOURCE_URL)).toThrow("与当前链接不一致");
   });
 
   it("跳过不匹配的较新状态并查找当前帖子", () => {
@@ -273,17 +256,15 @@ describe("帖子页面解析", () => {
 
   it("拒绝缺少或损坏的初始状态", () => {
     document.body.innerHTML = "<main></main>";
-    expect(() => parseCurrentDocument(document, SOURCE_URL)).toThrow(
+    expect(() => parseCurrentDocument(document, SOURCE_URL)).toThrow("没有可解析");
+    expect(() => parseInitialStateScript("window.__INITIAL_STATE__={broken", SOURCE_URL)).toThrow(
+      "无法解析",
+    );
+    expect(() => parseInitialStateScript("window.__INITIAL_STATE__", SOURCE_URL)).toThrow(
+      "格式无效",
+    );
+    expect(() => parseInitialStateScript("window.__INITIAL_STATE__={}", SOURCE_URL)).toThrow(
       "没有可解析",
     );
-    expect(() =>
-      parseInitialStateScript("window.__INITIAL_STATE__={broken", SOURCE_URL),
-    ).toThrow("无法解析");
-    expect(() =>
-      parseInitialStateScript("window.__INITIAL_STATE__", SOURCE_URL),
-    ).toThrow("格式无效");
-    expect(() =>
-      parseInitialStateScript("window.__INITIAL_STATE__={}", SOURCE_URL),
-    ).toThrow("没有可解析");
   });
 });

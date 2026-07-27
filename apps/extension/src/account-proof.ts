@@ -1,8 +1,5 @@
 import { readLiveInitialState } from "./browser-state-bridge";
-import {
-  isValidAccountId,
-  readCurrentNavigationAccountId,
-} from "./current-account-navigation";
+import { isValidAccountId, readCurrentNavigationAccountId } from "./current-account-navigation";
 import { dataRecord, dataText, unwrapState } from "./page-data";
 
 const PROOF_CONTEXT = "xhs-account-challenge/v1\0";
@@ -15,9 +12,7 @@ export interface BrowserAccountChallenge {
 
 /** 浏览器返回给本机服务的脱敏账号证明。 */
 export type BrowserAccountProof =
-  | { status: "proved"; proof: string }
-  | { status: "logged_out" }
-  | { status: "unverified" };
+  { status: "proved"; proof: string } | { status: "logged_out" } | { status: "unverified" };
 
 /** 后台发送给小红书内容脚本的一次性证明请求。 */
 export interface BrowserAccountChallengeRequest {
@@ -26,9 +21,9 @@ export interface BrowserAccountChallengeRequest {
 }
 
 /** 判断消息是否为一次性账号挑战。 */
-export function isBrowserAccountChallengeRequest(
-  value: { type?: string },
-): value is BrowserAccountChallengeRequest {
+export function isBrowserAccountChallengeRequest(value: {
+  type?: string;
+}): value is BrowserAccountChallengeRequest {
   return value.type === "browser-account-challenge";
 }
 
@@ -67,10 +62,7 @@ export async function proveBrowserAccount(
   }
 }
 
-async function hmacProof(
-  challenge: BrowserAccountChallenge,
-  accountId: string,
-): Promise<string> {
+async function hmacProof(challenge: BrowserAccountChallenge, accountId: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     decodeBase64Url(challenge.challengeKey),
@@ -82,17 +74,12 @@ async function hmacProof(
     `${PROOF_CONTEXT}${challenge.challengeId}\0${accountId}`,
   );
   const digest = await crypto.subtle.sign("HMAC", key, message);
-  return [...new Uint8Array(digest)]
-    .map((value) => value.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
 
 function decodeBase64Url(value: string): ArrayBuffer {
   const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = normalized.padEnd(
-    normalized.length + ((4 - (normalized.length % 4)) % 4),
-    "=",
-  );
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
   const decoded = atob(padded);
   const buffer = new ArrayBuffer(decoded.length);
   const bytes = new Uint8Array(buffer);

@@ -1,0 +1,17 @@
+# 构建产物与依赖
+node_modules
+dist
+coverage
+build
+volume
+*.tsbuildinfo
+
+# Python 侧由 ruff 负责，锁文件与快照不参与格式化
+.venv
+__pycache__
+uv.lock
+pnpm-lock.yaml
+
+# 扩展构建会把这两个适配器脚本生成回仓库，格式化了下次构建也会覆盖，
+# 还会让 verify 里的 format:check 在构建之后变红
+packages/xhs-adapters/src/xhs_adapters/browser_assets/

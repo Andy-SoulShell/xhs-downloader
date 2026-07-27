@@ -1,7 +1,4 @@
-import type {
-  ProfileMetric,
-  UserProfileResult,
-} from "@xhs-downloader/contracts";
+import type { ProfileMetric, UserProfileResult } from "@xhs-downloader/contracts";
 
 import { parseFeedSummaries } from "./feed-parser";
 import {
@@ -26,8 +23,7 @@ export function parseUserProfileDocument(
   if (!Object.keys(basic).length) throw new Error("用户主页资料尚未加载");
   const feeds = parseFeedSummaries(unwrapState(userState.notes));
   return {
-    user_id:
-      dataText(basic.userId ?? basic.user_id) || requestedUserId || null,
+    user_id: dataText(basic.userId ?? basic.user_id) || requestedUserId || null,
     nickname: dataText(basic.nickname).slice(0, 200),
     red_id: dataText(basic.redId).slice(0, 200),
     description: dataText(basic.desc).slice(0, 5000),

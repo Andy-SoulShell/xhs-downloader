@@ -88,17 +88,13 @@ describe("连接状态面板", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认断开" }));
 
     await waitFor(() =>
-      expect(revokeBrowserExtension).toHaveBeenCalledWith(
-        extension.extension_id,
-      ),
+      expect(revokeBrowserExtension).toHaveBeenCalledWith(extension.extension_id),
     );
   });
 
   it("读取失败时展示错误而不是空白", async () => {
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
-    vi.mocked(listBrowserTasks).mockRejectedValueOnce(
-      new Error("连接状态读取失败"),
-    );
+    vi.mocked(listBrowserTasks).mockRejectedValueOnce(new Error("连接状态读取失败"));
 
     render(
       <ConnectionPanel

@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { runBrowserTaskPoll } from "./browser-task-runner";
-import {
-  BROWSER_TASK_REGISTER_TIMEOUT_MS,
-  registerBrowserExtension,
-} from "./browser-task-service";
+import { BROWSER_TASK_REGISTER_TIMEOUT_MS, registerBrowserExtension } from "./browser-task-service";
 
 let values: Record<string, unknown>;
 
@@ -18,10 +15,7 @@ beforeEach(() => {
       local: {
         get: vi.fn(async (keys: string | string[]) =>
           Object.fromEntries(
-            (Array.isArray(keys) ? keys : [keys]).map((key) => [
-              key,
-              values[key],
-            ]),
+            (Array.isArray(keys) ? keys : [keys]).map((key) => [key, values[key]]),
           ),
         ),
         set: vi.fn(async (next: Record<string, unknown>) => {
@@ -49,8 +43,7 @@ describe("浏览器任务扩展登记超时", () => {
     vi.spyOn(AbortSignal, "timeout").mockImplementation((milliseconds) => {
       const controller = new AbortController();
       setTimeout(
-        () =>
-          controller.abort(new DOMException("合成登记超时", "TimeoutError")),
+        () => controller.abort(new DOMException("合成登记超时", "TimeoutError")),
         milliseconds,
       );
       return controller.signal;
@@ -72,10 +65,7 @@ describe("浏览器任务扩展登记超时", () => {
       ),
     );
 
-    const registration = registerBrowserExtension(
-      "http://service",
-      "synthetic-extension",
-    );
+    const registration = registerBrowserExtension("http://service", "synthetic-extension");
     const rejection = expect(registration).rejects.toMatchObject({
       name: "TimeoutError",
     });
@@ -100,15 +90,11 @@ describe("浏览器任务扩展登记超时", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(capabilities())
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ token: "initial-token" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "initial-token" })))
       .mockResolvedValueOnce(new Response("null"))
       .mockResolvedValueOnce(capabilities())
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ token: "renewed-token" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "renewed-token" })))
       .mockResolvedValueOnce(new Response("null"));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -122,9 +108,7 @@ describe("浏览器任务扩展登记超时", () => {
     for (const [, init] of registrationCalls) {
       const signal = (init as RequestInit).signal;
       expect(signal).toBeInstanceOf(AbortSignal);
-      expect(signalTimeouts.get(signal as AbortSignal)).toBe(
-        BROWSER_TASK_REGISTER_TIMEOUT_MS,
-      );
+      expect(signalTimeouts.get(signal as AbortSignal)).toBe(BROWSER_TASK_REGISTER_TIMEOUT_MS);
     }
     // 凭据必须带安装标识: 同一个未打包目录在两个浏览器里扩展 ID 相同,
     // 只按扩展 ID 存会让两边互相顶掉令牌并陷入登记循环

@@ -120,9 +120,7 @@ describe("浏览结果解析器", () => {
                 nickname: "合成作者",
               },
               interactInfo: { commentCount: "1" },
-              imageList: [
-                { urlDefault: "https://example.invalid/image.png" },
-              ],
+              imageList: [{ urlDefault: "https://example.invalid/image.png" }],
             },
             comments: {
               value: {
@@ -196,9 +194,7 @@ describe("浏览结果解析器", () => {
                 imageb: "https://example.invalid/profile.png",
                 ipLocation: "合成地点",
               },
-              interactions: [
-                { name: "获赞与收藏", count: "88", type: "likes" },
-              ],
+              interactions: [{ name: "获赞与收藏", count: "88", type: "likes" }],
             },
           },
           notes: { value: [[feed()]] },

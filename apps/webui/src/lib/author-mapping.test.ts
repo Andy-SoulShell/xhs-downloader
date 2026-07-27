@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  incompleteMappingRows,
-  toMappingObject,
-  toMappingRows,
-} from "./author-mapping";
+import { incompleteMappingRows, toMappingObject, toMappingRows } from "./author-mapping";
 
 describe("作者名称映射编辑", () => {
   it("展开服务端映射为可编辑行", () => {

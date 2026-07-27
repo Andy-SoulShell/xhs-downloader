@@ -33,12 +33,7 @@ describe("点赞与收藏目标状态执行器", () => {
     scope.__INITIAL_STATE__ = state(true);
     const uninstall = installBrowserStateBridge(scope);
 
-    const result = await setDesiredInteraction(
-      document,
-      "synthetic-feed",
-      "like",
-      true,
-    );
+    const result = await setDesiredInteraction(document, "synthetic-feed", "like", true);
     uninstall();
 
     expect(result).toEqual({
@@ -63,12 +58,7 @@ describe("点赞与收藏目标状态执行器", () => {
     });
     const uninstall = installBrowserStateBridge(scope);
 
-    const result = await setDesiredInteraction(
-      document,
-      "synthetic-feed",
-      "favorite",
-      true,
-    );
+    const result = await setDesiredInteraction(document, "synthetic-feed", "favorite", true);
     uninstall();
 
     expect(result.changed).toBe(true);
@@ -98,7 +88,11 @@ describe("点赞与收藏目标状态执行器", () => {
     uninstall();
 
     expect(trustedActivate).toHaveBeenCalledOnce();
-    expect(result).toMatchObject({ active: true, changed: true, verified: true });
+    expect(result).toMatchObject({
+      active: true,
+      changed: true,
+      verified: true,
+    });
   });
 
   it("点击后无法确认时要求人工核对", async () => {
@@ -112,15 +106,8 @@ describe("点赞与收藏目标状态执行器", () => {
     const uninstall = installBrowserStateBridge(scope);
     vi.useFakeTimers();
 
-    const operation = setDesiredInteraction(
-      document,
-      "synthetic-feed",
-      "like",
-      true,
-    );
-    const rejection = expect(operation).rejects.toBeInstanceOf(
-      UncertainBrowserActionError,
-    );
+    const operation = setDesiredInteraction(document, "synthetic-feed", "like", true);
+    const rejection = expect(operation).rejects.toBeInstanceOf(UncertainBrowserActionError);
     await vi.runAllTimersAsync();
 
     await rejection;
@@ -133,12 +120,7 @@ describe("点赞与收藏目标状态执行器", () => {
     const uninstall = installBrowserStateBridge(scope);
     vi.useFakeTimers();
 
-    const operation = setDesiredInteraction(
-      document,
-      "synthetic-feed",
-      "like",
-      true,
-    );
+    const operation = setDesiredInteraction(document, "synthetic-feed", "like", true);
     const rejection = expect(operation).rejects.toThrow("没有点赞按钮");
     await vi.runAllTimersAsync();
     await rejection;
@@ -160,20 +142,15 @@ describe("点赞与收藏目标状态执行器", () => {
       },
     };
     const uninstall = installBrowserStateBridge(scope);
-    const result = await setDesiredInteraction(
-      document,
-      "synthetic-feed",
-      "favorite",
-      false,
-    );
+    const result = await setDesiredInteraction(document, "synthetic-feed", "favorite", false);
     expect(result.changed).toBe(false);
 
     scope.__INITIAL_STATE__ = {
       note: { noteDetailMap: { "synthetic-feed": { note: {} } } },
     };
-    await expect(
-      setDesiredInteraction(document, "synthetic-feed", "like", true),
-    ).rejects.toThrow("没有可核验的互动状态");
+    await expect(setDesiredInteraction(document, "synthetic-feed", "like", true)).rejects.toThrow(
+      "没有可核验的互动状态",
+    );
 
     scope.__INITIAL_STATE__ = {
       note: {
@@ -187,9 +164,9 @@ describe("点赞与收藏目标状态执行器", () => {
         },
       },
     };
-    await expect(
-      setDesiredInteraction(document, "synthetic-feed", "like", true),
-    ).rejects.toThrow("不属于目标帖子");
+    await expect(setDesiredInteraction(document, "synthetic-feed", "like", true)).rejects.toThrow(
+      "不属于目标帖子",
+    );
     uninstall();
   });
 });

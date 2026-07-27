@@ -38,10 +38,7 @@ describe("相对时间", () => {
   });
 
   it("时间在未来时退回时刻而不是负数", () => {
-    const result = formatRelativeTime(
-      new Date(NOW.getTime() + 60_000).toISOString(),
-      NOW,
-    );
+    const result = formatRelativeTime(new Date(NOW.getTime() + 60_000).toISOString(), NOW);
 
     expect(result).toMatch(/^\d{2}:\d{2}$/);
   });

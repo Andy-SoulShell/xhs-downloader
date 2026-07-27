@@ -9,9 +9,8 @@ const credential: ExtensionCredential = {
   token: "synthetic-token",
 };
 
-const withCredential = <T,>(
-  operation: (value: ExtensionCredential) => Promise<T>,
-): Promise<T> => operation(credential);
+const withCredential = <T>(operation: (value: ExtensionCredential) => Promise<T>): Promise<T> =>
+  operation(credential);
 
 /** 记录服务端收到的状态与结果回传。 */
 interface ReportedCall {
@@ -21,16 +20,12 @@ interface ReportedCall {
 
 let reported: ReportedCall[];
 
-function stubFetch(
-  onResult?: (body: Record<string, unknown>) => Response | undefined,
-): void {
+function stubFetch(onResult?: (body: Record<string, unknown>) => Response | undefined): void {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
-      const body = init?.body
-        ? (JSON.parse(String(init.body)) as Record<string, unknown>)
-        : {};
+      const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
       reported.push({ url, body });
       if (url.endsWith("/result")) {
         const override = onResult?.(body);

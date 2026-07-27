@@ -61,19 +61,11 @@ describe("浏览器任务队列排空", () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(first)))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })))
       .mockResolvedValueOnce(new Response(JSON.stringify(second)))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })))
       .mockResolvedValueOnce(new Response("null"));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -96,9 +88,7 @@ describe("浏览器任务队列排空", () => {
           }),
         ),
       )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(makeBrowserTaskClaim())),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(makeBrowserTaskClaim())))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ detail: "任务租约已取消" }), {
           status: 409,

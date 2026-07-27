@@ -26,18 +26,14 @@ export function PublicationOptionsForm({
   const managed = browserDriver === "managed";
   return (
     <fieldset className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4">
-      <legend className="px-1 text-xs font-semibold text-stone-700">
-        发布选项
-      </legend>
+      <legend className="px-1 text-xs font-semibold text-stone-700">发布选项</legend>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-xs font-semibold text-stone-700">
           可见范围
           <select
             className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
             disabled={managed}
-            onChange={(event) =>
-              onVisibilityChange(event.target.value as PublicationVisibility)
-            }
+            onChange={(event) => onVisibilityChange(event.target.value as PublicationVisibility)}
             value={managed ? "private" : visibility}
           >
             <option value="public">公开可见</option>
@@ -68,9 +64,7 @@ export function PublicationOptionsForm({
           disabled={managed}
           onChange={(event) => onProductsChange(event.target.value)}
           placeholder={
-            managed
-              ? "受管浏览器首期不支持绑定商品"
-              : "每行一个商品名称或商品 ID；发布前会再次确认"
+            managed ? "受管浏览器首期不支持绑定商品" : "每行一个商品名称或商品 ID；发布前会再次确认"
           }
           value={managed ? "" : products}
         />

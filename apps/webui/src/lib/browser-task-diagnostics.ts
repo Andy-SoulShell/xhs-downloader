@@ -3,18 +3,8 @@ import type { JsonValue } from "@xhs-downloader/contracts";
 const ADAPTER_VERSIONS = new Set(["xhs-web-2026.07"]);
 const MAX_ANCHOR_COUNT = 8;
 const MAX_INSPECTED_ANCHORS = 16;
-const SELECTOR_PROFILES = new Set([
-  "initial-state-v1",
-  "semantic-dom-v1",
-  "unknown",
-]);
-const PAGE_KINDS = new Set([
-  "home",
-  "search",
-  "feed_detail",
-  "profile",
-  "unknown",
-]);
+const SELECTOR_PROFILES = new Set(["initial-state-v1", "semantic-dom-v1", "unknown"]);
+const PAGE_KINDS = new Set(["home", "search", "feed_detail", "profile", "unknown"]);
 const SEMANTIC_ANCHORS = new Set([
   "initial_state",
   "main_container",
@@ -73,10 +63,7 @@ function safeAdapterVersion(value: JsonValue | undefined): string | undefined {
   return safeEnum(value, ADAPTER_VERSIONS);
 }
 
-function safeEnum(
-  value: JsonValue | undefined,
-  allowed: ReadonlySet<string>,
-): string | undefined {
+function safeEnum(value: JsonValue | undefined, allowed: ReadonlySet<string>): string | undefined {
   return typeof value === "string" && allowed.has(value) ? value : undefined;
 }
 
@@ -84,10 +71,9 @@ function safeAnchors(value: JsonValue | undefined): string[] {
   if (!Array.isArray(value)) return [];
   return [
     ...new Set(
-      value.slice(0, MAX_INSPECTED_ANCHORS).filter(
-        (item): item is string =>
-          typeof item === "string" && SEMANTIC_ANCHORS.has(item),
-      ),
+      value
+        .slice(0, MAX_INSPECTED_ANCHORS)
+        .filter((item): item is string => typeof item === "string" && SEMANTIC_ANCHORS.has(item)),
     ),
   ].slice(0, MAX_ANCHOR_COUNT);
 }

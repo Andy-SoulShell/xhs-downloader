@@ -26,18 +26,12 @@ describe("浏览器任务状态请求超时", () => {
     }));
     vi.stubGlobal(
       "fetch",
-      vi.fn(
-        async (_input: string | URL | Request, init?: RequestInit) =>
-          neverResolvingResponse(init?.signal),
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) =>
+        neverResolvingResponse(init?.signal),
       ),
     );
 
-    const running = executeBrowserTaskClaim(
-      "http://service",
-      claim,
-      execute,
-      withCredential,
-    );
+    const running = executeBrowserTaskClaim("http://service", claim, execute, withCredential);
     const rejected = expect(running).rejects.toMatchObject({
       name: "AbortError",
     });
@@ -67,12 +61,7 @@ describe("浏览器任务状态请求超时", () => {
       }),
     );
 
-    const running = executeBrowserTaskClaim(
-      "http://service",
-      claim,
-      execute,
-      withCredential,
-    );
+    const running = executeBrowserTaskClaim("http://service", claim, execute, withCredential);
     const rejected = expect(running).rejects.toMatchObject({
       name: "AbortError",
     });
@@ -89,9 +78,7 @@ async function withCredential<T>(
   return operation(credential);
 }
 
-function neverResolvingResponse(
-  signal: AbortSignal | null | undefined,
-): Promise<Response> {
+function neverResolvingResponse(signal: AbortSignal | null | undefined): Promise<Response> {
   return new Promise((_, reject) => {
     const abort = () => reject(new DOMException("请求超时", "AbortError"));
     if (signal?.aborted) {

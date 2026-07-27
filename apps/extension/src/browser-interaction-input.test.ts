@@ -11,9 +11,7 @@ const mocks = vi.hoisted(() => ({
   attach: vi.fn(async () => undefined),
   detach: vi.fn(async () => undefined),
   sendCommand: vi.fn(async (_target: unknown, method: string) =>
-    method === "Runtime.evaluate"
-      ? { result: { value: { ok: true, x: 80, y: 60 } } }
-      : undefined,
+    method === "Runtime.evaluate" ? { result: { value: { ok: true, x: 80, y: 60 } } } : undefined,
   ),
   sendMessage: vi.fn(async () => ({ ok: true, message: "已触发" })),
   query: vi.fn(async () => [{ id: 7 }]),
@@ -37,11 +35,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("浏览器互动可信输入", () => {
   it("仅为已授权任务发送可信鼠标点击", async () => {
-    const revoke = authorizeBrowserTaskInteraction(
-      42,
-      "synthetic-task",
-      "set_favorite",
-    );
+    const revoke = authorizeBrowserTaskInteraction(42, "synthetic-task", "set_favorite");
 
     await expect(
       handleBrowserInteractionRequest(
@@ -80,11 +74,7 @@ describe("浏览器互动可信输入", () => {
   });
 
   it("拒绝错误任务、非详情页和不可见控件", async () => {
-    const revoke = authorizeBrowserTaskInteraction(
-      43,
-      "synthetic-task",
-      "set_like",
-    );
+    const revoke = authorizeBrowserTaskInteraction(43, "synthetic-task", "set_like");
     await expect(
       handleBrowserInteractionRequest(
         {
@@ -151,17 +141,11 @@ describe("浏览器互动可信输入", () => {
       ok: false,
       message: "模拟拒绝",
     });
-    await expect(
-      requestBrowserInteraction("synthetic-task", "like"),
-    ).rejects.toThrow("模拟拒绝");
+    await expect(requestBrowserInteraction("synthetic-task", "like")).rejects.toThrow("模拟拒绝");
   });
 
   it("非互动任务不会创建授权", async () => {
-    const revoke = authorizeBrowserTaskInteraction(
-      44,
-      "synthetic-task",
-      "list_feeds",
-    );
+    const revoke = authorizeBrowserTaskInteraction(44, "synthetic-task", "list_feeds");
     await expect(
       handleBrowserInteractionRequest(
         {

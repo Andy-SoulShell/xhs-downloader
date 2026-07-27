@@ -1,10 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  deleteCookies,
-  executeBrowserOperation,
-  executeReadCapability,
-} from "./browser-api";
+import { deleteCookies, executeBrowserOperation, executeReadCapability } from "./browser-api";
 
 function task(status: string, result: Record<string, unknown> | null) {
   return {
@@ -50,10 +46,7 @@ describe("浏览器能力 API 客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("crypto", { randomUUID: () => "synthetic-read-request" });
 
-    const result = await executeReadCapability<{ items: [] }>(
-      "/xhs/feeds/list",
-      {},
-    );
+    const result = await executeReadCapability<{ items: [] }>("/xhs/feeds/list", {});
 
     expect(result).toMatchObject({
       data: { items: [] },
@@ -82,10 +75,7 @@ describe("浏览器能力 API 客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.stubGlobal("crypto", { randomUUID: () => "synthetic-request" });
 
-    const result = await executeBrowserOperation<{ logged_in: boolean }>(
-      "/xhs/login/status",
-      {},
-    );
+    const result = await executeBrowserOperation<{ logged_in: boolean }>("/xhs/login/status", {});
 
     expect(result.data.logged_in).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -102,14 +92,9 @@ describe("浏览器能力 API 客户端", () => {
     [task("queued", null), "尚未完成任务"],
     [task("succeeded", null), "尚未完成任务"],
   ])("把非成功任务转换为明确错误", async (payload, message) => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(payload))));
 
-    await expect(
-      executeBrowserOperation("/xhs/login/status", {}),
-    ).rejects.toThrow(message);
+    await expect(executeBrowserOperation("/xhs/login/status", {})).rejects.toThrow(message);
   });
 
   it("显式确认后清理指定 Cookie 会话", async () => {
@@ -161,8 +146,6 @@ describe("浏览器能力 API 客户端", () => {
       ),
     );
 
-    await expect(deleteCookies("browser")).rejects.toThrow(
-      "尚未完成 Cookie 清理",
-    );
+    await expect(deleteCookies("browser")).rejects.toThrow("尚未完成 Cookie 清理");
   });
 });

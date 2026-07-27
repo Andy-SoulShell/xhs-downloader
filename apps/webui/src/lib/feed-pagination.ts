@@ -46,17 +46,12 @@ export async function loadNextFeedPage(
   context: FeedContext,
   signal: AbortSignal,
 ): Promise<FeedPage> {
-  const path =
-    context.source === "search" ? "/xhs/feeds/search" : "/xhs/feeds/list";
+  const path = context.source === "search" ? "/xhs/feeds/search" : "/xhs/feeds/list";
   const payload: Record<string, JsonValue> =
     context.source === "search"
       ? { keyword: context.keyword, filters: {}, cursor: context.cursor }
       : { cursor: context.cursor };
-  const result = await executeReadCapability<FeedListResult>(
-    path,
-    payload,
-    signal,
-  );
+  const result = await executeReadCapability<FeedListResult>(path, payload, signal);
   return {
     items: result.data.items,
     context: feedContextFrom(context.source, context.keyword, result.data),
@@ -65,10 +60,7 @@ export async function loadNextFeedPage(
 }
 
 /** 追加新结果并按帖子标识去重，避免翻页时出现重复卡片。 */
-export function appendUniqueFeeds(
-  current: FeedSummary[],
-  incoming: FeedSummary[],
-): FeedSummary[] {
+export function appendUniqueFeeds(current: FeedSummary[], incoming: FeedSummary[]): FeedSummary[] {
   const known = new Set(current.map((item) => item.feed_id));
   return [...current, ...incoming.filter((item) => !known.has(item.feed_id))];
 }

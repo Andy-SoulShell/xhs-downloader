@@ -147,9 +147,7 @@ describe("创作页语义适配", () => {
       document.body.innerHTML = `<div class="toast">发布成功</div>`;
     }, 0);
 
-    await expect(
-      waitForPublishOutcome(document, () => "/publish", 100),
-    ).resolves.toEqual({
+    await expect(waitForPublishOutcome(document, () => "/publish", 100)).resolves.toEqual({
       status: "published",
       message: "发布成功",
     });
@@ -160,8 +158,6 @@ describe("创作页语义适配", () => {
     await expect(waitForUploadInput(document, "image", 1)).rejects.toThrow(
       "没有找到创作页素材上传入口",
     );
-    await expect(waitForPublishControl(document, 1)).rejects.toThrow(
-      "没有找到可用的发布按钮",
-    );
+    await expect(waitForPublishControl(document, 1)).rejects.toThrow("没有找到可用的发布按钮");
   });
 });

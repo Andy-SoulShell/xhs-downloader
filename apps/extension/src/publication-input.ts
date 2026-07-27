@@ -1,6 +1,5 @@
 const CREATOR_ORIGIN = "https://creator.xiaohongshu.com";
-const CONTROL_EXPRESSION =
-  "globalThis[Symbol.for('xhs-downloader.publisher-control')]?.()";
+const CONTROL_EXPRESSION = "globalThis[Symbol.for('xhs-downloader.publisher-control')]?.()";
 const FALLBACK_EXPRESSION =
   "({path:location.pathname,result:globalThis[Symbol.for('xhs-downloader.publisher-control')]?.('activate')})";
 const SCHEDULE_INPUT_EXPRESSION = `(() => {
@@ -28,10 +27,7 @@ const POINTER_PRESS_MS = 80;
 const FALLBACK_CHECK_MS = 1_000;
 const SCHEDULE_SETTLE_MS = 180;
 
-export async function activatePublicationControl(
-  tabId: number,
-  senderUrl?: string,
-): Promise<void> {
+export async function activatePublicationControl(tabId: number, senderUrl?: string): Promise<void> {
   validateCreatorPage(senderUrl);
   const target = { tabId };
   await chrome.debugger.attach(target, "1.3");
@@ -67,7 +63,9 @@ export async function typePublicationSchedule(
   try {
     await chrome.debugger.sendCommand(target, "Page.bringToFront");
     await requireEvaluation(target, SCHEDULE_INPUT_EXPRESSION);
-    await chrome.debugger.sendCommand(target, "Input.insertText", { text: value });
+    await chrome.debugger.sendCommand(target, "Input.insertText", {
+      text: value,
+    });
     await dispatchTab(target, "keyDown");
     await dispatchTab(target, "keyUp");
     await delay(SCHEDULE_SETTLE_MS);
@@ -85,14 +83,11 @@ interface ControlPoint {
   y: number;
 }
 
-async function locateControl(
-  target: chrome.debugger.Debuggee,
-): Promise<ControlPoint> {
-  const response = await chrome.debugger.sendCommand(
-    target,
-    "Runtime.evaluate",
-    { expression: CONTROL_EXPRESSION, returnByValue: true },
-  );
+async function locateControl(target: chrome.debugger.Debuggee): Promise<ControlPoint> {
+  const response = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
+    expression: CONTROL_EXPRESSION,
+    returnByValue: true,
+  });
   const value = (
     response as {
       result?: {
@@ -130,18 +125,12 @@ async function dispatchMouse(
   });
 }
 
-async function activateDomFallback(
-  target: chrome.debugger.Debuggee,
-): Promise<void> {
-  const response = await chrome.debugger.sendCommand(
-    target,
-    "Runtime.evaluate",
-    {
-      expression: FALLBACK_EXPRESSION,
-      returnByValue: true,
-      userGesture: true,
-    },
-  );
+async function activateDomFallback(target: chrome.debugger.Debuggee): Promise<void> {
+  const response = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
+    expression: FALLBACK_EXPRESSION,
+    returnByValue: true,
+    userGesture: true,
+  });
   const value = (
     response as {
       result?: {
@@ -161,11 +150,10 @@ async function requireEvaluation(
   target: chrome.debugger.Debuggee,
   expression: string,
 ): Promise<{ ok?: boolean; message?: string; value?: string }> {
-  const response = await chrome.debugger.sendCommand(
-    target,
-    "Runtime.evaluate",
-    { expression, returnByValue: true },
-  );
+  const response = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
+    expression,
+    returnByValue: true,
+  });
   const value = (
     response as {
       result?: {

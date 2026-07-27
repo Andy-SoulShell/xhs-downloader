@@ -8,10 +8,7 @@ import {
   resumePublicationVerification,
   retryPublicationTask,
 } from "../lib/publication-api";
-import {
-  makePublicationDraft,
-  makePublicationTask,
-} from "../test/fixtures";
+import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 import { PublicationBoard } from "./publication-board";
 
 vi.mock("../lib/publication-api", () => ({
@@ -37,26 +34,18 @@ beforeEach(() => {
 
 describe("发布中心界面", () => {
   it("执行驱动尚未确认时不允许编辑或提交发布", async () => {
-    vi.mocked(listPublicationDrafts).mockResolvedValue([
-      makePublicationDraft(),
-    ]);
+    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
     render(<PublicationBoard onNotify={vi.fn()} />);
 
     expect(
-      screen.getByText(
-        "暂时无法确认发布执行器，新建和提交已停用；已有任务仍可核对或恢复。",
-      ),
+      screen.getByText("暂时无法确认发布执行器，新建和提交已停用；已有任务仍可核对或恢复。"),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "立即发布" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "立即发布" })).not.toBeInTheDocument();
   });
 
   it("未知执行器阻止新提交但保留冻结任务的恢复入口", async () => {
-    vi.mocked(listPublicationDrafts).mockResolvedValue([
-      makePublicationDraft(),
-    ]);
+    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
     vi.mocked(listPublicationTasks).mockResolvedValue([
       makePublicationTask({
         task_id: "synthetic-verification",
@@ -70,12 +59,7 @@ describe("发布中心界面", () => {
       }),
     ]);
 
-    render(
-      <PublicationBoard
-        browserDriver="future-browser-driver"
-        onNotify={vi.fn()}
-      />,
-    );
+    render(<PublicationBoard browserDriver="future-browser-driver" onNotify={vi.fn()} />);
 
     expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
     expect(
@@ -83,18 +67,14 @@ describe("发布中心界面", () => {
         name: "我已完成验证，继续原任务",
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "没发出去" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "没发出去" })).toBeInTheDocument();
   });
 
   it("从复用空状态创建第一份草稿", async () => {
     const draft = makePublicationDraft();
     vi.mocked(createPublicationDraft).mockResolvedValue(draft);
     const onNotify = vi.fn();
-    render(
-      <PublicationBoard browserDriver="extension" onNotify={onNotify} />,
-    );
+    render(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
     expect(screen.getByRole("status", { name: "正在加载" })).toBeInTheDocument();
     const button = await screen.findByRole("button", {
@@ -123,32 +103,25 @@ describe("发布中心界面", () => {
       status: "ready",
     });
     const onNotify = vi.fn();
-    render(
-      <PublicationBoard browserDriver="extension" onNotify={onNotify} />,
-    );
+    render(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
     const selector = await screen.findByLabelText("当前草稿");
     fireEvent.change(selector, { target: { value: "second" } });
     expect(screen.getByLabelText("标题")).toHaveValue("第二份草稿");
-    fireEvent.click((fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ })), screen.getByRole("button", { name: "重试" })));
-
-    await waitFor(() =>
-      expect(retryPublicationTask).toHaveBeenCalledWith(task.task_id),
+    fireEvent.click(
+      (fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ })),
+      screen.getByRole("button", { name: "重试" })),
     );
+
+    await waitFor(() => expect(retryPublicationTask).toHaveBeenCalledWith(task.task_id));
     expect(onNotify).toHaveBeenCalledWith("发布任务已重新就绪");
   });
 
   it("展示发布中心读取错误", async () => {
-    vi.mocked(listPublicationDrafts).mockRejectedValue(
-      new Error("本地发布服务不可用"),
-    );
-    render(
-      <PublicationBoard browserDriver="extension" onNotify={vi.fn()} />,
-    );
+    vi.mocked(listPublicationDrafts).mockRejectedValue(new Error("本地发布服务不可用"));
+    render(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
-    expect(
-      await screen.findByText("本地发布服务不可用"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("本地发布服务不可用")).toBeInTheDocument();
     expect(screen.getByText("还没有发布草稿")).toBeInTheDocument();
   });
 
@@ -168,28 +141,18 @@ describe("发布中心界面", () => {
       message: "已确认安全验证完成，受管发布将在原页面继续",
     });
     const onNotify = vi.fn();
-    render(
-      <PublicationBoard browserDriver="managed" onNotify={onNotify} />,
-    );
+    render(<PublicationBoard browserDriver="managed" onNotify={onNotify} />);
 
-    fireEvent.mouseDown(
-      await screen.findByRole("tab", { name: /发布任务/ }),
-    );
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /发布任务/ }));
     fireEvent.click(
       screen.getByRole("button", {
         name: "我已完成验证，继续原任务",
       }),
     );
     expect(resumePublicationVerification).not.toHaveBeenCalled();
-    fireEvent.click(
-      screen.getByRole("button", { name: "确认验证完成并继续" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "确认验证完成并继续" }));
 
-    await waitFor(() =>
-      expect(resumePublicationVerification).toHaveBeenCalledWith(task.task_id),
-    );
-    expect(onNotify).toHaveBeenCalledWith(
-      "已确认验证完成，原发布任务正在继续",
-    );
+    await waitFor(() => expect(resumePublicationVerification).toHaveBeenCalledWith(task.task_id));
+    expect(onNotify).toHaveBeenCalledWith("已确认验证完成，原发布任务正在继续");
   });
 });

@@ -46,10 +46,7 @@ vi.mock("./publication-input", () => ({
   typePublicationSchedule: mocks.typeSchedule,
 }));
 
-import {
-  handlePublicationRequest,
-  installPublicationAutomation,
-} from "./publication-runner";
+import { handlePublicationRequest, installPublicationAutomation } from "./publication-runner";
 const credential = { extensionId: "extension", token: "token" };
 
 beforeEach(() => {
@@ -122,9 +119,7 @@ describe("发布任务后台协调器", () => {
   it("保存进行中状态并在终态清除租约", async () => {
     const filling = makeClaim("filling").task;
     const published = makeClaim("published").task;
-    mocks.report
-      .mockResolvedValueOnce(filling)
-      .mockResolvedValueOnce(published);
+    mocks.report.mockResolvedValueOnce(filling).mockResolvedValueOnce(published);
 
     await handlePublicationRequest({
       type: "publication-status",
@@ -184,8 +179,7 @@ describe("发布任务后台协调器", () => {
     mocks.claim.mockResolvedValue(claim);
 
     installPublicationAutomation();
-    const installed = vi.mocked(chrome.runtime.onInstalled.addListener)
-      .mock.calls[0][0];
+    const installed = vi.mocked(chrome.runtime.onInstalled.addListener).mock.calls[0][0];
     installed({ reason: "install" });
     await vi.waitFor(() => {
       expect(chrome.tabs.create).toHaveBeenCalledOnce();

@@ -22,12 +22,7 @@ describe("页面兼容性诊断", () => {
       adapter_version: "xhs-web-2026.07",
       selector_profile: "initial-state-v1",
       page_kind: "search",
-      matched_anchors: [
-        "initial_state",
-        "main_container",
-        "filter_control",
-        "feed_container",
-      ],
+      matched_anchors: ["initial_state", "main_container", "filter_control", "feed_container"],
       missing_anchors: [],
     });
     expect(JSON.stringify(result)).not.toContain("sensitive");

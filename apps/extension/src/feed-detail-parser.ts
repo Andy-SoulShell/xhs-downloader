@@ -1,7 +1,4 @@
-import type {
-  FeedComment,
-  FeedDetailResult,
-} from "@xhs-downloader/contracts";
+import type { FeedComment, FeedDetailResult } from "@xhs-downloader/contracts";
 
 import { parseFeedAuthor, parseFeedMetrics } from "./feed-parser";
 import {
@@ -58,19 +55,14 @@ export function parseFeedDetailDocument(
     ip_location: dataText(note.ipLocation).slice(0, 200),
     comments: dataList(unwrapState(comments.list))
       .slice(0, options.commentLimit)
-      .map((item) =>
-        parseComment(item, options.includeReplies, options.replyLimit),
-      )
+      .map((item) => parseComment(item, options.includeReplies, options.replyLimit))
       .filter((item): item is FeedComment => item !== null),
     comments_has_more: dataBoolean(comments.hasMore),
     comments_cursor: dataText(comments.cursor).slice(0, 2048),
   };
 }
 
-function findDetail(
-  detailMap: Record<string, unknown>,
-  feedId: string,
-): Record<string, unknown> {
+function findDetail(detailMap: Record<string, unknown>, feedId: string): Record<string, unknown> {
   const direct = dataRecord(detailMap[feedId]);
   if (Object.keys(direct).length) return direct;
   const match = Object.values(detailMap)

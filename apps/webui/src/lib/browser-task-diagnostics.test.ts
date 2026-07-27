@@ -11,16 +11,10 @@ describe("浏览器任务安全诊断", () => {
       adapter_version: "xhs-web-2026.07",
       selector_profile: "semantic-dom-v1",
       page_kind: "feed_detail",
-      matched_anchors: [
-        "main_container",
-        "detail_container",
-        "main_container",
-        "用户输入",
-      ],
+      matched_anchors: ["main_container", "detail_container", "main_container", "用户输入"],
       missing_anchors: ["comment_container", "access_token"],
       raw_html: "<main>不应公开的页面原文</main>",
-      request_url:
-        "https://www.xiaohongshu.com/explore/synthetic?token=secret",
+      request_url: "https://www.xiaohongshu.com/explore/synthetic?token=secret",
       token: "synthetic-secret-token",
       user_text: "不应公开的用户正文",
     });
@@ -42,8 +36,7 @@ describe("浏览器任务安全诊断", () => {
   it("拒绝伪装成诊断字段的 URL、令牌和未知枚举值", () => {
     expect(
       safeBrowserTaskDiagnostics({
-        adapter_version:
-          "https://example.invalid/page?access_token=synthetic",
+        adapter_version: "https://example.invalid/page?access_token=synthetic",
         selector_profile: "synthetic-secret-token",
         page_kind: "用户输入的页面名称",
         matched_anchors: ["authorization"],

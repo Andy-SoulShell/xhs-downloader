@@ -39,20 +39,12 @@ describe("浏览器扩展安装引导", () => {
     expect(screen.getByText("加载浏览器扩展")).toBeInTheDocument();
     expect(screen.getByText(/解压发行目录中的扩展 ZIP/)).toBeInTheDocument();
     expect(screen.getByText(/开启“开发者模式”/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/加载已解压的扩展程序/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/加载已解压的扩展程序/)).toBeInTheDocument();
     expect(screen.getByText(/不会读取或上传浏览器 Cookie/)).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "复制 Chrome 扩展管理地址" }),
-    );
-    await waitFor(() =>
-      expect(writeText).toHaveBeenCalledWith("chrome://extensions"),
-    );
-    expect(
-      screen.getByText("已复制 Chrome 扩展管理地址"),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "复制 Chrome 扩展管理地址" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("chrome://extensions"));
+    expect(screen.getByText("已复制 Chrome 扩展管理地址")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "已加载，刷新状态" }));
     expect(onRefresh).toHaveBeenCalledTimes(1);
@@ -69,13 +61,9 @@ describe("浏览器扩展安装引导", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "复制 Edge 扩展管理地址" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "复制 Edge 扩展管理地址" }));
 
-    expect(
-      await screen.findByText("复制失败，请手动选择并复制上方地址"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("复制失败，请手动选择并复制上方地址")).toBeInTheDocument();
     expect(screen.getByText("edge://extensions")).toBeInTheDocument();
   });
 
@@ -92,8 +80,6 @@ describe("浏览器扩展安装引导", () => {
     expect(screen.getByText("浏览器扩展已连接")).toBeInTheDocument();
     expect(screen.getByText("2 个实例在线")).toBeInTheDocument();
     expect(screen.queryByText("加载浏览器扩展")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /复制 Chrome/ }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /复制 Chrome/ })).not.toBeInTheDocument();
   });
 });

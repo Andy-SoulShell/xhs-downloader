@@ -10,16 +10,11 @@ interface AuthorMappingEditorProps {
 }
 
 /** 以键值行编辑作者名称映射，避免让用户手写 JSON。 */
-export function AuthorMappingEditor({
-  rows,
-  onChange,
-}: AuthorMappingEditorProps) {
+export function AuthorMappingEditor({ rows, onChange }: AuthorMappingEditorProps) {
   const incomplete = incompleteMappingRows(rows);
 
   const update = (id: string, change: Partial<AuthorMappingRow>) =>
-    onChange(
-      rows.map((row) => (row.id === id ? { ...row, ...change } : row)),
-    );
+    onChange(rows.map((row) => (row.id === id ? { ...row, ...change } : row)));
 
   return (
     <div className="min-w-0 sm:col-span-2">
@@ -35,9 +30,7 @@ export function AuthorMappingEditor({
               <input
                 aria-label="作者 ID"
                 className="min-w-0 flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-100"
-                onChange={(event) =>
-                  update(row.id, { authorId: event.target.value })
-                }
+                onChange={(event) => update(row.id, { authorId: event.target.value })}
                 placeholder="作者 ID"
                 value={row.authorId}
               />
@@ -45,17 +38,13 @@ export function AuthorMappingEditor({
               <input
                 aria-label="显示名称"
                 className="min-w-0 flex-1 rounded-xl border border-stone-200 px-3 py-2 text-sm outline-none focus:border-red-300 focus:ring-4 focus:ring-red-100"
-                onChange={(event) =>
-                  update(row.id, { displayName: event.target.value })
-                }
+                onChange={(event) => update(row.id, { displayName: event.target.value })}
                 placeholder="显示名称"
                 value={row.displayName}
               />
               <ActionButton
                 aria-label={`删除 ${row.authorId || "这一条"}`}
-                onClick={() =>
-                  onChange(rows.filter((item) => item.id !== row.id))
-                }
+                onClick={() => onChange(rows.filter((item) => item.id !== row.id))}
                 size="icon"
                 variant="ghost"
               >

@@ -16,9 +16,7 @@ describe("连接方式配置", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /用程序自带的浏览器/ }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /用程序自带的浏览器/ }));
 
     expect(onChange).toHaveBeenCalledWith("route_strategy", "browser_only");
     expect(onChange).toHaveBeenCalledWith("browser_driver", "managed");
@@ -56,9 +54,7 @@ describe("连接方式配置", () => {
     );
 
     expect(
-      screen.getByText(
-        "当前使用的是自定义组合，可以在下面的高级选项里查看和调整。",
-      ),
+      screen.getByText("当前使用的是自定义组合，可以在下面的高级选项里查看和调整。"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("读取方式")).toHaveValue("http_first");
   });
@@ -76,9 +72,7 @@ describe("连接方式配置", () => {
     );
 
     expect(screen.getByLabelText("自带浏览器位置")).toBeDisabled();
-    expect(
-      screen.getByText("当前使用浏览器扩展，不需要这一项。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("当前使用浏览器扩展，不需要这一项。")).toBeInTheDocument();
   });
 
   it("使用自带浏览器时可填写位置并清空恢复自动检测", () => {

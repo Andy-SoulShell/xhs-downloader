@@ -20,12 +20,7 @@ interface PageHeadingProps {
  * @param props.actions 页头右侧的操作区，窄屏下依然可见。
  * @returns 宽屏完整、窄屏收起文本的页头。
  */
-export function PageHeading({
-  actions,
-  description,
-  meta,
-  title,
-}: PageHeadingProps) {
+export function PageHeading({ actions, description, meta, title }: PageHeadingProps) {
   return (
     <div
       className={`flex flex-col gap-4 md:mb-6 xl:flex-row xl:items-end xl:justify-between ${
@@ -36,13 +31,9 @@ export function PageHeading({
       <div className="max-md:sr-only">
         <h1 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-3xl font-semibold tracking-[-0.035em] text-stone-950">
           <span>{title}</span>
-          <span className="text-sm font-normal tracking-normal text-stone-600">
-            {meta}
-          </span>
+          <span className="text-sm font-normal tracking-normal text-stone-600">{meta}</span>
         </h1>
-        {description && (
-          <p className="mt-2 text-sm text-stone-600">{description}</p>
-        )}
+        {description && <p className="mt-2 text-sm text-stone-600">{description}</p>}
       </div>
       {actions}
     </div>

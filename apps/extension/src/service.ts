@@ -1,13 +1,5 @@
-import type {
-  ClientDownloadRecord,
-  ExtensionMedia,
-  ExtensionWork,
-  MediaKind,
-} from "./types";
-import {
-  supportsCapability,
-  type ServiceCapabilities,
-} from "./capability-negotiation";
+import type { ClientDownloadRecord, ExtensionMedia, ExtensionWork, MediaKind } from "./types";
+import { supportsCapability, type ServiceCapabilities } from "./capability-negotiation";
 
 export const DEFAULT_SERVICE_URL = "http://127.0.0.1:5556";
 
@@ -42,9 +34,10 @@ export async function requestBackgroundDownload(
       request_id: requestId,
     }),
   });
-  const payload = (await response.json().catch(() => null)) as
-    | { task_id?: string; message?: string }
-    | null;
+  const payload = (await response.json().catch(() => null)) as {
+    task_id?: string;
+    message?: string;
+  } | null;
   if (!response.ok) {
     throw new Error(payload?.message || `后台下载失败（HTTP ${response.status}）`);
   }
@@ -62,9 +55,7 @@ export async function requestWorkDetail(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: sourceUrl, download: false }),
   });
-  const payload = (await response.json().catch(() => null)) as
-    | DetailPayload
-    | null;
+  const payload = (await response.json().catch(() => null)) as DetailPayload | null;
   if (!response.ok) {
     throw new Error(
       payload?.message || payload?.detail || `帖子解析失败（HTTP ${response.status}）`,
@@ -142,19 +133,17 @@ function workIdFromUrl(value: string): string {
   return new URL(value).pathname.split("/").filter(Boolean).at(-1) ?? "";
 }
 
-async function syncRecordBatch(
-  baseUrl: string,
-  records: ClientDownloadRecord[],
-): Promise<number> {
+async function syncRecordBatch(baseUrl: string, records: ClientDownloadRecord[]): Promise<number> {
   const response = await fetch(`${normalizeBase(baseUrl)}/extension/records`, {
     method: "POST",
     credentials: "omit",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ records }),
   });
-  const payload = (await response.json().catch(() => null)) as
-    | { accepted?: number; message?: string }
-    | null;
+  const payload = (await response.json().catch(() => null)) as {
+    accepted?: number;
+    message?: string;
+  } | null;
   if (!response.ok) {
     throw new Error(payload?.message || `记录同步失败（HTTP ${response.status}）`);
   }

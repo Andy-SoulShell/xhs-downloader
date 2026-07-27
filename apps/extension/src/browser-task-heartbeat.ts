@@ -73,18 +73,14 @@ export function heartbeatIntervalMilliseconds(claim: BrowserTaskClaim): number {
     Number.isFinite(declared) &&
     declared >= MIN_DECLARED_LEASE_SECONDS
       ? declared
-      : remaining ?? DEFAULT_LEASE_SECONDS;
-  return Math.max(
-    1,
-    Math.min(MAX_HEARTBEAT_INTERVAL_MS, (leaseSeconds * 1000) / 3),
-  );
+      : (remaining ?? DEFAULT_LEASE_SECONDS);
+  return Math.max(1, Math.min(MAX_HEARTBEAT_INTERVAL_MS, (leaseSeconds * 1000) / 3));
 }
 
 function remainingLeaseSeconds(expiresAt: string | null): number | undefined {
   if (!expiresAt) return undefined;
   const remaining = (Date.parse(expiresAt) - Date.now()) / 1000;
-  return Number.isFinite(remaining) &&
-    remaining >= MIN_DECLARED_LEASE_SECONDS
+  return Number.isFinite(remaining) && remaining >= MIN_DECLARED_LEASE_SECONDS
     ? remaining
     : undefined;
 }

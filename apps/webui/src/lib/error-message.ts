@@ -1,6 +1,5 @@
 /** 本地服务连不上时的统一提示。 */
-export const SERVICE_UNREACHABLE_MESSAGE =
-  "连接不上本地服务，请确认它还在运行，然后重试。";
+export const SERVICE_UNREACHABLE_MESSAGE = "连接不上本地服务，请确认它还在运行，然后重试。";
 
 /**
  * 消息本身就是写给用户看的错误，涵盖服务端返回的提示与本地校验结论。

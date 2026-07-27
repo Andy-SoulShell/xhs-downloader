@@ -39,9 +39,7 @@ describe("账号挑战本机 API 客户端", () => {
       ),
     );
 
-    await expect(
-      supportsAccountChallenges("http://127.0.0.1:5556/"),
-    ).resolves.toBe(true);
+    await expect(supportsAccountChallenges("http://127.0.0.1:5556/")).resolves.toBe(true);
   });
 
   it.each([
@@ -51,40 +49,27 @@ describe("账号挑战本机 API 客户端", () => {
   ])("拒绝旧协议、关闭能力或错误响应", async (payload, status) => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify(payload), { status }),
-      ),
+      vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status })),
     );
 
-    await expect(
-      supportsAccountChallenges("http://127.0.0.1:5556"),
-    ).resolves.toBe(false);
+    await expect(supportsAccountChallenges("http://127.0.0.1:5556")).resolves.toBe(false);
   });
 
   it("服务不可连接时报告不支持", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockRejectedValue(new Error("synthetic offline")),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("synthetic offline")));
 
-    await expect(
-      supportsAccountChallenges("http://127.0.0.1:5556"),
-    ).resolves.toBe(false);
+    await expect(supportsAccountChallenges("http://127.0.0.1:5556")).resolves.toBe(false);
   });
 
   it("使用 Bearer 和扩展标识领取挑战", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(claim), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(claim), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      claimAccountChallenge(
-        "http://127.0.0.1:5556/",
-        credential,
-        0,
-      ),
-    ).resolves.toEqual(claim);
+    await expect(claimAccountChallenge("http://127.0.0.1:5556/", credential, 0)).resolves.toEqual(
+      claim,
+    );
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("wait_seconds=0");
     expect(init.headers).toMatchObject({
@@ -98,34 +83,23 @@ describe("账号挑战本机 API 客户端", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await answerAccountChallenge(
-      "http://127.0.0.1:5556",
-      credential,
-      claim,
-      { status: "proved", proof: "a".repeat(64) },
-    );
+    await answerAccountChallenge("http://127.0.0.1:5556", credential, claim, {
+      status: "proved",
+      proof: "a".repeat(64),
+    });
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(init.headers).toMatchObject({
       "X-Account-Challenge-Lease": "synthetic-lease",
     });
-    expect(init.body).toBe(
-      JSON.stringify({ status: "proved", proof: "a".repeat(64) }),
-    );
+    expect(init.body).toBe(JSON.stringify({ status: "proved", proof: "a".repeat(64) }));
   });
 
   it("把 401 映射为共享凭据重新签发信号", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response(null, { status: 401 })),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
 
     await expect(
-      claimAccountChallenge(
-        "http://127.0.0.1:5556",
-        credential,
-        0,
-      ),
+      claimAccountChallenge("http://127.0.0.1:5556", credential, 0),
     ).rejects.toBeInstanceOf(BrowserTaskUnauthorizedError);
   });
 
@@ -144,22 +118,15 @@ describe("账号挑战本机 API 客户端", () => {
     );
 
     await expect(
-      answerAccountChallenge(
-        "http://127.0.0.1:5556",
-        credential,
-        claim,
-        { status: "unverified" },
-      ),
+      answerAccountChallenge("http://127.0.0.1:5556", credential, claim, {
+        status: "unverified",
+      }),
     ).rejects.toThrow(expected);
   });
 
   it.each([-1, 31])("拒绝越界领取等待时间 %s", async (waitSeconds) => {
     await expect(
-      claimAccountChallenge(
-        "http://127.0.0.1:5556",
-        credential,
-        waitSeconds,
-      ),
+      claimAccountChallenge("http://127.0.0.1:5556", credential, waitSeconds),
     ).rejects.toThrow("0 到 30 秒");
   });
 });

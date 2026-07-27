@@ -28,8 +28,7 @@ export function libraryEmptyState({
   if (online === false && totalPosts === 0) {
     return {
       title: "连接不上本地服务",
-      description:
-        "帖子和下载记录都保存在本地服务里。请确认它还在运行，然后重试。",
+      description: "帖子和下载记录都保存在本地服务里。请确认它还在运行，然后重试。",
       offline: true,
     };
   }
@@ -42,8 +41,7 @@ export function libraryEmptyState({
   }
   return {
     title: "帖子列表还是空的",
-    description:
-      "在上方粘贴 xiaohongshu.com 或 xhslink.cn 链接，解析完成后帖子会出现在这里。",
+    description: "在上方粘贴 xiaohongshu.com 或 xhslink.cn 链接，解析完成后帖子会出现在这里。",
     offline: false,
   };
 }

@@ -1,7 +1,4 @@
-import {
-  buildDownloadFilename,
-  resolveDownloadMode,
-} from "./mode";
+import { buildDownloadFilename, resolveDownloadMode } from "./mode";
 import { installAccountChallengeAutomation } from "./account-challenge-runner";
 import { installBrowserTaskAutomation } from "./browser-task-runner";
 import {
@@ -10,10 +7,7 @@ import {
   type BrowserInteractionRequest,
   type BrowserInteractionResponse,
 } from "./browser-interaction-input";
-import {
-  handlePublicationRequest,
-  installPublicationAutomation,
-} from "./publication-runner";
+import { handlePublicationRequest, installPublicationAutomation } from "./publication-runner";
 import {
   isPublicationRequest,
   type PublicationRequest,
@@ -50,16 +44,10 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener(
   (
-    request:
-      | ExtensionRequest
-      | PublicationRequest
-      | BrowserInteractionRequest,
+    request: ExtensionRequest | PublicationRequest | BrowserInteractionRequest,
     sender,
     sendResponse: (
-      response:
-        | ExtensionResponse
-        | PublicationResponse
-        | BrowserInteractionResponse,
+      response: ExtensionResponse | PublicationResponse | BrowserInteractionResponse,
     ) => void,
   ) => {
     void handleRequest(request, sender.tab?.id, sender.url)
@@ -75,15 +63,10 @@ chrome.runtime.onMessage.addListener(
 );
 
 async function handleRequest(
-  request:
-    | ExtensionRequest
-    | PublicationRequest
-    | BrowserInteractionRequest,
+  request: ExtensionRequest | PublicationRequest | BrowserInteractionRequest,
   senderTabId?: number,
   senderUrl?: string,
-): Promise<
-  ExtensionResponse | PublicationResponse | BrowserInteractionResponse
-> {
+): Promise<ExtensionResponse | PublicationResponse | BrowserInteractionResponse> {
   if (isBrowserInteractionRequest(request)) {
     return handleBrowserInteractionRequest(request, senderTabId, senderUrl);
   }
@@ -128,10 +111,7 @@ async function getState(): Promise<ExtensionResponse> {
   };
 }
 
-async function download(
-  work: ExtensionWork,
-  indexes: number[],
-): Promise<ExtensionResponse> {
+async function download(work: ExtensionWork, indexes: number[]): Promise<ExtensionResponse> {
   if (!indexes.length) throw new Error("请至少选择一项媒体");
   const settings = await loadSettings();
   const online = await checkService(settings.serviceUrl);
@@ -166,10 +146,7 @@ async function download(
   }
 }
 
-async function downloadInBrowser(
-  work: ExtensionWork,
-  indexes: number[],
-): Promise<string> {
+async function downloadInBrowser(work: ExtensionWork, indexes: number[]): Promise<string> {
   const selected = new Set(indexes);
   const media = work.media.filter((item) => selected.has(item.index));
   if (!media.length) throw new Error("选中的媒体没有可下载资源");
@@ -196,20 +173,15 @@ async function downloadInBrowser(
   return `已交给浏览器下载 ${media.length} 个文件`;
 }
 
-async function recordSettledDownloads(
-  outcomes: BrowserDownloadOutcome[],
-): Promise<void> {
+async function recordSettledDownloads(outcomes: BrowserDownloadOutcome[]): Promise<void> {
   const settings = await loadSettings();
   const online = await checkService(settings.serviceUrl);
   for (const { batch, status, message } of outcomes) {
     await saveRecord(
-      buildRecord(
-        batch.work_id,
-        batch.source_url,
-        batch.title,
-        batch.media_indexes,
-        { status, message },
-      ),
+      buildRecord(batch.work_id, batch.source_url, batch.title, batch.media_indexes, {
+        status,
+        message,
+      }),
       online,
     );
   }
@@ -235,10 +207,7 @@ function buildRecord(
   };
 }
 
-async function saveRecord(
-  record: ClientDownloadRecord,
-  serviceOnline: boolean,
-): Promise<void> {
+async function saveRecord(record: ClientDownloadRecord, serviceOnline: boolean): Promise<void> {
   await appendPendingRecord(record);
   if (!serviceOnline) return;
   try {
@@ -263,10 +232,7 @@ async function syncPendingRecords(): Promise<ExtensionResponse> {
 }
 
 async function trySyncPendingRecords(): Promise<number> {
-  const [settings, records] = await Promise.all([
-    loadSettings(),
-    loadPendingRecords(),
-  ]);
+  const [settings, records] = await Promise.all([loadSettings(), loadPendingRecords()]);
   if (!records.length) return 0;
   const accepted = await syncClientRecords(settings.serviceUrl, records);
   await removePendingRecords(records.map((record) => record.record_id));

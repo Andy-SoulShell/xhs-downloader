@@ -22,9 +22,7 @@ describe("帖子列表空状态", () => {
   });
 
   it("探测未完成时不误报离线", () => {
-    expect(libraryEmptyState({ online: null, totalPosts: 0 }).offline).toBe(
-      false,
-    );
+    expect(libraryEmptyState({ online: null, totalPosts: 0 }).offline).toBe(false);
   });
 
   it("有帖子但被筛掉时归因于筛选条件", () => {

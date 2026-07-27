@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  proveBrowserAccount,
-  type BrowserAccountChallenge,
-} from "./account-proof";
+import { proveBrowserAccount, type BrowserAccountChallenge } from "./account-proof";
 import { installBrowserStateBridge } from "./browser-state-main";
 
 const challenge: BrowserAccountChallenge = {

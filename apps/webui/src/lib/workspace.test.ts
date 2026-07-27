@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  makeDetailResponse,
-  makeDownloadTask,
-} from "../test/fixtures";
-import {
-  mergeTaskResults,
-  type PostRecord,
-} from "./workspace";
+import { makeDetailResponse, makeDownloadTask } from "../test/fixtures";
+import { mergeTaskResults, type PostRecord } from "./workspace";
 
 function makePost(): PostRecord {
   return {

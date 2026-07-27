@@ -1,7 +1,4 @@
-import type {
-  ClientDownloadRecord,
-  DownloadMode,
-} from "@xhs-downloader/contracts";
+import type { ClientDownloadRecord, DownloadMode } from "@xhs-downloader/contracts";
 
 /** 浏览器扩展和服务端共享的下载记录与执行模式。 */
 export type { ClientDownloadRecord, DownloadMode };

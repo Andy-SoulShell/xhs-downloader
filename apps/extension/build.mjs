@@ -10,8 +10,7 @@ const browserAssets = resolve(
   repositoryRoot,
   "packages/xhs-adapters/src/xhs_adapters/browser_assets",
 );
-const generatedHeader =
-  "/* 由 apps/extension/build.mjs 生成，请勿手工修改。 */";
+const generatedHeader = "/* 由 apps/extension/build.mjs 生成，请勿手工修改。 */";
 
 await rm(output, { force: true, recursive: true });
 await mkdir(output, { recursive: true });

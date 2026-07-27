@@ -1,8 +1,4 @@
-import type {
-  ImageFormat,
-  SettingsValues,
-  VideoPreference,
-} from "../lib/types";
+import type { ImageFormat, SettingsValues, VideoPreference } from "../lib/types";
 import type { AuthorMappingRow } from "../lib/author-mapping";
 import { AuthorMappingEditor } from "./author-mapping-editor";
 import { CookieSetupGuide } from "./cookie-setup-guide";
@@ -33,10 +29,7 @@ export function StorageSettings({
   values: SettingsValues;
 }) {
   return (
-    <SettingsSection
-      description="控制媒体、记录和临时文件的位置及命名方式。"
-      title="目录与记录"
-    >
+    <SettingsSection description="控制媒体、记录和临时文件的位置及命名方式。" title="目录与记录">
       <TextSetting
         help="留空使用当前目录下的 volume；保存后重启生效。"
         label="数据根目录"
@@ -179,21 +172,12 @@ export function DownloadSettings({
   values: SettingsValues;
 }) {
   return (
-    <SettingsSection
-      description="控制媒体类型、输出格式、流选择与并发资源。"
-      title="下载行为"
-    >
+    <SettingsSection description="控制媒体类型、输出格式、流选择与并发资源。" title="下载行为">
       <SelectSetting
         disabled={!values.image_download}
-        help={
-          values.image_download
-            ? "自动会保留原始格式。"
-            : "已关闭图片下载，此项暂不生效。"
-        }
+        help={values.image_download ? "自动会保留原始格式。" : "已关闭图片下载，此项暂不生效。"}
         label="图片格式"
-        onChange={(value) =>
-          onChange("image_format", value as ImageFormat)
-        }
+        onChange={(value) => onChange("image_format", value as ImageFormat)}
         options={[
           { label: "自动", value: "auto" },
           { label: "JPEG", value: "jpeg" },
@@ -212,9 +196,7 @@ export function DownloadSettings({
             : "已关闭视频下载，此项暂不生效。"
         }
         label="视频流偏好"
-        onChange={(value) =>
-          onChange("video_preference", value as VideoPreference)
-        }
+        onChange={(value) => onChange("video_preference", value as VideoPreference)}
         options={[
           { label: "分辨率优先", value: "resolution" },
           { label: "码率优先", value: "bitrate" },

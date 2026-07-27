@@ -85,24 +85,24 @@ cp .env.example .env
 
 常用变量：
 
-| 变量 | 默认值 | 说明 |
-| --- | --- | --- |
-| `XHS_WORK_PATH` | `volume` | 数据根目录 |
-| `XHS_FOLDER_NAME` | `download` | 媒体目录名称 |
-| `XHS_COOKIE` | 空 | 小红书网页版 Cookie |
-| `XHS_PROXY` | 空 | HTTP/SOCKS 代理 |
-| `XHS_TIMEOUT` | `15` | 请求超时秒数 |
-| `XHS_MAX_RETRY` | `3` | 最大重试次数 |
-| `XHS_MAX_CONCURRENCY` | `4` | 最大并发下载数 |
-| `XHS_IMAGE_FORMAT` | `jpeg` | `auto/png/webp/jpeg/heic/avif` |
-| `XHS_DOWNLOAD_RECORD` | `true` | 启用指纹下载记录 |
-| `XHS_RECORD_DATA` | `false` | 保存结构化作品元数据 |
-| `XHS_PUBLISH_MAX_ASSET_SIZE` | `1073741824` | 单个发布素材上限，单位为字节 |
-| `XHS_PUBLISH_LEASE_SECONDS` | `300` | 浏览器执行发布任务的租约秒数 |
-| `XHS_ROUTE_STRATEGY` | `browser_only` | 只读能力的提供方顺序，`http_only/browser_only/http_first/browser_first` |
-| `XHS_BROWSER_DRIVER` | `extension` | `extension/managed` 浏览器执行器 |
-| `XHS_SERVER_HOST` | `127.0.0.1` | API 监听地址；MCP 默认沿用，局域网访问需显式改为 `0.0.0.0` |
-| `XHS_SERVER_PORT` | `5556` | API 端口；MCP 默认使用下一个端口 |
+| 变量                         | 默认值         | 说明                                                                    |
+| ---------------------------- | -------------- | ----------------------------------------------------------------------- |
+| `XHS_WORK_PATH`              | `volume`       | 数据根目录                                                              |
+| `XHS_FOLDER_NAME`            | `download`     | 媒体目录名称                                                            |
+| `XHS_COOKIE`                 | 空             | 小红书网页版 Cookie                                                     |
+| `XHS_PROXY`                  | 空             | HTTP/SOCKS 代理                                                         |
+| `XHS_TIMEOUT`                | `15`           | 请求超时秒数                                                            |
+| `XHS_MAX_RETRY`              | `3`            | 最大重试次数                                                            |
+| `XHS_MAX_CONCURRENCY`        | `4`            | 最大并发下载数                                                          |
+| `XHS_IMAGE_FORMAT`           | `jpeg`         | `auto/png/webp/jpeg/heic/avif`                                          |
+| `XHS_DOWNLOAD_RECORD`        | `true`         | 启用指纹下载记录                                                        |
+| `XHS_RECORD_DATA`            | `false`        | 保存结构化作品元数据                                                    |
+| `XHS_PUBLISH_MAX_ASSET_SIZE` | `1073741824`   | 单个发布素材上限，单位为字节                                            |
+| `XHS_PUBLISH_LEASE_SECONDS`  | `300`          | 浏览器执行发布任务的租约秒数                                            |
+| `XHS_ROUTE_STRATEGY`         | `browser_only` | 只读能力的提供方顺序，`http_only/browser_only/http_first/browser_first` |
+| `XHS_BROWSER_DRIVER`         | `extension`    | `extension/managed` 浏览器执行器                                        |
+| `XHS_SERVER_HOST`            | `127.0.0.1`    | API 监听地址；MCP 默认沿用，局域网访问需显式改为 `0.0.0.0`              |
+| `XHS_SERVER_PORT`            | `5556`         | API 端口；MCP 默认使用下一个端口                                        |
 
 完整配置见 [.env.example](.env.example)。
 

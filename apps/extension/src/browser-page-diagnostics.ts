@@ -39,9 +39,7 @@ export function buildPageCompatibilityDiagnostics(
         : Boolean(page.querySelector(selector)),
     )
     .map(([name]) => name);
-  const missing = Object.keys(expected).filter(
-    (name) => !matched.includes(name),
-  );
+  const missing = Object.keys(expected).filter((name) => !matched.includes(name));
   return {
     adapter_version: ADAPTER_VERSION,
     selector_profile: detectSelectorProfile(page),
@@ -56,10 +54,7 @@ function classifyPage(value: string): string {
     const pathname = new URL(value).pathname;
     if (pathname.startsWith("/search_result")) return "search";
     if (pathname.startsWith("/user/profile/")) return "profile";
-    if (
-      pathname.startsWith("/explore/") ||
-      pathname.startsWith("/discovery/item/")
-    ) {
+    if (pathname.startsWith("/explore/") || pathname.startsWith("/discovery/item/")) {
       return "feed_detail";
     }
     if (pathname === "/" || pathname.startsWith("/explore")) return "home";
@@ -76,7 +71,5 @@ function detectSelectorProfile(page: Document): string {
 }
 
 function hasInitialStateScript(page: Document): boolean {
-  return [...page.scripts].some((script) =>
-    script.textContent?.includes("__INITIAL_STATE__"),
-  );
+  return [...page.scripts].some((script) => script.textContent?.includes("__INITIAL_STATE__"));
 }

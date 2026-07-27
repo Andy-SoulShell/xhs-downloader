@@ -48,11 +48,7 @@ export function useManagedBrowser(): ManagedBrowserControl {
         }
       } catch (reason) {
         if (mounted.current) {
-          setError(
-            reason instanceof Error
-              ? reason.message
-              : "受管浏览器操作失败",
-          );
+          setError(reason instanceof Error ? reason.message : "受管浏览器操作失败");
         }
       } finally {
         inFlight.current = false;
@@ -66,18 +62,9 @@ export function useManagedBrowser(): ManagedBrowserControl {
     [],
   );
 
-  const refresh = useCallback(
-    () => run(null, () => getManagedBrowserStatus()),
-    [run],
-  );
-  const start = useCallback(
-    () => run("start", startManagedBrowser),
-    [run],
-  );
-  const stop = useCallback(
-    () => run("stop", stopManagedBrowser),
-    [run],
-  );
+  const refresh = useCallback(() => run(null, () => getManagedBrowserStatus()), [run]);
+  const start = useCallback(() => run("start", startManagedBrowser), [run]);
+  const stop = useCallback(() => run("stop", stopManagedBrowser), [run]);
 
   // 受管进程可能从服务外退出；定时同步服务端生命周期，避免页面保留陈旧运行态。
   useEffect(() => {

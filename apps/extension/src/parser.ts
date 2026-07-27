@@ -1,17 +1,11 @@
-import type {
-  ExtensionMedia,
-  ExtensionWork,
-} from "./types";
+import type { ExtensionMedia, ExtensionWork } from "./types";
 
 const INITIAL_STATE_PREFIX = "window.__INITIAL_STATE__";
 const EPHEMERAL_IMAGE_ROUTE = /^\d{12}\/[0-9a-f]{32}\//i;
 
 type DataMap = Record<string, unknown>;
 
-export function parseCurrentDocument(
-  page: Document,
-  sourceUrl: string,
-): ExtensionWork {
+export function parseCurrentDocument(page: Document, sourceUrl: string): ExtensionWork {
   const scripts = [...page.scripts]
     .map((script) => script.textContent?.trim() ?? "")
     .filter((text) => text.startsWith(INITIAL_STATE_PREFIX))
@@ -28,10 +22,7 @@ export function parseCurrentDocument(
   throw latestError;
 }
 
-export function parseInitialStateScript(
-  script: string,
-  sourceUrl: string,
-): ExtensionWork {
+export function parseInitialStateScript(script: string, sourceUrl: string): ExtensionWork {
   const state = parseInitialStateValue(script);
   const workId = workIdFromUrl(sourceUrl);
   const note = selectNote(state, workId);
@@ -42,9 +33,7 @@ export function parseInitialStateScript(
   const video = object(note.video);
   const kind = text(note.type);
   const media =
-    kind === "video" && images.length <= 1
-      ? parseVideo(video, images)
-      : parseImages(images);
+    kind === "video" && images.length <= 1 ? parseVideo(video, images) : parseImages(images);
   return {
     workId: resolvedWorkId,
     sourceUrl,
@@ -96,9 +85,7 @@ function noteMatches(note: DataMap, workId: string): boolean {
 
 function parseVideo(video: DataMap, images: DataMap[]): ExtensionMedia[] {
   const originKey = text(deepGet(video, "consumer.originVideoKey"));
-  const url = originKey
-    ? `https://sns-video-bd.xhscdn.com/${originKey}`
-    : selectVideoStream(video);
+  const url = originKey ? `https://sns-video-bd.xhscdn.com/${originKey}` : selectVideoStream(video);
   if (!url) return [];
   const preview = text(images[0]?.urlDefault) || text(images[0]?.url);
   return [
@@ -117,12 +104,8 @@ function selectVideoStream(video: DataMap): string {
     ...list(deepGet(video, "media.stream.h264")),
     ...list(deepGet(video, "media.stream.h265")),
   ];
-  const selected = streams.sort(
-    (left, right) => number(right.height) - number(left.height),
-  )[0];
-  const backups = Array.isArray(selected?.backupUrls)
-    ? selected.backupUrls
-    : [];
+  const selected = streams.sort((left, right) => number(right.height) - number(left.height))[0];
+  const backups = Array.isArray(selected?.backupUrls) ? selected.backupUrls : [];
   return (
     backups.find((item): item is string => typeof item === "string" && !!item) ??
     text(selected?.masterUrl)
@@ -190,11 +173,7 @@ function normalizeJavaScriptValue(value: string): string {
       continue;
     }
     const token = value.slice(index, index + 9);
-    if (
-      token === "undefined" &&
-      isBoundary(value[index - 1]) &&
-      isBoundary(value[index + 9])
-    ) {
+    if (token === "undefined" && isBoundary(value[index - 1]) && isBoundary(value[index + 9])) {
       result += "null";
       index += 8;
       continue;
@@ -221,9 +200,7 @@ function deepGet(value: unknown, path: string): unknown {
 }
 
 function object(value: unknown): DataMap {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as DataMap)
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as DataMap) : {};
 }
 
 function list(value: unknown): DataMap[] {
@@ -235,9 +212,7 @@ function hasKeys(value: DataMap): boolean {
 }
 
 function text(value: unknown): string {
-  return typeof value === "string" || typeof value === "number"
-    ? String(value)
-    : "";
+  return typeof value === "string" || typeof value === "number" ? String(value) : "";
 }
 
 function number(value: unknown): number {
@@ -246,8 +221,5 @@ function number(value: unknown): number {
 }
 
 function decodeUrl(value: string): string {
-  return value
-    .replaceAll("\\u002F", "/")
-    .replaceAll("\\/", "/")
-    .replaceAll("\\u0026", "&");
+  return value.replaceAll("\\u002F", "/").replaceAll("\\/", "/").replaceAll("\\u0026", "&");
 }

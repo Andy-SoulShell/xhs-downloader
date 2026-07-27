@@ -1,10 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
@@ -20,11 +14,7 @@ import {
   submitTask,
   updateSettings,
 } from "./lib/api";
-import {
-  makeDetailResponse,
-  makeDownloadTask,
-  makeSettingsResponse,
-} from "./test/fixtures";
+import { makeDetailResponse, makeDownloadTask, makeSettingsResponse } from "./test/fixtures";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
@@ -47,23 +37,20 @@ describe("管理后台配置集成", () => {
     vi.mocked(listCollectedPosts).mockResolvedValue([]);
     vi.mocked(listTasks).mockResolvedValue([]);
     vi.mocked(getSettings).mockResolvedValue(makeSettingsResponse());
-    vi.mocked(retryTask).mockResolvedValue(
-      makeDownloadTask({ status: "queued" }),
-    );
+    vi.mocked(retryTask).mockResolvedValue(makeDownloadTask({ status: "queued" }));
     vi.mocked(submitDetail).mockResolvedValue(makeDetailResponse());
     vi.mocked(submitTask).mockResolvedValue(makeDownloadTask());
-    vi.mocked(updateSettings).mockResolvedValue(
-      makeSettingsResponse({ restart_required: true }),
-    );
+    vi.mocked(updateSettings).mockResolvedValue(makeSettingsResponse({ restart_required: true }));
   });
 
   it("从管理后台更新服务配置", async () => {
     render(<App />);
 
     fireEvent.mouseDown(
-      await within(
-        await screen.findByRole("tablist", { name: "切换工作台视图" }),
-      ).findByRole("tab", { name: "设置" }),
+      await within(await screen.findByRole("tablist", { name: "切换工作台视图" })).findByRole(
+        "tab",
+        { name: "设置" },
+      ),
     );
     fireEvent.mouseDown(screen.getByRole("tab", { name: /文件与目录/ }));
     fireEvent.change(screen.getByLabelText("媒体目录名"), {
@@ -83,10 +70,6 @@ describe("管理后台配置集成", () => {
         }),
       ),
     );
-    expect(
-      await screen.findByText(
-        "已保存；部分修改要重启服务才生效",
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("已保存；部分修改要重启服务才生效")).toBeInTheDocument();
   });
 });

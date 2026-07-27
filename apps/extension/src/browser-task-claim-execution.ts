@@ -1,10 +1,7 @@
 import type { BrowserTaskClaim } from "@xhs-downloader/contracts";
 
 import type { BrowserPageTaskResponse } from "./browser-page-runner";
-import {
-  heartbeatIntervalMilliseconds,
-  startBrowserTaskHeartbeat,
-} from "./browser-task-heartbeat";
+import { heartbeatIntervalMilliseconds, startBrowserTaskHeartbeat } from "./browser-task-heartbeat";
 import {
   BrowserTaskLeaseLostError,
   reportBrowserTaskResult,
@@ -32,24 +29,12 @@ export async function executeBrowserTaskClaim(
   const leaseToken = claim.lease_token;
   await withLeaseRequestTimeout(claim, (signal) =>
     withCredential((credential) =>
-      reportBrowserTaskRunning(
-        baseUrl,
-        credential,
-        taskId,
-        leaseToken,
-        signal,
-      ),
+      reportBrowserTaskRunning(baseUrl, credential, taskId, leaseToken, signal),
     ),
   );
   const heartbeat = startBrowserTaskHeartbeat(claim, (signal) =>
     withCredential((credential) =>
-      reportBrowserTaskRunning(
-        baseUrl,
-        credential,
-        taskId,
-        leaseToken,
-        signal,
-      ),
+      reportBrowserTaskRunning(baseUrl, credential, taskId, leaseToken, signal),
     ),
   );
   let response: BrowserPageTaskResponse;
@@ -58,12 +43,7 @@ export async function executeBrowserTaskClaim(
   } catch (error) {
     const leaseFailure = await heartbeat.stop();
     if (leaseFailure !== undefined) {
-      await settleAfterLeaseFailure(
-        baseUrl,
-        claim,
-        leaseFailure,
-        withCredential,
-      );
+      await settleAfterLeaseFailure(baseUrl, claim, leaseFailure, withCredential);
       return;
     }
     const message = error instanceof Error ? error.message : "浏览器任务执行失败";
@@ -79,12 +59,7 @@ export async function executeBrowserTaskClaim(
   }
   const leaseFailure = await heartbeat.stop();
   if (leaseFailure !== undefined) {
-    await settleAfterLeaseFailure(
-      baseUrl,
-      claim,
-      leaseFailure,
-      withCredential,
-    );
+    await settleAfterLeaseFailure(baseUrl, claim, leaseFailure, withCredential);
     return;
   }
   await reportResultWithTimeout(
@@ -147,10 +122,7 @@ async function withLeaseRequestTimeout<T>(
   operation: (signal: AbortSignal) => Promise<T>,
 ): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    heartbeatIntervalMilliseconds(claim),
-  );
+  const timeout = setTimeout(() => controller.abort(), heartbeatIntervalMilliseconds(claim));
   try {
     return await operation(controller.signal);
   } finally {
@@ -159,7 +131,5 @@ async function withLeaseRequestTimeout<T>(
 }
 
 function isWriteTask(claim: BrowserTaskClaim): boolean {
-  return ["set_like", "set_favorite", "post_comment", "reply_comment"].includes(
-    claim.task.kind,
-  );
+  return ["set_like", "set_favorite", "post_comment", "reply_comment"].includes(claim.task.kind);
 }

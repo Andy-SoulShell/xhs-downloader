@@ -17,9 +17,7 @@ function makeProgress(overrides: Partial<DownloadProgress> = {}): DownloadProgre
 describe("下载进度条", () => {
   it("任务尚未开始时不渲染", () => {
     // 排队阶段挂一条 0% 的进度条会让人以为卡住了。
-    const { container } = render(
-      <DownloadProgressBar progress={makeProgress()} />,
-    );
+    const { container } = render(<DownloadProgressBar progress={makeProgress()} />);
 
     expect(container).toBeEmptyDOMElement();
   });
@@ -44,16 +42,9 @@ describe("下载进度条", () => {
   });
 
   it("上游不给字节总量时按文件计数走进度", () => {
-    render(
-      <DownloadProgressBar
-        progress={makeProgress({ completed_files: 1, total_files: 2 })}
-      />,
-    );
+    render(<DownloadProgressBar progress={makeProgress({ completed_files: 1, total_files: 2 })} />);
 
-    expect(screen.getByRole("progressbar")).toHaveAttribute(
-      "aria-valuenow",
-      "50",
-    );
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "50");
     expect(screen.getByText("正在下载第 2/2 个文件")).toBeInTheDocument();
   });
 });

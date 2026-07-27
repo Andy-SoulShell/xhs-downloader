@@ -72,10 +72,7 @@ export function usePostDownloads({
       try {
         const result = await submitDetail({ url, download: false });
         const post = postFromResponse(result);
-        setPosts((current) => [
-          post,
-          ...current.filter((item) => item.id !== post.id),
-        ]);
+        setPosts((current) => [post, ...current.filter((item) => item.id !== post.id)]);
         await createTask({
           url,
           index: [...post.selected].sort((a, b) => a - b),

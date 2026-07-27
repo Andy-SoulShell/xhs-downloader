@@ -10,9 +10,7 @@ const STORAGE_KEY = "installationId";
  * @param storage 存放标识的本地存储区。
  * @returns 本安装实例的稳定标识。
  */
-export async function resolveInstallationId(
-  storage: chrome.storage.StorageArea,
-): Promise<string> {
+export async function resolveInstallationId(storage: chrome.storage.StorageArea): Promise<string> {
   const stored = await storage.get(STORAGE_KEY);
   const existing = stored?.[STORAGE_KEY];
   if (typeof existing === "string" && existing.length > 0) return existing;

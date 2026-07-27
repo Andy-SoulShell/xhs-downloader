@@ -8,19 +8,13 @@ import type {
 import { detectLoginState } from "./login-state";
 import { waitForLoginQrCode } from "./login-qrcode";
 import { readLiveInitialState } from "./browser-state-bridge";
-import {
-  loadComments,
-  needsCommentLoading,
-} from "./comment-loader";
+import { loadComments, needsCommentLoading } from "./comment-loader";
 import { postComment, replyComment } from "./comment-runner";
 import { parseFeedDetailDocument } from "./feed-detail-parser";
 import { parseFeedListDocument } from "./feed-parser";
 import { setDesiredInteraction } from "./interaction-runner";
 import { parseUserProfileDocument } from "./profile-parser";
-import {
-  applySearchFilters,
-  hasCustomSearchFilters,
-} from "./search-filters";
+import { applySearchFilters, hasCustomSearchFilters } from "./search-filters";
 import { buildPageCompatibilityDiagnostics } from "./browser-page-diagnostics";
 
 const SEARCH_READY_ATTEMPTS = 20;
@@ -28,10 +22,7 @@ const SEARCH_READY_INTERVAL_MS = 250;
 
 /** 内容脚本执行写任务时可调用的浏览器级受控动作。 */
 export interface BrowserPageTaskActions {
-  activateInteraction?: (
-    taskId: string,
-    kind: "like" | "favorite",
-  ) => Promise<void>;
+  activateInteraction?: (taskId: string, kind: "like" | "favorite") => Promise<void>;
 }
 
 /** 后台发送给小红书内容脚本的浏览器任务消息。 */
@@ -50,9 +41,9 @@ export interface BrowserPageTaskResponse {
 }
 
 /** 判断消息是否为内容脚本浏览器任务。 */
-export function isBrowserPageTaskRequest(
-  value: { type?: string },
-): value is BrowserPageTaskRequest {
+export function isBrowserPageTaskRequest(value: {
+  type?: string;
+}): value is BrowserPageTaskRequest {
   return value.type === "browser-page-task";
 }
 
@@ -74,9 +65,7 @@ export async function executeBrowserPageTask(
   if (task.kind === "get_login_qrcode") {
     const result = await waitForLoginQrCode(page, pageUrl);
     return success(
-      result.is_logged_in
-        ? "浏览器已登录，无需再次扫码"
-        : "登录二维码已生成，登录页面将保持打开",
+      result.is_logged_in ? "浏览器已登录，无需再次扫码" : "登录二维码已生成，登录页面将保持打开",
       result,
     );
   }
@@ -89,10 +78,7 @@ export async function executeBrowserPageTask(
     if (hasCustomSearchFilters(filters)) {
       await applySearchFilters(page, filters);
     }
-    return success(
-      "搜索结果读取完成",
-      await waitForSearchResult(page, keyword),
-    );
+    return success("搜索结果读取完成", await waitForSearchResult(page, keyword));
   }
   if (task.kind === "get_feed_detail") {
     const options = {
@@ -107,10 +93,7 @@ export async function executeBrowserPageTask(
       await loadComments(page, options);
       currentState = await readLiveInitialState(page);
     }
-    return success(
-      "帖子详情读取完成",
-      parseFeedDetailDocument(page, options, currentState),
-    );
+    return success("帖子详情读取完成", parseFeedDetailDocument(page, options, currentState));
   }
   if (task.kind === "get_user_profile") {
     return success(
@@ -160,25 +143,16 @@ export async function executeBrowserPageTask(
   if (task.kind === "post_comment") {
     return success(
       "评论已提交并确认",
-      await postComment(
-        page,
-        payloadText(task, "feed_id"),
-        payloadText(task, "content"),
-      ),
+      await postComment(page, payloadText(task, "feed_id"), payloadText(task, "content")),
     );
   }
   if (task.kind === "reply_comment") {
     return success(
       "回复已提交并确认",
-      await replyComment(
-        page,
-        payloadText(task, "feed_id"),
-        payloadText(task, "content"),
-        {
-          commentId: payloadOptionalText(task, "comment_id"),
-          userId: payloadOptionalText(task, "user_id"),
-        },
-      ),
+      await replyComment(page, payloadText(task, "feed_id"), payloadText(task, "content"), {
+        commentId: payloadOptionalText(task, "comment_id"),
+        userId: payloadOptionalText(task, "user_id"),
+      }),
     );
   }
   return {
@@ -188,10 +162,7 @@ export async function executeBrowserPageTask(
   };
 }
 
-function success(
-  message: string,
-  result: object,
-): BrowserPageTaskResponse {
+function success(message: string, result: object): BrowserPageTaskResponse {
   return {
     ok: true,
     message,
@@ -199,10 +170,7 @@ function success(
   };
 }
 
-async function waitForSearchResult(
-  page: Document,
-  keyword: string,
-): Promise<FeedListResult> {
+async function waitForSearchResult(page: Document, keyword: string): Promise<FeedListResult> {
   try {
     const initial = parseFeedListDocument(page, "search", keyword);
     if (initial.items.length) return initial;
@@ -231,14 +199,9 @@ function payloadText(task: BrowserTask, field: string): string {
   return value;
 }
 
-function payloadRecord(
-  task: BrowserTask,
-  field: string,
-): Record<string, JsonValue> {
+function payloadRecord(task: BrowserTask, field: string): Record<string, JsonValue> {
   const value = task.payload[field];
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
 function payloadNumber(task: BrowserTask, field: string): number {
@@ -257,10 +220,7 @@ function payloadBoolean(task: BrowserTask, field: string): boolean {
   return value;
 }
 
-function payloadOptionalText(
-  task: BrowserTask,
-  field: string,
-): string | null {
+function payloadOptionalText(task: BrowserTask, field: string): string | null {
   const value = task.payload[field];
   return typeof value === "string" && value ? value : null;
 }

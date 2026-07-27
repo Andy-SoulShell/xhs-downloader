@@ -1,10 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
@@ -21,11 +15,7 @@ import {
   submitTask,
   updateSettings,
 } from "./lib/api";
-import {
-  makeDetailResponse,
-  makeDownloadTask,
-  makeSettingsResponse,
-} from "./test/fixtures";
+import { makeDetailResponse, makeDownloadTask, makeSettingsResponse } from "./test/fixtures";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
@@ -58,14 +48,10 @@ describe("帖子下载工作台", () => {
     vi.mocked(listCollectedPosts).mockResolvedValue([]);
     vi.mocked(listTasks).mockResolvedValue([]);
     vi.mocked(getSettings).mockResolvedValue(makeSettingsResponse());
-    vi.mocked(retryTask).mockResolvedValue(
-      makeDownloadTask({ status: "queued" }),
-    );
+    vi.mocked(retryTask).mockResolvedValue(makeDownloadTask({ status: "queued" }));
     vi.mocked(submitDetail).mockResolvedValue(makeDetailResponse());
     vi.mocked(submitTask).mockResolvedValue(makeDownloadTask());
-    vi.mocked(updateSettings).mockResolvedValue(
-      makeSettingsResponse({ restart_required: true }),
-    );
+    vi.mocked(updateSettings).mockResolvedValue(makeSettingsResponse({ restart_required: true }));
   });
 
   it("解析帖子并以紧凑卡片加入瀑布流", async () => {
@@ -91,9 +77,7 @@ describe("帖子下载工作台", () => {
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getAllByRole("checkbox")).toHaveLength(2);
     fireEvent.click(within(dialog).getByLabelText("选择第 2 项"));
-    fireEvent.click(
-      within(dialog).getByRole("switch", { name: "强制重新下载" }),
-    );
+    fireEvent.click(within(dialog).getByRole("switch", { name: "强制重新下载" }));
     vi.mocked(submitTask).mockResolvedValue(
       makeDownloadTask({
         media_indexes: [1],
@@ -108,9 +92,7 @@ describe("帖子下载工作台", () => {
         ],
       }),
     );
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "下载 1 项" }),
-    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "下载 1 项" }));
 
     await waitFor(() =>
       expect(submitTask).toHaveBeenLastCalledWith({
@@ -144,22 +126,17 @@ describe("帖子下载工作台", () => {
     fireEvent.click(screen.getByRole("radio", { name: "已下载" }));
     expect(screen.getByText("没有符合条件的帖子")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "全部" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "打开帖子：合成测试帖子" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "打开帖子：合成测试帖子" }));
     fireEvent.click(
       within(screen.getByRole("dialog")).getByRole("button", {
         name: "移除帖子：合成测试帖子",
       }),
     );
-    expect(
-      await screen.findByText("帖子列表还是空的"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("帖子列表还是空的")).toBeInTheDocument();
   });
 
   it("解析期间在列表里占位，不让用户对着不动的列表干等", async () => {
-    let resolveDetail: (value: ReturnType<typeof makeDetailResponse>) => void =
-      () => {};
+    let resolveDetail: (value: ReturnType<typeof makeDetailResponse>) => void = () => {};
     vi.mocked(submitDetail).mockReturnValueOnce(
       new Promise((resolve) => {
         resolveDetail = resolve;
@@ -176,9 +153,7 @@ describe("帖子下载工作台", () => {
 
     resolveDetail(makeDetailResponse());
     await waitFor(() =>
-      expect(
-        screen.queryByRole("status", { name: "正在解析" }),
-      ).not.toBeInTheDocument(),
+      expect(screen.queryByRole("status", { name: "正在解析" })).not.toBeInTheDocument(),
     );
     expect(screen.getByText("合成测试帖子")).toBeInTheDocument();
   });
@@ -205,13 +180,9 @@ describe("帖子下载工作台", () => {
       target: { value: "https://example.invalid/work" },
     });
 
-    vi.mocked(submitDetail).mockResolvedValueOnce(
-      makeDetailResponse({ data: null }),
-    );
+    vi.mocked(submitDetail).mockResolvedValueOnce(makeDetailResponse({ data: null }));
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    expect(
-      await screen.findByText("没有解析到帖子内容，请确认链接是否正确"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("没有解析到帖子内容，请确认链接是否正确")).toBeInTheDocument();
 
     vi.mocked(submitDetail).mockRejectedValueOnce("未知异常");
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
@@ -224,14 +195,10 @@ describe("帖子下载工作台", () => {
     untitled.data!.发布时间 = null;
     vi.mocked(submitDetail).mockResolvedValue(untitled);
     fireEvent.click(screen.getByRole("button", { name: "添加到列表" }));
-    fireEvent.click(
-      await screen.findByRole("button", { name: "打开帖子：未命名帖子" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "打开帖子：未命名帖子" }));
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("发布时间未知")).toBeInTheDocument();
-    expect(
-      within(dialog).getByText("这个帖子没有文字描述。"),
-    ).toBeInTheDocument();
+    expect(within(dialog).getByText("这个帖子没有文字描述。")).toBeInTheDocument();
   });
 
   it("下载失败时标记所选媒体并允许重试", async () => {
@@ -240,9 +207,7 @@ describe("帖子下载工作台", () => {
     const dialog = screen.getByRole("dialog");
 
     vi.mocked(submitTask).mockRejectedValueOnce(new UserFacingError("下载异常"));
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "下载 2 项" }),
-    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "下载 2 项" }));
     // 原因既进 toast 也落到记录上，因此会出现两处。
     expect(await screen.findAllByText("下载异常")).not.toHaveLength(0);
     expect(within(dialog).getAllByText("失败")).toHaveLength(2);
@@ -250,9 +215,7 @@ describe("帖子下载工作台", () => {
 
     // 失败之后主按钮改成“重试下载”，让用户知道再点一次是重试而不是重复下载。
     vi.mocked(submitTask).mockRejectedValueOnce("未知异常");
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "重试下载 2 项" }),
-    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "重试下载 2 项" }));
     expect(await screen.findAllByText("下载失败")).not.toHaveLength(0);
   });
 
@@ -279,20 +242,17 @@ describe("帖子下载工作台", () => {
     render(<App />);
 
     fireEvent.mouseDown(
-      await within(
-        await screen.findByRole("tablist", { name: "切换工作台视图" }),
-      ).findByRole("tab", { name: "动态" }),
+      await within(await screen.findByRole("tablist", { name: "切换工作台视图" })).findByRole(
+        "tab",
+        { name: "动态" },
+      ),
     );
 
-    expect(
-      await screen.findByText("合成任务失败"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("合成任务失败")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重新下载" }));
-    await waitFor(() =>
-      expect(retryTask).toHaveBeenCalledWith("synthetic-task"),
-    );
+    await waitFor(() => expect(retryTask).toHaveBeenCalledWith("synthetic-task"));
 
-        fireEvent.mouseDown(screen.getByRole("tab", { name: /插件下载/ }));
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /插件下载/ }));
     expect(await screen.findByText("合成独立记录")).toBeInTheDocument();
     expect(screen.getByText("浏览器下载完成")).toBeInTheDocument();
   });

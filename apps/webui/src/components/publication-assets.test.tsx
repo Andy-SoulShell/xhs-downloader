@@ -44,14 +44,10 @@ describe("发布素材列表", () => {
     expect(screen.getByText("2.0 MiB")).toBeInTheDocument();
     expect(screen.getByText("视频")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "上移 bytes.png" })).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "下移 video.mp4" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "下移 video.mp4" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "下移 bytes.png" }));
-    await waitFor(() =>
-      expect(onMove).toHaveBeenCalledWith(["kib", "bytes", "video"]),
-    );
+    await waitFor(() => expect(onMove).toHaveBeenCalledWith(["kib", "bytes", "video"]));
     fireEvent.click(screen.getByRole("button", { name: "删除 video.mp4" }));
     expect(onRemove).toHaveBeenCalledWith("video");
   });

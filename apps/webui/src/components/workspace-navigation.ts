@@ -87,6 +87,4 @@ export const workspaceViewItems: WorkspaceViewItem[] = [
   },
 ];
 
-export const managementViewItems = workspaceViewItems.filter(
-  ({ view }) => view !== "content",
-);
+export const managementViewItems = workspaceViewItems.filter(({ view }) => view !== "content");

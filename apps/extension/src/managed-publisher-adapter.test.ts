@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { installManagedPublisherAdapter } from "./managed-publisher-adapter";
-import type {
-  PublicationAsset,
-  PublicationTask,
-} from "./publication-types";
+import type { PublicationAsset, PublicationTask } from "./publication-types";
 
 const adapter = installManagedPublisherAdapter();
 
@@ -26,22 +23,19 @@ describe("受管浏览器发布页面适配器", () => {
       mediaKind: "image",
       selector: "[data-xhd-managed-upload='true']",
     });
-    expect(
-      document.querySelector("[data-xhd-managed-upload='true']"),
-    ).toBeInstanceOf(HTMLInputElement);
+    expect(document.querySelector("[data-xhd-managed-upload='true']")).toBeInstanceOf(
+      HTMLInputElement,
+    );
 
     await expect(adapter.fill(task)).resolves.toEqual({
       ok: true,
       message: "创作页内容和发布选项已核验",
     });
-    expect(document.querySelector<HTMLInputElement>("[placeholder='标题']")?.value)
-      .toBe("合成标题");
-    expect(document.querySelector(".ProseMirror")?.textContent).toBe(
-      "合成正文\n#合成标签",
+    expect(document.querySelector<HTMLInputElement>("[placeholder='标题']")?.value).toBe(
+      "合成标题",
     );
-    expect(
-      document.querySelector<HTMLInputElement>(".d-switch input")?.checked,
-    ).toBe(true);
+    expect(document.querySelector(".ProseMirror")?.textContent).toBe("合成正文\n#合成标签");
+    expect(document.querySelector<HTMLInputElement>(".d-switch input")?.checked).toBe(true);
 
     await expect(adapter.preparePublish()).resolves.toMatchObject({
       ok: true,
@@ -54,10 +48,7 @@ describe("受管浏览器发布页面适配器", () => {
       state: "pending",
       message: "等待创作平台确认",
     });
-    document.body.insertAdjacentHTML(
-      "beforeend",
-      `<div role="alert">发布成功：合成标题</div>`,
-    );
+    document.body.insertAdjacentHTML("beforeend", `<div role="alert">发布成功：合成标题</div>`);
     expect(adapter.observeOutcome()).toMatchObject({
       ok: true,
       state: "published",
@@ -100,9 +91,7 @@ describe("受管浏览器发布页面适配器", () => {
       selector: "[data-xhd-managed-schedule='true']",
       value: "2026-07-25 20:34",
     });
-    const input = document.querySelector<HTMLInputElement>(
-      "[data-xhd-managed-schedule='true']",
-    )!;
+    const input = document.querySelector<HTMLInputElement>("[data-xhd-managed-schedule='true']")!;
     expect(input.dataset.xhdExpectedValue).toBe(prepared.value);
     input.value = prepared.value!;
     await expect(adapter.verifySchedule()).resolves.toEqual({
@@ -182,9 +171,7 @@ function installImageForm(withOriginal: boolean): void {
       </div>
     `,
   );
-  const toggle = document.querySelector<HTMLElement>(
-    ".custom-switch-card .d-switch",
-  )!;
+  const toggle = document.querySelector<HTMLElement>(".custom-switch-card .d-switch")!;
   const state = toggle.querySelector<HTMLInputElement>("input")!;
   toggle.addEventListener("click", () => {
     const dialog = document.createElement("div");
@@ -235,9 +222,7 @@ function createTask(
     mediaKind === "mixed"
       ? [createAsset("image", 0), createAsset("video", 1)]
       : options.assetCount !== undefined
-        ? Array.from({ length: options.assetCount }, (_, index) =>
-            createAsset(mediaKind, index),
-          )
+        ? Array.from({ length: options.assetCount }, (_, index) => createAsset(mediaKind, index))
         : [createAsset(mediaKind, 0)];
   const timestamp = "2026-07-25T12:34:00.000Z";
   return {
@@ -267,10 +252,7 @@ function createTask(
   };
 }
 
-function createAsset(
-  kind: "image" | "video",
-  position: number,
-): PublicationAsset {
+function createAsset(kind: "image" | "video", position: number): PublicationAsset {
   return {
     asset_id: `synthetic-${kind}-${position}`,
     filename: `synthetic-${position}.${kind === "image" ? "png" : "mp4"}`,

@@ -1,8 +1,4 @@
-import type {
-  DownloadMode,
-  DownloadPreference,
-  ExtensionMedia,
-} from "./types";
+import type { DownloadMode, DownloadPreference, ExtensionMedia } from "./types";
 
 export function resolveDownloadMode(
   preference: DownloadPreference,
@@ -14,10 +10,7 @@ export function resolveDownloadMode(
   return preference;
 }
 
-export function buildDownloadFilename(
-  workId: string,
-  media: ExtensionMedia,
-): string {
+export function buildDownloadFilename(workId: string, media: ExtensionMedia): string {
   const safeWorkId = workId.replace(/[^A-Za-z0-9_-]/g, "_");
   const kindSuffix = media.kind === "live" ? "_live" : "";
   return `xhs-downloader/${safeWorkId}/${media.index}${kindSuffix}.${media.suffix}`;

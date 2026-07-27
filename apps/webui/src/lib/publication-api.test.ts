@@ -14,10 +14,7 @@ import {
   updatePublicationDraft,
   uploadPublicationAsset,
 } from "./publication-api";
-import {
-  makePublicationDraft,
-  makePublicationTask,
-} from "../test/fixtures";
+import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -66,18 +63,12 @@ describe("发布中心 API 客户端", () => {
       type: "image/png",
     });
 
-    await expect(
-      uploadPublicationAsset(draft.draft_id, file),
-    ).resolves.toEqual(draft);
-    await expect(
-      removePublicationAsset(draft.draft_id, "synthetic-asset"),
-    ).resolves.toEqual(draft);
+    await expect(uploadPublicationAsset(draft.draft_id, file)).resolves.toEqual(draft);
+    await expect(removePublicationAsset(draft.draft_id, "synthetic-asset")).resolves.toEqual(draft);
 
     const body = fetchMock.mock.calls[0][1].body as FormData;
     expect(body.get("upload")).toBe(file);
-    expect(fetchMock.mock.calls[1][0]).toContain(
-      "/assets/synthetic-asset",
-    );
+    expect(fetchMock.mock.calls[1][0]).toContain("/assets/synthetic-asset");
   });
 
   it("提交、读取、核对、重试和取消发布任务", async () => {
@@ -93,20 +84,12 @@ describe("发布中心 API 客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      submitPublicationTask(
-        "synthetic-draft",
-        "scheduled",
-        "2026-01-02T00:00:00Z",
-      ),
+      submitPublicationTask("synthetic-draft", "scheduled", "2026-01-02T00:00:00Z"),
     ).resolves.toEqual(task);
     await expect(listPublicationTasks()).resolves.toEqual([task]);
     await expect(retryPublicationTask(task.task_id)).resolves.toEqual(task);
-    await expect(
-      reviewPublicationTask(task.task_id, false),
-    ).resolves.toEqual(task);
-    await expect(
-      reviewPublicationTask(task.task_id, true),
-    ).resolves.toEqual(task);
+    await expect(reviewPublicationTask(task.task_id, false)).resolves.toEqual(task);
+    await expect(reviewPublicationTask(task.task_id, true)).resolves.toEqual(task);
     await expect(cancelPublicationTask(task.task_id)).resolves.toEqual(task);
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
@@ -130,23 +113,18 @@ describe("发布中心 API 客户端", () => {
     };
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(result), { status: 202 }))
       .mockResolvedValueOnce(
-        new Response(JSON.stringify(result), { status: 202 }),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ detail: "发布任务当前未等待安全验证" }),
-          { status: 409 },
-        ),
+        new Response(JSON.stringify({ detail: "发布任务当前未等待安全验证" }), {
+          status: 409,
+        }),
       );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      resumePublicationVerification(result.task_id),
-    ).resolves.toEqual(result);
-    await expect(
-      resumePublicationVerification(result.task_id),
-    ).rejects.toThrow("发布任务当前未等待安全验证");
+    await expect(resumePublicationVerification(result.task_id)).resolves.toEqual(result);
+    await expect(resumePublicationVerification(result.task_id)).rejects.toThrow(
+      "发布任务当前未等待安全验证",
+    );
 
     expect(fetchMock.mock.calls[0][0]).toBe(
       "/api/publication/tasks/synthetic-publication-task/verification/resume",
@@ -170,9 +148,7 @@ describe("发布中心 API 客户端", () => {
       ),
     );
 
-    await expect(deletePublicationDraft("draft")).rejects.toThrow(
-      "草稿存在活跃任务",
-    );
+    await expect(deletePublicationDraft("draft")).rejects.toThrow("草稿存在活跃任务");
   });
 
   it("拒绝发布任务中的未知冻结执行器", async () => {
@@ -188,11 +164,9 @@ describe("发布中心 API 客户端", () => {
         .mockResolvedValueOnce(new Response(JSON.stringify([invalid]))),
     );
 
-    await expect(
-      submitPublicationTask("synthetic-draft", "manual"),
-    ).rejects.toThrow("发布任务返回了不支持的浏览器执行器");
-    await expect(listPublicationTasks()).rejects.toThrow(
+    await expect(submitPublicationTask("synthetic-draft", "manual")).rejects.toThrow(
       "发布任务返回了不支持的浏览器执行器",
     );
+    await expect(listPublicationTasks()).rejects.toThrow("发布任务返回了不支持的浏览器执行器");
   });
 });

@@ -20,18 +20,14 @@ describe("帖子互动请求", () => {
         active: true,
       },
     });
-    expect(desiredStateRequest(detail, "favorite", false)?.path).toBe(
-      "/xhs/feeds/favorite",
-    );
+    expect(desiredStateRequest(detail, "favorite", false)?.path).toBe("/xhs/feeds/favorite");
   });
 
   it("评论与回复带上正文和被回复对象", () => {
     expect(commentRequest(detail, "合成评论")?.payload).toMatchObject({
       content: "合成评论",
     });
-    expect(
-      replyRequest(detail, "synthetic-comment", "合成回复")?.payload,
-    ).toMatchObject({
+    expect(replyRequest(detail, "synthetic-comment", "合成回复")?.payload).toMatchObject({
       comment_id: "synthetic-comment",
       content: "合成回复",
       user_id: null,

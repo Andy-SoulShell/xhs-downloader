@@ -32,8 +32,7 @@ describe("浏览器任务页面诊断", () => {
             matched_anchors: ["main_container", "filter_control"],
             missing_anchors: ["feed_container"],
             raw_page: "不应显示的页面原文",
-            request_url:
-              "https://example.invalid/search?keyword=不应显示的用户文本",
+            request_url: "https://example.invalid/search?keyword=不应显示的用户文本",
             access_token: "synthetic-secret-token",
           }}
         />
@@ -50,9 +49,7 @@ describe("浏览器任务页面诊断", () => {
     expect(screen.queryByText(/用户文本/)).not.toBeInTheDocument();
     expect(screen.queryByText(/synthetic-secret/)).not.toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "复制安全页面诊断" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "复制安全页面诊断" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     expect(writeText).toHaveBeenCalledWith(
       JSON.stringify(
@@ -81,9 +78,7 @@ describe("浏览器任务页面诊断", () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "复制安全页面诊断" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "复制安全页面诊断" }));
     expect(await screen.findByText("复制失败，请稍后重试")).toBeInTheDocument();
     expect(screen.queryByText(/synthetic-secret/)).not.toBeInTheDocument();
   });
@@ -100,9 +95,7 @@ describe("浏览器任务页面诊断", () => {
 
     // 没有可公开诊断时整块不渲染，避免每条记录都挂一句无用提示。
     expect(screen.queryByLabelText("安全页面诊断")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "复制安全页面诊断" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "复制安全页面诊断" })).not.toBeInTheDocument();
     expect(screen.queryByText(/合成页面原文/)).not.toBeInTheDocument();
   });
 });

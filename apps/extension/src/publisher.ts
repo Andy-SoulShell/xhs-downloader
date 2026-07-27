@@ -28,8 +28,7 @@ void runPublisher();
 
 async function runPublisher(): Promise<void> {
   installStyles();
-  const preferredTaskId =
-    new URL(window.location.href).searchParams.get("xhd_task") ?? undefined;
+  const preferredTaskId = new URL(window.location.href).searchParams.get("xhd_task") ?? undefined;
   try {
     const prepared = await send({
       type: "publication-prepare",
@@ -41,11 +40,7 @@ async function runPublisher(): Promise<void> {
     }
     const claim = prepared.claim;
     if (isLoginPage()) {
-      await report(
-        claim,
-        "needs_review",
-        "创作平台尚未登录，请登录后在发布中心重试",
-      );
+      await report(claim, "needs_review", "创作平台尚未登录，请登录后在发布中心重试");
       showStatus("需要先登录创作平台", "warning");
       return;
     }
@@ -67,9 +62,7 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
     const assets = [...claim.task.package.assets].sort(
       (left, right) => left.position - right.position,
     );
-    const kind = assets[0]?.media_type.startsWith("video/")
-      ? "video"
-      : "image";
+    const kind = assets[0]?.media_type.startsWith("video/") ? "video" : "image";
     choosePublicationMode(document, kind);
     const input = await waitForUploadInput(document, kind);
     const files = [];
@@ -85,9 +78,7 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
     await waitForMediaReady(document, kind);
     showStatus("正在填写标题和正文");
     const draft = claim.task.package;
-    const body = [draft.body, ...draft.tags.map((tag) => `#${tag}`)]
-      .filter(Boolean)
-      .join("\n");
+    const body = [draft.body, ...draft.tags.map((tag) => `#${tag}`)].filter(Boolean).join("\n");
     await fillPublicationForm(document, draft.title, body);
     showStatus("正在核对发布选项");
     await setPublicationVisibility(document, draft.visibility);
@@ -120,10 +111,7 @@ async function executePublication(claim: PublicationClaim): Promise<void> {
   }
 }
 
-async function typePlatformSchedule(
-  claim: PublicationClaim,
-  value: string,
-): Promise<void> {
+async function typePlatformSchedule(claim: PublicationClaim, value: string): Promise<void> {
   const response = await send({
     type: "publication-schedule-input",
     taskId: claim.task.task_id,
@@ -135,10 +123,7 @@ async function typePlatformSchedule(
 
 async function observeOutcome(claim: PublicationClaim): Promise<void> {
   try {
-    const outcome = await waitForPublishOutcome(
-      document,
-      () => window.location.pathname,
-    );
+    const outcome = await waitForPublishOutcome(document, () => window.location.pathname);
     await report(
       claim,
       outcome.status,
@@ -156,11 +141,7 @@ async function observeOutcome(claim: PublicationClaim): Promise<void> {
   }
 }
 
-async function loadAssetChunk(
-  claim: PublicationClaim,
-  assetId: string,
-  offset: number,
-) {
+async function loadAssetChunk(claim: PublicationClaim, assetId: string, offset: number) {
   const response = await send({
     type: "publication-asset-chunk",
     taskId: claim.task.task_id,
@@ -213,9 +194,7 @@ function isLoginPage(): boolean {
 }
 
 function publicResultUrl(): string | undefined {
-  return window.location.hostname === "www.xiaohongshu.com"
-    ? window.location.href
-    : undefined;
+  return window.location.hostname === "www.xiaohongshu.com" ? window.location.href : undefined;
 }
 
 function installStyles(): void {
@@ -226,10 +205,7 @@ function installStyles(): void {
   document.documentElement.append(style);
 }
 
-function showStatus(
-  message: string,
-  tone: "default" | "success" | "warning" = "default",
-): void {
+function showStatus(message: string, tone: "default" | "success" | "warning" = "default"): void {
   let element = document.querySelector<HTMLElement>("#xhd-publish-status");
   if (!element) {
     element = document.createElement("div");

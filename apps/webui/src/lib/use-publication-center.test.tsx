@@ -16,10 +16,7 @@ import {
   uploadPublicationAsset,
 } from "./publication-api";
 import { usePublicationCenter } from "./use-publication-center";
-import {
-  makePublicationDraft,
-  makePublicationTask,
-} from "../test/fixtures";
+import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 
 vi.mock("./publication-api", () => ({
   cancelPublicationTask: vi.fn(),
@@ -92,10 +89,7 @@ describe("发布中心状态管理", () => {
         is_original: false,
         products: [],
       });
-      await result.current.uploadAsset(
-        initial.draft_id,
-        new File(["value"], "asset.png"),
-      );
+      await result.current.uploadAsset(initial.draft_id, new File(["value"], "asset.png"));
       await result.current.removeAsset(initial.draft_id, "second");
       await result.current.submitTask(initial.draft_id, "manual");
       await result.current.retryTask(task.task_id);
@@ -106,11 +100,7 @@ describe("发布中心状态管理", () => {
 
     expect(result.current.drafts).toEqual([initial]);
     expect(result.current.tasks[0].status).toBe("canceled");
-    expect(submitPublicationTask).toHaveBeenCalledWith(
-      initial.draft_id,
-      "manual",
-      undefined,
-    );
+    expect(submitPublicationTask).toHaveBeenCalledWith(initial.draft_id, "manual", undefined);
     expect(reviewPublicationTask).toHaveBeenCalledWith(task.task_id, true);
   });
 
@@ -156,24 +146,18 @@ describe("发布中心状态管理", () => {
     await act(async () => {
       await result.current.resumeVerification(task.task_id);
     });
-    expect(result.current.tasks).toEqual([
-      { ...task, message: "已受理，正在原页面继续" },
-    ]);
+    expect(result.current.tasks).toEqual([{ ...task, message: "已受理，正在原页面继续" }]);
 
     await expect(
       act(async () => {
         await result.current.resumeVerification(task.task_id);
       }),
     ).rejects.toThrow("发布任务当前未等待安全验证");
-    expect(result.current.tasks).toEqual([
-      { ...task, message: "已受理，正在原页面继续" },
-    ]);
+    expect(result.current.tasks).toEqual([{ ...task, message: "已受理，正在原页面继续" }]);
   });
 
   it("区分读取异常和非标准任务错误", async () => {
-    vi.mocked(listPublicationDrafts).mockRejectedValue(
-      new Error("发布中心离线"),
-    );
+    vi.mocked(listPublicationDrafts).mockRejectedValue(new Error("发布中心离线"));
     const { result } = renderHook(() => usePublicationCenter());
 
     await waitFor(() => expect(result.current.error).toBe("发布中心离线"));

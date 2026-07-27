@@ -2,8 +2,7 @@ import type { CommentResult } from "@xhs-downloader/contracts";
 
 import { UncertainBrowserActionError } from "./browser-action-errors";
 
-const COMMENT_ELEMENTS =
-  ".comments-container .parent-comment, .comments-container .comment-item";
+const COMMENT_ELEMENTS = ".comments-container .parent-comment, .comments-container .comment-item";
 
 interface ReplyTarget {
   commentId: string | null;
@@ -48,9 +47,7 @@ async function findTargetCommentWithLoading(
     if (match) return match;
     if (
       !container ||
-      page.querySelector(
-        ".comments-container .end-container, .comments-container .no-more",
-      )
+      page.querySelector(".comments-container .end-container, .comments-container .no-more")
     ) {
       return null;
     }
@@ -86,19 +83,13 @@ async function submitComment(
     }
     await delay(250);
   }
-  throw new UncertainBrowserActionError(
-    "评论提交已触发，但未在评论区确认结果，请人工核对",
-  );
+  throw new UncertainBrowserActionError("评论提交已触发，但未在评论区确认结果，请人工核对");
 }
 
-async function waitForCommentInput(
-  page: Document,
-): Promise<HTMLElement | null> {
+async function waitForCommentInput(page: Document): Promise<HTMLElement | null> {
   let activated = false;
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const activator = page.querySelector<HTMLElement>(
-      "div.input-box div.content-edit span",
-    );
+    const activator = page.querySelector<HTMLElement>("div.input-box div.content-edit span");
     if (activator && !activated) {
       activator.click();
       activated = true;
@@ -113,10 +104,7 @@ async function waitForCommentInput(
   return null;
 }
 
-function findTargetComment(
-  page: Document,
-  target: ReplyTarget,
-): HTMLElement | null {
+function findTargetComment(page: Document, target: ReplyTarget): HTMLElement | null {
   if (target.commentId) {
     const direct = page.getElementById(`comment-${target.commentId}`);
     if (direct instanceof HTMLElement) return direct;
@@ -131,11 +119,7 @@ function findTargetComment(
   );
 }
 
-function fillContentEditable(
-  page: Document,
-  input: HTMLElement,
-  content: string,
-): void {
+function fillContentEditable(page: Document, input: HTMLElement, content: string): void {
   input.focus();
   const scope = page.defaultView;
   const selection = scope?.getSelection();
@@ -146,10 +130,7 @@ function fillContentEditable(
     selection.removeAllRanges();
     selection.addRange(range);
   }
-  if (
-    typeof page.execCommand === "function" &&
-    page.execCommand("insertText", false, content)
-  ) {
+  if (typeof page.execCommand === "function" && page.execCommand("insertText", false, content)) {
     return;
   }
   const beforeInput = scope
@@ -172,13 +153,9 @@ function fillContentEditable(
   input.dispatchEvent(event);
 }
 
-async function waitForEnabledSubmit(
-  page: Document,
-): Promise<HTMLButtonElement | null> {
+async function waitForEnabledSubmit(page: Document): Promise<HTMLButtonElement | null> {
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const submit = page.querySelector<HTMLButtonElement>(
-      "div.bottom button.submit",
-    );
+    const submit = page.querySelector<HTMLButtonElement>("div.bottom button.submit");
     if (submit && !submit.disabled) return submit;
     await delay(100);
   }
@@ -187,16 +164,15 @@ async function waitForEnabledSubmit(
 
 function matchingComments(page: Document, content: string): HTMLElement[] {
   const expected = normalize(content);
-  return [...page.querySelectorAll<HTMLElement>(COMMENT_ELEMENTS)].filter(
-    (item) => normalize(item.textContent ?? "").includes(expected),
+  return [...page.querySelectorAll<HTMLElement>(COMMENT_ELEMENTS)].filter((item) =>
+    normalize(item.textContent ?? "").includes(expected),
   );
 }
 
 function commentId(element: HTMLElement | null): string | null {
   if (!element) return null;
   return (
-    element.dataset.commentId ??
-    (element.id.startsWith("comment-") ? element.id.slice(8) : null)
+    element.dataset.commentId ?? (element.id.startsWith("comment-") ? element.id.slice(8) : null)
   );
 }
 

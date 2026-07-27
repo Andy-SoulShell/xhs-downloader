@@ -1,11 +1,7 @@
 import styleText from "./panel.css";
 import { renderPanel } from "./panel";
 import { parseCurrentDocument } from "./parser";
-import type {
-  DownloadPreference,
-  ExtensionRequest,
-  ExtensionResponse,
-} from "./types";
+import type { DownloadPreference, ExtensionRequest, ExtensionResponse } from "./types";
 
 const host = document.createElement("div");
 host.id = "xhs-downloader-extension";
@@ -40,8 +36,7 @@ async function togglePanel(): Promise<void> {
     launcher.hidden = true;
     renderPanel(root, work, response.state, {
       close: closePanel,
-      download: (indexes) =>
-        send({ type: "download", work, indexes }),
+      download: (indexes) => send({ type: "download", work, indexes }),
       setMode: async (mode: DownloadPreference) => {
         const result = await send({ type: "set-mode", mode });
         return result;
@@ -49,15 +44,13 @@ async function togglePanel(): Promise<void> {
       sync: () => send({ type: "sync-records" }),
     });
   } catch (error) {
-    showTransientError(
-      error instanceof Error ? error.message : "当前帖子解析失败",
-    );
+    showTransientError(error instanceof Error ? error.message : "当前帖子解析失败");
   }
 }
 
-async function resolveCurrentWork(online: boolean): Promise<
-  ReturnType<typeof parseCurrentDocument>
-> {
+async function resolveCurrentWork(
+  online: boolean,
+): Promise<ReturnType<typeof parseCurrentDocument>> {
   let pageWork: ReturnType<typeof parseCurrentDocument> | undefined;
   let pageError: unknown;
   try {
@@ -75,9 +68,7 @@ async function resolveCurrentWork(online: boolean): Promise<
     throw new Error(response.message);
   }
   if (pageWork) return pageWork;
-  throw pageError instanceof Error
-    ? pageError
-    : new Error("当前帖子解析失败");
+  throw pageError instanceof Error ? pageError : new Error("当前帖子解析失败");
 }
 
 function closePanel(): void {
@@ -87,10 +78,7 @@ function closePanel(): void {
 
 async function send(request: ExtensionRequest): Promise<ExtensionResponse> {
   try {
-    return await chrome.runtime.sendMessage<
-      ExtensionRequest,
-      ExtensionResponse
-    >(request);
+    return await chrome.runtime.sendMessage<ExtensionRequest, ExtensionResponse>(request);
   } catch {
     return { ok: false, message: "扩展后台未响应，请重新加载扩展" };
   }

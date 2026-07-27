@@ -16,10 +16,7 @@ export default tseslint.config(
     },
     rules: {
       // 测试替身按惯例用下划线前缀声明有意不用的参数。
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
   {

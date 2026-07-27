@@ -40,10 +40,7 @@ describe("移动端工作台导航", () => {
       "发布",
       "设置",
     ]);
-    expect(screen.getByRole("tab", { name: "内容" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(screen.getByRole("tab", { name: "内容" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("点击标签切换工作台", () => {

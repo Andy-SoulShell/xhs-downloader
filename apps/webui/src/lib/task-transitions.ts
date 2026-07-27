@@ -20,10 +20,7 @@ const SETTLED = new Set(["completed", "failed"]);
  * @param next 本次轮询得到的任务列表。
  * @returns 本次新落定的任务，按传入顺序排列。
  */
-export function detectSettledTasks(
-  previous: DownloadTask[],
-  next: DownloadTask[],
-): SettledTask[] {
+export function detectSettledTasks(previous: DownloadTask[], next: DownloadTask[]): SettledTask[] {
   if (!previous.length) return [];
   const before = new Map(previous.map((task) => [task.task_id, task.status]));
   const settled: SettledTask[] = [];
@@ -67,10 +64,7 @@ export function describeSettled(
     };
   }
   return {
-    message:
-      done.length === 1
-        ? `「${done[0].title}」下载完成`
-        : `${done.length} 个下载完成`,
+    message: done.length === 1 ? `「${done[0].title}」下载完成` : `${done.length} 个下载完成`,
     tone: "success",
   };
 }

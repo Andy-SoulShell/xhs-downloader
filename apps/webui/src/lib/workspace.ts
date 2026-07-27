@@ -1,9 +1,4 @@
-import type {
-  DetailResponse,
-  DownloadProgress,
-  DownloadTask,
-  WorkDetail,
-} from "./types";
+import type { DetailResponse, DownloadProgress, DownloadTask, WorkDetail } from "./types";
 import { UserFacingError } from "./error-message";
 
 export type PostStatus = "ready" | "downloading" | "done" | "error";
@@ -61,18 +56,13 @@ export function postFromResponse(result: DetailResponse): PostRecord {
     id: result.data.作品ID,
     result,
     selected: new Set(result.data.媒体.map((item) => item.序号)),
-    downloaded: new Set(
-      result.files.map((file) => `${file.media_index}:${file.kind}`),
-    ),
+    downloaded: new Set(result.files.map((file) => `${file.media_index}:${file.kind}`)),
     force: false,
     status: "ready",
   };
 }
 
-export function mergeTaskResults(
-  posts: PostRecord[],
-  tasks: DownloadTask[],
-): PostRecord[] {
+export function mergeTaskResults(posts: PostRecord[], tasks: DownloadTask[]): PostRecord[] {
   const latestByWork = new Map<string, DownloadTask>();
   const latestByUrl = new Map<string, DownloadTask>();
   for (const task of tasks) {
@@ -85,9 +75,7 @@ export function mergeTaskResults(
   }
   const merged = posts.map((post) => {
     const sourceUrl = post.result.data?.作品链接;
-    const task =
-      latestByWork.get(post.id) ??
-      (sourceUrl ? latestByUrl.get(sourceUrl) : undefined);
+    const task = latestByWork.get(post.id) ?? (sourceUrl ? latestByUrl.get(sourceUrl) : undefined);
     if (!task) return post;
     if (!task.detail) {
       return {
@@ -108,10 +96,7 @@ export function mergeTaskResults(
   return merged;
 }
 
-function postFromTask(
-  task: DownloadTask,
-  existing?: PostRecord,
-): PostRecord {
+function postFromTask(task: DownloadTask, existing?: PostRecord): PostRecord {
   const detail = task.detail!;
   const selected =
     existing?.selected ??

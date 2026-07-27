@@ -28,16 +28,10 @@ export async function waitForMediaReady(
 }
 
 function readMediaState(root: ParentNode): true | undefined {
-  const statuses = [...root.querySelectorAll<HTMLElement>(STATUS_SELECTOR)].filter(
-    isVisible,
-  );
-  const failure = statuses
-    .map(normalizedText)
-    .find((text) => FAILURE_PATTERN.test(text));
+  const statuses = [...root.querySelectorAll<HTMLElement>(STATUS_SELECTOR)].filter(isVisible);
+  const failure = statuses.map(normalizedText).find((text) => FAILURE_PATTERN.test(text));
   if (failure) throw new Error(`视频素材处理失败：${failure}`);
-  const pending = statuses.some((element) =>
-    PENDING_PATTERN.test(normalizedText(element)),
-  );
+  const pending = statuses.some((element) => PENDING_PATTERN.test(normalizedText(element)));
   return root.querySelector(FORM_SELECTOR) && !pending ? true : undefined;
 }
 
@@ -51,15 +45,10 @@ function isVisible(element: HTMLElement): boolean {
 }
 
 function normalizedText(element: HTMLElement): string {
-  return (element.innerText || element.textContent || "")
-    .replace(/\s+/g, "")
-    .slice(0, 200);
+  return (element.innerText || element.textContent || "").replace(/\s+/g, "").slice(0, 200);
 }
 
-async function waitForValue(
-  read: () => true | undefined,
-  timeout: number,
-): Promise<void> {
+async function waitForValue(read: () => true | undefined, timeout: number): Promise<void> {
   const immediate = read();
   if (immediate) return;
   return new Promise<void>((resolve, reject) => {

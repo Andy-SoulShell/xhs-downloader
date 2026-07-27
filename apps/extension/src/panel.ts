@@ -1,9 +1,4 @@
-import type {
-  DownloadPreference,
-  ExtensionResponse,
-  ExtensionState,
-  ExtensionWork,
-} from "./types";
+import type { DownloadPreference, ExtensionResponse, ExtensionState, ExtensionWork } from "./types";
 
 interface PanelActions {
   close: () => void;
@@ -22,11 +17,7 @@ export function renderPanel(
   const panel = document.createElement("aside");
   panel.className = "xhd-panel";
   panel.setAttribute("aria-label", "xhs-downloader 下载面板");
-  panel.append(
-    renderHeader(actions.close),
-    renderConnection(state),
-    renderWork(work),
-  );
+  panel.append(renderHeader(actions.close), renderConnection(state), renderWork(work));
 
   const selected = new Set(uniqueIndexes(work));
   const mediaSection = renderMedia(work, selected);
@@ -86,9 +77,7 @@ function renderConnection(state: ExtensionState): HTMLElement {
   badge.dataset.online = String(state.online);
   badge.textContent = state.online ? "本地服务在线" : "独立模式";
   const explanation = document.createElement("span");
-  explanation.textContent = state.online
-    ? "自动模式将使用后台能力"
-    : "由浏览器直接完成下载";
+  explanation.textContent = state.online ? "自动模式将使用后台能力" : "由浏览器直接完成下载";
   row.append(badge, explanation);
   return row;
 }
@@ -119,10 +108,7 @@ function renderWork(work: ExtensionWork): HTMLElement {
   return section;
 }
 
-function renderMedia(
-  work: ExtensionWork,
-  selected: Set<number>,
-): HTMLElement {
+function renderMedia(work: ExtensionWork, selected: Set<number>): HTMLElement {
   const section = document.createElement("section");
   const heading = document.createElement("h3");
   heading.textContent = `选择媒体 · ${selected.size} 项`;
@@ -173,7 +159,11 @@ function renderControls(
     onModeChange: (mode: DownloadPreference) => Promise<void>;
     onSync: () => Promise<void>;
   },
-): { element: HTMLElement; download: HTMLButtonElement; sync: HTMLButtonElement } {
+): {
+  element: HTMLElement;
+  download: HTMLButtonElement;
+  sync: HTMLButtonElement;
+} {
   const footer = document.createElement("footer");
   footer.className = "xhd-controls";
   const select = document.createElement("select");
@@ -217,11 +207,7 @@ function mediaLabel(resources: ExtensionWork["media"]): string {
   return "图片";
 }
 
-function setBusy(
-  button: HTMLButtonElement,
-  busy: boolean,
-  label: string,
-): void {
+function setBusy(button: HTMLButtonElement, busy: boolean, label: string): void {
   button.disabled = busy;
   button.textContent = label;
 }

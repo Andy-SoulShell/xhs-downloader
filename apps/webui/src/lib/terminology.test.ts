@@ -42,16 +42,7 @@ describe("界面术语基线", () => {
   });
 
   it("状态文案不泄露内部概念", () => {
-    const forbidden = [
-      "驱动",
-      "执行器",
-      "租约",
-      "提供方",
-      "指纹",
-      "领取",
-      "回退",
-      "快照",
-    ];
+    const forbidden = ["驱动", "执行器", "租约", "提供方", "指纹", "领取", "回退", "快照"];
     const texts = [
       ...Object.values(downloadStatusCopy),
       ...Object.values(publishStatusCopy),
@@ -67,21 +58,15 @@ describe("界面术语基线", () => {
   });
 
   it("把服务端原始错误换成日常说法", () => {
-    expect(humanizeError("请求失败（HTTP 500）")).toBe(
-      "本地服务出错了，请稍后重试。",
-    );
+    expect(humanizeError("请求失败（HTTP 500）")).toBe("本地服务出错了，请稍后重试。");
     expect(humanizeError("请求失败（HTTP 403）")).toBe("这个操作只能在本机使用。");
-    expect(humanizeError("Failed to fetch")).toBe(
-      "连接不上本地服务，请确认它正在运行。",
+    expect(humanizeError("Failed to fetch")).toBe("连接不上本地服务，请确认它正在运行。");
+    expect(humanizeError("当前浏览器执行器尚未支持post_comment任务，请改用其他执行器")).toBe(
+      "当前连接方式不支持这个操作，换一种连接方式即可。",
     );
-    expect(
-      humanizeError("当前浏览器执行器尚未支持post_comment任务，请改用其他执行器"),
-    ).toBe("当前连接方式不支持这个操作，换一种连接方式即可。");
   });
 
   it("无法识别的错误保留原文而不是吞掉", () => {
-    expect(humanizeError("素材超过单个文件大小上限")).toBe(
-      "素材超过单个文件大小上限",
-    );
+    expect(humanizeError("素材超过单个文件大小上限")).toBe("素材超过单个文件大小上限");
   });
 });

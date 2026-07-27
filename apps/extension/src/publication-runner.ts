@@ -13,15 +13,9 @@ import {
   saveActivePublicationClaim,
   saveActivePublicationOwner,
 } from "./publication-storage";
-import {
-  clearExtensionCredential,
-  ensureExtensionCredential,
-} from "./extension-credential";
+import { clearExtensionCredential, ensureExtensionCredential } from "./extension-credential";
 import { schedulePublicationTabClose } from "./publication-tab";
-import {
-  activatePublicationControl,
-  typePublicationSchedule,
-} from "./publication-input";
+import { activatePublicationControl, typePublicationSchedule } from "./publication-input";
 import type {
   ExtensionCredential,
   PublicationClaim,
@@ -61,10 +55,7 @@ export async function handlePublicationRequest(
   senderUrl?: string,
 ): Promise<PublicationResponse> {
   if (request.type === "publication-prepare") {
-    const prepared = await preparePublication(
-      request.preferredTaskId,
-      senderTabId,
-    );
+    const prepared = await preparePublication(request.preferredTaskId, senderTabId);
     return {
       ok: Boolean(prepared),
       message: prepared ? "发布任务已准备" : "没有待发布任务",
@@ -144,11 +135,11 @@ async function pollPublicationTasks(): Promise<void> {
     const url = new URL(CREATOR_URL);
     url.searchParams.set("xhd_task", prepared.claim.task.task_id);
     const mediaType = prepared.claim.task.package.assets[0]?.media_type;
-    url.searchParams.set(
-      "target",
-      mediaType?.startsWith("video/") ? "video" : "image",
-    );
-    const tab = await chrome.tabs.create({ url: url.toString(), active: false });
+    url.searchParams.set("target", mediaType?.startsWith("video/") ? "video" : "image");
+    const tab = await chrome.tabs.create({
+      url: url.toString(),
+      active: false,
+    });
     if (tab.id !== undefined) await saveActivePublicationOwner(tab.id);
   } catch {
     // 服务离线、未授权或暂时不可用时保留任务，下一次闹钟会继续尝试。
@@ -215,11 +206,7 @@ async function validActiveClaim(
     throw new Error("已有另一项发布任务正在执行");
   }
   const ownerTabId = await loadActivePublicationOwner();
-  if (
-    ownerTabId !== undefined &&
-    senderTabId !== undefined &&
-    ownerTabId !== senderTabId
-  ) {
+  if (ownerTabId !== undefined && senderTabId !== undefined && ownerTabId !== senderTabId) {
     throw new Error("该发布任务已由另一个创作页执行");
   }
   // 只有指名任务的页面可以补登记归属，避免无参页面抢占他人租约。
@@ -230,10 +217,7 @@ async function validActiveClaim(
 }
 
 async function withCredential<T>(
-  operation: (
-    baseUrl: string,
-    credential: ExtensionCredential,
-  ) => Promise<T>,
+  operation: (baseUrl: string, credential: ExtensionCredential) => Promise<T>,
 ): Promise<T> {
   const settings = await loadSettings();
   let credential = await ensureCredential(settings.serviceUrl);
@@ -247,8 +231,6 @@ async function withCredential<T>(
   }
 }
 
-async function ensureCredential(
-  baseUrl: string,
-): Promise<ExtensionCredential> {
+async function ensureCredential(baseUrl: string): Promise<ExtensionCredential> {
   return ensureExtensionCredential(baseUrl, registerPublicationExtension);
 }

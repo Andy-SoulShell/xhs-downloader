@@ -1,16 +1,7 @@
-import type {
-  DetailResponse,
-  DownloadTask,
-  SettingsResponse,
-} from "../lib/types";
-import type {
-  PublicationDraft,
-  PublicationTask,
-} from "../lib/publication";
+import type { DetailResponse, DownloadTask, SettingsResponse } from "../lib/types";
+import type { PublicationDraft, PublicationTask } from "../lib/publication";
 
-export function makeDetailResponse(
-  overrides: Partial<DetailResponse> = {},
-): DetailResponse {
+export function makeDetailResponse(overrides: Partial<DetailResponse> = {}): DetailResponse {
   return {
     message: "作品信息解析完成",
     data: {
@@ -59,9 +50,7 @@ export function makeDetailResponse(
   };
 }
 
-export function makeDownloadTask(
-  overrides: Partial<DownloadTask> = {},
-): DownloadTask {
+export function makeDownloadTask(overrides: Partial<DownloadTask> = {}): DownloadTask {
   const detail = makeDetailResponse().data;
   return {
     task_id: "synthetic-task",
@@ -86,9 +75,7 @@ export function makeDownloadTask(
   };
 }
 
-export function makeSettingsResponse(
-  overrides: Partial<SettingsResponse> = {},
-): SettingsResponse {
+export function makeSettingsResponse(overrides: Partial<SettingsResponse> = {}): SettingsResponse {
   return {
     values: {
       work_path: null,
@@ -132,9 +119,7 @@ export function makeSettingsResponse(
   };
 }
 
-export function makePublicationDraft(
-  overrides: Partial<PublicationDraft> = {},
-): PublicationDraft {
+export function makePublicationDraft(overrides: Partial<PublicationDraft> = {}): PublicationDraft {
   return {
     draft_id: "synthetic-draft",
     title: "合成发布标题",
@@ -159,9 +144,7 @@ export function makePublicationDraft(
   };
 }
 
-export function makePublicationTask(
-  overrides: Partial<PublicationTask> = {},
-): PublicationTask {
+export function makePublicationTask(overrides: Partial<PublicationTask> = {}): PublicationTask {
   const draft = makePublicationDraft();
   return {
     task_id: "synthetic-publication-task",

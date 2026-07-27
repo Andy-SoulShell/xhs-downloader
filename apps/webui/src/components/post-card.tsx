@@ -37,10 +37,7 @@ export function PostCard({
 }: PostCardProps) {
   const [open, setOpen] = useState(false);
   const detail = post.result.data;
-  const media = useMemo(
-    () => groupMedia(detail?.媒体 ?? []),
-    [detail?.媒体],
-  );
+  const media = useMemo(() => groupMedia(detail?.媒体 ?? []), [detail?.媒体]);
   if (!detail) return null;
 
   const title = detail.作品标题 || "未命名帖子";
@@ -93,32 +90,13 @@ export function PostCard({
           )}
           <div className="mt-2 flex items-center justify-between gap-3 text-xs text-stone-600">
             <div className="flex min-w-0 items-center gap-2">
-              <AuthorAvatar
-                name={detail.作者.作者昵称}
-                size="small"
-                src={detail.作者.头像地址}
-              />
+              <AuthorAvatar name={detail.作者.作者昵称} size="small" src={detail.作者.头像地址} />
               <span className="truncate">{detail.作者.作者昵称}</span>
             </div>
             <div className="flex shrink-0 items-center gap-2.5">
-              <Metric
-                compact
-                icon={Heart}
-                label="赞"
-                value={detail.点赞数量}
-              />
-              <Metric
-                compact
-                icon={Star}
-                label="收藏"
-                value={detail.收藏数量}
-              />
-              <Metric
-                compact
-                icon={MessageCircle}
-                label="评论"
-                value={detail.评论数量}
-              />
+              <Metric compact icon={Heart} label="赞" value={detail.点赞数量} />
+              <Metric compact icon={Star} label="收藏" value={detail.收藏数量} />
+              <Metric compact icon={MessageCircle} label="评论" value={detail.评论数量} />
             </div>
           </div>
         </div>
@@ -145,13 +123,7 @@ export function PostCard({
  * @param props.onOpen 打开帖子详情的回调。
  * @returns 与正常封面等高、可进入详情的说明性占位。
  */
-function NoMediaCover({
-  title,
-  onOpen,
-}: {
-  title: string;
-  onOpen: () => void;
-}) {
+function NoMediaCover({ title, onOpen }: { title: string; onOpen: () => void }) {
   return (
     <button
       aria-label={`打开帖子：${title}`}

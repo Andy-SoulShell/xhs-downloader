@@ -6,10 +6,7 @@ import {
   requestWorkDetail,
   syncClientRecords,
 } from "./service";
-import type {
-  ClientDownloadRecord,
-  ExtensionWork,
-} from "./types";
+import type { ClientDownloadRecord, ExtensionWork } from "./types";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -41,12 +38,8 @@ describe("本地服务客户端", () => {
   it("根据协议版本判断服务是否可用", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ protocol_version: 1 })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ protocol_version: 0 })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ protocol_version: 1 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ protocol_version: 0 })))
       .mockResolvedValueOnce(new Response(null, { status: 503 }))
       .mockRejectedValueOnce(new Error("offline"));
     vi.stubGlobal("fetch", fetchMock);
@@ -59,18 +52,13 @@ describe("本地服务客户端", () => {
   });
 
   it("提交后台下载且不携带浏览器凭据", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ task_id: "1234567890abcdef" })),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ task_id: "1234567890abcdef" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestBackgroundDownload(
-        "http://127.0.0.1:5556",
-        work,
-        [1, 3],
-        "request-1",
-      ),
+      requestBackgroundDownload("http://127.0.0.1:5556", work, [1, 3], "request-1"),
     ).resolves.toBe("后台任务 12345678 已提交");
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       credentials: "omit",
@@ -85,9 +73,7 @@ describe("本地服务客户端", () => {
   it("保留服务端错误并处理空响应", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: "合成错误" }), { status: 400 }),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "合成错误" }), { status: 400 }))
       .mockResolvedValueOnce(new Response(null));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -129,10 +115,7 @@ describe("本地服务客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestWorkDetail(
-        "http://127.0.0.1:5556/",
-        "https://example.invalid/synthetic-work",
-      ),
+      requestWorkDetail("http://127.0.0.1:5556/", "https://example.invalid/synthetic-work"),
     ).resolves.toMatchObject({
       workId: "synthetic-work",
       authorName: "合成作者",
@@ -144,9 +127,7 @@ describe("本地服务客户端", () => {
         },
       ],
     });
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      "http://127.0.0.1:5556/xhs/detail",
-    );
+    expect(fetchMock.mock.calls[0][0]).toBe("http://127.0.0.1:5556/xhs/detail");
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       credentials: "omit",
       method: "POST",
@@ -170,10 +151,7 @@ describe("本地服务客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestWorkDetail(
-        "http://127.0.0.1:5556",
-        "https://example.invalid/synthetic-work",
-      ),
+      requestWorkDetail("http://127.0.0.1:5556", "https://example.invalid/synthetic-work"),
     ).rejects.toThrow("与当前链接不一致");
   });
 
@@ -211,10 +189,7 @@ describe("本地服务客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      requestWorkDetail(
-        "http://127.0.0.1:5556",
-        "https://example.invalid/synthetic-work",
-      ),
+      requestWorkDetail("http://127.0.0.1:5556", "https://example.invalid/synthetic-work"),
     ).resolves.toMatchObject({
       authorName: "synthetic-author",
       authorAvatar: undefined,
@@ -234,26 +209,20 @@ describe("本地服务客户端", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: null })));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      requestWorkDetail("http://service", work.sourceUrl),
-    ).rejects.toThrow("详情解析失败");
-    await expect(
-      requestWorkDetail("http://service", work.sourceUrl),
-    ).rejects.toThrow("HTTP 503");
-    await expect(
-      requestWorkDetail("http://service", work.sourceUrl),
-    ).rejects.toThrow("没有返回帖子数据");
+    await expect(requestWorkDetail("http://service", work.sourceUrl)).rejects.toThrow(
+      "详情解析失败",
+    );
+    await expect(requestWorkDetail("http://service", work.sourceUrl)).rejects.toThrow("HTTP 503");
+    await expect(requestWorkDetail("http://service", work.sourceUrl)).rejects.toThrow(
+      "没有返回帖子数据",
+    );
   });
 
   it("同步记录并跳过空批次", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ accepted: 200 })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ accepted: 1 })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ accepted: 200 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ accepted: 1 })))
       .mockResolvedValueOnce(new Response("invalid", { status: 500 }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -268,8 +237,6 @@ describe("本地服务客户端", () => {
       ),
     ).resolves.toBe(201);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    await expect(
-      syncClientRecords("http://service", [record]),
-    ).rejects.toThrow("HTTP 500");
+    await expect(syncClientRecords("http://service", [record])).rejects.toThrow("HTTP 500");
   });
 });

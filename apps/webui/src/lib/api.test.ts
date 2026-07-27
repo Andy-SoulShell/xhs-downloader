@@ -34,18 +34,18 @@ describe("API 客户端", () => {
     });
   });
 
-  it.each([
-    new Response(null, { status: 503 }),
-    new Error("network unavailable"),
-  ])("把不可用或异常的健康检查转为空状态", async (outcome) => {
-    const fetchMock =
-      outcome instanceof Error
-        ? vi.fn().mockRejectedValue(outcome)
-        : vi.fn().mockResolvedValue(outcome);
-    vi.stubGlobal("fetch", fetchMock);
+  it.each([new Response(null, { status: 503 }), new Error("network unavailable")])(
+    "把不可用或异常的健康检查转为空状态",
+    async (outcome) => {
+      const fetchMock =
+        outcome instanceof Error
+          ? vi.fn().mockRejectedValue(outcome)
+          : vi.fn().mockResolvedValue(outcome);
+      vi.stubGlobal("fetch", fetchMock);
 
-    await expect(checkHealth()).resolves.toBe(false);
-  });
+      await expect(checkHealth()).resolves.toBe(false);
+    },
+  );
 
   it("提交结构化下载请求并返回结果", async () => {
     const payload = {
@@ -86,20 +86,13 @@ describe("API 客户端", () => {
       ),
     );
 
-    await expect(
-      submitDetail({ url: "invalid", download: false }),
-    ).rejects.toThrow("链接无效");
+    await expect(submitDetail({ url: "invalid", download: false })).rejects.toThrow("链接无效");
   });
 
   it("在错误响应不是 JSON 时保留状态码", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response("broken", { status: 500 })),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("broken", { status: 500 })));
 
-    await expect(
-      submitDetail({ url: "invalid", download: false }),
-    ).rejects.toThrow("HTTP 500");
+    await expect(submitDetail({ url: "invalid", download: false })).rejects.toThrow("HTTP 500");
   });
 
   it("提交、筛选并重试后台任务", async () => {
@@ -130,10 +123,7 @@ describe("API 客户端", () => {
 
   it("读取扩展独立下载记录", async () => {
     const records = [{ record_id: "synthetic-record" }];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response(JSON.stringify(records))),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(records))));
 
     await expect(listClientRecords()).resolves.toEqual(records);
   });
@@ -203,8 +193,6 @@ describe("API 客户端", () => {
       ),
     );
 
-    await expect(getSettings()).rejects.toThrow(
-      "本地服务返回了不支持的浏览器执行器",
-    );
+    await expect(getSettings()).rejects.toThrow("本地服务返回了不支持的浏览器执行器");
   });
 });

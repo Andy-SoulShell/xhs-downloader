@@ -1,12 +1,6 @@
-import type {
-  PublicationAsset,
-  PublicationAssetChunk,
-} from "./publication-types";
+import type { PublicationAsset, PublicationAssetChunk } from "./publication-types";
 
-export type AssetChunkLoader = (
-  assetId: string,
-  offset: number,
-) => Promise<PublicationAssetChunk>;
+export type AssetChunkLoader = (assetId: string, offset: number) => Promise<PublicationAssetChunk>;
 
 export async function assemblePublicationFile(
   asset: PublicationAsset,
@@ -16,11 +10,7 @@ export async function assemblePublicationFile(
   let offset = 0;
   while (offset < asset.size) {
     const chunk = await loadChunk(asset.asset_id, offset);
-    if (
-      chunk.offset !== offset ||
-      chunk.nextOffset <= offset ||
-      chunk.total !== asset.size
-    ) {
+    if (chunk.offset !== offset || chunk.nextOffset <= offset || chunk.total !== asset.size) {
       throw new Error(`素材 ${asset.filename} 的分段顺序无效`);
     }
     chunks.push(Uint8Array.from(base64ToBytes(chunk.base64)).buffer);
@@ -54,7 +44,5 @@ function base64ToBytes(value: string): Uint8Array {
 
 async function sha256Hex(value: ArrayBuffer): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", value));
-  return [...digest]
-    .map((item) => item.toString(16).padStart(2, "0"))
-    .join("");
+  return [...digest].map((item) => item.toString(16).padStart(2, "0")).join("");
 }

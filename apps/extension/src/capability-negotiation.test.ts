@@ -54,8 +54,6 @@ describe("扩展与服务能力协商", () => {
 
   it("拒绝缺少协议版本的响应", () => {
     expect(supportsCapability({}, 1)).toBe(false);
-    expect(supportsCapability({ features: { publication: true } }, 1)).toBe(
-      false,
-    );
+    expect(supportsCapability({ features: { publication: true } }, 1)).toBe(false);
   });
 });

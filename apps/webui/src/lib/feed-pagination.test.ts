@@ -1,15 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { executeReadCapability } from "./browser-api";
-import {
-  appendUniqueFeeds,
-  feedContextFrom,
-  loadNextFeedPage,
-} from "./feed-pagination";
-import {
-  browserReadRouteFixture,
-  makeBrowserFeedList,
-} from "../test/browser-explorer-fixtures";
+import { appendUniqueFeeds, feedContextFrom, loadNextFeedPage } from "./feed-pagination";
+import { browserReadRouteFixture, makeBrowserFeedList } from "../test/browser-explorer-fixtures";
 import type { FeedSummary } from "./types";
 
 vi.mock("./browser-api", () => ({ executeReadCapability: vi.fn() }));
@@ -73,10 +66,7 @@ describe("浏览结果分页", () => {
   });
 
   it("追加时按帖子标识去重", () => {
-    const merged = appendUniqueFeeds(
-      [feed("a"), feed("b")],
-      [feed("b"), feed("c")],
-    );
+    const merged = appendUniqueFeeds([feed("a"), feed("b")], [feed("b"), feed("c")]);
 
     expect(merged.map((item) => item.feed_id)).toEqual(["a", "b", "c"]);
   });

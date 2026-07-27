@@ -18,15 +18,11 @@ vi.mock("./managed-browser-api", () => ({
 describe("受管浏览器生命周期 Hook", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.mocked(getManagedBrowserStatus).mockResolvedValue(
-      makeManagedBrowserStatus(),
-    );
+    vi.mocked(getManagedBrowserStatus).mockResolvedValue(makeManagedBrowserStatus());
     vi.mocked(startManagedBrowser).mockResolvedValue(
       makeManagedBrowserStatus({ state: "running", cdp_port: 9222 }),
     );
-    vi.mocked(stopManagedBrowser).mockResolvedValue(
-      makeManagedBrowserStatus(),
-    );
+    vi.mocked(stopManagedBrowser).mockResolvedValue(makeManagedBrowserStatus());
   });
 
   afterEach(() => {
@@ -47,8 +43,7 @@ describe("受管浏览器生命周期 Hook", () => {
   });
 
   it("阻止重复启动并采用操作返回的新状态", async () => {
-    let finish: (value: ReturnType<typeof makeManagedBrowserStatus>) => void =
-      () => undefined;
+    let finish: (value: ReturnType<typeof makeManagedBrowserStatus>) => void = () => undefined;
     vi.mocked(startManagedBrowser).mockReturnValueOnce(
       new Promise((resolve) => {
         finish = resolve;

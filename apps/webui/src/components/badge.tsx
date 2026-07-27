@@ -2,14 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { HTMLAttributes } from "react";
 
 type BadgeTone =
-  | "accent"
-  | "danger"
-  | "dark"
-  | "neutral"
-  | "overlay"
-  | "success"
-  | "surface"
-  | "warning";
+  "accent" | "danger" | "dark" | "neutral" | "overlay" | "success" | "surface" | "warning";
 type BadgeSize = "compact" | "regular" | "floating";
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -50,13 +43,7 @@ export function Badge({
       className={`inline-flex items-center gap-1 rounded-full font-medium ${toneClasses[tone]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
-      {Icon && (
-        <Icon
-          aria-hidden
-          className={spinning ? "animate-spin" : ""}
-          size={12}
-        />
-      )}
+      {Icon && <Icon aria-hidden className={spinning ? "animate-spin" : ""} size={12} />}
       {children}
     </span>
   );

@@ -93,9 +93,7 @@ function parseFeedSummary(value: unknown): FeedSummary | null {
 }
 
 function flattenFeeds(value: unknown): unknown[] {
-  return dataList(value).flatMap((item) =>
-    Array.isArray(item) ? flattenFeeds(item) : [item],
-  );
+  return dataList(value).flatMap((item) => (Array.isArray(item) ? flattenFeeds(item) : [item]));
 }
 
 function noteType(value: unknown): FeedSummary["note_type"] {

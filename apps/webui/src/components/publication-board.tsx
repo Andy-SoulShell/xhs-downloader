@@ -24,18 +24,12 @@ export function PublicationBoard({
   const center = usePublicationCenter();
   const [selectedId, setSelectedId] = useState("");
   const [creating, setCreating] = useState(false);
-  const confirmedDriver = isBrowserDriver(browserDriver)
-    ? browserDriver
-    : null;
+  const confirmedDriver = isBrowserDriver(browserDriver) ? browserDriver : null;
 
-  const resolvedId = center.drafts.some(
-    (draft) => draft.draft_id === selectedId,
-  )
+  const resolvedId = center.drafts.some((draft) => draft.draft_id === selectedId)
     ? selectedId
     : (center.drafts[0]?.draft_id ?? "");
-  const selected = center.drafts.find(
-    (draft) => draft.draft_id === resolvedId,
-  );
+  const selected = center.drafts.find((draft) => draft.draft_id === resolvedId);
   const createDraft = async () => {
     setCreating(true);
     try {
@@ -48,10 +42,7 @@ export function PublicationBoard({
       setCreating(false);
     }
   };
-  const taskAction = async (
-    operation: () => Promise<unknown>,
-    message: string,
-  ) => {
+  const taskAction = async (operation: () => Promise<unknown>, message: string) => {
     try {
       await operation();
       onNotify(message);
@@ -70,19 +61,13 @@ export function PublicationBoard({
   };
   const taskList = (
     <PublicationTaskList
-      onCancel={(taskId) =>
-        taskAction(() => center.cancelTask(taskId), "发布任务已取消")
-      }
+      onCancel={(taskId) => taskAction(() => center.cancelTask(taskId), "发布任务已取消")}
       onResumeVerification={resumeVerification}
-      onRetry={(taskId) =>
-        taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")
-      }
+      onRetry={(taskId) => taskAction(() => center.retryTask(taskId), "发布任务已重新就绪")}
       onReview={(taskId, published) =>
         taskAction(
           () => center.reviewTask(taskId, published),
-          published
-            ? "已确认作品发布成功"
-            : "已确认作品未发布，现在可以重试",
+          published ? "已确认作品发布成功" : "已确认作品未发布，现在可以重试",
         )
       }
       tasks={center.tasks}
@@ -113,11 +98,7 @@ export function PublicationBoard({
     <section aria-label="发布中心" className="mt-8 min-w-0">
       <PageHeading
         actions={
-          <ActionButton
-            disabled={creating}
-            onClick={() => void createDraft()}
-            size="large"
-          >
+          <ActionButton disabled={creating} onClick={() => void createDraft()} size="large">
             <FilePlus2 aria-hidden size={16} />
             {creating ? "正在创建…" : "新建草稿"}
           </ActionButton>
@@ -162,57 +143,47 @@ export function PublicationBoard({
               icon: FilePlus2,
               count: center.drafts.length,
               content: (
-          <section className="control-shell mt-4 min-w-0 p-5" aria-label="草稿编辑">
-            <label className="mb-5 block text-xs font-semibold text-stone-700">
-              当前草稿
-              <select
-                className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none"
-                onChange={(event) => setSelectedId(event.target.value)}
-                value={resolvedId}
-              >
-                {center.drafts.map((draft) => (
-                  <option key={draft.draft_id} value={draft.draft_id}>
-                    {draft.title || "未命名草稿"} · {draft.assets.length} 项素材
-                  </option>
-                ))}
-              </select>
-            </label>
-            {selected && (
-              <PublicationEditor
-                browserDriver={confirmedDriver}
-                draft={selected}
-                key={`${selected.draft_id}:${confirmedDriver}`}
-                onDelete={() => center.deleteDraft(selected.draft_id)}
-                onNotify={onNotify}
-                onRemoveAsset={async (assetId) => {
-                  await center.removeAsset(selected.draft_id, assetId);
-                }}
-                onSave={(input) => center.saveDraft(selected.draft_id, input)}
-                onSubmitManual={() =>
-                  center.submitTask(selected.draft_id, "manual")
-                }
-                onSubmitPlatformScheduled={(scheduledAt) =>
-                  center.submitTask(
-                    selected.draft_id,
-                    "platform_scheduled",
-                    scheduledAt,
-                  )
-                }
-                onSubmitScheduled={(scheduledAt) =>
-                  center.submitTask(
-                    selected.draft_id,
-                    "scheduled",
-                    scheduledAt,
-                  )
-                }
-                onUpload={async (files) => {
-                  for (const file of files) {
-                    await center.uploadAsset(selected.draft_id, file);
-                  }
-                }}
-              />
-            )}
-          </section>
+                <section className="control-shell mt-4 min-w-0 p-5" aria-label="草稿编辑">
+                  <label className="mb-5 block text-xs font-semibold text-stone-700">
+                    当前草稿
+                    <select
+                      className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none"
+                      onChange={(event) => setSelectedId(event.target.value)}
+                      value={resolvedId}
+                    >
+                      {center.drafts.map((draft) => (
+                        <option key={draft.draft_id} value={draft.draft_id}>
+                          {draft.title || "未命名草稿"} · {draft.assets.length} 项素材
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {selected && (
+                    <PublicationEditor
+                      browserDriver={confirmedDriver}
+                      draft={selected}
+                      key={`${selected.draft_id}:${confirmedDriver}`}
+                      onDelete={() => center.deleteDraft(selected.draft_id)}
+                      onNotify={onNotify}
+                      onRemoveAsset={async (assetId) => {
+                        await center.removeAsset(selected.draft_id, assetId);
+                      }}
+                      onSave={(input) => center.saveDraft(selected.draft_id, input)}
+                      onSubmitManual={() => center.submitTask(selected.draft_id, "manual")}
+                      onSubmitPlatformScheduled={(scheduledAt) =>
+                        center.submitTask(selected.draft_id, "platform_scheduled", scheduledAt)
+                      }
+                      onSubmitScheduled={(scheduledAt) =>
+                        center.submitTask(selected.draft_id, "scheduled", scheduledAt)
+                      }
+                      onUpload={async (files) => {
+                        for (const file of files) {
+                          await center.uploadAsset(selected.draft_id, file);
+                        }
+                      }}
+                    />
+                  )}
+                </section>
               ),
             },
             {

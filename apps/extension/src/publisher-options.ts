@@ -25,21 +25,17 @@ export async function setPublicationVisibility(
   select.click();
   const option = await waitForValue(
     () =>
-      [...root.querySelectorAll<HTMLElement>(
-        ".d-options-wrapper .custom-option, [role='option']",
-      )].find((item) => normalizedText(item).includes(target)),
+      [
+        ...root.querySelectorAll<HTMLElement>(".d-options-wrapper .custom-option, [role='option']"),
+      ].find((item) => normalizedText(item).includes(target)),
     timeout,
     `没有找到可见范围“${target}”`,
   );
   option.click();
   await waitForValue(
     () => {
-      const current = root.querySelector<HTMLElement>(
-        ".permission-card-wrapper .d-select-content",
-      );
-      return current && normalizedText(current).includes(target)
-        ? true
-        : undefined;
+      const current = root.querySelector<HTMLElement>(".permission-card-wrapper .d-select-content");
+      return current && normalizedText(current).includes(target) ? true : undefined;
     },
     timeout,
     `可见范围未能确认设为“${target}”`,
@@ -54,10 +50,7 @@ export async function setOriginalDeclaration(
   enabled: boolean,
   timeout = 10_000,
 ): Promise<void> {
-  const card = findByText(
-    root.querySelectorAll<HTMLElement>(".custom-switch-card"),
-    "原创声明",
-  );
+  const card = findByText(root.querySelectorAll<HTMLElement>(".custom-switch-card"), "原创声明");
   if (!card) {
     if (!enabled) return;
     throw new Error("没有找到原创声明控件");
@@ -167,9 +160,7 @@ async function handleOriginalDialog(
     "原创声明确认窗口未能打开",
   );
   if (outcome.confirmed || !outcome.footer) return;
-  const checkbox = outcome.footer.querySelector<HTMLElement>(
-    ".d-checkbox, input[type='checkbox']",
-  );
+  const checkbox = outcome.footer.querySelector<HTMLElement>(".d-checkbox, input[type='checkbox']");
   if (checkbox && !readToggle(checkbox)) checkbox.click();
   const confirm = await waitForValue(
     () => findButton(outcome.footer!, "声明原创"),
@@ -202,17 +193,14 @@ function readToggle(element: HTMLElement): boolean {
       : element.querySelector<HTMLInputElement>("input[type='checkbox']");
   return Boolean(
     input?.checked ||
-      element.getAttribute("aria-checked") === "true" ||
-      element.classList.contains("checked") ||
-      element.querySelector(".checked"),
+    element.getAttribute("aria-checked") === "true" ||
+    element.classList.contains("checked") ||
+    element.querySelector(".checked"),
   );
 }
 
 function setInputValue(input: HTMLInputElement, value: string): void {
-  const setter = Object.getOwnPropertyDescriptor(
-    HTMLInputElement.prototype,
-    "value",
-  )?.set;
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new InputEvent("input", { bubbles: true, data: value }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -252,11 +240,7 @@ function waitForElement<T extends HTMLElement>(
   timeout: number,
   message: string,
 ): Promise<T> {
-  return waitForValue(
-    () => root.querySelector<T>(selector) ?? undefined,
-    timeout,
-    message,
-  );
+  return waitForValue(() => root.querySelector<T>(selector) ?? undefined, timeout, message);
 }
 
 async function waitForValue<T>(

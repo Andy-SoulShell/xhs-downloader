@@ -59,17 +59,13 @@ describe("任务与记录管理界面", () => {
 
     rerender(<RecordBoard records={[]} />);
     expect(screen.getByText("还没有插件下载记录")).toBeInTheDocument();
-    expect(
-      screen.getByText(/在插件面板里点一下同步/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/在插件面板里点一下同步/)).toBeInTheDocument();
   });
 
   it("展示空任务状态", () => {
     render(<TaskBoard onRetry={vi.fn()} tasks={[]} />);
 
     expect(screen.getByText("还没有下载记录")).toBeInTheDocument();
-    expect(
-      screen.getByText("下载开始后可以在这里看到进度。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("下载开始后可以在这里看到进度。")).toBeInTheDocument();
   });
 });

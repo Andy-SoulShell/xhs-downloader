@@ -9,9 +9,8 @@ const credential: ExtensionCredential = {
   token: "synthetic-token",
 };
 
-const withCredential = <T,>(
-  operation: (value: ExtensionCredential) => Promise<T>,
-): Promise<T> => operation(credential);
+const withCredential = <T>(operation: (value: ExtensionCredential) => Promise<T>): Promise<T> =>
+  operation(credential);
 
 /** 记录服务端收到的状态与结果回传。 */
 interface ReportedCall {
@@ -44,9 +43,7 @@ describe("浏览器任务续租中断", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
         const url = String(input);
-        const body = init?.body
-          ? (JSON.parse(String(init.body)) as Record<string, unknown>)
-          : {};
+        const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
         reported.push({ url, body });
         // 首次运行态请求成功，后续续租一律失败以模拟服务中断。
         if (url.endsWith("/status") && ++renewals > 1) {
@@ -92,9 +89,7 @@ describe("浏览器任务续租中断", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
         const url = String(input);
-        const body = init?.body
-          ? (JSON.parse(String(init.body)) as Record<string, unknown>)
-          : {};
+        const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
         reported.push({ url, body });
         // 续租先因服务不可用中断，随后的结果回传才发现租约已被收回。
         if (url.endsWith("/status") && ++renewals > 1) {
@@ -140,9 +135,7 @@ describe("浏览器任务续租中断", () => {
       "fetch",
       vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
         const url = String(input);
-        const body = init?.body
-          ? (JSON.parse(String(init.body)) as Record<string, unknown>)
-          : {};
+        const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
         reported.push({ url, body });
         // 409 表示租约已失效，扩展不得再写入结果。
         if (url.endsWith("/status") && ++renewals > 1) {

@@ -33,10 +33,7 @@ beforeEach(() => {
       local: {
         get: vi.fn(async (keys: string | string[]) =>
           Object.fromEntries(
-            (Array.isArray(keys) ? keys : [keys]).map((key) => [
-              key,
-              values[key],
-            ]),
+            (Array.isArray(keys) ? keys : [keys]).map((key) => [key, values[key]]),
           ),
         ),
         set: vi.fn(async (next: Record<string, unknown>) => {
@@ -82,12 +79,8 @@ describe("浏览器任务后台执行器", () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(claim())))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await runBrowserTaskPoll();
@@ -137,9 +130,7 @@ describe("浏览器任务后台执行器", () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(claim())))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
       .mockResolvedValueOnce(new Response(JSON.stringify({ status: "failed" })));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -168,26 +159,10 @@ describe("浏览器任务后台执行器", () => {
       { feed_id: "synthetic/feed", xsec_token: "token value" },
       "https://www.xiaohongshu.com/explore/synthetic%2Ffeed?xsec_token=token%20value&xsec_source=pc_feed",
     ],
-    [
-      "get_my_profile" as const,
-      {},
-      "https://www.xiaohongshu.com/explore/",
-    ],
-    [
-      "set_like" as const,
-      { ...WRITE_PAYLOAD, active: true },
-      WRITE_URL,
-    ],
-    [
-      "set_favorite" as const,
-      { ...WRITE_PAYLOAD, active: false },
-      WRITE_URL,
-    ],
-    [
-      "post_comment" as const,
-      { ...WRITE_PAYLOAD, content: "合成评论" },
-      WRITE_URL,
-    ],
+    ["get_my_profile" as const, {}, "https://www.xiaohongshu.com/explore/"],
+    ["set_like" as const, { ...WRITE_PAYLOAD, active: true }, WRITE_URL],
+    ["set_favorite" as const, { ...WRITE_PAYLOAD, active: false }, WRITE_URL],
+    ["post_comment" as const, { ...WRITE_PAYLOAD, content: "合成评论" }, WRITE_URL],
     [
       "reply_comment" as const,
       {
@@ -216,12 +191,8 @@ describe("浏览器任务后台执行器", () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(claim(kind, payload))))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await runBrowserTaskPoll();
@@ -238,8 +209,7 @@ describe("浏览器任务后台执行器", () => {
       {
         ok: false,
         message: "正在打开当前账号主页",
-        navigateUrl:
-          "https://www.xiaohongshu.com/user/profile/synthetic-user",
+        navigateUrl: "https://www.xiaohongshu.com/user/profile/synthetic-user",
       },
       {
         ok: true,
@@ -247,9 +217,7 @@ describe("浏览器任务后台执行器", () => {
         result: { user_id: "synthetic-user" },
       },
     ];
-    vi.mocked(chrome.tabs.sendMessage).mockImplementation(
-      async () => responses.shift(),
-    );
+    vi.mocked(chrome.tabs.sendMessage).mockImplementation(async () => responses.shift());
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -260,15 +228,9 @@ describe("浏览器任务后台执行器", () => {
           }),
         ),
       )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(claim("get_my_profile"))),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify(claim("get_my_profile"))))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await runBrowserTaskPoll();

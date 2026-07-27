@@ -29,10 +29,7 @@ function makeItem(
 
 describe("浏览器下载结果判定", () => {
   it("全部落盘才记为完成", () => {
-    const outcome = resolveBatchOutcome(makeBatch(), [
-      makeItem("complete"),
-      makeItem("complete"),
-    ]);
+    const outcome = resolveBatchOutcome(makeBatch(), [makeItem("complete"), makeItem("complete")]);
 
     expect(outcome?.status).toBe("completed");
     expect(outcome?.message).toContain("2 个文件");
@@ -59,10 +56,7 @@ describe("浏览器下载结果判定", () => {
   });
 
   it("查不到的下载项不算成功", () => {
-    const outcome = resolveBatchOutcome(makeBatch(), [
-      makeItem("complete"),
-      undefined,
-    ]);
+    const outcome = resolveBatchOutcome(makeBatch(), [makeItem("complete"), undefined]);
 
     expect(outcome?.status).toBe("failed");
     expect(outcome?.message).toContain("1/2");
@@ -104,9 +98,7 @@ describe("浏览器下载批次跟踪", () => {
 
   it("批次结束后返回结果并停止重复回报", async () => {
     await trackDownloadBatch(makeBatch());
-    vi.mocked(chrome.downloads.search).mockImplementation(async () => [
-      makeItem("complete"),
-    ]);
+    vi.mocked(chrome.downloads.search).mockImplementation(async () => [makeItem("complete")]);
 
     const settled = await settleDownloadBatches();
     const repeated = await settleDownloadBatches();
@@ -118,9 +110,7 @@ describe("浏览器下载批次跟踪", () => {
 
   it("仍在下载的批次保留到下次对账", async () => {
     await trackDownloadBatch(makeBatch([21]));
-    vi.mocked(chrome.downloads.search).mockImplementation(async () => [
-      makeItem("in_progress"),
-    ]);
+    vi.mocked(chrome.downloads.search).mockImplementation(async () => [makeItem("in_progress")]);
 
     expect(await settleDownloadBatches()).toHaveLength(0);
 
@@ -135,9 +125,7 @@ describe("浏览器下载批次跟踪", () => {
 
   it("查询失败按记录缺失处理而不是中断对账", async () => {
     await trackDownloadBatch(makeBatch([31]));
-    vi.mocked(chrome.downloads.search).mockRejectedValue(
-      new Error("下载记录不可读"),
-    );
+    vi.mocked(chrome.downloads.search).mockRejectedValue(new Error("下载记录不可读"));
 
     const settled = await settleDownloadBatches();
 
@@ -147,16 +135,13 @@ describe("浏览器下载批次跟踪", () => {
 
   it("安装时先对账一次并只在状态变化时重新对账", async () => {
     await trackDownloadBatch(makeBatch([41]));
-    vi.mocked(chrome.downloads.search).mockImplementation(async () => [
-      makeItem("complete"),
-    ]);
+    vi.mocked(chrome.downloads.search).mockImplementation(async () => [makeItem("complete")]);
     const onSettled = vi.fn(async () => undefined);
 
     installDownloadTracking(onSettled);
     await vi.waitFor(() => expect(onSettled).toHaveBeenCalledOnce());
 
-    const listener = vi.mocked(chrome.downloads.onChanged.addListener).mock
-      .calls[0][0];
+    const listener = vi.mocked(chrome.downloads.onChanged.addListener).mock.calls[0][0];
     listener({ id: 41 } as chrome.downloads.DownloadDelta);
     listener({
       id: 41,

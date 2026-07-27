@@ -26,7 +26,10 @@ describe("用户资料解析边界", () => {
           user_id: "alternate-user",
           images: "https://example.invalid/avatar.png",
         },
-        [{ name: "", count: "9" }, { name: "关注", type: "follows" }],
+        [
+          { name: "", count: "9" },
+          { name: "关注", type: "follows" },
+        ],
       ),
       "requested-user",
     );
@@ -34,10 +37,7 @@ describe("用户资料解析边界", () => {
       pageWithProfile({ nickname: "合成用户" }),
       "requested-user",
     );
-    const anonymous = parseUserProfileDocument(
-      pageWithProfile({ nickname: "匿名用户" }),
-      null,
-    );
+    const anonymous = parseUserProfileDocument(pageWithProfile({ nickname: "匿名用户" }), null);
 
     expect(alternate).toMatchObject({
       user_id: "alternate-user",
@@ -50,8 +50,8 @@ describe("用户资料解析边界", () => {
   });
 
   it("资料主体缺失时明确失败", () => {
-    expect(() =>
-      parseUserProfileDocument(pageWithProfile({}, []), null),
-    ).toThrow("用户主页资料尚未加载");
+    expect(() => parseUserProfileDocument(pageWithProfile({}, []), null)).toThrow(
+      "用户主页资料尚未加载",
+    );
   });
 });

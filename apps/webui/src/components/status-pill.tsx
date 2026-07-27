@@ -5,8 +5,7 @@ interface StatusPillProps {
 }
 
 export function StatusPill({ online }: StatusPillProps) {
-  const label =
-    online === null ? "正在连接" : online ? "服务已连接" : "服务未连接";
+  const label = online === null ? "正在连接" : online ? "服务已连接" : "服务未连接";
 
   return (
     <Tooltip.Provider delayDuration={250}>
@@ -33,9 +32,7 @@ export function StatusPill({ online }: StatusPillProps) {
             className="rounded-lg bg-stone-900 px-3 py-2 text-xs text-white shadow-xl"
             sideOffset={8}
           >
-            {online
-              ? "FastAPI 服务运行正常"
-              : "请先运行 uv run xhs-downloader api"}
+            {online ? "FastAPI 服务运行正常" : "请先运行 uv run xhs-downloader api"}
             <Tooltip.Arrow className="fill-stone-900" />
           </Tooltip.Content>
         </Tooltip.Portal>

@@ -28,10 +28,14 @@
     target?.click();
   }
   async function waitForUploadInput(root, kind, timeout = 3e4) {
-    return waitForValue(() => {
-      const inputs = [...root.querySelectorAll("input[type=file]")];
-      return inputs.find((input) => acceptsKind(input.accept, kind));
-    }, timeout, "\u6CA1\u6709\u627E\u5230\u521B\u4F5C\u9875\u7D20\u6750\u4E0A\u4F20\u5165\u53E3");
+    return waitForValue(
+      () => {
+        const inputs = [...root.querySelectorAll("input[type=file]")];
+        return inputs.find((input) => acceptsKind(input.accept, kind));
+      },
+      timeout,
+      "\u6CA1\u6709\u627E\u5230\u521B\u4F5C\u9875\u7D20\u6750\u4E0A\u4F20\u5165\u53E3"
+    );
   }
   async function fillPublicationForm(root, title, body, timeout = 6e4) {
     const titleEditor = await waitForValue(
@@ -48,17 +52,21 @@
     setEditorValue(bodyEditor, body);
   }
   async function waitForPublishControl(root, timeout = 9e4) {
-    return waitForValue(() => {
-      const custom = root.querySelector(CUSTOM_PUBLISH_CONTROL);
-      if (custom?.getAttribute("is-publish") === "true" && custom.getAttribute("submit-disabled") !== "true" && custom.getAttribute("submit-loading") !== "true") {
-        return custom;
-      }
-      const buttons = [...root.querySelectorAll("button")];
-      return buttons.find((button) => {
-        const text = normalizedText(button);
-        return !button.disabled && (text === "\u53D1\u5E03" || text === "\u53D1\u5E03\u7B14\u8BB0" || text === "\u7ACB\u5373\u53D1\u5E03");
-      });
-    }, timeout, "\u6CA1\u6709\u627E\u5230\u53EF\u7528\u7684\u53D1\u5E03\u6309\u94AE");
+    return waitForValue(
+      () => {
+        const custom = root.querySelector(CUSTOM_PUBLISH_CONTROL);
+        if (custom?.getAttribute("is-publish") === "true" && custom.getAttribute("submit-disabled") !== "true" && custom.getAttribute("submit-loading") !== "true") {
+          return custom;
+        }
+        const buttons = [...root.querySelectorAll("button")];
+        return buttons.find((button) => {
+          const text = normalizedText(button);
+          return !button.disabled && (text === "\u53D1\u5E03" || text === "\u53D1\u5E03\u7B14\u8BB0" || text === "\u7ACB\u5373\u53D1\u5E03");
+        });
+      },
+      timeout,
+      "\u6CA1\u6709\u627E\u5230\u53EF\u7528\u7684\u53D1\u5E03\u6309\u94AE"
+    );
   }
   function isCustomPublishControl(control) {
     return control.localName === CUSTOM_PUBLISH_CONTROL;
@@ -171,7 +179,9 @@
     }
     if (submitting) return { ok: false, message: "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u63A7\u4EF6\u4E0D\u53EF\u7528" };
     const label = control.getAttribute("submit-text") || "\u53D1\u5E03";
-    const button = [...roots.get(control)?.querySelectorAll("button") ?? []].find((item) => !item.disabled && item.textContent?.trim() === label);
+    const button = [...roots.get(control)?.querySelectorAll("button") ?? []].find(
+      (item) => !item.disabled && item.textContent?.trim() === label
+    );
     if (!button) return { ok: false, message: "\u65E0\u6CD5\u8BBF\u95EE\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE" };
     if (action === "activate") {
       button.click();
@@ -214,14 +224,10 @@
     await waitForValue2(() => readMediaState(root), timeout);
   }
   function readMediaState(root) {
-    const statuses = [...root.querySelectorAll(STATUS_SELECTOR)].filter(
-      isVisible
-    );
+    const statuses = [...root.querySelectorAll(STATUS_SELECTOR)].filter(isVisible);
     const failure2 = statuses.map(normalizedText2).find((text) => FAILURE_PATTERN.test(text));
     if (failure2) throw new Error(`\u89C6\u9891\u7D20\u6750\u5904\u7406\u5931\u8D25\uFF1A${failure2}`);
-    const pending = statuses.some(
-      (element) => PENDING_PATTERN.test(normalizedText2(element))
-    );
+    const pending = statuses.some((element) => PENDING_PATTERN.test(normalizedText2(element)));
     return root.querySelector(FORM_SELECTOR) && !pending ? true : void 0;
   }
   function isVisible(element) {
@@ -266,9 +272,7 @@
   var PREPARED_MESSAGE = "\u521B\u4F5C\u5E73\u53F0\u53D1\u5E03\u6309\u94AE\u5DF2\u51C6\u5907";
   function prepareManagedPublishControl() {
     try {
-      const result = globalThis[PUBLISH_CONTROL2]?.(
-        "prepare"
-      );
+      const result = globalThis[PUBLISH_CONTROL2]?.("prepare");
       if (result?.ok === true && result.message === PREPARED_MESSAGE) {
         return { ok: true, message: result.message };
       }
@@ -294,18 +298,16 @@
     if (normalizedText3(select).includes(target)) return;
     select.click();
     const option = await waitForValue3(
-      () => [...root.querySelectorAll(
-        ".d-options-wrapper .custom-option, [role='option']"
-      )].find((item) => normalizedText3(item).includes(target)),
+      () => [
+        ...root.querySelectorAll(".d-options-wrapper .custom-option, [role='option']")
+      ].find((item) => normalizedText3(item).includes(target)),
       timeout,
       `\u6CA1\u6709\u627E\u5230\u53EF\u89C1\u8303\u56F4\u201C${target}\u201D`
     );
     option.click();
     await waitForValue3(
       () => {
-        const current = root.querySelector(
-          ".permission-card-wrapper .d-select-content"
-        );
+        const current = root.querySelector(".permission-card-wrapper .d-select-content");
         return current && normalizedText3(current).includes(target) ? true : void 0;
       },
       timeout,
@@ -313,10 +315,7 @@
     );
   }
   async function setOriginalDeclaration(root, enabled, timeout = 1e4) {
-    const card = findByText(
-      root.querySelectorAll(".custom-switch-card"),
-      "\u539F\u521B\u58F0\u660E"
-    );
+    const card = findByText(root.querySelectorAll(".custom-switch-card"), "\u539F\u521B\u58F0\u660E");
     if (!card) {
       if (!enabled) return;
       throw new Error("\u6CA1\u6709\u627E\u5230\u539F\u521B\u58F0\u660E\u63A7\u4EF6");
@@ -377,9 +376,7 @@
       "\u539F\u521B\u58F0\u660E\u786E\u8BA4\u7A97\u53E3\u672A\u80FD\u6253\u5F00"
     );
     if (outcome.confirmed || !outcome.footer) return;
-    const checkbox = outcome.footer.querySelector(
-      ".d-checkbox, input[type='checkbox']"
-    );
+    const checkbox = outcome.footer.querySelector(".d-checkbox, input[type='checkbox']");
     if (checkbox && !readToggle(checkbox)) checkbox.click();
     const confirm = await waitForValue3(
       () => findButton(outcome.footer, "\u58F0\u660E\u539F\u521B"),
@@ -424,11 +421,7 @@
     return (element.innerText || element.textContent || "").replace(/\s+/g, "");
   }
   function waitForElement(root, selector, timeout, message) {
-    return waitForValue3(
-      () => root.querySelector(selector) ?? void 0,
-      timeout,
-      message
-    );
+    return waitForValue3(() => root.querySelector(selector) ?? void 0, timeout, message);
   }
   async function waitForValue3(read, timeout, message) {
     const immediate = read();
@@ -474,9 +467,7 @@
   function readPublicationVerification(root) {
     const frame = root.querySelector(VERIFICATION_FRAME_SELECTOR);
     if (frame && isVisible2(frame)) return "\u521B\u4F5C\u5E73\u53F0\u8981\u6C42\u5B8C\u6210\u5B89\u5168\u9A8C\u8BC1";
-    const containers = root.querySelectorAll(
-      VERIFICATION_CONTAINER_SELECTOR
-    );
+    const containers = root.querySelectorAll(VERIFICATION_CONTAINER_SELECTOR);
     for (const container of containers) {
       if (isVisible2(container) && VERIFICATION_TEXT.test(normalizedText4(container))) {
         return "\u521B\u4F5C\u5E73\u53F0\u8981\u6C42\u5B8C\u6210\u5B89\u5168\u9A8C\u8BC1";
@@ -557,10 +548,7 @@
       if (task.mode !== "platform_scheduled") {
         return { ok: true, message: "\u521B\u4F5C\u9875\u5185\u5BB9\u548C\u53D1\u5E03\u9009\u9879\u5DF2\u6838\u9A8C" };
       }
-      const prepared = await preparePlatformSchedule(
-        document,
-        task.scheduled_at
-      );
+      const prepared = await preparePlatformSchedule(document, task.scheduled_at);
       clearMarker(SCHEDULE_ATTRIBUTE);
       prepared.input.setAttribute(SCHEDULE_ATTRIBUTE, "true");
       prepared.input.dataset.xhdExpectedValue = prepared.value;
@@ -632,9 +620,7 @@
     if (!outcome) {
       return { ok: true, state: "pending", message: "\u7B49\u5F85\u521B\u4F5C\u5E73\u53F0\u786E\u8BA4" };
     }
-    const resultUrl = outcome.status === "published" && window.location.hostname === "www.xiaohongshu.com" && /^\/(?:explore|discovery\/item)\/[a-z0-9]+\/?$/i.test(
-      window.location.pathname
-    ) ? `https://www.xiaohongshu.com${window.location.pathname}` : void 0;
+    const resultUrl = outcome.status === "published" && window.location.hostname === "www.xiaohongshu.com" && /^\/(?:explore|discovery\/item)\/[a-z0-9]+\/?$/i.test(window.location.pathname) ? `https://www.xiaohongshu.com${window.location.pathname}` : void 0;
     return {
       ok: true,
       state: outcome.status,
@@ -650,12 +636,8 @@
     if (task.package.products.length) throw new Error("\u53D7\u7BA1\u53D1\u5E03\u4E0D\u652F\u6301\u7ED1\u5B9A\u5546\u54C1");
     const assets = task.package.assets;
     if (!assets.length) throw new Error("\u53D1\u5E03\u4EFB\u52A1\u6CA1\u6709\u7D20\u6750");
-    const videoAssets = assets.filter(
-      (asset) => asset.media_type.startsWith("video/")
-    );
-    const imageAssets = assets.filter(
-      (asset) => asset.media_type.startsWith("image/")
-    );
+    const videoAssets = assets.filter((asset) => asset.media_type.startsWith("video/"));
+    const imageAssets = assets.filter((asset) => asset.media_type.startsWith("image/"));
     if (videoAssets.length) {
       if (videoAssets.length !== 1 || assets.length !== 1) {
         throw new Error("\u89C6\u9891\u7B14\u8BB0\u7D20\u6750\u7EC4\u5408\u65E0\u6548");

@@ -15,11 +15,7 @@ describe("列表封面缩略图", () => {
 
   it("加载完成前保持透明，完成后淡入", () => {
     render(
-      <MediaThumbnail
-        alt="合成封面"
-        fallback={FALLBACK}
-        src="https://example.invalid/cover.jpg"
-      />,
+      <MediaThumbnail alt="合成封面" fallback={FALLBACK} src="https://example.invalid/cover.jpg" />,
     );
 
     const image = screen.getByRole("img", { name: "合成封面" });
@@ -47,16 +43,9 @@ describe("列表封面缩略图", () => {
 
   it("不向第三方发送来源信息", () => {
     render(
-      <MediaThumbnail
-        alt="合成封面"
-        fallback={FALLBACK}
-        src="https://example.invalid/cover.jpg"
-      />,
+      <MediaThumbnail alt="合成封面" fallback={FALLBACK} src="https://example.invalid/cover.jpg" />,
     );
 
-    expect(screen.getByRole("img")).toHaveAttribute(
-      "referrerpolicy",
-      "no-referrer",
-    );
+    expect(screen.getByRole("img")).toHaveAttribute("referrerpolicy", "no-referrer");
   });
 });

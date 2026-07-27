@@ -9,8 +9,13 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "check": "pnpm -r --if-present check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
-    "verify": "pnpm lint && pnpm check && pnpm test && pnpm build"
+    "verify": "pnpm format:check && pnpm lint && pnpm check && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

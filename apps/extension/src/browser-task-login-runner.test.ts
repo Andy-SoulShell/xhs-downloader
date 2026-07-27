@@ -46,7 +46,8 @@ beforeEach(() => {
               key,
               values[key as keyof typeof values],
             ]),
-          )),
+          ),
+        ),
         set: vi.fn(async () => undefined),
         remove: vi.fn(async () => undefined),
       },
@@ -88,12 +89,8 @@ describe("登录二维码后台任务", () => {
         ),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(qrCodeClaim())))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "running" })),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ status: "succeeded" })),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "running" })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "succeeded" })));
     vi.stubGlobal("fetch", fetchMock);
 
     await runBrowserTaskPoll();

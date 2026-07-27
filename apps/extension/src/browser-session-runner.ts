@@ -15,10 +15,7 @@ export async function executeBrowserSessionTask(
   if (task.payload.confirmed !== true) {
     throw new Error("清除浏览器 Cookie 前必须明确确认");
   }
-  await chrome.browsingData.remove(
-    { origins: XHS_ORIGINS },
-    { cookies: true },
-  );
+  await chrome.browsingData.remove({ origins: XHS_ORIGINS }, { cookies: true });
   return {
     ok: true,
     message: "浏览器中的小红书 Cookie 已清除",

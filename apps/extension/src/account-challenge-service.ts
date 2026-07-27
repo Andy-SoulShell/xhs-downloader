@@ -14,32 +14,22 @@ export interface ExtensionAccountChallengeClaim {
 
 /** 扩展回传给本机服务的脱敏账号证明。 */
 export type ExtensionAccountChallengeAnswer =
-  | { status: "proved"; proof: string }
-  | { status: "logged_out" }
-  | { status: "unverified" };
+  { status: "proved"; proof: string } | { status: "logged_out" } | { status: "unverified" };
 
 /** 检查本机服务是否支持不落盘的账号挑战协议。 */
-export async function supportsAccountChallenges(
-  baseUrl: string,
-): Promise<boolean> {
+export async function supportsAccountChallenges(baseUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(
-      `${normalizeBase(baseUrl)}/extension/capabilities`,
-      {
-        cache: "no-store",
-        credentials: "omit",
-        signal: AbortSignal.timeout(1_200),
-      },
-    );
+    const response = await fetch(`${normalizeBase(baseUrl)}/extension/capabilities`, {
+      cache: "no-store",
+      credentials: "omit",
+      signal: AbortSignal.timeout(1_200),
+    });
     if (!response.ok) return false;
     const payload = (await response.json()) as {
       protocol_version?: number;
       features?: Record<string, boolean>;
     };
-    return (
-      (payload.protocol_version ?? 0) >= 5 &&
-      payload.features?.account_challenge === true
-    );
+    return (payload.protocol_version ?? 0) >= 5 && payload.features?.account_challenge === true;
   } catch {
     return false;
   }
@@ -60,9 +50,7 @@ export async function claimAccountChallenge(
       method: "POST",
       credentials: "omit",
       headers: extensionHeaders(credential),
-      signal: AbortSignal.timeout(
-        waitSeconds * 1_000 + CLAIM_TIMEOUT_PADDING_MS,
-      ),
+      signal: AbortSignal.timeout(waitSeconds * 1_000 + CLAIM_TIMEOUT_PADDING_MS),
     },
   );
   return parseJsonResponse<ExtensionAccountChallengeClaim | null>(response);
@@ -98,31 +86,23 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | null;
   if (!response.ok) {
     throw new Error(
-      messageFromPayload(payload) ||
-        `本地账号挑战服务错误（HTTP ${response.status}）`,
+      messageFromPayload(payload) || `本地账号挑战服务错误（HTTP ${response.status}）`,
     );
   }
   return payload as T;
 }
 
-function extensionHeaders(
-  credential: ExtensionCredential,
-): Record<string, string> {
+function extensionHeaders(credential: ExtensionCredential): Record<string, string> {
   return {
     Authorization: `Bearer ${credential.token}`,
     "X-Extension-Id": credential.extensionId,
-    ...(credential.installationId
-      ? { "X-Extension-Installation": credential.installationId }
-      : {}),
+    ...(credential.installationId ? { "X-Extension-Installation": credential.installationId } : {}),
   };
 }
 
 async function responseMessage(response: Response): Promise<string> {
   const payload = (await response.json().catch(() => null)) as unknown;
-  return (
-    messageFromPayload(payload) ||
-    `本地账号挑战服务错误（HTTP ${response.status}）`
-  );
+  return messageFromPayload(payload) || `本地账号挑战服务错误（HTTP ${response.status}）`;
 }
 
 function messageFromPayload(payload: unknown): string | undefined {

@@ -207,10 +207,7 @@
   }
   function decodeBase64Url(value) {
     const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
-    const padded = normalized.padEnd(
-      normalized.length + (4 - normalized.length % 4) % 4,
-      "="
-    );
+    const padded = normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, "=");
     const decoded = atob(padded);
     const buffer = new ArrayBuffer(decoded.length);
     const bytes = new Uint8Array(buffer);
@@ -259,9 +256,7 @@
     const matched = Object.entries(expected).filter(
       ([name, selector]) => name === "initial_state" ? hasInitialStateScript(page) : Boolean(page.querySelector(selector))
     ).map(([name]) => name);
-    const missing = Object.keys(expected).filter(
-      (name) => !matched.includes(name)
-    );
+    const missing = Object.keys(expected).filter((name) => !matched.includes(name));
     return {
       adapter_version: ADAPTER_VERSION,
       selector_profile: detectSelectorProfile(page),
@@ -290,9 +285,7 @@
     return "unknown";
   }
   function hasInitialStateScript(page) {
-    return [...page.scripts].some(
-      (script) => script.textContent?.includes("__INITIAL_STATE__")
-    );
+    return [...page.scripts].some((script) => script.textContent?.includes("__INITIAL_STATE__"));
   }
 
   // src/login-state.ts
@@ -361,9 +354,7 @@
     return {
       is_logged_in: false,
       image_data_url: source,
-      expires_at: new Date(
-        now.getTime() + QR_VALIDITY_MILLISECONDS
-      ).toISOString(),
+      expires_at: new Date(now.getTime() + QR_VALIDITY_MILLISECONDS).toISOString(),
       consumed: false
     };
   }
@@ -416,9 +407,7 @@
     }
   }
   async function waitForCommentContainer(page) {
-    const findContainer = () => page.querySelector(
-      ".comments-container, [class*='comments-container']"
-    );
+    const findContainer = () => page.querySelector(".comments-container, [class*='comments-container']");
     let container = findContainer();
     if (container || !page.defaultView) return container;
     page.defaultView.scrollBy(0, page.defaultView.innerHeight * 0.8);
@@ -467,9 +456,7 @@
     for (let attempt = 0; attempt < 24; attempt += 1) {
       const match = findTargetComment(page, target);
       if (match) return match;
-      if (!container || page.querySelector(
-        ".comments-container .end-container, .comments-container .no-more"
-      )) {
+      if (!container || page.querySelector(".comments-container .end-container, .comments-container .no-more")) {
         return null;
       }
       const comments = page.querySelectorAll(COMMENT_ELEMENTS);
@@ -499,16 +486,12 @@
       }
       await delay3(250);
     }
-    throw new UncertainBrowserActionError(
-      "\u8BC4\u8BBA\u63D0\u4EA4\u5DF2\u89E6\u53D1\uFF0C\u4F46\u672A\u5728\u8BC4\u8BBA\u533A\u786E\u8BA4\u7ED3\u679C\uFF0C\u8BF7\u4EBA\u5DE5\u6838\u5BF9"
-    );
+    throw new UncertainBrowserActionError("\u8BC4\u8BBA\u63D0\u4EA4\u5DF2\u89E6\u53D1\uFF0C\u4F46\u672A\u5728\u8BC4\u8BBA\u533A\u786E\u8BA4\u7ED3\u679C\uFF0C\u8BF7\u4EBA\u5DE5\u6838\u5BF9");
   }
   async function waitForCommentInput(page) {
     let activated = false;
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      const activator = page.querySelector(
-        "div.input-box div.content-edit span"
-      );
+      const activator = page.querySelector("div.input-box div.content-edit span");
       if (activator && !activated) {
         activator.click();
         activated = true;
@@ -565,9 +548,7 @@
   }
   async function waitForEnabledSubmit(page) {
     for (let attempt = 0; attempt < 12; attempt += 1) {
-      const submit = page.querySelector(
-        "div.bottom button.submit"
-      );
+      const submit = page.querySelector("div.bottom button.submit");
       if (submit && !submit.disabled) return submit;
       await delay3(100);
     }
@@ -652,9 +633,7 @@
     };
   }
   function flattenFeeds(value) {
-    return dataList(value).flatMap(
-      (item) => Array.isArray(item) ? flattenFeeds(item) : [item]
-    );
+    return dataList(value).flatMap((item) => Array.isArray(item) ? flattenFeeds(item) : [item]);
   }
   function noteType(value) {
     const type = dataText(value).toLowerCase();
@@ -689,9 +668,7 @@
       }).filter((url) => url !== null).slice(0, 100),
       published_at: dataInteger(note.time),
       ip_location: dataText(note.ipLocation).slice(0, 200),
-      comments: dataList(unwrapState(comments.list)).slice(0, options.commentLimit).map(
-        (item) => parseComment(item, options.includeReplies, options.replyLimit)
-      ).filter((item) => item !== null),
+      comments: dataList(unwrapState(comments.list)).slice(0, options.commentLimit).map((item) => parseComment(item, options.includeReplies, options.replyLimit)).filter((item) => item !== null),
       comments_has_more: dataBoolean(comments.hasMore),
       comments_cursor: dataText(comments.cursor).slice(0, 2048)
     };
@@ -736,23 +713,14 @@
   var CONTROL_READY_ATTEMPTS = 20;
   var CONTROL_READY_INTERVAL_MS = 250;
   async function setDesiredInteraction(page, feedId, kind, active, activate) {
-    const preparation = await prepareDesiredInteraction(
-      page,
-      feedId,
-      kind,
-      active
-    );
+    const preparation = await prepareDesiredInteraction(page, feedId, kind, active);
     if (preparation.result) return preparation.result;
     if (activate) await activate();
     else clickInteractionControl(page, preparation.selector);
     return verifyDesiredInteraction(page, feedId, kind, active);
   }
   async function prepareDesiredInteraction(page, feedId, kind, active) {
-    const before = interactionState(
-      await readLiveInitialState(page),
-      feedId,
-      kind
-    );
+    const before = interactionState(await readLiveInitialState(page), feedId, kind);
     if (before === active) {
       return {
         result: {
@@ -774,11 +742,7 @@
   async function verifyDesiredInteraction(page, feedId, kind, active) {
     for (let attempt = 0; attempt < 16; attempt += 1) {
       try {
-        const current = interactionState(
-          await readLiveInitialState(page),
-          feedId,
-          kind
-        );
+        const current = interactionState(await readLiveInitialState(page), feedId, kind);
         if (current === active) {
           return {
             feed_id: feedId,
@@ -793,9 +757,7 @@
       await delay4(250);
     }
     const action = kind === "like" ? "\u70B9\u8D5E" : "\u6536\u85CF";
-    throw new UncertainBrowserActionError(
-      `${action}\u64CD\u4F5C\u5DF2\u89E6\u53D1\uFF0C\u4F46\u672A\u80FD\u786E\u8BA4\u6700\u7EC8\u72B6\u6001\uFF0C\u8BF7\u4EBA\u5DE5\u6838\u5BF9`
-    );
+    throw new UncertainBrowserActionError(`${action}\u64CD\u4F5C\u5DF2\u89E6\u53D1\uFF0C\u4F46\u672A\u80FD\u786E\u8BA4\u6700\u7EC8\u72B6\u6001\uFF0C\u8BF7\u4EBA\u5DE5\u6838\u5BF9`);
   }
   async function waitForInteractionControl(page, kind) {
     for (let attempt = 0; attempt < CONTROL_READY_ATTEMPTS; attempt += 1) {
@@ -883,13 +845,7 @@
     search_scope: "\u4E0D\u9650",
     location: "\u4E0D\u9650"
   };
-  var FILTER_GROUPS = [
-    "sort_by",
-    "note_type",
-    "publish_time",
-    "search_scope",
-    "location"
-  ];
+  var FILTER_GROUPS = ["sort_by", "note_type", "publish_time", "search_scope", "location"];
   function hasCustomSearchFilters(filters) {
     return FILTER_GROUPS.some(
       (field) => typeof filters[field] === "string" && filters[field] !== DEFAULT_FILTERS[field]
@@ -897,9 +853,7 @@
   }
   async function applySearchFilters(page, filters) {
     const triggerCandidate = page.querySelector(".filter") ?? findExactTextElement(page, "\u7B5B\u9009");
-    const trigger = triggerCandidate?.closest(
-      "button, [role='button'], div.filter, div"
-    ) ?? triggerCandidate;
+    const trigger = triggerCandidate?.closest("button, [role='button'], div.filter, div") ?? triggerCandidate;
     if (!trigger) throw new Error("\u641C\u7D22\u9875\u6CA1\u6709\u7B5B\u9009\u5165\u53E3");
     trigger.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     trigger.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
@@ -926,13 +880,9 @@
     throw new Error("\u641C\u7D22\u7B5B\u9009\u9762\u677F\u672A\u80FD\u53CA\u65F6\u6253\u5F00");
   }
   function findExactTextElement(scope, text2) {
-    const candidates = scope.querySelectorAll(
-      "button, [role='button'], div, span"
-    );
+    const candidates = scope.querySelectorAll("button, [role='button'], div, span");
     return [...candidates].find(
-      (element) => element.textContent?.trim() === text2 && ![...element.children].some(
-        (child) => child.textContent?.trim() === text2
-      )
+      (element) => element.textContent?.trim() === text2 && ![...element.children].some((child) => child.textContent?.trim() === text2)
     ) ?? null;
   }
   function delay5(milliseconds) {
@@ -967,10 +917,7 @@
       if (hasCustomSearchFilters(filters)) {
         await applySearchFilters(page, filters);
       }
-      return success(
-        "\u641C\u7D22\u7ED3\u679C\u8BFB\u53D6\u5B8C\u6210",
-        await waitForSearchResult(page, keyword)
-      );
+      return success("\u641C\u7D22\u7ED3\u679C\u8BFB\u53D6\u5B8C\u6210", await waitForSearchResult(page, keyword));
     }
     if (task.kind === "get_feed_detail") {
       const options = {
@@ -985,10 +932,7 @@
         await loadComments(page, options);
         currentState = await readLiveInitialState(page);
       }
-      return success(
-        "\u5E16\u5B50\u8BE6\u60C5\u8BFB\u53D6\u5B8C\u6210",
-        parseFeedDetailDocument(page, options, currentState)
-      );
+      return success("\u5E16\u5B50\u8BE6\u60C5\u8BFB\u53D6\u5B8C\u6210", parseFeedDetailDocument(page, options, currentState));
     }
     if (task.kind === "get_user_profile") {
       return success(
@@ -1035,25 +979,16 @@
     if (task.kind === "post_comment") {
       return success(
         "\u8BC4\u8BBA\u5DF2\u63D0\u4EA4\u5E76\u786E\u8BA4",
-        await postComment(
-          page,
-          payloadText(task, "feed_id"),
-          payloadText(task, "content")
-        )
+        await postComment(page, payloadText(task, "feed_id"), payloadText(task, "content"))
       );
     }
     if (task.kind === "reply_comment") {
       return success(
         "\u56DE\u590D\u5DF2\u63D0\u4EA4\u5E76\u786E\u8BA4",
-        await replyComment(
-          page,
-          payloadText(task, "feed_id"),
-          payloadText(task, "content"),
-          {
-            commentId: payloadOptionalText(task, "comment_id"),
-            userId: payloadOptionalText(task, "user_id")
-          }
-        )
+        await replyComment(page, payloadText(task, "feed_id"), payloadText(task, "content"), {
+          commentId: payloadOptionalText(task, "comment_id"),
+          userId: payloadOptionalText(task, "user_id")
+        })
       );
     }
     return {
@@ -1170,9 +1105,7 @@
     }
   }
   function respond(scope, eventName, value) {
-    scope.dispatchEvent(
-      new CustomEvent(eventName, { detail: JSON.stringify(value) })
-    );
+    scope.dispatchEvent(new CustomEvent(eventName, { detail: JSON.stringify(value) }));
   }
 
   // src/managed-page-adapter.ts
@@ -1200,17 +1133,10 @@
   }
   async function executeSafely(task, scope) {
     if (isInteractionTask(task)) {
-      return failure(
-        new Error("\u53D7\u7BA1\u6D4F\u89C8\u5668\u4E92\u52A8\u5FC5\u987B\u901A\u8FC7\u53EF\u4FE1\u8F93\u5165\u6D41\u7A0B\u6267\u884C"),
-        scope
-      );
+      return failure(new Error("\u53D7\u7BA1\u6D4F\u89C8\u5668\u4E92\u52A8\u5FC5\u987B\u901A\u8FC7\u53EF\u4FE1\u8F93\u5165\u6D41\u7A0B\u6267\u884C"), scope);
     }
     try {
-      return await executeBrowserPageTask(
-        task,
-        scope.document,
-        scope.location.href
-      );
+      return await executeBrowserPageTask(task, scope.document, scope.location.href);
     } catch (error) {
       return failure(error, scope);
     }
@@ -1247,12 +1173,7 @@
       const input = interactionInput(task);
       return success2(
         "\u4E92\u52A8\u72B6\u6001\u5DF2\u901A\u8FC7\u9875\u9762\u5B9E\u65F6\u6570\u636E\u786E\u8BA4",
-        await verifyDesiredInteraction(
-          scope.document,
-          input.feedId,
-          input.kind,
-          input.active
-        )
+        await verifyDesiredInteraction(scope.document, input.feedId, input.kind, input.active)
       );
     } catch (error) {
       return failure(error, scope);
@@ -1291,10 +1212,7 @@
       ok: false,
       message: error instanceof Error ? error.message : "\u9875\u9762\u6570\u636E\u89E3\u6790\u5931\u8D25",
       status: error instanceof UncertainBrowserActionError ? "needs_review" : "failed",
-      result: buildPageCompatibilityDiagnostics(
-        scope.document,
-        scope.location.href
-      )
+      result: buildPageCompatibilityDiagnostics(scope.document, scope.location.href)
     };
   }
   installManagedPageAdapter();

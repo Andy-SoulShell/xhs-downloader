@@ -70,11 +70,7 @@ export interface DetailRequest {
   force?: boolean;
 }
 
-export type DownloadTaskStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed";
+export type DownloadTaskStatus = "queued" | "running" | "completed" | "failed";
 
 /** 后台下载任务的实时进度；上游未给出字节总量时 total_bytes 为 0。 */
 export interface DownloadProgress {
@@ -107,21 +103,11 @@ export interface TaskRequest {
   request_id: string;
 }
 
-export type ImageFormat =
-  | "auto"
-  | "png"
-  | "webp"
-  | "jpeg"
-  | "heic"
-  | "avif";
+export type ImageFormat = "auto" | "png" | "webp" | "jpeg" | "heic" | "avif";
 export type VideoPreference = "resolution" | "bitrate" | "size";
 
 /** 只读能力的 HTTP 与浏览器调用顺序。 */
-export type RouteStrategy =
-  | "http_only"
-  | "browser_only"
-  | "http_first"
-  | "browser_first";
+export type RouteStrategy = "http_only" | "browser_only" | "http_first" | "browser_first";
 
 /** 判断不可信配置值是否为当前 WebUI 支持的浏览器执行器。 */
 export function isBrowserDriver(value: unknown): value is BrowserDriverValue {

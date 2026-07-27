@@ -4,15 +4,7 @@
     {
       "name": "xhs-desktop",
       "runtimeExecutable": "uv",
-      "runtimeArgs": [
-        "run",
-        "python",
-        "-m",
-        "xhs_api.desktop",
-        "--port",
-        "5556",
-        "--no-open"
-      ],
+      "runtimeArgs": ["run", "python", "-m", "xhs_api.desktop", "--port", "5556", "--no-open"],
       "port": 5556,
       "url": "http://127.0.0.1:5556"
     },

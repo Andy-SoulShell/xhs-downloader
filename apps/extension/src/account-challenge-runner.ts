@@ -4,18 +4,9 @@ import {
   supportsAccountChallenges,
   type ExtensionAccountChallengeClaim,
 } from "./account-challenge-service";
-import {
-  type BrowserAccountChallengeRequest,
-  type BrowserAccountProof,
-} from "./account-proof";
-import {
-  BrowserTaskUnauthorizedError,
-  registerBrowserExtension,
-} from "./browser-task-service";
-import {
-  clearExtensionCredential,
-  ensureExtensionCredential,
-} from "./extension-credential";
+import { type BrowserAccountChallengeRequest, type BrowserAccountProof } from "./account-proof";
+import { BrowserTaskUnauthorizedError, registerBrowserExtension } from "./browser-task-service";
+import { clearExtensionCredential, ensureExtensionCredential } from "./extension-credential";
 import type { ExtensionCredential } from "./publication-types";
 import { loadSettings } from "./storage";
 
@@ -58,21 +49,12 @@ async function performPoll(): Promise<void> {
     const settings = await loadSettings();
     if (!(await supportsAccountChallenges(settings.serviceUrl))) return;
     const claim = await withCredential((credential) =>
-      claimAccountChallenge(
-        settings.serviceUrl,
-        credential,
-        CLAIM_WAIT_SECONDS,
-      ),
+      claimAccountChallenge(settings.serviceUrl, credential, CLAIM_WAIT_SECONDS),
     );
     if (!claim) return;
     const answer = await executeChallenge(claim);
     await withCredential((credential) =>
-      answerAccountChallenge(
-        settings.serviceUrl,
-        credential,
-        claim,
-        answer,
-      ),
+      answerAccountChallenge(settings.serviceUrl, credential, claim, answer),
     );
   } catch {
     // 服务离线、挑战失效或页面尚未就绪时由服务端按超时安全收敛。
@@ -95,10 +77,10 @@ async function executeChallenge(
   for (const tab of tabs) {
     try {
       return validateProof(
-        await chrome.tabs.sendMessage<
-          BrowserAccountChallengeRequest,
-          BrowserAccountProof
-        >(tab.id as number, request),
+        await chrome.tabs.sendMessage<BrowserAccountChallengeRequest, BrowserAccountProof>(
+          tab.id as number,
+          request,
+        ),
       );
     } catch {
       // 只有已注入小红书内容脚本的页面会响应。
@@ -111,10 +93,10 @@ async function executeChallenge(
     for (let attempt = 0; attempt < PAGE_READY_ATTEMPTS; attempt += 1) {
       try {
         return validateProof(
-          await chrome.tabs.sendMessage<
-            BrowserAccountChallengeRequest,
-            BrowserAccountProof
-          >(tabId, request),
+          await chrome.tabs.sendMessage<BrowserAccountChallengeRequest, BrowserAccountProof>(
+            tabId,
+            request,
+          ),
         );
       } catch {
         await delay(250);
@@ -144,19 +126,13 @@ async function withCredential<T>(
   operation: (credential: ExtensionCredential) => Promise<T>,
 ): Promise<T> {
   const settings = await loadSettings();
-  let credential = await ensureExtensionCredential(
-    settings.serviceUrl,
-    registerBrowserExtension,
-  );
+  let credential = await ensureExtensionCredential(settings.serviceUrl, registerBrowserExtension);
   try {
     return await operation(credential);
   } catch (error) {
     if (!(error instanceof BrowserTaskUnauthorizedError)) throw error;
     await clearExtensionCredential();
-    credential = await ensureExtensionCredential(
-      settings.serviceUrl,
-      registerBrowserExtension,
-    );
+    credential = await ensureExtensionCredential(settings.serviceUrl, registerBrowserExtension);
     return operation(credential);
   }
 }

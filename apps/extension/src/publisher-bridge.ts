@@ -10,9 +10,7 @@ type PublicationControlAction = "locate" | "prepare" | "activate";
 export function installPublisherBridge(): () => void {
   const roots = new WeakMap<Element, ShadowRoot>();
   const originalAttachShadow = Element.prototype.attachShadow;
-  Element.prototype.attachShadow = function (
-    init: ShadowRootInit,
-  ): ShadowRoot {
+  Element.prototype.attachShadow = function (init: ShadowRootInit): ShadowRoot {
     const root = originalAttachShadow.call(this, init);
     if (this.localName === PUBLISH_CONTROL) roots.set(this, root);
     return root;
@@ -20,8 +18,7 @@ export function installPublisherBridge(): () => void {
 
   const scope = globalThis as BridgeScope;
   const previous = scope[BRIDGE];
-  scope[BRIDGE] = (action = "locate") =>
-    accessCapturedControl(roots, action);
+  scope[BRIDGE] = (action = "locate") => accessCapturedControl(roots, action);
   return () => {
     Element.prototype.attachShadow = originalAttachShadow;
     if (previous) scope[BRIDGE] = previous;
@@ -52,8 +49,9 @@ function accessCapturedControl(
   }
   if (submitting) return { ok: false, message: "创作平台发布控件不可用" };
   const label = control.getAttribute("submit-text") || "发布";
-  const button = [...(roots.get(control)?.querySelectorAll("button") ?? [])]
-    .find((item) => !item.disabled && item.textContent?.trim() === label);
+  const button = [...(roots.get(control)?.querySelectorAll("button") ?? [])].find(
+    (item) => !item.disabled && item.textContent?.trim() === label,
+  );
   if (!button) return { ok: false, message: "无法访问创作平台发布按钮" };
   if (action === "activate") {
     button.click();

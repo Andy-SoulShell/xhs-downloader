@@ -10,9 +10,7 @@ import type { FeedSummary } from "./types";
  * @param feed 浏览或搜索返回的帖子摘要。
  * @returns 可交给解析与下载接口的绝对链接；缺少访问上下文时为空。
  */
-export function feedPostUrl(
-  feed: Pick<FeedSummary, "feed_id" | "xsec_token">,
-): string | null {
+export function feedPostUrl(feed: Pick<FeedSummary, "feed_id" | "xsec_token">): string | null {
   if (!feed.feed_id || !feed.xsec_token) return null;
   const url = new URL(`https://www.xiaohongshu.com/explore/${feed.feed_id}`);
   url.searchParams.set("xsec_token", feed.xsec_token);

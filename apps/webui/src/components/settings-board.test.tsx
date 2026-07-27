@@ -25,9 +25,7 @@ describe("服务配置界面", () => {
       target: { value: "synthetic-author" },
     });
     // 填了一半时就地提示，而不是等到保存时整页报错。
-    expect(
-      screen.getByText("有 1 条只填了一半，保存时会忽略这些行。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("有 1 条只填了一半，保存时会忽略这些行。")).toBeInTheDocument();
 
     const saveButton = screen.getByRole("button", { name: "保存配置" });
     expect(saveButton).toHaveAttribute("type", "submit");
@@ -35,9 +33,7 @@ describe("服务配置界面", () => {
 
     // 半行被忽略，其余配置照常保存，不再整页阻断。
     await waitFor(() =>
-      expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ mapping_data: {} }),
-      ),
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ mapping_data: {} })),
     );
   });
 
@@ -67,13 +63,9 @@ describe("服务配置界面", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存配置" }));
 
     await waitFor(() =>
-      expect(onSave).toHaveBeenCalledWith(
-        expect.objectContaining({ cookie: null }),
-      ),
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ cookie: null })),
     );
-    expect(onSaved).toHaveBeenCalledWith(
-      "已保存；部分修改要重启服务才生效",
-    );
+    expect(onSaved).toHaveBeenCalledWith("已保存；部分修改要重启服务才生效");
   });
 
   it("输入替代值时取消敏感配置清除状态", async () => {
@@ -106,9 +98,7 @@ describe("服务配置界面", () => {
   });
 
   it("保存受管 Chromium 路径并允许清空恢复自动检测", async () => {
-    const onSave = vi.fn().mockResolvedValue(
-      makeSettingsResponse({ restart_required: true }),
-    );
+    const onSave = vi.fn().mockResolvedValue(makeSettingsResponse({ restart_required: true }));
     render(
       <SettingsBoard
         error=""

@@ -12,37 +12,23 @@ type CredentialIssuer = (
 ) => Promise<ExtensionCredential>;
 
 /** 读取本机服务签发的共享扩展能力令牌。 */
-export async function loadExtensionCredential(): Promise<
-  ExtensionCredential | undefined
-> {
-  const stored = await chrome.storage.local.get([
-    CREDENTIAL_KEY,
-    LEGACY_CREDENTIAL_KEY,
-  ]);
-  const value = (stored[CREDENTIAL_KEY] ??
-    stored[LEGACY_CREDENTIAL_KEY]) as
-    | Partial<ExtensionCredential>
-    | undefined;
-  if (
-    typeof value?.extensionId !== "string" ||
-    typeof value.token !== "string"
-  ) {
+export async function loadExtensionCredential(): Promise<ExtensionCredential | undefined> {
+  const stored = await chrome.storage.local.get([CREDENTIAL_KEY, LEGACY_CREDENTIAL_KEY]);
+  const value = (stored[CREDENTIAL_KEY] ?? stored[LEGACY_CREDENTIAL_KEY]) as
+    Partial<ExtensionCredential> | undefined;
+  if (typeof value?.extensionId !== "string" || typeof value.token !== "string") {
     return undefined;
   }
   return {
     extensionId: value.extensionId,
     token: value.token,
     // 安装标识必须一并带出, 丢了会被当成旧凭据反复重新登记。
-    ...(typeof value.installationId === "string"
-      ? { installationId: value.installationId }
-      : {}),
+    ...(typeof value.installationId === "string" ? { installationId: value.installationId } : {}),
   };
 }
 
 /** 保存发布和通用浏览器任务共用的扩展能力令牌。 */
-export async function saveExtensionCredential(
-  credential: ExtensionCredential,
-): Promise<void> {
+export async function saveExtensionCredential(credential: ExtensionCredential): Promise<void> {
   await chrome.storage.local.set({ [CREDENTIAL_KEY]: credential });
   await chrome.storage.local.remove(LEGACY_CREDENTIAL_KEY);
 }

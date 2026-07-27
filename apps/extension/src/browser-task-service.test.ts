@@ -59,33 +59,22 @@ describe("浏览器任务服务客户端", () => {
     const done = { task_id: "task", status: "succeeded" };
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ token: "issued-token" })),
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "issued-token" })))
       .mockResolvedValueOnce(new Response(JSON.stringify(claim)))
       .mockResolvedValueOnce(new Response(JSON.stringify(task)))
       .mockResolvedValueOnce(new Response(JSON.stringify(done)));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      registerBrowserExtension("http://service", "extension"),
-    ).resolves.toEqual({
+    await expect(registerBrowserExtension("http://service", "extension")).resolves.toEqual({
       extensionId: "extension",
       token: "issued-token",
     });
-    await expect(
-      claimBrowserTask("http://service", credential),
-    ).resolves.toEqual(claim);
+    await expect(claimBrowserTask("http://service", credential)).resolves.toEqual(claim);
     expect(fetchMock.mock.calls[1][0]).toBe(
       "http://service/browser/extension/tasks/claim?wait_seconds=25",
     );
     await expect(
-      reportBrowserTaskRunning(
-        "http://service",
-        credential,
-        "task",
-        "lease",
-      ),
+      reportBrowserTaskRunning("http://service", credential, "task", "lease"),
     ).resolves.toEqual(task);
     await expect(
       reportBrowserTaskResult(
@@ -109,20 +98,16 @@ describe("浏览器任务服务客户端", () => {
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({})))
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ detail: "合成错误" }), { status: 400 }),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: "合成错误" }), { status: 400 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      registerBrowserExtension("http://service", "extension"),
-    ).rejects.toThrow("没有返回扩展能力令牌");
-    await expect(
-      claimBrowserTask("http://service", credential),
-    ).rejects.toBeInstanceOf(BrowserTaskUnauthorizedError);
-    await expect(
-      claimBrowserTask("http://service", credential),
-    ).rejects.toThrow("合成错误");
+    await expect(registerBrowserExtension("http://service", "extension")).rejects.toThrow(
+      "没有返回扩展能力令牌",
+    );
+    await expect(claimBrowserTask("http://service", credential)).rejects.toBeInstanceOf(
+      BrowserTaskUnauthorizedError,
+    );
+    await expect(claimBrowserTask("http://service", credential)).rejects.toThrow("合成错误");
   });
 
   it("只把租约冲突识别为租约丢失，不吞掉结果校验错误", async () => {
@@ -141,12 +126,7 @@ describe("浏览器任务服务客户端", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      reportBrowserTaskRunning(
-        "http://service",
-        credential,
-        "task",
-        "stale-lease",
-      ),
+      reportBrowserTaskRunning("http://service", credential, "task", "stale-lease"),
     ).rejects.toBeInstanceOf(BrowserTaskLeaseLostError);
     const validationError = await reportBrowserTaskResult(
       "http://service",
@@ -159,23 +139,18 @@ describe("浏览器任务服务客户端", () => {
     ).catch((error: unknown) => error);
     expect(validationError).toBeInstanceOf(Error);
     expect((validationError as Error).message).toContain("任务结果结构无效");
-    expect(validationError).not.toBeInstanceOf(
-      BrowserTaskLeaseLostError,
-    );
+    expect(validationError).not.toBeInstanceOf(BrowserTaskLeaseLostError);
   });
 
-  it.each([-0.01, 30.01, Number.NaN])(
-    "拒绝越界的领取等待时间 %s",
-    async (waitSeconds) => {
-      const fetchMock = vi.fn();
-      vi.stubGlobal("fetch", fetchMock);
+  it.each([-0.01, 30.01, Number.NaN])("拒绝越界的领取等待时间 %s", async (waitSeconds) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
 
-      await expect(
-        claimBrowserTask("http://service", credential, waitSeconds),
-      ).rejects.toThrow("必须在 0 到 30 秒之间");
-      expect(fetchMock).not.toHaveBeenCalled();
-    },
-  );
+    await expect(claimBrowserTask("http://service", credential, waitSeconds)).rejects.toThrow(
+      "必须在 0 到 30 秒之间",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 
   it("拒绝执行服务端误发的受管浏览器任务", async () => {
     vi.stubGlobal(
@@ -190,8 +165,6 @@ describe("浏览器任务服务客户端", () => {
       ),
     );
 
-    await expect(
-      claimBrowserTask("http://service", credential),
-    ).rejects.toThrow("不属于扩展");
+    await expect(claimBrowserTask("http://service", credential)).rejects.toThrow("不属于扩展");
   });
 });

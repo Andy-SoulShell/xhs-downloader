@@ -73,28 +73,22 @@ describe("发布素材组装", () => {
       })),
     ).rejects.toThrow("提前结束");
     await expect(
-      assemblePublicationFile(
-        { ...asset, size: 5 },
-        async () => ({
-          base64: btoa("tiny"),
-          offset: 0,
-          nextOffset: 5,
-          total: 5,
-          done: true,
-        }),
-      ),
+      assemblePublicationFile({ ...asset, size: 5 }, async () => ({
+        base64: btoa("tiny"),
+        offset: 0,
+        nextOffset: 5,
+        total: 5,
+        done: true,
+      })),
     ).rejects.toThrow("大小校验失败");
     await expect(
-      assemblePublicationFile(
-        { ...asset, sha256: "0".repeat(64) },
-        async () => ({
-          base64: btoa("synthetic-media"),
-          offset: 0,
-          nextOffset: content.length,
-          total: content.length,
-          done: true,
-        }),
-      ),
+      assemblePublicationFile({ ...asset, sha256: "0".repeat(64) }, async () => ({
+        base64: btoa("synthetic-media"),
+        offset: 0,
+        nextOffset: content.length,
+        total: content.length,
+        done: true,
+      })),
     ).rejects.toThrow("完整性校验失败");
   });
 });

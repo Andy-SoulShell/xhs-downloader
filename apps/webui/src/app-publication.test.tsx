@@ -1,9 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./app";
@@ -14,14 +9,8 @@ import {
   listCollectedPosts,
   listTasks,
 } from "./lib/api";
-import {
-  listPublicationDrafts,
-  listPublicationTasks,
-} from "./lib/publication-api";
-import {
-  makePublicationDraft,
-  makeSettingsResponse,
-} from "./test/fixtures";
+import { listPublicationDrafts, listPublicationTasks } from "./lib/publication-api";
+import { makePublicationDraft, makeSettingsResponse } from "./test/fixtures";
 
 vi.mock("./lib/api", () => ({
   checkHealth: vi.fn(),
@@ -60,15 +49,14 @@ beforeEach(() => {
 
 describe("发布中心主导航集成", () => {
   it("从工作台导航进入已有草稿", async () => {
-    vi.mocked(listPublicationDrafts).mockResolvedValue([
-      makePublicationDraft(),
-    ]);
+    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
     render(<App />);
 
     fireEvent.mouseDown(
-      await within(
-        await screen.findByRole("tablist", { name: "切换工作台视图" }),
-      ).findByRole("tab", { name: "发布" }),
+      await within(await screen.findByRole("tablist", { name: "切换工作台视图" })).findByRole(
+        "tab",
+        { name: "发布" },
+      ),
     );
 
     expect(await screen.findByLabelText("当前草稿")).toBeInTheDocument();

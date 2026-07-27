@@ -26,14 +26,10 @@ describe("页面实时状态桥接", () => {
 
   it("状态缺失或桥接未安装时返回明确错误", async () => {
     const uninstall = installBrowserStateBridge(window as TestWindow);
-    await expect(readLiveInitialState(document)).rejects.toThrow(
-      "实时状态尚未加载",
-    );
+    await expect(readLiveInitialState(document)).rejects.toThrow("实时状态尚未加载");
     uninstall();
 
-    await expect(readLiveInitialState(document, 5)).rejects.toThrow(
-      "实时状态超时",
-    );
+    await expect(readLiveInitialState(document, 5)).rejects.toThrow("实时状态超时");
   });
 
   it("拒绝无窗口文档，并安全移除状态中的循环引用", async () => {

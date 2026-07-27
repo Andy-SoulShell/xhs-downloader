@@ -7,22 +7,12 @@ const DEFAULT_FILTERS: Record<string, string> = {
   search_scope: "不限",
   location: "不限",
 };
-const FILTER_GROUPS = [
-  "sort_by",
-  "note_type",
-  "publish_time",
-  "search_scope",
-  "location",
-];
+const FILTER_GROUPS = ["sort_by", "note_type", "publish_time", "search_scope", "location"];
 
 /** 判断搜索任务是否要求操作筛选面板。 */
-export function hasCustomSearchFilters(
-  filters: Record<string, JsonValue>,
-): boolean {
+export function hasCustomSearchFilters(filters: Record<string, JsonValue>): boolean {
   return FILTER_GROUPS.some(
-    (field) =>
-      typeof filters[field] === "string" &&
-      filters[field] !== DEFAULT_FILTERS[field],
+    (field) => typeof filters[field] === "string" && filters[field] !== DEFAULT_FILTERS[field],
   );
 }
 
@@ -32,12 +22,10 @@ export async function applySearchFilters(
   filters: Record<string, JsonValue>,
 ): Promise<void> {
   const triggerCandidate =
-    page.querySelector<HTMLElement>(".filter") ??
-    findExactTextElement(page, "筛选");
+    page.querySelector<HTMLElement>(".filter") ?? findExactTextElement(page, "筛选");
   const trigger =
-    triggerCandidate?.closest<HTMLElement>(
-      "button, [role='button'], div.filter, div",
-    ) ?? triggerCandidate;
+    triggerCandidate?.closest<HTMLElement>("button, [role='button'], div.filter, div") ??
+    triggerCandidate;
   if (!trigger) throw new Error("搜索页没有筛选入口");
   trigger.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
   trigger.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
@@ -66,20 +54,13 @@ async function waitForFilterOptions(page: Document): Promise<ParentNode> {
   throw new Error("搜索筛选面板未能及时打开");
 }
 
-function findExactTextElement(
-  scope: ParentNode,
-  text: string,
-): HTMLElement | null {
-  const candidates = scope.querySelectorAll<HTMLElement>(
-    "button, [role='button'], div, span",
-  );
+function findExactTextElement(scope: ParentNode, text: string): HTMLElement | null {
+  const candidates = scope.querySelectorAll<HTMLElement>("button, [role='button'], div, span");
   return (
     [...candidates].find(
       (element) =>
         element.textContent?.trim() === text &&
-        ![...element.children].some(
-          (child) => child.textContent?.trim() === text,
-        ),
+        ![...element.children].some((child) => child.textContent?.trim() === text),
     ) ?? null
   );
 }

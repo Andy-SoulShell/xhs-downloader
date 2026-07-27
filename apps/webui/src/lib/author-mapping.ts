@@ -6,9 +6,7 @@ export interface AuthorMappingRow {
 }
 
 /** 把服务端映射对象展开为可编辑的行。 */
-export function toMappingRows(
-  mapping: Record<string, string>,
-): AuthorMappingRow[] {
+export function toMappingRows(mapping: Record<string, string>): AuthorMappingRow[] {
   return Object.entries(mapping).map(([authorId, displayName], index) => ({
     id: `${index}-${authorId}`,
     authorId,
@@ -25,9 +23,7 @@ export function toMappingRows(
  * @param rows 当前编辑中的映射行。
  * @returns 可直接提交的作者映射对象。
  */
-export function toMappingObject(
-  rows: AuthorMappingRow[],
-): Record<string, string> {
+export function toMappingObject(rows: AuthorMappingRow[]): Record<string, string> {
   const mapping: Record<string, string> = {};
   for (const row of rows) {
     const authorId = row.authorId.trim();
@@ -39,9 +35,7 @@ export function toMappingObject(
 }
 
 /** 找出填了一半的行，供界面就地提示而不是阻断保存。 */
-export function incompleteMappingRows(
-  rows: AuthorMappingRow[],
-): AuthorMappingRow[] {
+export function incompleteMappingRows(rows: AuthorMappingRow[]): AuthorMappingRow[] {
   return rows.filter((row) => {
     const hasId = Boolean(row.authorId.trim());
     const hasName = Boolean(row.displayName.trim());

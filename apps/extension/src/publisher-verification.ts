@@ -17,19 +17,12 @@ const VERIFICATION_TEXT =
 /**
  * 识别创作页当前可见且足够明确的安全验证阻塞。
  */
-export function readPublicationVerification(
-  root: ParentNode,
-): string | undefined {
+export function readPublicationVerification(root: ParentNode): string | undefined {
   const frame = root.querySelector<HTMLElement>(VERIFICATION_FRAME_SELECTOR);
   if (frame && isVisible(frame)) return "创作平台要求完成安全验证";
-  const containers = root.querySelectorAll<HTMLElement>(
-    VERIFICATION_CONTAINER_SELECTOR,
-  );
+  const containers = root.querySelectorAll<HTMLElement>(VERIFICATION_CONTAINER_SELECTOR);
   for (const container of containers) {
-    if (
-      isVisible(container) &&
-      VERIFICATION_TEXT.test(normalizedText(container))
-    ) {
+    if (isVisible(container) && VERIFICATION_TEXT.test(normalizedText(container))) {
       return "创作平台要求完成安全验证";
     }
   }
@@ -37,11 +30,7 @@ export function readPublicationVerification(
 }
 
 function isVisible(element: HTMLElement): boolean {
-  for (
-    let current: HTMLElement | null = element;
-    current;
-    current = current.parentElement
-  ) {
+  for (let current: HTMLElement | null = element; current; current = current.parentElement) {
     if (
       current.hidden ||
       current.getAttribute("aria-hidden") === "true" ||
@@ -55,7 +44,5 @@ function isVisible(element: HTMLElement): boolean {
 }
 
 function normalizedText(element: HTMLElement): string {
-  return (element.innerText || element.textContent || "")
-    .replace(/\s+/g, "")
-    .slice(0, 300);
+  return (element.innerText || element.textContent || "").replace(/\s+/g, "").slice(0, 300);
 }

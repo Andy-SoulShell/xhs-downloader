@@ -2,23 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { BrowserTask } from "@xhs-downloader/contracts";
 
-import {
-  executeBrowserPageTask,
-  isBrowserPageTaskRequest,
-} from "./browser-page-runner";
+import { executeBrowserPageTask, isBrowserPageTaskRequest } from "./browser-page-runner";
 import { installBrowserStateBridge } from "./browser-state-main";
-import {
-  feedState,
-  pageTask as task,
-  profileState,
-  statePage,
-} from "./browser-page-test-helpers";
+import { feedState, pageTask as task, profileState, statePage } from "./browser-page-test-helpers";
 
 describe("内容脚本浏览器任务执行器", () => {
   it("执行登录状态任务并返回结构化结果", async () => {
     const page = document.implementation.createHTMLDocument();
-    page.head.innerHTML =
-      '<base href="https://www.xiaohongshu.com/explore">';
+    page.head.innerHTML = '<base href="https://www.xiaohongshu.com/explore">';
     page.body.innerHTML = `
       <div class="main-container">
         <div class="user">
@@ -184,10 +175,7 @@ describe("内容脚本浏览器任务执行器", () => {
         </div>
       </div>
     `;
-    const click = vi.spyOn(
-      page.querySelector("#profile-link") as HTMLAnchorElement,
-      "click",
-    );
+    const click = vi.spyOn(page.querySelector("#profile-link") as HTMLAnchorElement, "click");
 
     const response = await executeBrowserPageTask(
       task("get_my_profile"),

@@ -2,19 +2,13 @@ import { GalleryVerticalEnd, PlugZap, RefreshCw, Search } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { libraryEmptyState } from "../lib/library-empty-state";
-import type {
-  Filter,
-  PostRecord,
-} from "../lib/workspace";
+import type { Filter, PostRecord } from "../lib/workspace";
 import { ActionButton } from "./action-button";
 import { EmptyState } from "./empty-state";
 import { MasonryFeed } from "./masonry-feed";
 import { PostCard } from "./post-card";
 import { SkeletonFeedCard } from "./skeleton";
-import {
-  SegmentedControl,
-  SegmentedControlItem,
-} from "./segmented-control";
+import { SegmentedControl, SegmentedControlItem } from "./segmented-control";
 import { postFilterItems } from "./workspace-navigation";
 
 interface PostLibraryProps {
@@ -91,10 +85,7 @@ export function PostLibrary({
             value={filter}
           >
             {postFilterItems.map((item) => (
-              <SegmentedControlItem
-                key={item.filter}
-                value={item.filter}
-              >
+              <SegmentedControlItem key={item.filter} value={item.filter}>
                 {item.label}
               </SegmentedControlItem>
             ))}
@@ -111,17 +102,12 @@ export function PostLibrary({
           <div className="feed-grid">
             {parsing && <SkeletonFeedCard />}
             {visiblePosts.map((post, index) => (
-              <div
-                key={post.id}
-                style={{ "--enter-index": index } as CSSProperties}
-              >
+              <div key={post.id} style={{ "--enter-index": index } as CSSProperties}>
                 <PostCard
                   onDownload={() => onDownload(post)}
                   onForceChange={(force) => onForceChange(post.id, force)}
                   onRemove={() => onRemove(post.id)}
-                  onSelectionChange={(selected) =>
-                    onSelectionChange(post.id, selected)
-                  }
+                  onSelectionChange={(selected) => onSelectionChange(post.id, selected)}
                   post={post}
                 />
               </div>
@@ -136,9 +122,7 @@ export function PostLibrary({
                 onDownload={() => onDownload(post)}
                 onForceChange={(force) => onForceChange(post.id, force)}
                 onRemove={() => onRemove(post.id)}
-                onSelectionChange={(selected) =>
-                  onSelectionChange(post.id, selected)
-                }
+                onSelectionChange={(selected) => onSelectionChange(post.id, selected)}
                 post={post}
               />
             ))}

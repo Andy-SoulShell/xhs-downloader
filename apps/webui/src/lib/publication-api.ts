@@ -35,9 +35,7 @@ export async function updatePublicationDraft(
   return parseResponse<PublicationDraft>(response);
 }
 
-export async function deletePublicationDraft(
-  draftId: string,
-): Promise<void> {
+export async function deletePublicationDraft(draftId: string): Promise<void> {
   const response = await fetch(`${API_BASE}/publication/drafts/${draftId}`, {
     method: "DELETE",
   });
@@ -50,10 +48,10 @@ export async function uploadPublicationAsset(
 ): Promise<PublicationDraft> {
   const data = new FormData();
   data.append("upload", file);
-  const response = await fetch(
-    `${API_BASE}/publication/drafts/${draftId}/assets`,
-    { method: "POST", body: data },
-  );
+  const response = await fetch(`${API_BASE}/publication/drafts/${draftId}/assets`, {
+    method: "POST",
+    body: data,
+  });
   return parseResponse<PublicationDraft>(response);
 }
 
@@ -61,10 +59,9 @@ export async function removePublicationAsset(
   draftId: string,
   assetId: string,
 ): Promise<PublicationDraft> {
-  const response = await fetch(
-    `${API_BASE}/publication/drafts/${draftId}/assets/${assetId}`,
-    { method: "DELETE" },
-  );
+  const response = await fetch(`${API_BASE}/publication/drafts/${draftId}/assets/${assetId}`, {
+    method: "DELETE",
+  });
   return parseResponse<PublicationDraft>(response);
 }
 
@@ -73,17 +70,14 @@ export async function submitPublicationTask(
   mode: PublicationMode,
   scheduledAt?: string,
 ): Promise<PublicationTask> {
-  const response = await fetch(
-    `${API_BASE}/publication/drafts/${draftId}/submit`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode,
-        scheduled_at: scheduledAt || null,
-      }),
-    },
-  );
+  const response = await fetch(`${API_BASE}/publication/drafts/${draftId}/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mode,
+      scheduled_at: scheduledAt || null,
+    }),
+  });
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
@@ -96,13 +90,8 @@ export async function listPublicationTasks(): Promise<PublicationTask[]> {
 }
 
 /** 显式重试明确失败且允许重试的发布任务。 */
-export async function retryPublicationTask(
-  taskId: string,
-): Promise<PublicationTask> {
-  const response = await fetch(
-    `${API_BASE}/publication/tasks/${taskId}/retry`,
-    { method: "POST" },
-  );
+export async function retryPublicationTask(taskId: string): Promise<PublicationTask> {
+  const response = await fetch(`${API_BASE}/publication/tasks/${taskId}/retry`, { method: "POST" });
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
@@ -110,14 +99,11 @@ export async function retryPublicationTask(
 export async function resumePublicationVerification(
   taskId: string,
 ): Promise<PublicationVerificationResumeResult> {
-  const response = await fetch(
-    `${API_BASE}/publication/tasks/${taskId}/verification/resume`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ confirmed: true }),
-    },
-  );
+  const response = await fetch(`${API_BASE}/publication/tasks/${taskId}/verification/resume`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmed: true }),
+  });
   return parseResponse<PublicationVerificationResumeResult>(response);
 }
 
@@ -126,27 +112,21 @@ export async function reviewPublicationTask(
   taskId: string,
   published: boolean,
 ): Promise<PublicationTask> {
-  const response = await fetch(
-    `${API_BASE}/publication/tasks/${taskId}/review`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        decision: published ? "published" : "not_published",
-      }),
-    },
-  );
+  const response = await fetch(`${API_BASE}/publication/tasks/${taskId}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      decision: published ? "published" : "not_published",
+    }),
+  });
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 
 /** 取消尚未产生平台写入的发布任务。 */
-export async function cancelPublicationTask(
-  taskId: string,
-): Promise<PublicationTask> {
-  const response = await fetch(
-    `${API_BASE}/publication/tasks/${taskId}/cancel`,
-    { method: "POST" },
-  );
+export async function cancelPublicationTask(taskId: string): Promise<PublicationTask> {
+  const response = await fetch(`${API_BASE}/publication/tasks/${taskId}/cancel`, {
+    method: "POST",
+  });
   return requirePublicationTask(await parseResponse<unknown>(response));
 }
 

@@ -31,20 +31,12 @@ interface FieldShellProps {
   wide?: boolean;
 }
 
-function FieldShell({
-  children,
-  help,
-  id,
-  label,
-  wide = false,
-}: FieldShellProps) {
+function FieldShell({ children, help, id, label, wide = false }: FieldShellProps) {
   return (
     <label className={wide ? "sm:col-span-2" : ""} htmlFor={id}>
       <span className="text-xs font-semibold text-stone-700">{label}</span>
       {children}
-      <span className="mt-1.5 block text-[11px] leading-4 text-stone-400">
-        {help}
-      </span>
+      <span className="mt-1.5 block text-[11px] leading-4 text-stone-400">{help}</span>
     </label>
   );
 }
@@ -258,12 +250,8 @@ export function ToggleSetting({
   return (
     <label className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 p-4">
       <span>
-        <span className="block text-xs font-semibold text-stone-700">
-          {label}
-        </span>
-        <span className="mt-1 block text-[11px] leading-4 text-stone-400">
-          {description}
-        </span>
+        <span className="block text-xs font-semibold text-stone-700">{label}</span>
+        <span className="mt-1 block text-[11px] leading-4 text-stone-400">{description}</span>
       </span>
       <Switch.Root
         aria-label={label}

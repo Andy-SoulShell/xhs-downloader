@@ -12,9 +12,7 @@ describe("创作页安全验证识别", () => {
       <section role="dialog">请完成安全验证后继续</section>
     `;
 
-    expect(readPublicationVerification(document)).toBe(
-      "创作平台要求完成安全验证",
-    );
+    expect(readPublicationVerification(document)).toBe("创作平台要求完成安全验证");
   });
 
   it("忽略隐藏的验证内容和无关文案", () => {
@@ -33,9 +31,7 @@ describe("创作页安全验证识别", () => {
       <iframe src="https://synthetic.invalid/captcha"></iframe>
     `;
 
-    expect(readPublicationVerification(document)).toBe(
-      "创作平台要求完成安全验证",
-    );
+    expect(readPublicationVerification(document)).toBe("创作平台要求完成安全验证");
   });
 
   it("忽略明确标记为不可见的验证码框架", () => {

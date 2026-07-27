@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  UNKNOWN_METRIC_TEXT,
-  formatMetricValue,
-  metricAriaLabel,
-} from "./metric-format";
+import { UNKNOWN_METRIC_TEXT, formatMetricValue, metricAriaLabel } from "./metric-format";
 
 describe("互动数量格式化", () => {
   it("已知数量原样展示", () => {

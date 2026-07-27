@@ -2,14 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  executeBrowserOperation,
-  executeReadCapability,
-} from "../lib/browser-api";
-import {
-  listBrowserExtensions,
-  listBrowserTasks,
-} from "../lib/browser-management-api";
+import { executeBrowserOperation, executeReadCapability } from "../lib/browser-api";
+import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
 import {
   browserDetailFixture,
@@ -37,9 +31,7 @@ vi.mock("../lib/use-managed-browser", () => ({
 
 describe("浏览结果就地下载", () => {
   beforeEach(() => {
-    vi.mocked(useManagedBrowser).mockReturnValue(
-      makeManagedBrowserControl(),
-    );
+    vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl());
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockImplementation(async (path) => {
@@ -54,10 +46,7 @@ describe("浏览结果就地下载", () => {
       return { task: makeCompletedBrowserTask(data), data } as never;
     });
     vi.mocked(executeReadCapability).mockImplementation(async (path) => {
-      const data =
-        path === "/xhs/feeds/detail"
-          ? browserDetailFixture
-          : makeBrowserFeedList();
+      const data = path === "/xhs/feeds/detail" ? browserDetailFixture : makeBrowserFeedList();
       return { data, route: browserReadRouteFixture } as never;
     });
   });
@@ -75,9 +64,7 @@ describe("浏览结果就地下载", () => {
 
     await waitFor(() =>
       expect(onDownload).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `xiaohongshu.com/explore/${browserFeedFixture.feed_id}`,
-        ),
+        expect.stringContaining(`xiaohongshu.com/explore/${browserFeedFixture.feed_id}`),
         browserFeedFixture.title,
       ),
     );
@@ -99,9 +86,7 @@ describe("浏览结果就地下载", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
-    expect(
-      await screen.findByText("这条暂时打不开，重新搜索一下试试。"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("这条暂时打不开，重新搜索一下试试。")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "下载" })).toBeNull();
   });
 
@@ -131,10 +116,6 @@ describe("浏览结果就地下载", () => {
     expect(await screen.findByText("第二页帖子")).toBeInTheDocument();
     // 首页已有的帖子不会重复出现。
     expect(screen.getAllByText(browserFeedFixture.title)).toHaveLength(1);
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("button", { name: "加载更多" }),
-      ).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("button", { name: "加载更多" })).toBeNull());
   });
 });
