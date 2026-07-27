@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { Tabs, Toast } from "radix-ui";
 
 import { ActivityBoard } from "./components/activity-board";
-import { ConnectionPanel } from "./components/connection-panel";
 import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
-import { PageHeading } from "./components/page-heading";
 import { PublicationBoard } from "./components/publication-board";
-import { SettingsBoard } from "./components/settings-board";
 import { AppToast } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
+import { SettingsWorkspace } from "./components/settings-workspace";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import { checkHealth, deleteCollectedPost, listCollectedPosts, submitDetail } from "./lib/api";
-import { isBrowserDriver } from "./lib/types";
 import { useManagedBrowser } from "./lib/use-managed-browser";
 import { useSettings } from "./lib/use-settings";
 import { usePostDownloads } from "./lib/use-post-downloads";
@@ -37,6 +34,22 @@ export default function App() {
     <BrowserSessionProvider>
       <Workspace />
     </BrowserSessionProvider>
+  );
+}
+
+/**
+ * 一个常驻的工作台面板。
+ *
+ * forceMount 让四个工作台切走也不卸载：此前切到别处会连同未保存的设置
+ * 修改、正在写的发布草稿和整页浏览结果一起销毁，回来什么都没了，轮询也
+ * 跟着停摆。Radix 在 forceMount 下不再自己隐藏，未激活的面板改由
+ * data-state 收起，React 状态因此得以保留。
+ */
+function WorkspacePanel({ children, value }: { children: ReactNode; value: WorkspaceView }) {
+  return (
+    <Tabs.Content className="data-[state=inactive]:hidden" forceMount value={value}>
+      {children}
+    </Tabs.Content>
   );
 }
 
@@ -210,7 +223,7 @@ function Workspace() {
 
           <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
             <div className="mx-auto max-w-[1460px]">
-              <Tabs.Content value="content">
+              <WorkspacePanel value="content">
                 <ContentBoard
                   browserDriver={settings?.values.browser_driver}
                   filter={filter}
@@ -232,50 +245,33 @@ function Workspace() {
                   query={query}
                   visiblePosts={visiblePosts}
                 />
-              </Tabs.Content>
-              <Tabs.Content value="activity">
+              </WorkspacePanel>
+              <WorkspacePanel value="activity">
                 <ActivityBoard
                   loading={tasksLoading}
                   onRetryDownload={(taskId) => void handleRetry(taskId)}
                   records={records}
                   tasks={tasks}
                 />
-              </Tabs.Content>
-              <Tabs.Content value="publication">
+              </WorkspacePanel>
+              <WorkspacePanel value="publication">
                 <PublicationBoard
                   browserDriver={settings?.values.browser_driver}
                   onNotify={notify}
                 />
-              </Tabs.Content>
-              <Tabs.Content value="settings">
-                <>
-                  {/* 页面标题必须排在最前：此前它在服务配置那一节里，
-                      于是受管浏览器和连接方式两块反而排在页面标题之前。
-                      标题也跟侧栏统一叫「设置」，不再一个叫设置一个叫服务配置。 */}
-                  <PageHeading
-                    description="决定这个程序用什么方式打开小红书、文件下载到哪里，以及本地服务怎么跑。"
-                    meta=""
-                    title="设置"
-                  />
-                  <ConnectionPanel
-                    browserDriver={
-                      isBrowserDriver(settings?.values.browser_driver)
-                        ? settings.values.browser_driver
-                        : null
-                    }
-                    managedBrowser={managedBrowser}
-                  />
-                  <SettingsBoard
-                    error={settingsError}
-                    loading={settingsLoading}
-                    onRefresh={() => void refreshSettings()}
-                    onSave={saveSettings}
-                    onSaved={notify}
-                    saving={settingsSaving}
-                    settings={settings}
-                  />
-                </>
-              </Tabs.Content>
+              </WorkspacePanel>
+              <WorkspacePanel value="settings">
+                <SettingsWorkspace
+                  error={settingsError}
+                  loading={settingsLoading}
+                  managedBrowser={managedBrowser}
+                  onNotify={notify}
+                  onRefresh={() => void refreshSettings()}
+                  onSave={saveSettings}
+                  saving={settingsSaving}
+                  settings={settings}
+                />
+              </WorkspacePanel>
             </div>
           </main>
         </div>
