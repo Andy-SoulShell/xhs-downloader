@@ -23,3 +23,8 @@ __pycache__/
 /output/
 /tmp/
 /.pnpm-store
+ux-walkthrough
+
+
+# 走查截图仅用于本地核对，不进仓库。
+/docs/assets/ux-walkthrough/

@@ -15,6 +15,25 @@
       ],
       "port": 5556,
       "url": "http://127.0.0.1:5556"
+    },
+    {
+      "name": "xhs-walkthrough",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "xhs_api.desktop",
+        "--port",
+        "5557",
+        "--no-open",
+        "--config-dir",
+        "volume/walkthrough/config",
+        "--data-dir",
+        "volume/walkthrough/data"
+      ],
+      "port": 5557,
+      "url": "http://127.0.0.1:5557"
     }
   ]
 }
