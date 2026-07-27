@@ -86,9 +86,15 @@ describe("动态工作台", () => {
       />,
     );
 
-    const tabs = await screen.findAllByRole("tab");
-
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["下载1", "浏览操作1", "插件下载1"]);
+    // 标签条在首帧就在了，浏览操作的条目数却要等轮询回来才写上去：只等
+    // 标签出现就断言等于赌轮询能抢在断言之前落地，整包跑起来会随机翻车。
+    await waitFor(() =>
+      expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+        "下载1",
+        "浏览操作1",
+        "插件下载1",
+      ]),
+    );
     // 默认停在下载，其余分类要切换后才呈现，不再串成一页长滚动。
     expect(screen.getByRole("tabpanel")).toHaveTextContent("合成下载状态");
     expect(screen.queryByText("合成插件记录")).not.toBeInTheDocument();
