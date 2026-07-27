@@ -11,12 +11,7 @@ import { SettingsBoard } from "./components/settings-board";
 import { AppToast } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
-import {
-  checkHealth,
-  deleteCollectedPost,
-  listCollectedPosts,
-  submitDetail,
-} from "./lib/api";
+import { checkHealth, deleteCollectedPost, listCollectedPosts, submitDetail } from "./lib/api";
 import { isBrowserDriver } from "./lib/types";
 import { useManagedBrowser } from "./lib/use-managed-browser";
 import { useSettings } from "./lib/use-settings";
@@ -78,9 +73,7 @@ export default function App() {
         const restored = details.map(postFromDetail);
         setPosts((current) => [
           ...current,
-          ...restored.filter(
-            (post) => !current.some((item) => item.id === post.id),
-          ),
+          ...restored.filter((post) => !current.some((item) => item.id === post.id)),
         ]);
       })
       .catch((error: unknown) => {
@@ -112,10 +105,7 @@ export default function App() {
     try {
       const result = await submitDetail({ url, download: false });
       const post = postFromResponse(result);
-      setPosts((current) => [
-        post,
-        ...current.filter((item) => item.id !== post.id),
-      ]);
+      setPosts((current) => [post, ...current.filter((item) => item.id !== post.id)]);
       setLink("");
       setOnline(true);
       notify(`已添加「${post.result.data?.作品标题 || "未命名帖子"}」`, "success");
@@ -128,9 +118,7 @@ export default function App() {
   };
 
   const updatePost = (id: string, change: Partial<PostRecord>) => {
-    setPosts((current) =>
-      current.map((post) => (post.id === id ? { ...post, ...change } : post)),
-    );
+    setPosts((current) => current.map((post) => (post.id === id ? { ...post, ...change } : post)));
   };
 
   const { downloadFeed, downloadPost } = usePostDownloads({
@@ -162,10 +150,7 @@ export default function App() {
     }
   };
 
-  const managedPosts = useMemo(
-    () => mergeTaskResults(posts, tasks),
-    [posts, tasks],
-  );
+  const managedPosts = useMemo(() => mergeTaskResults(posts, tasks), [posts, tasks]);
   const visiblePosts = useMemo(() => {
     const keyword = query.trim().toLowerCase();
     return managedPosts.filter((post) => {
@@ -183,9 +168,7 @@ export default function App() {
     });
   }, [filter, managedPosts, query]);
 
-  const completedCount = managedPosts.filter(
-    (post) => post.status === "done",
-  ).length;
+  const completedCount = managedPosts.filter((post) => post.status === "done").length;
   const effectiveOnline = taskError ? false : online;
 
   return (
@@ -199,83 +182,85 @@ export default function App() {
         onValueChange={(next) => setView(next as WorkspaceView)}
         value={view}
       >
-      <div className="min-h-screen">
-        <WorkspaceSidebar
-          activityCount={tasks.length + records.length}
-          completedCount={completedCount}
-          filter={filter}
-          onFilterChange={setFilter}
-          online={effectiveOnline}
-          postCount={managedPosts.length}
-          view={view}
-        />
+        <div className="min-h-screen">
+          <WorkspaceSidebar
+            activityCount={tasks.length + records.length}
+            completedCount={completedCount}
+            filter={filter}
+            onFilterChange={setFilter}
+            online={effectiveOnline}
+            postCount={managedPosts.length}
+            view={view}
+          />
 
-        <MobileHeader online={effectiveOnline} />
-        <MobileWorkspaceNav />
+          <MobileHeader online={effectiveOnline} />
+          <MobileWorkspaceNav />
 
-        <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
-          <div className="mx-auto max-w-[1460px]">
-            <Tabs.Content value="content">
-              <ContentBoard
-                browserDriver={settings?.values.browser_driver}
-                completedCount={completedCount}
-                filter={filter}
-                link={link}
-                onDownload={(post) => void downloadPost(post)}
-                onDownloadFeed={downloadFeed}
-                onFilterChange={setFilter}
-                onForceChange={(id, force) => updatePost(id, { force })}
-                onLinkChange={setLink}
-                onLinkSubmit={handleAdd}
-                onQueryChange={setQuery}
-                onRemove={(id) => void handleRemove(id)}
-                onRetryConnection={retryConnection}
-                online={effectiveOnline}
-                onSelectionChange={(id, selected) =>
-                  updatePost(id, { selected })
-                }
-                parsing={parsing}
-                posts={managedPosts}
-                query={query}
-                visiblePosts={visiblePosts}
-              />
-            </Tabs.Content>
-            <Tabs.Content value="activity">
-              <ActivityBoard
-                loading={tasksLoading}
-                onRetryDownload={(taskId) => void handleRetry(taskId)}
-                records={records}
-                tasks={tasks}
-              />
-            </Tabs.Content>
-            <Tabs.Content value="publication">
-              <PublicationBoard browserDriver={settings?.values.browser_driver} onNotify={notify} />
-            </Tabs.Content>
-            <Tabs.Content value="settings">
-              <>
-                <ConnectionPanel
-                  account={null}
-                  browserDriver={
-                    isBrowserDriver(settings?.values.browser_driver)
-                      ? settings.values.browser_driver
-                      : null
-                  }
-                  managedBrowser={managedBrowser}
+          <main className="px-5 py-6 sm:px-8 lg:ml-60 lg:px-10 lg:py-8">
+            <div className="mx-auto max-w-[1460px]">
+              <Tabs.Content value="content">
+                <ContentBoard
+                  browserDriver={settings?.values.browser_driver}
+                  completedCount={completedCount}
+                  filter={filter}
+                  link={link}
+                  onDownload={(post) => void downloadPost(post)}
+                  onDownloadFeed={downloadFeed}
+                  onFilterChange={setFilter}
+                  onForceChange={(id, force) => updatePost(id, { force })}
+                  onLinkChange={setLink}
+                  onLinkSubmit={handleAdd}
+                  onOpenSettings={() => setView("settings")}
+                  onQueryChange={setQuery}
+                  onRemove={(id) => void handleRemove(id)}
+                  onRetryConnection={retryConnection}
+                  online={effectiveOnline}
+                  onSelectionChange={(id, selected) => updatePost(id, { selected })}
+                  parsing={parsing}
+                  posts={managedPosts}
+                  query={query}
+                  visiblePosts={visiblePosts}
                 />
-                <SettingsBoard
-                  error={settingsError}
-                  loading={settingsLoading}
-                  onRefresh={() => void refreshSettings()}
-                  onSave={saveSettings}
-                  onSaved={notify}
-                  saving={settingsSaving}
-                  settings={settings}
+              </Tabs.Content>
+              <Tabs.Content value="activity">
+                <ActivityBoard
+                  loading={tasksLoading}
+                  onRetryDownload={(taskId) => void handleRetry(taskId)}
+                  records={records}
+                  tasks={tasks}
                 />
-              </>
-            </Tabs.Content>
-          </div>
-        </main>
-      </div>
+              </Tabs.Content>
+              <Tabs.Content value="publication">
+                <PublicationBoard
+                  browserDriver={settings?.values.browser_driver}
+                  onNotify={notify}
+                />
+              </Tabs.Content>
+              <Tabs.Content value="settings">
+                <>
+                  <ConnectionPanel
+                    account={null}
+                    browserDriver={
+                      isBrowserDriver(settings?.values.browser_driver)
+                        ? settings.values.browser_driver
+                        : null
+                    }
+                    managedBrowser={managedBrowser}
+                  />
+                  <SettingsBoard
+                    error={settingsError}
+                    loading={settingsLoading}
+                    onRefresh={() => void refreshSettings()}
+                    onSave={saveSettings}
+                    onSaved={notify}
+                    saving={settingsSaving}
+                    settings={settings}
+                  />
+                </>
+              </Tabs.Content>
+            </div>
+          </main>
+        </div>
       </Tabs.Root>
 
       <AppToast

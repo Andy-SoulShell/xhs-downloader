@@ -9,10 +9,7 @@ import {
 } from "lucide-react";
 import type { ChangeEvent } from "react";
 
-import type {
-  PublicationAsset,
-  PublicationDraft,
-} from "../lib/publication";
+import type { PublicationAsset, PublicationDraft } from "../lib/publication";
 import { ActionButton } from "./action-button";
 import { EmptyState } from "./empty-state";
 import { Badge } from "./badge";
@@ -49,9 +46,7 @@ export function PublicationAssets({
     <fieldset className="space-y-3" disabled={busy}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <legend className="text-sm font-semibold text-stone-800">
-            发布素材
-          </legend>
+          <legend className="text-sm font-semibold text-stone-800">发布素材</legend>
           <p className="mt-1 text-xs text-stone-600">
             图文支持 1–18 张图片；视频笔记仅支持一个视频。
           </p>
@@ -86,7 +81,7 @@ export function PublicationAssets({
       ) : (
         <EmptyState
           compact
-          description="图文可以放 1 到 18 张图片，视频笔记放一个视频。"
+          description="从本机选图片或视频，顺序可以拖动调整。"
           icon={ImagePlus}
           title="还没有添加素材"
         />
@@ -118,14 +113,10 @@ function AssetRow({
         <Icon aria-hidden size={17} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-stone-800">
-          {asset.filename}
-        </p>
+        <p className="truncate text-xs font-semibold text-stone-800">{asset.filename}</p>
         <div className="mt-1 flex items-center gap-2">
           <Badge>{video ? "视频" : "图片"}</Badge>
-          <span className="meta-text">
-            {formatBytes(asset.size)}
-          </span>
+          <span className="meta-text">{formatBytes(asset.size)}</span>
         </div>
       </div>
       <div className="flex shrink-0 items-center">

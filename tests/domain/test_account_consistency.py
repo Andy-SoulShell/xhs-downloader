@@ -106,15 +106,15 @@ def test_account_proof_enforces_state_digest_invariant() -> None:
     [
         (
             AccountConsistencyStatus.DIFFERENT,
-            "HTTP Cookie 与当前浏览器不是同一账号，已停止个性化读取回退",
+            "保存的 Cookie 和浏览器里登录的不是同一个账号，为免串号已经停下",
         ),
         (
             AccountConsistencyStatus.LOGGED_OUT,
-            "至少一个提供方尚未登录，无法确认账号一致，已停止个性化读取回退",
+            "还没有登录小红书，先完成登录再试",
         ),
         (
             AccountConsistencyStatus.UNVERIFIED,
-            "无法确认 HTTP Cookie 与当前浏览器账号一致，已停止个性化读取回退",
+            "没法确认现在用的是哪个账号，为免串号已经停下，先登录一次再试",
         ),
     ],
 )

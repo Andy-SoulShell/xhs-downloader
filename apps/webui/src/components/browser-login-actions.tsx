@@ -39,17 +39,12 @@ export function BrowserLoginActions({
   };
 
   return (
-    <section
-      aria-label="浏览器登录与会话"
-      className="control-shell mb-4 min-w-0 p-4 sm:p-5"
-    >
+    <section aria-label="浏览器登录与会话" className="control-shell mb-4 min-w-0 p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <ShieldCheck aria-hidden className="text-red-500" size={18} />
-            <h2 className="text-sm font-semibold text-stone-900">
-              浏览器登录与会话
-            </h2>
+            <h2 className="text-sm font-semibold text-stone-900">浏览器登录与会话</h2>
           </div>
           <p className="mt-1 text-xs leading-5 text-stone-600">
             {loginGuidance(browserDriver, managedStatus)}
@@ -115,17 +110,12 @@ export function BrowserLoginActions({
           className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"
           role="alertdialog"
         >
-          <p className="text-sm font-semibold text-stone-900">
-            确认清除浏览器中的小红书 Cookie？
-          </p>
+          <p className="text-sm font-semibold text-stone-900">确认清除浏览器中的小红书 Cookie？</p>
           <p className="mt-1 text-xs leading-5 text-stone-600">
             这会退出浏览器登录，但不会修改 Cookie HTTP 模式的本地配置。
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton
-              disabled={busy}
-              onClick={() => void confirmDelete()}
-            >
+            <ActionButton disabled={busy} onClick={() => void confirmDelete()}>
               <Trash2 aria-hidden size={14} />
               确认清除
             </ActionButton>
@@ -164,9 +154,9 @@ function loginGuidance(
       return "登录会在已启动的受管浏览器中完成，并保存在独立的本机用户目录。";
     }
     if (managedStatus && !managedStatus.installed) {
-      return "请先安装并配置 Chrome 或 Chromium，再在下方启动受管浏览器。";
+      return "没找到 Chrome 或 Chromium。装好之后到「设置 → 连接方式」里启动受管浏览器。";
     }
-    return "请先在下方启动受管浏览器，再获取二维码完成首次登录。";
+    return "受管浏览器还没启动。到「设置 → 连接方式」里启动它，再回来扫码登录。";
   }
-  return "浏览器执行器配置尚未确认，登录、扫码和清理操作已停用。";
+  return "还没定下用哪种方式打开小红书，登录、扫码和清理都先停用了。到「设置 → 连接方式」里选一个。";
 }

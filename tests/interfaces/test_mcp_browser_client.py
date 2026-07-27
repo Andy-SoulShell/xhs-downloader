@@ -91,14 +91,14 @@ async def test_mcp_browser_client_preserves_account_guard_error() -> None:
         json={
             "code": "account_consistency_failed",
             "account_consistency": "different",
-            "message": "HTTP Cookie 与当前浏览器不是同一账号，已停止个性化读取回退",
+            "message": "保存的 Cookie 和浏览器里登录的不是同一个账号，为免串号已经停下",
         },
     )
     async with AsyncClient(
         transport=MockTransport(lambda _: response),
         base_url="http://127.0.0.1:5556",
     ) as client:
-        with pytest.raises(BrowserTaskError, match="不是同一账号"):
+        with pytest.raises(BrowserTaskError, match="不是同一个账号"):
             await HttpBrowserCapabilityClient(client).execute(
                 "/xhs/feeds/list",
                 {},

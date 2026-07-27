@@ -2,14 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  executeBrowserOperation,
-  executeReadCapability,
-} from "../lib/browser-api";
-import {
-  listBrowserExtensions,
-  listBrowserTasks,
-} from "../lib/browser-management-api";
+import { executeBrowserOperation, executeReadCapability } from "../lib/browser-api";
+import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
 import {
   browserDetailFixture,
@@ -37,9 +31,7 @@ vi.mock("../lib/use-managed-browser", () => ({
 
 describe("浏览器探索工作台", () => {
   beforeEach(() => {
-    vi.mocked(useManagedBrowser).mockReturnValue(
-      makeManagedBrowserControl(),
-    );
+    vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl());
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockImplementation(async (path) => {
@@ -54,10 +46,7 @@ describe("浏览器探索工作台", () => {
       return { task: makeCompletedBrowserTask(data), data } as never;
     });
     vi.mocked(executeReadCapability).mockImplementation(async (path) => {
-      const data =
-        path === "/xhs/feeds/detail"
-          ? browserDetailFixture
-          : makeBrowserFeedList();
+      const data = path === "/xhs/feeds/detail" ? browserDetailFixture : makeBrowserFeedList();
       return { data, route: browserReadRouteFixture } as never;
     });
   });
@@ -86,9 +75,7 @@ describe("浏览器探索工作台", () => {
       ),
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "打开「合成浏览帖子」" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "打开「合成浏览帖子」" }));
     expect(await screen.findByText("合成详情")).toBeInTheDocument();
     expect(screen.getByText("合成评论")).toBeInTheDocument();
 
@@ -148,24 +135,19 @@ describe("浏览器探索工作台", () => {
     const readsBeforeClose = vi.mocked(executeReadCapability).mock.calls.length;
     fireEvent.click(screen.getByRole("button", { name: "关闭帖子详情" }));
 
-    expect(vi.mocked(executeReadCapability).mock.calls).toHaveLength(
-      readsBeforeClose,
-    );
+    expect(vi.mocked(executeReadCapability).mock.calls).toHaveLength(readsBeforeClose);
     expect(screen.getByText("合成浏览帖子")).toBeInTheDocument();
   });
 
   it("显示任务错误并阻止空关键词搜索", async () => {
-    vi.mocked(executeReadCapability).mockRejectedValueOnce(
-      new Error("浏览器扩展未连接"),
-    );
+    vi.mocked(executeReadCapability).mockRejectedValueOnce(new Error("浏览器扩展未连接"));
     render(<BrowserBoard browserDriver="extension" />);
 
     expect(screen.getByRole("button", { name: "搜索" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
-    expect(
-      await screen.findByText("浏览器扩展未连接"),
-    ).toBeInTheDocument();
+    // 结果区为空时错误由空状态承载，不再另挂一条同文徽章。
+    expect(await screen.findByText(/浏览器扩展未连接/)).toBeInTheDocument();
   });
 
   it("不向用户暴露账号标识与内部编排结论", async () => {
@@ -218,9 +200,7 @@ describe("浏览器探索工作台", () => {
     expect(await screen.findByText("尚未登录")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     expect(await screen.findByText("暂无封面")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "打开「未命名帖子」" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "打开「未命名帖子」" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("能力请求执行失败")).toBeInTheDocument();
   });
@@ -228,18 +208,10 @@ describe("浏览器探索工作台", () => {
   it("执行器未确认时只允许读取并禁用会话与写操作", async () => {
     render(<BrowserBoard />);
 
-    expect(
-      screen.getByText("还没有选好连接方式，请先到设置里完成"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "检查登录" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "获取登录二维码" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
-    ).toBeDisabled();
+    expect(screen.getByText("还没有选好连接方式，请先到设置里完成")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "检查登录" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "获取登录二维码" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "清除浏览器 Cookie" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     fireEvent.click(

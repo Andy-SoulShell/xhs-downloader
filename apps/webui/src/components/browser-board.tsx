@@ -6,11 +6,13 @@ import {
   LoaderCircle,
   MessageCircle,
   Search,
+  Settings,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 
 import type { FeedSummary } from "../lib/types";
 import { isBrowserDriver } from "../lib/types";
+import { browseEmptyState } from "../lib/browse-empty-state";
 import { feedPostUrl, MISSING_ACCESS_HINT } from "../lib/feed-links";
 import { useBrowserExplorer } from "../lib/use-browser-explorer";
 import { useManagedBrowser } from "../lib/use-managed-browser";
@@ -20,29 +22,29 @@ import { BrowserDetail } from "./browser-detail";
 import { BrowserLoginActions } from "./browser-login-actions";
 import { EmptyState } from "./empty-state";
 import { Metric } from "./metric";
-import { PageHeading } from "./page-heading";
 
 /**
  * 浏览小红书并就地下载。
  *
  * @param browserDriver 当前连接方式；未确认时停用登录与互动。
  * @param onDownload 把一条浏览结果交给下载；由内容工作台提供。
+ * @param onOpenSettings 跳到设置工作台；浏览受阻时的出路都在那里。
  */
 export function BrowserBoard({
   browserDriver = null,
   onDownload,
+  onOpenSettings,
 }: {
   browserDriver?: unknown;
   onDownload?: (url: string, title: string) => Promise<void>;
+  onOpenSettings?: () => void;
 }) {
   const explorer = useBrowserExplorer();
   const managedBrowser = useManagedBrowser();
   const [keyword, setKeyword] = useState("");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [hint, setHint] = useState("");
-  const confirmedDriver = isBrowserDriver(browserDriver)
-    ? browserDriver
-    : null;
+  const confirmedDriver = isBrowserDriver(browserDriver) ? browserDriver : null;
 
   const handleDownload = async (feed: FeedSummary) => {
     const url = feedPostUrl(feed);
@@ -60,6 +62,12 @@ export function BrowserBoard({
     }
   };
 
+  const emptyState = browseEmptyState({
+    busy: explorer.busy,
+    error: explorer.error,
+    fetched: explorer.context !== null,
+  });
+
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
     const value = keyword.trim();
@@ -67,22 +75,15 @@ export function BrowserBoard({
   };
 
   return (
-    <section>
-      <PageHeading
-        description="用你已登录的小红书浏览推荐和搜索，看到喜欢的可以直接下载。"
-        meta={explorer.feeds.length ? `${explorer.feeds.length} 条` : ""}
-        title="浏览小红书"
-        actions={
-          <ActionButton
-            disabled={explorer.busy}
-            onClick={() => void explorer.loadFeeds()}
-          >
-            <Compass aria-hidden size={15} />
-            看看推荐
-          </ActionButton>
-        }
-      />
-
+    // 这里不再有自己的页头：外层「内容」已经有 h1，标签名也写着「浏览小红书」，
+    // 再放一个同名大标题就是同页两个 h1 加三重同义文案。
+    <section
+      aria-label="浏览小红书"
+      className="content-column"
+      style={
+        { "--content-cards": Math.min(Math.max(explorer.feeds.length, 2), 5) } as CSSProperties
+      }
+    >
       <BrowserLoginActions
         browserDriver={confirmedDriver}
         busy={explorer.busy}
@@ -110,11 +111,7 @@ export function BrowserBoard({
               value={keyword}
             />
           </label>
-          <ActionButton
-            disabled={explorer.busy || !keyword.trim()}
-            size="large"
-            type="submit"
-          >
+          <ActionButton disabled={explorer.busy || !keyword.trim()} size="large" type="submit">
             {explorer.busy ? (
               <LoaderCircle aria-hidden className="animate-spin" size={16} />
             ) : (
@@ -122,16 +119,23 @@ export function BrowserBoard({
             )}
             搜索
           </ActionButton>
+          {/* 「看看推荐」原本孤零零挂在页头右上角，空状态却写着“点上面的看看推荐”，
+              让人满屏找按钮。它和搜索是同一件事的两种入口，就该并排放。 */}
+          <ActionButton
+            disabled={explorer.busy}
+            onClick={() => void explorer.loadFeeds()}
+            size="large"
+            variant="outline"
+          >
+            <Compass aria-hidden size={16} />
+            看看推荐
+          </ActionButton>
         </form>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Badge
             tone={
-              explorer.account?.logged_in
-                ? "success"
-                : explorer.account
-                  ? "warning"
-                  : "neutral"
+              explorer.account?.logged_in ? "success" : explorer.account ? "warning" : "neutral"
             }
           >
             {explorer.account?.logged_in
@@ -140,7 +144,8 @@ export function BrowserBoard({
                 ? "尚未登录"
                 : "登录状态待检查"}
           </Badge>
-          {explorer.error && (
+          {/* 结果区为空时错误由空状态承载，这里再挂一条就是同一句话说两遍。 */}
+          {explorer.error && explorer.feeds.length > 0 && (
             <Badge icon={CircleAlert} tone="danger">
               {explorer.error}
             </Badge>
@@ -165,12 +170,8 @@ export function BrowserBoard({
           detail={explorer.detail}
           onComment={(content) => explorer.postComment(content)}
           onClose={explorer.closeDetail}
-          onReply={(commentId, content) =>
-            explorer.replyComment(commentId, content)
-          }
-          onSetFavorite={(active) =>
-            explorer.setInteraction("favorite", active)
-          }
+          onReply={(commentId, content) => explorer.replyComment(commentId, content)}
+          onSetFavorite={(active) => explorer.setInteraction("favorite", active)}
           onSetLike={(active) => explorer.setInteraction("like", active)}
           writeEnabled={confirmedDriver !== null}
         />
@@ -190,11 +191,21 @@ export function BrowserBoard({
             ))}
           </div>
         ) : (
+          // 空状态必须跟着上一次动作走：此前不论刚失败还是没搜到，
+          // 一律显示“点上面的看看推荐”，等于让人把刚失败的动作再做一遍。
           <EmptyState
+            action={
+              explorer.error && onOpenSettings ? (
+                <ActionButton onClick={onOpenSettings} variant="outline">
+                  <Settings aria-hidden size={15} />
+                  去设置检查连接方式
+                </ActionButton>
+              ) : undefined
+            }
             compact
-            description="点上面的「看看推荐」，或者搜索你想找的内容。"
+            description={emptyState.description}
             icon={Compass}
-            title={explorer.busy ? "正在打开小红书" : "还没有内容"}
+            title={emptyState.title}
           />
         )}
         {explorer.context?.hasMore && (
@@ -241,35 +252,19 @@ function BrowserFeedCard({
         type="button"
       >
         {feed.cover_url ? (
-          <img
-            alt=""
-            className="aspect-[3/4] w-full object-cover"
-            src={feed.cover_url}
-          />
+          <img alt="" className="aspect-[3/4] w-full object-cover" src={feed.cover_url} />
         ) : (
           <span className="grid aspect-[3/4] place-items-center text-sm text-stone-400">
             暂无封面
           </span>
         )}
       </button>
-      <h2 className="mt-3 line-clamp-2 text-sm leading-6 font-semibold text-stone-900">
-        {title}
-      </h2>
+      <h2 className="mt-3 line-clamp-2 text-sm leading-6 font-semibold text-stone-900">{title}</h2>
       <div className="mt-2 flex min-w-0 items-center justify-between gap-3 text-xs text-stone-600">
         <span className="truncate">{feed.author.nickname || "未知作者"}</span>
         <span className="flex shrink-0 gap-2">
-          <Metric
-            compact
-            icon={Heart}
-            label="赞"
-            value={feed.metrics.liked_count}
-          />
-          <Metric
-            compact
-            icon={MessageCircle}
-            label="评论"
-            value={feed.metrics.comment_count}
-          />
+          <Metric compact icon={Heart} label="赞" value={feed.metrics.liked_count} />
+          <Metric compact icon={MessageCircle} label="评论" value={feed.metrics.comment_count} />
         </span>
       </div>
       {accessible ? (

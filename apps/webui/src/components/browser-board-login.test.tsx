@@ -3,15 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BrowserTask, LoginQrCodeResult } from "../lib/types";
 import { deleteCookies, executeBrowserOperation } from "../lib/browser-api";
-import {
-  listBrowserExtensions,
-  listBrowserTasks,
-} from "../lib/browser-management-api";
+import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
-import {
-  makeManagedBrowserControl,
-  makeManagedBrowserStatus,
-} from "../test/managed-browser";
+import { makeManagedBrowserControl, makeManagedBrowserStatus } from "../test/managed-browser";
 import { BrowserBoard } from "./browser-board";
 
 vi.mock("../lib/browser-api", () => ({
@@ -54,9 +48,7 @@ const qrTask: BrowserTask = {
 
 describe("浏览器登录与会话操作", () => {
   beforeEach(() => {
-    vi.mocked(useManagedBrowser).mockReturnValue(
-      makeManagedBrowserControl(),
-    );
+    vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl());
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
     vi.mocked(listBrowserTasks).mockResolvedValue([]);
     vi.mocked(executeBrowserOperation).mockResolvedValue({
@@ -76,40 +68,28 @@ describe("浏览器登录与会话操作", () => {
   it("展示一次性二维码并二次确认 Cookie 清理", async () => {
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "获取登录二维码" }),
+    fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
+    expect(await screen.findByRole("img", { name: "小红书登录二维码" })).toHaveAttribute(
+      "src",
+      qrCode.image_data_url,
     );
-    expect(
-      await screen.findByRole("img", { name: "小红书登录二维码" }),
-    ).toHaveAttribute("src", qrCode.image_data_url);
     expect(executeBrowserOperation).toHaveBeenCalledWith(
       "/xhs/login/qrcode",
       {},
       expect.any(AbortSignal),
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
-    );
-    expect(screen.getByRole("alertdialog")).toHaveTextContent(
-      "确认清除浏览器中的小红书 Cookie",
-    );
+    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("确认清除浏览器中的小红书 Cookie");
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
     expect(deleteCookies).not.toHaveBeenCalled();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
     fireEvent.click(screen.getByRole("button", { name: "确认清除" }));
     await waitFor(() =>
-      expect(deleteCookies).toHaveBeenCalledWith(
-        "browser",
-        expect.any(AbortSignal),
-      ),
+      expect(deleteCookies).toHaveBeenCalledWith("browser", expect.any(AbortSignal)),
     );
-    expect(
-      await screen.findByText("浏览器中的小红书 Cookie 已清除"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("浏览器中的小红书 Cookie 已清除")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
@@ -126,16 +106,10 @@ describe("浏览器登录与会话操作", () => {
     });
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "获取登录二维码" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
 
-    expect(
-      await screen.findByText("浏览器已经登录，无需扫码"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("img", { name: "小红书登录二维码" }),
-    ).not.toBeInTheDocument();
+    expect(await screen.findByText("浏览器已经登录，无需扫码")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "小红书登录二维码" })).not.toBeInTheDocument();
   });
 
   it("为未知过期时间提供回退提示", async () => {
@@ -146,9 +120,7 @@ describe("浏览器登录与会话操作", () => {
     });
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "获取登录二维码" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
 
     const image = await screen.findByRole("img", {
       name: "小红书登录二维码",
@@ -160,48 +132,30 @@ describe("浏览器登录与会话操作", () => {
     vi.mocked(deleteCookies).mockRejectedValueOnce(new Error("站点数据清理失败"));
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
     fireEvent.click(screen.getByRole("button", { name: "确认清除" }));
 
-    expect(await screen.findByText("站点数据清理失败")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "清除浏览器 Cookie" }),
-    ).toBeEnabled();
+    expect(await screen.findByText(/站点数据清理失败/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "清除浏览器 Cookie" })).toBeEnabled();
   });
 
   it.each([
-    [
-      "extension",
-      makeManagedBrowserStatus(),
-      "登录会在浏览器扩展连接的真实小红书页面完成",
-      false,
-    ],
+    ["extension", makeManagedBrowserStatus(), "登录会在浏览器扩展连接的真实小红书页面完成", false],
     [
       "managed",
       makeManagedBrowserStatus({ state: "running", cdp_port: 9222 }),
       "登录会在已启动的受管浏览器中完成",
       false,
     ],
-    [
-      "managed",
-      makeManagedBrowserStatus({ state: "stopped" }),
-      "请先在下方启动受管浏览器",
-      true,
-    ],
-  ] as const)(
-    "根据 %s 执行器展示首次登录引导",
-    (browserDriver, status, guidance, disabled) => {
-      vi.mocked(useManagedBrowser).mockReturnValue(
-        makeManagedBrowserControl({ status }),
-      );
-      render(<BrowserBoard browserDriver={browserDriver} />);
+    ["managed", makeManagedBrowserStatus({ state: "stopped" }), "受管浏览器还没启动", true],
+  ] as const)("根据 %s 执行器展示首次登录引导", (browserDriver, status, guidance, disabled) => {
+    vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl({ status }));
+    render(<BrowserBoard browserDriver={browserDriver} />);
 
-      expect(screen.getByText(new RegExp(guidance))).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "获取登录二维码" }),
-      ).toHaveProperty("disabled", disabled);
-    },
-  );
+    expect(screen.getByText(new RegExp(guidance))).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "获取登录二维码" })).toHaveProperty(
+      "disabled",
+      disabled,
+    );
+  });
 });

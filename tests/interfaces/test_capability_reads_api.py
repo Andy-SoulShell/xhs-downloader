@@ -178,7 +178,7 @@ async def test_api_returns_fixed_account_consistency_conflict(tmp_path) -> None:
     assert json.loads(response.body) == {
         "code": "account_consistency_failed",
         "account_consistency": "different",
-        "message": "HTTP Cookie 与当前浏览器不是同一账号，已停止个性化读取回退",
+        "message": "保存的 Cookie 和浏览器里登录的不是同一个账号，为免串号已经停下",
     }
 
 

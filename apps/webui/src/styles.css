@@ -137,6 +137,23 @@ button {
   }
 }
 
+/* 内容列宽跟着卡片数走。
+   只有两三张卡片却把版面铺满一千多像素时，粘贴框会被拉成一条长缝，
+   计数和搜索被甩到屏幕两端，中间一大片空白。这里按卡片数收窄整列，
+   卡片多了再展开到满宽，粘贴框、工具条和网格始终是对齐的一列。
+   卡宽取 300px 而不是网格的最小值 260px：留出余量，
+   免得 floor((宽 + 间距) / (最小卡宽 + 间距)) 多算出一列空轨道。 */
+.content-column {
+  --content-card-width: 300px;
+  --content-card-gap: 20px;
+  width: 100%;
+  max-width: calc(
+    var(--content-cards, 5) * var(--content-card-width) + (var(--content-cards, 5) - 1) *
+      var(--content-card-gap)
+  );
+  transition: max-width 180ms ease;
+}
+
 /* 列表型内容的最大行长。
    超宽屏下让卡片铺满整行会把内容挤在最左侧，视线要横跨上千像素，
    这里限制在便于扫读的宽度内。 */

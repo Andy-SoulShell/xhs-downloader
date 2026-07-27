@@ -1,5 +1,5 @@
 import { Compass, GalleryVerticalEnd } from "lucide-react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 
 import type { Filter, PostRecord } from "../lib/workspace";
 import { BoardTabs } from "./board-tabs";
@@ -27,8 +27,16 @@ interface ContentBoardProps {
   onLinkSubmit: (event: FormEvent) => void;
   onQueryChange: (query: string) => void;
   onRemove: (id: string) => void;
+  onOpenSettings: () => void;
   onRetryConnection: () => void;
   onSelectionChange: (id: string, selected: Set<number>) => void;
+}
+
+/** 让列宽跟着卡片数走；下限两列保证粘贴框还读得下去，上限五列不再更宽。 */
+function contentColumn(cards: number): CSSProperties {
+  return {
+    "--content-cards": Math.min(Math.max(cards, 2), 5),
+  } as CSSProperties;
 }
 
 /**
@@ -53,6 +61,7 @@ export function ContentBoard({
   onLinkChange,
   onLinkSubmit,
   onQueryChange,
+  onOpenSettings,
   onRemove,
   onRetryConnection,
   onSelectionChange,
@@ -64,52 +73,53 @@ export function ContentBoard({
         meta={posts.length ? `${posts.length} 个帖子` : ""}
         title="内容"
       />
-        <BoardTabs
+      <BoardTabs
         ariaLabel="内容分类"
         tabs={[
-        {
-          value: "library",
-          label: "我的帖子",
-          icon: GalleryVerticalEnd,
-          count: posts.length,
-          content: (
-            <>
-              <LinkComposer
-                link={link}
-                onChange={onLinkChange}
-                onSubmit={onLinkSubmit}
-                parsing={parsing}
+          {
+            value: "library",
+            label: "我的帖子",
+            icon: GalleryVerticalEnd,
+            count: posts.length,
+            content: (
+              <div className="content-column" style={contentColumn(visiblePosts.length)}>
+                <LinkComposer
+                  link={link}
+                  onChange={onLinkChange}
+                  onSubmit={onLinkSubmit}
+                  parsing={parsing}
+                />
+                <PostLibrary
+                  completedCount={completedCount}
+                  filter={filter}
+                  onDownload={onDownload}
+                  onFilterChange={onFilterChange}
+                  onForceChange={onForceChange}
+                  onQueryChange={onQueryChange}
+                  onRemove={onRemove}
+                  onRetryConnection={onRetryConnection}
+                  online={online}
+                  parsing={parsing}
+                  onSelectionChange={onSelectionChange}
+                  posts={posts}
+                  query={query}
+                  visiblePosts={visiblePosts}
+                />
+              </div>
+            ),
+          },
+          {
+            value: "browse",
+            label: "浏览小红书",
+            icon: Compass,
+            content: (
+              <BrowserBoard
+                browserDriver={browserDriver}
+                onDownload={onDownloadFeed}
+                onOpenSettings={onOpenSettings}
               />
-              <PostLibrary
-                completedCount={completedCount}
-                filter={filter}
-                onDownload={onDownload}
-                onFilterChange={onFilterChange}
-                onForceChange={onForceChange}
-                onQueryChange={onQueryChange}
-                onRemove={onRemove}
-                onRetryConnection={onRetryConnection}
-                online={online}
-                parsing={parsing}
-                onSelectionChange={onSelectionChange}
-                posts={posts}
-                query={query}
-                visiblePosts={visiblePosts}
-              />
-            </>
-          ),
-        },
-        {
-          value: "browse",
-          label: "浏览小红书",
-          icon: Compass,
-          content: (
-            <BrowserBoard
-              browserDriver={browserDriver}
-              onDownload={onDownloadFeed}
-            />
-          ),
-        },
+            ),
+          },
         ]}
       />
     </>
