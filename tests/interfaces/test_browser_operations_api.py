@@ -5,7 +5,7 @@ from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
 from xhs_core.domain import BrowserDriver
 
-from tests.interfaces.helpers import FakeService
+from tests.interfaces.helpers import AlwaysReadyBrowser, FakeService
 
 
 async def test_browser_write_routes_freeze_selected_driver(tmp_path) -> None:
@@ -20,6 +20,7 @@ async def test_browser_write_routes_freeze_selected_driver(tmp_path) -> None:
             browser_driver=BrowserDriver.MANAGED,
         ),
         lambda _: FakeService(),
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),
@@ -96,6 +97,7 @@ async def test_extension_driver_accepts_comment_operations(tmp_path) -> None:
             browser_driver=BrowserDriver.EXTENSION,
         ),
         lambda _: FakeService(),
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),

@@ -4,23 +4,17 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from uvicorn import Config, Server
 from xhs_adapters import create_download_service
 from xhs_adapters.config import AppSettings
 from xhs_adapters.logging import configure_logging
 from xhs_core.application import (
+    BrowserReadinessProbe,
     CollectionService,
     DownloadService,
     DownloadTaskCoordinator,
-)
-from xhs_core.domain import (
-    AccountConsistencyError,
-    BrowserTaskLeaseConflictError,
-    ProviderError,
-    XhsError,
 )
 from xhs_core.version import VERSION
 
@@ -28,6 +22,8 @@ from .bootstrap import create_api_dependencies
 from .browser import create_browser_router
 from .browser_operations import create_browser_operation_router
 from .capability_reads import create_capability_read_router
+from .capability_runtime import create_browser_readiness
+from .error_handlers import register_exception_handlers
 from .extension import create_extension_router
 from .login import create_login_router
 from .managed_browser import create_managed_browser_router
@@ -54,6 +50,7 @@ def create_api(
     settings_file: Path | None = None,
     settings_access_policy: SettingsAccessPolicy = allow_loopback_settings,
     settings_override_fields: set[str] | None = None,
+    browser_readiness: BrowserReadinessProbe | None = None,
 ) -> FastAPI:
     """创建具备完整生命周期的 FastAPI 应用。
 
@@ -61,6 +58,7 @@ def create_api(
         settings: 应用配置；为空时读取默认环境配置。
         service_factory: 用于测试替换基础设施的服务工厂。
         settings_file: 管理后台维护的 dotenv 文件。
+        browser_readiness: 覆盖提交前的驱动就绪探针；为空时按真实运行时判定。
         settings_access_policy: 配置端点的本机访问判定策略。
         settings_override_fields: 启动参数覆盖的配置字段。
 
@@ -143,11 +141,18 @@ def create_api(
             settings_access_policy,
         )
     )
+    # 只读、登录与写操作共用同一个就绪判定
+    # 避免同一个"驱动没启动"在不同入口得到不一致的结论
+    readiness = browser_readiness or create_browser_readiness(
+        dependencies.browser,
+        dependencies.publication,
+    )
     api.include_router(
         create_browser_operation_router(
             dependencies.browser.tasks,
             lambda: dependencies.settings.current.browser_driver,
             settings_access_policy,
+            readiness,
         )
     )
     api.include_router(
@@ -162,6 +167,7 @@ def create_api(
             dependencies.settings,
             lambda: dependencies.settings.current.browser_driver,
             settings_access_policy,
+            readiness,
         )
     )
     api.include_router(
@@ -188,62 +194,7 @@ def create_api(
         )
     )
 
-    @api.exception_handler(ProviderError)
-    async def handle_provider_error(
-        _: Request,
-        error: ProviderError,
-    ) -> JSONResponse:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "message": error.message,
-                "provider": error.provider.value,
-                "code": error.code.value,
-            },
-        )
-
-    @api.exception_handler(BrowserTaskLeaseConflictError)
-    async def handle_browser_lease_conflict(
-        _: Request,
-        error: BrowserTaskLeaseConflictError,
-    ) -> JSONResponse:
-        """将浏览器执行器的陈旧租约映射为 HTTP 冲突。
-
-        Args:
-            _: 当前 HTTP 请求。
-            error: 已确认的租约或状态快照冲突。
-
-        Returns:
-            不包含租约令牌的冲突响应。
-        """
-        return JSONResponse(status_code=409, content={"message": str(error)})
-
-    @api.exception_handler(AccountConsistencyError)
-    async def handle_account_consistency_error(
-        _: Request,
-        error: AccountConsistencyError,
-    ) -> JSONResponse:
-        """返回不含账号和证明材料的固定路由阻止结果。
-
-        Args:
-            _: 当前 HTTP 请求。
-            error: 账号一致性门禁的脱敏结论。
-
-        Returns:
-            供 WebUI 与 MCP 稳定识别的冲突响应。
-        """
-        return JSONResponse(
-            status_code=409,
-            content={
-                "code": "account_consistency_failed",
-                "account_consistency": error.status.value,
-                "message": str(error),
-            },
-        )
-
-    @api.exception_handler(XhsError)
-    async def handle_xhs_error(_: Request, error: XhsError) -> JSONResponse:
-        return JSONResponse(status_code=400, content={"message": str(error)})
+    register_exception_handlers(api)
 
     @api.get("/", tags=["服务"])
     async def service_info() -> dict[str, str]:
@@ -270,6 +221,7 @@ async def run_api(
     Args:
         settings: 服务器与下载配置。
         settings_file: 管理后台维护的 dotenv 文件。
+        browser_readiness: 覆盖提交前的驱动就绪探针；为空时按真实运行时判定。
         settings_override_fields: 启动参数覆盖的配置字段。
     """
     configure_logging(settings.log_level)

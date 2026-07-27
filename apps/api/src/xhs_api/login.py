@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
-from xhs_core.application import BrowserTaskService
+from xhs_core.application import BrowserReadinessProbe, BrowserTaskService
 from xhs_core.domain import (
     BrowserDriver,
     BrowserTask,
@@ -22,6 +22,7 @@ def create_login_router(
     settings: SettingsManager,
     browser_driver: Callable[[], BrowserDriver],
     management_access: SettingsAccessPolicy,
+    readiness: BrowserReadinessProbe,
 ) -> APIRouter:
     """创建普通用户登录会话路由。
 
@@ -30,6 +31,7 @@ def create_login_router(
         settings: HTTP Cookie 配置管理用例。
         browser_driver: 返回当前登录会话使用的浏览器驱动。
         management_access: 本机管理端访问判定策略。
+        readiness: 提交前的驱动就绪探针。
 
     Returns:
         可挂载到主应用的登录会话路由。
@@ -48,11 +50,13 @@ def create_login_router(
         wait_seconds: float = Query(default=0, ge=0, le=60),
     ) -> BrowserTask:
         require_management(request)
+        driver = browser_driver()
+        await readiness.ensure_available(driver)
         task = await tasks.submit(
             BrowserTaskKind.GET_LOGIN_QRCODE,
             {},
             payload.request_id,
-            browser_driver(),
+            driver,
         )
         completed = await tasks.wait(task.task_id, wait_seconds)
         if (
@@ -75,11 +79,13 @@ def create_login_router(
         require_management(request)
         if payload.target == "http":
             return await _delete_http_cookie(settings)
+        driver = browser_driver()
+        await readiness.ensure_available(driver)
         task = await tasks.submit(
             BrowserTaskKind.DELETE_COOKIES,
             {"confirmed": payload.confirmed},
             payload.request_id,
-            browser_driver(),
+            driver,
         )
         completed = await tasks.wait(task.task_id, wait_seconds)
         return DeleteCookiesResponse(

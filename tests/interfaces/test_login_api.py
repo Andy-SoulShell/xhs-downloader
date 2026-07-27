@@ -5,7 +5,7 @@ from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
 from xhs_core.domain import BrowserDriver
 
-from tests.interfaces.helpers import FakeService
+from tests.interfaces.helpers import AlwaysReadyBrowser, FakeService
 
 
 async def test_login_routes_create_browser_tasks_and_require_confirmation(
@@ -23,6 +23,7 @@ async def test_login_routes_create_browser_tasks_and_require_confirmation(
         ),
         lambda _: FakeService(),
         settings_file=tmp_path.joinpath(".env"),
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),
@@ -75,6 +76,7 @@ async def test_http_cookie_delete_clears_config_and_reports_restart(
         AppSettings(work_path=tmp_path, cookie="session=synthetic"),
         lambda _: FakeService(),
         settings_file=settings_file,
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),
@@ -111,6 +113,7 @@ async def test_cookie_delete_rejects_remote_management(tmp_path) -> None:
         AppSettings(work_path=tmp_path),
         lambda _: FakeService(),
         settings_file=tmp_path.joinpath(".env"),
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),

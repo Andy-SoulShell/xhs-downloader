@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import JsonValue
-from xhs_core.application import BrowserTaskService
+from xhs_core.application import BrowserReadinessProbe, BrowserTaskService
 from xhs_core.domain import BrowserDriver, BrowserTask, BrowserTaskKind
 
 from .browser_operation_models import (
@@ -20,6 +20,7 @@ def create_browser_operation_router(
     tasks: BrowserTaskService,
     browser_driver: Callable[[], BrowserDriver],
     management_access: SettingsAccessPolicy,
+    readiness: BrowserReadinessProbe,
 ) -> APIRouter:
     """创建类型化浏览器能力路由。
 
@@ -27,6 +28,7 @@ def create_browser_operation_router(
         tasks: 浏览器任务提交与等待用例。
         browser_driver: 返回当前写操作与登录检查所用浏览器驱动。
         management_access: 本机管理端访问判定策略。
+        readiness: 提交前的驱动就绪探针。
 
     Returns:
         可挂载到主应用的浏览器能力路由。
@@ -39,12 +41,11 @@ def create_browser_operation_router(
         request_id: str | None,
         wait_seconds: float,
     ) -> BrowserTask:
-        task = await tasks.submit(
-            kind,
-            payload,
-            request_id,
-            browser_driver(),
-        )
+        driver = browser_driver()
+        # 先确认驱动能接单
+        # 派给没启动的执行器只会得到一句泛化失败, 用户看不出原因, 重试也不会成功
+        await readiness.ensure_available(driver)
+        task = await tasks.submit(kind, payload, request_id, driver)
         return await tasks.wait(task.task_id, wait_seconds)
 
     def require_management(request: Request) -> None:

@@ -95,3 +95,19 @@ class FakeService:
             detail=await self.get_detail(text, cookie),
             artifacts=artifacts,
         )
+
+
+class AlwaysReadyBrowser:
+    """把任何驱动都视为可接单的就绪探针替身。
+
+    路由与审计相关的测试关心的是任务是否被正确创建和冻结驱动，
+    不该被"受管浏览器没启动"这类环境条件干扰。
+    """
+
+    async def ensure_available(self, driver) -> None:
+        """始终认为驱动可用。
+
+        Args:
+            driver: 调用方选择的浏览器执行驱动。
+        """
+        return None

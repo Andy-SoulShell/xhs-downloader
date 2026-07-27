@@ -6,7 +6,7 @@ from xhs_adapters.config import AppSettings
 from xhs_api.app import create_api
 from xhs_core.domain import BrowserDriver, RouteStrategy
 
-from tests.interfaces.helpers import FakeService
+from tests.interfaces.helpers import AlwaysReadyBrowser, FakeService
 
 
 @pytest.mark.parametrize("strategy", list(RouteStrategy))
@@ -30,6 +30,7 @@ async def test_writes_always_use_configured_browser_driver(
             browser_driver=BrowserDriver.EXTENSION,
         ),
         lambda _: FakeService(),
+        browser_readiness=AlwaysReadyBrowser(),
     )
     async with (
         api.router.lifespan_context(api),

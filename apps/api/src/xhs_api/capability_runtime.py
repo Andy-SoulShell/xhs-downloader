@@ -217,6 +217,25 @@ class ReadCapabilityRuntime:
         )
 
 
+def create_browser_readiness(
+    browser: BrowserRuntime,
+    publication: PublicationRuntime,
+) -> BrowserReadinessService:
+    """构造浏览器驱动的提交前就绪探针。
+
+    只读能力与登录、写操作三条路径必须共用同一个判定，否则同一个"驱动没启动"
+    在不同入口会得到不一致的结论。
+
+    Args:
+        browser: 浏览器任务与受管浏览器生命周期。
+        publication: 提供扩展在线状态的运行时。
+
+    Returns:
+        可供多个路由共享的就绪探针。
+    """
+    return BrowserReadinessService(publication.credentials, browser.managed)
+
+
 def create_read_capability_runtime(
     settings: AppSettings,
     browser: BrowserRuntime,
@@ -232,10 +251,7 @@ def create_read_capability_runtime(
     Returns:
         固定配置且尚未关闭的运行时。
     """
-    readiness = BrowserReadinessService(
-        publication.credentials,
-        browser.managed,
-    )
+    readiness = create_browser_readiness(browser, publication)
     http = HttpReadProvider(settings)
     browser_proof = (
         browser.managed_account_proof
