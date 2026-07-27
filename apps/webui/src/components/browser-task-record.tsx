@@ -30,6 +30,8 @@ const KIND_LABELS: Record<BrowserTaskKind, string> = {
 
 /** 展示一项脱敏浏览操作记录及允许公开的失败诊断。 */
 export function BrowserTaskRecord({
+  count = 1,
+  earliestAt,
   onResolve,
   onRetry,
   resolving,
@@ -37,6 +39,10 @@ export function BrowserTaskRecord({
   showConnection = false,
   task,
 }: {
+  /** 相邻同义记录合并后的条数；大于一时标出次数与时间跨度。 */
+  count?: number;
+  /** 合并组内最早一条的时间。 */
+  earliestAt?: string;
   /** 用户核对后给出明确结论；已生效的记为完成，未生效的转为可重试。 */
   onResolve?: (succeeded: boolean) => void;
   onRetry: () => void;
@@ -50,6 +56,9 @@ export function BrowserTaskRecord({
   const status = browseStatusCopy[task.status as BrowseStatusKey];
   const hasFailureDiagnostics = task.status === "failed" || task.status === "needs_review";
   const needsReview = task.status === "needs_review";
+  const showEarliest =
+    Boolean(earliestAt) &&
+    formatRelativeTime(task.updated_at) !== formatRelativeTime(earliestAt as string);
 
   return (
     <article className="record-card flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
@@ -60,6 +69,8 @@ export function BrowserTaskRecord({
           {showConnection && (
             <Badge>{connectionCopy[task.target_driver as BrowserDriver].label}</Badge>
           )}
+          {/* 同一个动作连着做了好几次，铺成好几行只会把真正不同的记录淹掉。 */}
+          {count > 1 && <Badge>连续 {count} 次</Badge>}
         </div>
         <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-stone-600">
           {humanizeError(task.message)}
@@ -68,6 +79,18 @@ export function BrowserTaskRecord({
           <time dateTime={task.updated_at} title={formatFullTime(task.updated_at)}>
             {formatRelativeTime(task.updated_at)}
           </time>
+          {/* 两端算出同一个相对时间时就别再说一遍"最早…" */}
+          {count > 1 && earliestAt && showEarliest && (
+            <>
+              <span aria-hidden className="text-stone-300">
+                ·
+              </span>
+              最早
+              <time dateTime={earliestAt} title={formatFullTime(earliestAt)}>
+                {formatRelativeTime(earliestAt)}
+              </time>
+            </>
+          )}
           {task.attempts > 1 && (
             <>
               <span aria-hidden className="text-stone-300">

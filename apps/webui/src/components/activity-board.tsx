@@ -1,5 +1,6 @@
 import { Download, History, Puzzle } from "lucide-react";
 
+import { groupBrowserTasks } from "../lib/browse-task-groups";
 import { useBrowserMonitor } from "../lib/use-browser-monitor";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
 import { BoardTabs } from "./board-tabs";
@@ -78,8 +79,10 @@ function BrowseActions({ monitor }: { monitor: ReturnType<typeof useBrowserMonit
         <SkeletonRecordList />
       ) : monitor.tasks.length ? (
         <div className="reading-column space-y-3">
-          {monitor.tasks.map((task) => (
+          {groupBrowserTasks(monitor.tasks).map(({ task, count, earliestAt }) => (
             <BrowserTaskRecord
+              count={count}
+              earliestAt={earliestAt}
               key={task.task_id}
               onResolve={(succeeded) => void monitor.review(task.task_id, succeeded)}
               onRetry={() => void monitor.retry(task.task_id)}
