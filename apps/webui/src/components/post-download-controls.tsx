@@ -38,11 +38,7 @@ export function PostDownloadSelection({
         <button
           className="text-xs font-medium text-stone-600 hover:text-stone-950"
           onClick={() =>
-            onSelectionChange(
-              allSelected
-                ? new Set()
-                : new Set(media.map((item) => item.index)),
-            )
+            onSelectionChange(allSelected ? new Set() : new Set(media.map((item) => item.index)))
           }
           type="button"
         >
@@ -61,16 +57,14 @@ export function PostDownloadSelection({
                   ? "border-red-400 bg-red-50 ring-2 ring-red-100"
                   : selected
                     ? "border-red-100 bg-red-50/35"
-                  : "border-stone-200 hover:border-stone-300"
+                    : "border-stone-200 hover:border-stone-300"
               }`}
               key={item.index}
               onClick={() => onPreviewChange(position)}
             >
               <span
                 className={`grid size-5 shrink-0 place-items-center rounded-md border ${
-                  selected
-                    ? "border-red-500 bg-red-500 text-white"
-                    : "border-stone-300 bg-white"
+                  selected ? "border-red-500 bg-red-500 text-white" : "border-stone-300 bg-white"
                 }`}
               >
                 {selected && <Check aria-hidden size={13} />}
@@ -79,9 +73,7 @@ export function PostDownloadSelection({
                 aria-label={`选择第 ${item.index} 项`}
                 checked={selected}
                 className="sr-only"
-                onChange={(event) =>
-                  toggleMedia(item.index, event.target.checked)
-                }
+                onChange={(event) => toggleMedia(item.index, event.target.checked)}
                 type="checkbox"
               />
               <span className="min-w-0 flex-1 text-xs font-medium text-stone-700">
@@ -107,7 +99,7 @@ export function PostDownloadBar({
 }) {
   const failure = post.status === "error" ? post.result.message : "";
   return (
-    <div className="border-t border-stone-200 bg-white p-4 sm:p-5">
+    <div className="shrink-0 border-t border-stone-200 bg-white p-4 sm:p-5">
       {post.status === "downloading" && post.progress && (
         <DownloadProgressBar progress={post.progress} />
       )}
@@ -159,9 +151,7 @@ function mediaStatus(post: PostRecord, group: MediaGroup): string {
   return downloaded ? "已下载" : "未下载";
 }
 
-function statusTone(
-  status: string,
-): "success" | "danger" | "warning" | "neutral" {
+function statusTone(status: string): "success" | "danger" | "warning" | "neutral" {
   if (status === "已下载") return "success";
   if (status === "失败") return "danger";
   if (status === "下载中") return "warning";

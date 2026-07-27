@@ -1,11 +1,7 @@
 import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
-import {
-  mediaCover,
-  mediaLabel,
-  type MediaGroup,
-} from "../lib/media";
+import { mediaCover, mediaLabel, type MediaGroup } from "../lib/media";
 
 interface MediaStageProps {
   activeIndex: number;
@@ -26,13 +22,7 @@ interface MediaStageProps {
  * @param props.onSelect 选择指定媒体。
  * @returns 保持原始宽高比的详情媒体舞台。
  */
-export function MediaStage({
-  activeIndex,
-  current,
-  media,
-  onMove,
-  onSelect,
-}: MediaStageProps) {
+export function MediaStage({ activeIndex, current, media, onMove, onSelect }: MediaStageProps) {
   const [aspectRatio, setAspectRatio] = useState(3 / 4);
   // 记住失败的地址而不是布尔值：切换到下一项时会自动恢复，无需额外重置。
   const [failedSource, setFailedSource] = useState<string | null>(null);
@@ -50,10 +40,11 @@ export function MediaStage({
     }
   };
 
+  // 高度与宽高比都交给 detail-dialog-stage 按断点决定，原因见 styles.css。
   return (
     <div
-      className="relative grid min-h-[44vh] min-w-0 place-items-center overflow-hidden bg-stone-950 lg:h-full lg:min-h-0 lg:w-auto lg:max-w-[calc(96vw-400px)]"
-      style={{ aspectRatio }}
+      className="detail-dialog-stage relative grid min-h-[44vh] min-w-0 place-items-center overflow-hidden bg-stone-950 lg:min-h-0 lg:w-auto lg:max-w-[calc(96vw-400px)]"
+      style={{ "--detail-stage-ratio": aspectRatio } as CSSProperties}
     >
       {live ? (
         <video
@@ -135,9 +126,7 @@ export function MediaStage({
                       src={cover}
                     />
                   ) : (
-                    <span className="text-[10px] text-white">
-                      {item.index}
-                    </span>
+                    <span className="text-[10px] text-white">{item.index}</span>
                   )}
                 </button>
               );

@@ -2,8 +2,14 @@
 
 :root {
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "PingFang SC", "Microsoft YaHei", sans-serif;
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
   color: #1c1917;
   background: #f4f1eb;
   font-synthesis: none;
@@ -26,8 +32,7 @@ body {
   background:
     radial-gradient(circle at 82% 4%, rgb(255 255 255 / 85%), transparent 31rem),
     linear-gradient(rgb(28 25 23 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(28 25 23 / 0.035) 1px, transparent 1px),
-    #f4f1eb;
+    linear-gradient(90deg, rgb(28 25 23 / 0.035) 1px, transparent 1px), #f4f1eb;
   background-size:
     auto,
     40px 40px,
@@ -107,6 +112,28 @@ button {
     /* 延迟也要清零：只压缩时长会让错开入场变成逐个闪现，比平滑动画更难受。 */
     animation-delay: 0ms !important;
     transition-delay: 0ms !important;
+  }
+}
+
+/* 帖子详情弹窗的高度。
+   舞台的宽度是靠 aspect-ratio 从高度反推出来的，而 Safari 在给 grid 轨道定宽时
+   推不动百分比高度：用 h-full 会让 auto 轨道被算成 0px，舞台溢出去压在详情面板上，
+   右侧只剩弹窗自己的黑底（实测 Safari 26.5，Chromium 与 Playwright 的 WebKit 均正常）。
+   所以舞台必须拿到确定高度，这里用一个变量让弹窗和舞台共用同一个来源。 */
+.detail-dialog {
+  --detail-dialog-height: min(94vh, 880px);
+  height: var(--detail-dialog-height);
+}
+
+/* 舞台的宽高比只在宽屏两栏下生效。
+   窄屏是上下两段式，舞台会被拉到整个弹窗宽，按宽高比反推出来的高度
+   远超栅格行（实测 958 宽推出 1277 高，行高只有 344），直接盖住下面的详情面板。
+   两段式下不设宽高比，舞台填满栅格行，图片靠 object-contain 自己留边。 */
+.detail-dialog-stage {
+  @variant lg {
+    /* 减掉弹窗自身的上下各 1px 边框，否则舞台会比栅格行高出 2px。 */
+    height: calc(var(--detail-dialog-height) - 2px);
+    aspect-ratio: var(--detail-stage-ratio, 3 / 4);
   }
 }
 
