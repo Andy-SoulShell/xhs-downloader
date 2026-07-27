@@ -17,9 +17,7 @@ import { UserFacingError } from "./error-message";
  */
 export const DRAFT_PAGE_LIMIT = 200;
 
-export async function listPublicationDrafts(
-  limit = DRAFT_PAGE_LIMIT,
-): Promise<PublicationDraft[]> {
+export async function listPublicationDrafts(limit = DRAFT_PAGE_LIMIT): Promise<PublicationDraft[]> {
   const response = await fetch(`${API_BASE}/publication/drafts?limit=${limit}`);
   return parseResponse<PublicationDraft[]>(response);
 }

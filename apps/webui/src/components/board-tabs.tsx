@@ -15,8 +15,10 @@ export interface BoardTab {
 interface BoardTabsProps {
   ariaLabel: string;
   tabs: BoardTab[];
-  /** 初始分区；省略时停在第一个。 */
+  /** 初始分区；省略时停在第一个。传了 `value` 时无效。 */
   defaultValue?: string;
+  /** 当前分区；传了就由外部掌控，供"提交后跳到任务列表"一类联动使用。 */
+  value?: string;
   /** 切换分区时的回调，供页头一类标签条之外的位置跟着当前分区变化。 */
   onValueChange?: (value: string) => void;
 }
@@ -28,15 +30,22 @@ interface BoardTabsProps {
  * 内容宽度收缩而不是横跨整行，否则右侧会留下大片与内容无关的空白。
  * 与顶层工作台标签使用各自独立的 `Tabs.Root`，互不影响。
  */
-export function BoardTabs({ ariaLabel, tabs, defaultValue, onValueChange }: BoardTabsProps) {
-  const [value, setValue] = useState(defaultValue ?? tabs[0]?.value ?? "");
+export function BoardTabs({
+  ariaLabel,
+  tabs,
+  defaultValue,
+  value: controlledValue,
+  onValueChange,
+}: BoardTabsProps) {
+  const [ownValue, setOwnValue] = useState(defaultValue ?? tabs[0]?.value ?? "");
+  const value = controlledValue ?? ownValue;
 
   if (tabs.length <= 1) {
     return <>{tabs[0]?.content}</>;
   }
 
   const selectTab = (next: string) => {
-    setValue(next);
+    setOwnValue(next);
     onValueChange?.(next);
   };
 

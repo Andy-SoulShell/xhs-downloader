@@ -1,5 +1,5 @@
 import { Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { autosaveLabel, useDraftAutosave } from "../lib/use-draft-autosave";
 
@@ -44,6 +44,17 @@ interface PublicationEditorProps {
   onSubmitPlatformScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onUpload: (files: File[]) => Promise<void>;
+  /**
+   * 已选好的计划时间。
+   *
+   * 由发布中心按草稿保管，而不是留在本组件里：换一份草稿会重建编辑器，
+   * 刚挑好的时间不该跟着一起没。它不进草稿模型——后端没有这个字段，
+   * 加一个长得像排期却什么都不做的字段比没有更危险。
+   */
+  scheduledAt: string;
+  onScheduledAtChange: (scheduledAt: string) => void;
+  /** 这份草稿自己的发布记录，挂在编辑器底部。 */
+  timeline?: ReactNode;
 }
 
 /** 编辑本地发布草稿，并以二次确认提交三种发布任务。 */
@@ -61,6 +72,9 @@ export function PublicationEditor({
   onSubmitPlatformScheduled,
   onSubmitScheduled,
   onUpload,
+  scheduledAt,
+  onScheduledAtChange,
+  timeline,
 }: PublicationEditorProps) {
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
@@ -68,7 +82,6 @@ export function PublicationEditor({
   const [visibility, setVisibility] = useState<PublicationVisibility>(draft.visibility);
   const [isOriginal, setIsOriginal] = useState(draft.is_original);
   const [products, setProducts] = useState(draft.products.join("\n"));
-  const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState("");
   const hasVideo = draft.assets.some((asset) => asset.media_type.startsWith("video/"));
 
@@ -92,14 +105,10 @@ export function PublicationEditor({
   );
   const submissionInput = () => preparePublicationSubmission(input(), browserDriver);
   const blockers = publicationBlockers(submissionInput(), draft);
-  const saveSubmission = async () => {
-    const saved = await onSave(submissionInput());
-    if (browserDriver === "managed") {
-      setVisibility("private");
-      setProducts("");
-    }
-    return saved;
-  };
+  // 提交端点从存储读草稿，所以这次 PUT 必须落库；但落库的是收紧后的内容，
+  // 不能同步改回本地表单——改了之后自动保存会一直把空值写回去，
+  // 换回浏览器扩展模式时已填的商品全没了。
+  const saveSubmission = () => onSave(submissionInput());
   const run = async (label: string, operation: () => Promise<void>) => {
     setBusy(label);
     try {
@@ -127,7 +136,9 @@ export function PublicationEditor({
         if (targetDriver === "managed") {
           popup?.close();
           onNotify(
-            mode === "manual" ? "发布任务已交给软件自带浏览器" : "官方定时任务已交给软件自带浏览器设置",
+            mode === "manual"
+              ? "发布任务已交给软件自带浏览器"
+              : "官方定时任务已交给软件自带浏览器设置",
           );
         } else {
           if (popup) {
@@ -220,7 +231,7 @@ export function PublicationEditor({
         blockers={blockers}
         browserDriver={browserDriver}
         busy={busy}
-        onScheduledAtChange={setScheduledAt}
+        onScheduledAtChange={onScheduledAtChange}
         onSubmit={submit}
         products={browserDriver === "managed" ? [] : normalizePublicationProducts(products)}
         scheduledAt={scheduledAt}
@@ -275,6 +286,8 @@ export function PublicationEditor({
           {busy === "save" ? "正在保存…" : "保存草稿"}
         </ActionButton>
       </div>
+
+      {timeline}
     </form>
   );
 }

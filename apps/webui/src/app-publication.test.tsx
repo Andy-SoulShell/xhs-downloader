@@ -25,6 +25,9 @@ vi.mock("./lib/api", () => ({
   updateSettings: vi.fn(),
 }));
 vi.mock("./lib/publication-api", () => ({
+  DRAFT_PAGE_LIMIT: 200,
+  publicationAssetUrl: (draftId: string, assetId: string) =>
+    `/api/publication/drafts/${draftId}/assets/${assetId}`,
   cancelPublicationTask: vi.fn(),
   createPublicationDraft: vi.fn(),
   deletePublicationDraft: vi.fn(),
@@ -59,7 +62,8 @@ describe("发布中心主导航集成", () => {
       ),
     );
 
-    expect(await screen.findByLabelText("当前草稿")).toBeInTheDocument();
+    const list = await screen.findByRole("region", { name: "草稿列表" });
+    expect(within(list).getByRole("button", { name: /合成发布标题/ })).toBeInTheDocument();
     expect(screen.getByLabelText("标题")).toHaveValue("合成发布标题");
   });
 });

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 import { PublicationEditor } from "./publication-editor";
+import { ScheduleHost } from "../test/schedule-host";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -27,7 +28,7 @@ function renderEditor(overrides: Partial<Parameters<typeof PublicationEditor>[0]
     onUpload: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-  render(<PublicationEditor {...properties} />);
+  render(<ScheduleHost {...properties} />);
   return properties;
 }
 
