@@ -13,7 +13,6 @@ const LIBRARY_TAB = "library";
 
 interface ContentBoardProps {
   browserDriver: unknown;
-  headless: boolean;
   filter: Filter;
   link: string;
   parsing: boolean;
@@ -42,7 +41,6 @@ interface ContentBoardProps {
  */
 export function ContentBoard({
   browserDriver,
-  headless,
   filter,
   link,
   parsing,
@@ -115,7 +113,6 @@ export function ContentBoard({
             content: (
               <BrowserBoard
                 browserDriver={browserDriver}
-                headless={headless}
                 onDownload={onDownloadFeed}
                 onOpenSettings={onOpenSettings}
               />

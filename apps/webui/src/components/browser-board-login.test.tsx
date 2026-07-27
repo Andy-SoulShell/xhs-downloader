@@ -158,19 +158,4 @@ describe("浏览器登录与会话操作", () => {
       disabled,
     );
   });
-  it("后台运行时挡住二维码这条路并给出绕行办法", () => {
-    vi.mocked(useManagedBrowser).mockReturnValue(
-      makeManagedBrowserControl({
-        status: makeManagedBrowserStatus({ state: "running", cdp_port: 9222 }),
-      }),
-    );
-    render(<BrowserBoard browserDriver="managed" headless />);
-
-    // 实测无头 Chrome 下小红书不渲染登录二维码，任务只会失败；
-    // 不能让人点了等一场空，这里直接挡住并说清怎么绕过去。
-    expect(screen.getByRole("button", { name: "获取登录二维码" })).toBeDisabled();
-    expect(screen.getByText(/关掉「不显示浏览器窗口」/)).toBeInTheDocument();
-    // 检查登录在无头下是能用的，不该跟着一起禁用。
-    expect(screen.getByRole("button", { name: "检查登录" })).toBeEnabled();
-  });
 });

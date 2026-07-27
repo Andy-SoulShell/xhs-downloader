@@ -2,15 +2,24 @@
 
 from pathlib import Path
 
-from xhs_adapters.chromium_process import build_launch_command
+from xhs_adapters.chromium_process import (
+    build_launch_command,
+    build_user_agent,
+    parse_major_version,
+)
 
 
-def _command(headless: bool = False, offscreen: bool = False) -> tuple[str, ...]:
+def _command(
+    headless: bool = False,
+    offscreen: bool = False,
+    user_agent: str | None = None,
+) -> tuple[str, ...]:
     return build_launch_command(
         Path("/synthetic/chromium"),
         Path("/synthetic/profile"),
         headless,
         offscreen,
+        user_agent,
     )
 
 
@@ -48,3 +57,34 @@ def test_profile_stays_isolated_and_debugging_is_loopback_only() -> None:
     for command in (_command(), _command(headless=True), _command(offscreen=True)):
         assert "--user-data-dir=/synthetic/profile" in command
         assert "--remote-debugging-address=127.0.0.1" in command
+
+
+def test_headless_carries_a_user_agent_without_the_headless_token() -> None:
+    """无头时必须能覆盖 UA; 小红书就是靠 HeadlessChrome 这个词判定的。"""
+    agent = build_user_agent("150", "darwin")
+    command = _command(headless=True, user_agent=agent)
+
+    assert f"--user-agent={agent}" in command
+    assert "HeadlessChrome" not in agent
+    assert "Chrome/150.0.0.0" in agent
+
+
+def test_visible_window_never_overrides_the_user_agent() -> None:
+    """有头时浏览器自报的 UA 本来就是正常的, 不需要也不应该改。"""
+    command = _command(user_agent=build_user_agent("150", "darwin"))
+
+    assert not any(item.startswith("--user-agent") for item in command)
+
+
+def test_user_agent_follows_the_platform() -> None:
+    """三个平台各自的标识不能混用。"""
+    assert "Macintosh" in build_user_agent("150", "darwin")
+    assert "Windows NT" in build_user_agent("150", "win32")
+    assert "Linux" in build_user_agent("150", "freebsd14")
+
+
+def test_major_version_comes_from_the_browser_itself() -> None:
+    """版本号问浏览器要, 免得写死之后对不上真实安装。"""
+    assert parse_major_version("Google Chrome 150.0.7871.182 ") == "150"
+    assert parse_major_version("Chromium 131.0.6778.86") == "131"
+    assert parse_major_version("看不出版本") is None

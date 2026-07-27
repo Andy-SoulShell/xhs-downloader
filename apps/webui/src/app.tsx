@@ -203,7 +203,6 @@ export default function App() {
                 <ContentBoard
                   browserDriver={settings?.values.browser_driver}
                   filter={filter}
-                  headless={Boolean(settings?.values.managed_browser_headless)}
                   link={link}
                   onDownload={(post) => void downloadPost(post)}
                   onDownloadFeed={downloadFeed}

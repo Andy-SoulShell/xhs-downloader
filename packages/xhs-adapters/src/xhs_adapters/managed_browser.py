@@ -17,7 +17,7 @@ from .chromium_process import (
     ChromiumProcess,
     EndpointProbe,
     ProcessLauncher,
-    build_launch_command,
+    build_managed_launch_command,
     launch_process,
     probe_endpoint,
     read_active_port,
@@ -135,7 +135,7 @@ class ChromiumController(ManagedBrowserController):
             self._state = ManagedBrowserState.STARTING
             self._message = "正在启动专用浏览器"
             try:
-                command = build_launch_command(
+                command = await build_managed_launch_command(
                     executable,
                     self._settings.managed_browser_profile_dir,
                     self._settings.managed_browser_headless,
