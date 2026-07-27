@@ -26,6 +26,13 @@
       ],
       "port": 5557,
       "url": "http://127.0.0.1:5557"
+    },
+    {
+      "name": "webui-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "apps/webui", "dev"],
+      "port": 5173,
+      "url": "http://127.0.0.1:5173"
     }
   ]
 }
