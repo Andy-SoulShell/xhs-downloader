@@ -80,11 +80,13 @@ export function PostCard({
         <div className="px-1 pt-3">
           <button
             aria-label={`打开帖子详情：${title}`}
-            className="line-clamp-2 w-full text-left text-[15px] leading-6 font-semibold tracking-tight text-stone-900 transition group-hover:text-red-600"
+            className="w-full text-left text-[15px] leading-6 font-semibold tracking-tight text-stone-900 transition group-hover:text-red-600"
             onClick={() => setOpen(true)}
             type="button"
           >
-            {title}
+            {/* 截断必须落在按钮内部的元素上：WebKit 会把按钮内容塞进匿名盒，
+                直接写在 button 上的 -webkit-line-clamp 不生效，超长标题会整段铺开。 */}
+            <span className="line-clamp-2">{title}</span>
           </button>
           {post.status === "downloading" && post.progress && (
             <DownloadProgressBar progress={post.progress} />
