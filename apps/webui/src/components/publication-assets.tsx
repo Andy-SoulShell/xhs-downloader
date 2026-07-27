@@ -81,7 +81,7 @@ export function PublicationAssets({
       ) : (
         <EmptyState
           compact
-          description="从本机选图片或视频，顺序可以拖动调整。"
+          description="从本机选图片或视频，添加后可以调整顺序。"
           icon={ImagePlus}
           title="还没有添加素材"
         />

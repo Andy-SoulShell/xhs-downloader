@@ -1,16 +1,14 @@
 import {
   CheckCircle2,
   CircleDashed,
-  Compass,
   GalleryVerticalEnd,
   History,
-  Search,
   Send,
   Settings2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { ContentTab, Filter, WorkspaceView } from "../lib/workspace";
+import type { Filter, WorkspaceView } from "../lib/workspace";
 
 export interface PostFilterItem {
   filter: Filter;
@@ -24,12 +22,6 @@ export interface WorkspaceViewItem {
   label: string;
   sidebarLabel: string;
   view: WorkspaceView;
-}
-
-export interface ContentTabItem {
-  icon: LucideIcon;
-  label: string;
-  tab: ContentTab;
 }
 
 export const postFilterItems: PostFilterItem[] = [
@@ -51,13 +43,6 @@ export const postFilterItems: PostFilterItem[] = [
     label: "已下载",
     sidebarLabel: "已下载",
   },
-];
-
-/** 内容工作台顶部分段；三段共用同一套帖子卡片与操作。 */
-export const contentTabItems: ContentTabItem[] = [
-  { icon: GalleryVerticalEnd, label: "我的帖子", tab: "library" },
-  { icon: Compass, label: "推荐", tab: "feeds" },
-  { icon: Search, label: "搜索", tab: "search" },
 ];
 
 export const workspaceViewItems: WorkspaceViewItem[] = [
@@ -86,5 +71,3 @@ export const workspaceViewItems: WorkspaceViewItem[] = [
     view: "settings",
   },
 ];
-
-export const managementViewItems = workspaceViewItems.filter(({ view }) => view !== "content");

@@ -79,13 +79,13 @@ describe("浏览器登录与会话操作", () => {
       expect.any(AbortSignal),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
-    expect(screen.getByRole("alertdialog")).toHaveTextContent("确认清除浏览器中的小红书 Cookie");
+    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("确认退出小红书登录");
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
     expect(deleteCookies).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认清除" }));
+    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认退出登录" }));
     await waitFor(() =>
       expect(deleteCookies).toHaveBeenCalledWith("browser", expect.any(AbortSignal)),
     );
@@ -132,11 +132,11 @@ describe("浏览器登录与会话操作", () => {
     vi.mocked(deleteCookies).mockRejectedValueOnce(new Error("站点数据清理失败"));
     render(<BrowserBoard browserDriver="extension" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "清除浏览器 Cookie" }));
-    fireEvent.click(screen.getByRole("button", { name: "确认清除" }));
+    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认退出登录" }));
 
     expect(await screen.findByText(/站点数据清理失败/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "清除浏览器 Cookie" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "退出登录" })).toBeEnabled();
   });
 
   it.each([
@@ -147,7 +147,7 @@ describe("浏览器登录与会话操作", () => {
       "登录会在已启动的受管浏览器中完成",
       false,
     ],
-    ["managed", makeManagedBrowserStatus({ state: "stopped" }), "受管浏览器还没启动", true],
+    ["managed", makeManagedBrowserStatus({ state: "stopped" }), "软件自带的浏览器还没启动", true],
   ] as const)("根据 %s 执行器展示首次登录引导", (browserDriver, status, guidance, disabled) => {
     vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl({ status }));
     render(<BrowserBoard browserDriver={browserDriver} />);

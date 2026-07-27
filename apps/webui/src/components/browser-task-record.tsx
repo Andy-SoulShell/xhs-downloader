@@ -7,6 +7,7 @@ import {
   browseStatusCopy,
   connectionCopy,
   humanizeError,
+  LOGOUT_ACTION,
   type BrowseStatusKey,
 } from "../lib/terminology";
 import { ActionButton } from "./action-button";
@@ -16,7 +17,7 @@ import { BrowserTaskDiagnostics } from "./browser-task-diagnostics";
 const KIND_LABELS: Record<BrowserTaskKind, string> = {
   check_login_status: "检查登录状态",
   get_login_qrcode: "获取登录二维码",
-  delete_cookies: "退出登录",
+  delete_cookies: LOGOUT_ACTION,
   list_feeds: "看推荐",
   search_feeds: "搜索",
   get_feed_detail: "看帖子详情",

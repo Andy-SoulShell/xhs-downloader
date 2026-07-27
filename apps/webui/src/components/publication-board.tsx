@@ -76,11 +76,11 @@ export function PublicationBoard({
 
   if (!confirmedDriver) {
     return (
-      <section aria-label="发布中心" className="mt-8 min-w-0">
+      <section aria-label="发布" className="mt-8 min-w-0">
         <PageHeading
           description="发布任务必须先确认使用浏览器扩展还是受管浏览器。"
           meta="等待配置"
-          title="发布中心"
+          title="发布"
         />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.7fr)]">
           <EmptyState

@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 
 import type { BrowserDriver, LoginQrCodeResult } from "../lib/types";
 import type { ManagedBrowserStatus } from "../lib/managed-browser-api";
+import { LOGOUT_ACTION } from "../lib/terminology";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 
@@ -77,7 +78,7 @@ export function BrowserLoginActions({
             variant="ghost"
           >
             <Trash2 aria-hidden size={15} />
-            清除浏览器 Cookie
+            {LOGOUT_ACTION}
           </ActionButton>
         </div>
       </div>
@@ -116,14 +117,14 @@ export function BrowserLoginActions({
           className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"
           role="alertdialog"
         >
-          <p className="text-sm font-semibold text-stone-900">确认清除浏览器中的小红书 Cookie？</p>
+          <p className="text-sm font-semibold text-stone-900">确认退出小红书登录？</p>
           <p className="mt-1 text-xs leading-5 text-stone-600">
-            这会退出浏览器登录，但不会修改 Cookie HTTP 模式的本地配置。
+            这会清掉浏览器里的登录状态，下次要重新扫码。设置里保存的 Cookie 不受影响。
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton disabled={busy} onClick={() => void confirmDelete()}>
               <Trash2 aria-hidden size={14} />
-              确认清除
+              确认{LOGOUT_ACTION}
             </ActionButton>
             <ActionButton
               disabled={busy}
@@ -160,9 +161,9 @@ function loginGuidance(
       return "登录会在已启动的受管浏览器中完成，并保存在独立的本机用户目录。";
     }
     if (managedStatus && !managedStatus.installed) {
-      return "没找到 Chrome 或 Chromium。装好之后到「设置 → 连接方式」里启动受管浏览器。";
+      return "没找到 Chrome 或 Chromium。装好之后到「设置」页顶部的「软件自带浏览器」里启动。";
     }
-    return "受管浏览器还没启动。到「设置 → 连接方式」里启动它，再回来扫码登录。";
+    return "软件自带的浏览器还没启动。到「设置」页顶部启动它，再回来扫码登录。";
   }
   return "还没定下用哪种方式打开小红书，登录、扫码和清理都先停用了。到「设置 → 连接方式」里选一个。";
 }

@@ -12,6 +12,14 @@
 /** 内容对象的统一称呼；后端字段仍叫作品，界面一律称帖子。 */
 export const POST_NOUN = "帖子";
 
+/**
+ * 清除浏览器站点 Cookie 这一动作的统一叫法。
+ *
+ * 它对用户的实际效果就是退出登录；此前操作按钮写“清除浏览器 Cookie”、
+ * 动态记录里写“退出登录”，同一件事看起来像两件。
+ */
+export const LOGOUT_ACTION = "退出登录";
+
 /** 下载任务在界面上的状态。 */
 export type DownloadStatusKey = "queued" | "running" | "completed" | "failed";
 

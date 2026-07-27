@@ -11,9 +11,6 @@ export type Filter = "all" | "ready" | "done";
  */
 export type WorkspaceView = "content" | "activity" | "publication" | "settings";
 
-/** 内容工作台内部的分段：我的帖子、推荐流与搜索结果。 */
-export type ContentTab = "library" | "feeds" | "search";
-
 export interface PostRecord {
   id: string;
   result: DetailResponse;

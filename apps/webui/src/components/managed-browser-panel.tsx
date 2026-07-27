@@ -30,6 +30,7 @@ export function ManagedBrowserPanel({
     status?.state !== "stopping";
   const canStop = status?.state === "running" || status?.state === "error";
   const hint = repairHint(status, control.error);
+  const warning = hintIsWarning(status, control.error);
 
   return (
     <section aria-label="受管浏览器控制" className="control-shell mt-6 min-w-0 p-4 sm:p-5">
@@ -87,7 +88,13 @@ export function ManagedBrowserPanel({
       </div>
 
       {(hint || control.error) && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
+        <div
+          className={`mt-4 rounded-2xl border p-3 text-xs leading-5 ${
+            warning
+              ? "border-amber-200 bg-amber-50 text-amber-800"
+              : "border-stone-200 bg-stone-50 text-stone-600"
+          }`}
+        >
           {control.error && (
             <p className="flex items-start gap-2 font-medium">
               <CircleAlert aria-hidden className="mt-0.5 shrink-0" size={14} />
@@ -142,9 +149,20 @@ function repairHint(status: ManagedBrowserControl["status"], error: string): str
     return "首次使用请先启动；启动后到「内容 → 浏览小红书」里获取二维码完成登录。";
   }
   if (status?.state === "running") {
-    return "浏览器已经就绪；首次使用请点击上方“获取登录二维码”完成登录。";
+    // 与 stopped 分支同理：这一页没有二维码按钮，指向它所在的工作台。
+    return "浏览器已经就绪；首次使用请到「内容 → 浏览小红书」里获取二维码完成登录。";
   }
   return "";
+}
+
+/**
+ * 判断提示块该用警示还是普通说明的外观。
+ *
+ * 就绪后的引导语不是警告，套琥珀色会让用户以为出了问题。
+ */
+function hintIsWarning(status: ManagedBrowserControl["status"], error: string): boolean {
+  if (error) return true;
+  return status?.state !== "running" && status?.state !== "stopped";
 }
 
 function isLockConflict(message: string): boolean {

@@ -211,7 +211,7 @@ describe("浏览器探索工作台", () => {
     expect(screen.getByText("还没有选好连接方式，请先到设置里完成")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "检查登录" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "获取登录二维码" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "清除浏览器 Cookie" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "退出登录" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     fireEvent.click(
