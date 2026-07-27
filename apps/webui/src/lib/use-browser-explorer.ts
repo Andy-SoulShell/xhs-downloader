@@ -27,7 +27,6 @@ import {
   loadNextFeedPage,
   type FeedContext,
 } from "./feed-pagination";
-import { useQrLoginWatch } from "./use-qr-login-watch";
 
 /** 浏览器探索页面的读取状态和互动操作。 */
 export interface BrowserExplorer {
@@ -140,16 +139,6 @@ export function useBrowserExplorer(): BrowserExplorer {
         });
       }),
     [runBrowser],
-  );
-  // 二维码亮着的时候自动盯登录状态：扫码在手机上完成，这边没有事件可听，
-  // 不能要求用户扫完再回来手点一次「检查登录」。
-  useQrLoginWatch(
-    qrCode,
-    useCallback((state: BrowserLoginState) => {
-      setAccount(state);
-      setQrCode(null);
-      setSessionMessage("扫码登录成功");
-    }, []),
   );
   const deleteBrowserCookies = useCallback(
     () =>

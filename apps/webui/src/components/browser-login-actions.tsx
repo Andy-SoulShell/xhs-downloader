@@ -93,9 +93,7 @@ export function BrowserLoginActions({
           />
           <div className="min-w-0 text-xs leading-5 text-stone-600">
             <Badge tone="warning">等待扫码</Badge>
-            <p className="mt-2">
-              用小红书 App 扫码并在手机上确认，这里会自动完成登录，不用再点检查。
-            </p>
+            <p className="mt-2">请使用小红书 App 扫码并在手机上确认登录。</p>
             <p>登录标签页会保持打开，二维码约在 {formatExpiry(qrCode.expires_at)} 失效。</p>
           </div>
         </div>
