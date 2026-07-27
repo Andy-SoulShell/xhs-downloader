@@ -36,9 +36,7 @@ interface PublicationEditorProps {
   onRemoveAsset: (assetId: string) => Promise<void>;
   onSave: (input: PublicationDraftInput) => Promise<PublicationDraft>;
   onSubmitManual: () => Promise<PublicationTask>;
-  onSubmitPlatformScheduled: (
-    scheduledAt: string,
-  ) => Promise<PublicationTask>;
+  onSubmitPlatformScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onUpload: (files: File[]) => Promise<void>;
 }
@@ -62,15 +60,12 @@ export function PublicationEditor({
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
   const [tags, setTags] = useState<string[]>(draft.tags);
-  const [visibility, setVisibility] =
-    useState<PublicationVisibility>(draft.visibility);
+  const [visibility, setVisibility] = useState<PublicationVisibility>(draft.visibility);
   const [isOriginal, setIsOriginal] = useState(draft.is_original);
   const [products, setProducts] = useState(draft.products.join("\n"));
   const [scheduledAt, setScheduledAt] = useState("");
   const [busy, setBusy] = useState("");
-  const hasVideo = draft.assets.some((asset) =>
-    asset.media_type.startsWith("video/"),
-  );
+  const hasVideo = draft.assets.some((asset) => asset.media_type.startsWith("video/"));
 
   const input = (assetOrder?: string[]): PublicationDraftInput => ({
     title: title.trim(),
@@ -82,10 +77,11 @@ export function PublicationEditor({
     ...(assetOrder ? { asset_order: assetOrder } : {}),
   });
   const save = async (assetOrder?: string[]) => onSave(input(assetOrder));
+  // 自动保存直接交给 onSave：它回传的是自己记下指纹的那份草稿，
+  // 若接成 save 会被当作 assetOrder，整份草稿被塞进 asset_order 发出去。
   // 手动提交期间暂停：两条写入并发会互相覆盖。
-  const autosave = useDraftAutosave(input(), save, busy === "");
-  const submissionInput = () =>
-    preparePublicationSubmission(input(), browserDriver);
+  const autosave = useDraftAutosave(input(), onSave, busy === "");
+  const submissionInput = () => preparePublicationSubmission(input(), browserDriver);
   const saveSubmission = async () => {
     const saved = await onSave(submissionInput());
     if (browserDriver === "managed") {
@@ -108,13 +104,8 @@ export function PublicationEditor({
     run(mode, async () => {
       validatePublicationDraft(submissionInput(), draft);
       const platformSchedule =
-        mode === "platform_scheduled"
-          ? validatePublicationSchedule(scheduledAt, mode)
-          : undefined;
-      const popup =
-        browserDriver === "extension"
-          ? window.open("about:blank", "_blank")
-          : null;
+        mode === "platform_scheduled" ? validatePublicationSchedule(scheduledAt, mode) : undefined;
+      const popup = browserDriver === "extension" ? window.open("about:blank", "_blank") : null;
       if (popup) popup.opener = null;
       try {
         await saveSubmission();
@@ -126,18 +117,12 @@ export function PublicationEditor({
         if (targetDriver === "managed") {
           popup?.close();
           onNotify(
-            mode === "manual"
-              ? "发布任务已交给受管浏览器"
-              : "官方定时任务已交给受管浏览器设置",
+            mode === "manual" ? "发布任务已交给受管浏览器" : "官方定时任务已交给受管浏览器设置",
           );
         } else {
           if (popup) {
             popup.location.href = publicationCreatorUrl(task);
-            onNotify(
-              mode === "manual"
-                ? "发布任务已交给浏览器扩展"
-                : "官方定时任务已交给扩展设置",
-            );
+            onNotify(mode === "manual" ? "发布任务已交给浏览器扩展" : "官方定时任务已交给扩展设置");
           } else {
             onNotify("扩展任务已就绪，请从任务列表打开创作页");
           }
@@ -153,9 +138,7 @@ export function PublicationEditor({
       const schedule = validatePublicationSchedule(scheduledAt, "scheduled");
       await saveSubmission();
       const task = await onSubmitScheduled(schedule);
-      onNotify(
-        `本地定时任务已保存，届时由${publicationDriverLabel(task.target_driver)}执行`,
-      );
+      onNotify(`本地定时任务已保存，届时由${publicationDriverLabel(task.target_driver)}执行`);
     });
   const submit = (mode: PublicationMode) => {
     if (mode === "scheduled") return submitLocalSchedule();
@@ -166,10 +149,7 @@ export function PublicationEditor({
     <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label
-            className="block text-xs font-semibold text-stone-700"
-            htmlFor="publication-title"
-          >
+          <label className="block text-xs font-semibold text-stone-700" htmlFor="publication-title">
             标题
           </label>
           <input
@@ -183,17 +163,12 @@ export function PublicationEditor({
           <CharacterCount limit={TITLE_LIMIT} value={title.length} />
         </div>
         <div>
-          <span className="block text-xs font-semibold text-stone-700">
-            话题标签
-          </span>
+          <span className="block text-xs font-semibold text-stone-700">话题标签</span>
           <TagInput onChange={setTags} tags={tags} />
         </div>
       </div>
       <div>
-        <label
-          className="block text-xs font-semibold text-stone-700"
-          htmlFor="publication-body"
-        >
+        <label className="block text-xs font-semibold text-stone-700" htmlFor="publication-body">
           正文
         </label>
         <textarea
@@ -211,12 +186,8 @@ export function PublicationEditor({
         busy={Boolean(busy)}
         draft={draft}
         onMove={(order) => run("assets", async () => void (await save(order)))}
-        onRemove={(assetId) =>
-          run("assets", async () => void (await onRemoveAsset(assetId)))
-        }
-        onUpload={(files) =>
-          run("assets", async () => void (await onUpload(files)))
-        }
+        onRemove={(assetId) => run("assets", async () => void (await onRemoveAsset(assetId)))}
+        onUpload={(files) => run("assets", async () => void (await onUpload(files)))}
       />
 
       <PublicationOptionsForm
@@ -235,11 +206,7 @@ export function PublicationEditor({
         busy={busy}
         onScheduledAtChange={setScheduledAt}
         onSubmit={submit}
-        products={
-          browserDriver === "managed"
-            ? []
-            : normalizePublicationProducts(products)
-        }
+        products={browserDriver === "managed" ? [] : normalizePublicationProducts(products)}
         scheduledAt={scheduledAt}
       />
 

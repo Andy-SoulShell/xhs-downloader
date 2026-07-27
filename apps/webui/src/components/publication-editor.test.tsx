@@ -1,23 +1,12 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  makePublicationDraft,
-  makePublicationTask,
-} from "../test/fixtures";
+import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 import { PublicationEditor } from "./publication-editor";
 
 afterEach(() => vi.restoreAllMocks());
 
-function renderEditor(
-  overrides: Partial<Parameters<typeof PublicationEditor>[0]> = {},
-) {
+function renderEditor(overrides: Partial<Parameters<typeof PublicationEditor>[0]> = {}) {
   const properties = {
     browserDriver: "extension" as const,
     draft: makePublicationDraft(),
@@ -29,12 +18,12 @@ function renderEditor(
       ...input,
     })),
     onSubmitManual: vi.fn().mockResolvedValue(makePublicationTask()),
-    onSubmitPlatformScheduled: vi.fn().mockResolvedValue(
-      makePublicationTask({ mode: "platform_scheduled" }),
-    ),
-    onSubmitScheduled: vi.fn().mockResolvedValue(
-      makePublicationTask({ mode: "scheduled", status: "scheduled" }),
-    ),
+    onSubmitPlatformScheduled: vi
+      .fn()
+      .mockResolvedValue(makePublicationTask({ mode: "platform_scheduled" })),
+    onSubmitScheduled: vi
+      .fn()
+      .mockResolvedValue(makePublicationTask({ mode: "scheduled", status: "scheduled" })),
     onUpload: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -43,6 +32,29 @@ function renderEditor(
 }
 
 describe("发布草稿编辑器", () => {
+  it("停止输入后自动落盘草稿本身", async () => {
+    vi.useFakeTimers();
+    try {
+      const properties = renderEditor();
+      fireEvent.change(screen.getByLabelText("标题"), {
+        target: { value: "自动保存的标题" },
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(1300);
+      });
+
+      expect(properties.onSave).toHaveBeenCalledTimes(1);
+      const [payload] = vi.mocked(properties.onSave).mock.calls[0];
+      expect(payload).toEqual(expect.objectContaining({ title: "自动保存的标题" }));
+      // 自动保存曾被接到按资源顺序保存的那条回调上，整份草稿被当成
+      // assetOrder 塞进 asset_order 发出去；这里盯住载荷不能有这个字段。
+      expect(payload).not.toHaveProperty("asset_order");
+      expect(screen.getByText("草稿已自动保存")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("保存规范化内容并一键打开指定发布任务", async () => {
     const popup = {
       close: vi.fn(),
@@ -85,15 +97,9 @@ describe("发布草稿编辑器", () => {
       }),
     );
     expect(popup.opener).toBeNull();
-    expect(popup.location.href).toContain(
-      "creator.xiaohongshu.com/publish/publish",
-    );
-    expect(popup.location.href).toContain(
-      "xhd_task=synthetic-publication-task",
-    );
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "发布任务已交给浏览器扩展",
-    );
+    expect(popup.location.href).toContain("creator.xiaohongshu.com/publish/publish");
+    expect(popup.location.href).toContain("xhd_task=synthetic-publication-task");
+    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给浏览器扩展");
   });
 
   it("校验空内容、缺失素材和被阻止的弹窗", async () => {
@@ -101,11 +107,7 @@ describe("发布草稿编辑器", () => {
     const properties = renderEditor({ draft: noContent });
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
-    await waitFor(() =>
-      expect(properties.onNotify).toHaveBeenCalledWith(
-        "标题和正文不能同时为空",
-      ),
-    );
+    await waitFor(() => expect(properties.onNotify).toHaveBeenCalledWith("标题和正文不能同时为空"));
     cleanup();
 
     const empty = makePublicationDraft({ assets: [] });
@@ -113,9 +115,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
     await waitFor(() =>
-      expect(emptyProperties.onNotify).toHaveBeenCalledWith(
-        "请至少添加一个发布素材",
-      ),
+      expect(emptyProperties.onNotify).toHaveBeenCalledWith("请至少添加一个发布素材"),
     );
     cleanup();
 
@@ -124,9 +124,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
     await waitFor(() =>
-      expect(blocked.onNotify).toHaveBeenCalledWith(
-        "扩展任务已就绪，请从任务列表打开创作页",
-      ),
+      expect(blocked.onNotify).toHaveBeenCalledWith("扩展任务已就绪，请从任务列表打开创作页"),
     );
   });
 
@@ -135,9 +133,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "本地定时" }));
     fireEvent.click(screen.getByRole("button", { name: "确认本地定时" }));
     await waitFor(() =>
-      expect(properties.onNotify).toHaveBeenCalledWith(
-        "请选择有效的计划发布时间",
-      ),
+      expect(properties.onNotify).toHaveBeenCalledWith("请选择有效的计划发布时间"),
     );
     fireEvent.change(screen.getByLabelText("计划发布时间"), {
       target: { value: "2020-01-02T03:04" },
@@ -145,9 +141,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "本地定时" }));
     fireEvent.click(screen.getByRole("button", { name: "确认本地定时" }));
     await waitFor(() =>
-      expect(properties.onNotify).toHaveBeenCalledWith(
-        "计划发布时间必须晚于当前时间",
-      ),
+      expect(properties.onNotify).toHaveBeenCalledWith("计划发布时间必须晚于当前时间"),
     );
     fireEvent.change(screen.getByLabelText("计划发布时间"), {
       target: { value: "2099-01-02T03:04" },
@@ -160,9 +154,7 @@ describe("发布草稿编辑器", () => {
         new Date("2099-01-02T03:04").toISOString(),
       ),
     );
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "本地定时任务已保存，届时由浏览器扩展执行",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("本地定时任务已保存，届时由浏览器扩展执行");
   });
 
   it("官方定时要求边界有效并打开创作页", async () => {
@@ -174,9 +166,7 @@ describe("发布草稿编辑器", () => {
     vi.spyOn(window, "open").mockReturnValue(popup as unknown as Window);
     const properties = renderEditor();
     const schedule = new Date(Date.now() + 2 * 60 * 60_000);
-    const local = new Date(
-      schedule.getTime() - schedule.getTimezoneOffset() * 60_000,
-    )
+    const local = new Date(schedule.getTime() - schedule.getTimezoneOffset() * 60_000)
       .toISOString()
       .slice(0, 16);
     fireEvent.change(screen.getByLabelText("计划发布时间"), {
@@ -185,13 +175,9 @@ describe("发布草稿编辑器", () => {
     fireEvent.click(screen.getByRole("button", { name: "官方定时" }));
     fireEvent.click(screen.getByRole("button", { name: "确认官方定时" }));
 
-    await waitFor(() =>
-      expect(properties.onSubmitPlatformScheduled).toHaveBeenCalled(),
-    );
+    await waitFor(() => expect(properties.onSubmitPlatformScheduled).toHaveBeenCalled());
     expect(popup.location.href).toContain("xhd_task=");
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "官方定时任务已交给扩展设置",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("官方定时任务已交给扩展设置");
   });
 
   it("受管模式不打开日常浏览器并前置限制发布选项", async () => {
@@ -202,17 +188,13 @@ describe("发布草稿编辑器", () => {
         visibility: "public",
         products: ["合成商品"],
       }),
-      onSubmitManual: vi.fn().mockResolvedValue(
-        makePublicationTask({ target_driver: "managed" }),
-      ),
+      onSubmitManual: vi.fn().mockResolvedValue(makePublicationTask({ target_driver: "managed" })),
     });
 
     expect(screen.getByLabelText("可见范围")).toBeDisabled();
     expect(screen.getByLabelText("可见范围")).toHaveValue("private");
     expect(screen.getByLabelText("绑定商品")).toBeDisabled();
-    expect(
-      screen.getByText("受管浏览器首期固定为仅自己可见且不绑定商品。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("受管浏览器首期固定为仅自己可见且不绑定商品。")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "保存草稿" }));
     await waitFor(() => expect(properties.onSave).toHaveBeenCalled());
@@ -225,9 +207,7 @@ describe("发布草稿编辑器", () => {
     vi.clearAllMocks();
 
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
-    expect(
-      screen.getByText(/受管浏览器将使用当前选定浏览器中的登录账号/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/受管浏览器将使用当前选定浏览器中的登录账号/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "确认立即发布" }));
 
     await waitFor(() => expect(properties.onSubmitManual).toHaveBeenCalled());
@@ -235,9 +215,7 @@ describe("发布草稿编辑器", () => {
       expect.objectContaining({ visibility: "private", products: [] }),
     );
     expect(open).not.toHaveBeenCalled();
-    expect(properties.onNotify).toHaveBeenCalledWith(
-      "发布任务已交给受管浏览器",
-    );
+    expect(properties.onNotify).toHaveBeenCalledWith("发布任务已交给受管浏览器");
   });
 
   it("视频草稿禁用原创声明，并可撤回发布确认", () => {
@@ -253,9 +231,7 @@ describe("发布草稿编辑器", () => {
     });
     const properties = renderEditor({ draft: video });
 
-    expect(
-      screen.getByRole("checkbox", { name: /声明原创/ }),
-    ).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: /声明原创/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "立即发布" }));
     fireEvent.click(screen.getByRole("button", { name: "返回修改" }));
     expect(properties.onSubmitManual).not.toHaveBeenCalled();
@@ -268,16 +244,10 @@ describe("发布草稿编辑器", () => {
     fireEvent.change(screen.getByLabelText("添加素材"), {
       target: { files: [file] },
     });
-    await waitFor(() =>
-      expect(properties.onUpload).toHaveBeenCalledWith([file]),
-    );
+    await waitFor(() => expect(properties.onUpload).toHaveBeenCalledWith([file]));
 
     fireEvent.click(screen.getByRole("button", { name: /删除 synthetic/ }));
-    await waitFor(() =>
-      expect(properties.onRemoveAsset).toHaveBeenCalledWith(
-        "synthetic-asset",
-      ),
-    );
+    await waitFor(() => expect(properties.onRemoveAsset).toHaveBeenCalledWith("synthetic-asset"));
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "删除草稿" }));
     await waitFor(() => expect(properties.onDelete).toHaveBeenCalled());
