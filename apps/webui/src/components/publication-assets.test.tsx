@@ -67,7 +67,7 @@ describe("发布素材列表", () => {
         onUpload={onUpload}
       />,
     );
-    expect(screen.getByText(/还没有素材/)).toBeInTheDocument();
+    expect(screen.getByText("还没有添加素材")).toBeInTheDocument();
     const input = screen.getByLabelText("添加素材");
     fireEvent.change(input, { target: { files: [] } });
     expect(onUpload).not.toHaveBeenCalled();

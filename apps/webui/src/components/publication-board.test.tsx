@@ -96,7 +96,7 @@ describe("发布中心界面", () => {
       <PublicationBoard browserDriver="extension" onNotify={onNotify} />,
     );
 
-    expect(screen.getByText("正在加载发布中心")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "正在加载" })).toBeInTheDocument();
     const button = await screen.findByRole("button", {
       name: "新建第一份草稿",
     });

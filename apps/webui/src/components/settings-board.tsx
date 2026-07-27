@@ -1,4 +1,4 @@
-import { CircleAlert, RotateCcw, Save, Settings2 } from "lucide-react";
+import { CircleAlert, RotateCcw, Save } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -6,6 +6,7 @@ import { toMappingObject, toMappingRows } from "../lib/author-mapping";
 import type { SettingsResponse, SettingsUpdate } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { BoardTabs } from "./board-tabs";
+import { SkeletonForm } from "./skeleton";
 import type { SettingsChange } from "./settings-sections";
 import { settingsTabs } from "./settings-tabs";
 import { Badge } from "./badge";
@@ -36,11 +37,8 @@ export function SettingsBoard({
     return (
       <>
         <section className="mt-8" aria-label="配置管理">
-          <EmptyState
-            description="正在从本地服务读取下次启动使用的配置。"
-            icon={Settings2}
-            title="正在读取配置"
-          />
+          {/* 骨架与真实表单同构，数据到达时不产生跳变。 */}
+          <SkeletonForm fields={6} />
         </section>
         <DesktopServiceControl />
       </>

@@ -8,6 +8,7 @@ import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
 import { BoardTabs } from "./board-tabs";
+import { SkeletonForm } from "./skeleton";
 import { PublicationEditor } from "./publication-editor";
 import { PublicationTaskList } from "./publication-task-list";
 
@@ -137,11 +138,7 @@ export function PublicationBoard({
       )}
 
       {center.loading && !center.drafts.length ? (
-        <EmptyState
-          description="正在读取本地草稿、素材与发布任务。"
-          icon={Send}
-          title="正在加载发布中心"
-        />
+        <SkeletonForm fields={4} />
       ) : !center.drafts.length ? (
         <EmptyState
           action={

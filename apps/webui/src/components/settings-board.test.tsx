@@ -153,7 +153,7 @@ describe("服务配置界面", () => {
         settings={null}
       />,
     );
-    expect(screen.getByText("正在读取配置")).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "正在加载" })).toBeInTheDocument();
 
     rerender(
       <SettingsBoard

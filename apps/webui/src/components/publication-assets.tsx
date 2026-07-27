@@ -2,6 +2,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileImage,
+  ImagePlus,
   FileVideo2,
   Trash2,
   Upload,
@@ -13,6 +14,7 @@ import type {
   PublicationDraft,
 } from "../lib/publication";
 import { ActionButton } from "./action-button";
+import { EmptyState } from "./empty-state";
 import { Badge } from "./badge";
 
 interface PublicationAssetsProps {
@@ -82,9 +84,12 @@ export function PublicationAssets({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 px-5 py-8 text-center text-sm text-stone-500">
-          还没有素材。先添加图片或视频，再提交发布任务。
-        </div>
+        <EmptyState
+          compact
+          description="图文可以放 1 到 18 张图片，视频笔记放一个视频。"
+          icon={ImagePlus}
+          title="还没有添加素材"
+        />
       )}
     </fieldset>
   );

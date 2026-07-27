@@ -21,6 +21,8 @@ export function useTaskCenter() {
   const [tasks, setTasks] = useState<DownloadTask[]>([]);
   const [records, setRecords] = useState<ClientDownloadRecord[]>([]);
   const [error, setError] = useState("");
+  // 首次读取未完成前不能显示"还没有记录"，否则会先闪一下空状态。
+  const [loading, setLoading] = useState(true);
 
   const refreshTasks = useCallback(async () => {
     try {
@@ -51,6 +53,9 @@ export function useTaskCenter() {
       })
       .catch((reason: unknown) => {
         if (active) setError(errorMessage(reason, "管理数据读取失败"));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
@@ -89,6 +94,7 @@ export function useTaskCenter() {
   return {
     createTask,
     error,
+    loading,
     records,
     refreshRecords,
     refreshTasks,

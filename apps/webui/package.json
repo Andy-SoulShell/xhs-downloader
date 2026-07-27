@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:desktop": "VITE_API_BASE= VITE_BASE_PATH=/ui/ vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run --coverage",

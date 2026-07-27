@@ -21,11 +21,15 @@ import type {
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { EmptyState } from "./empty-state";
+import { MediaThumbnail } from "./media-thumbnail";
+import { SkeletonRecordList } from "./skeleton";
 
 export function TaskBoard({
+  loading = false,
   tasks,
   onRetry,
 }: {
+  loading?: boolean;
   tasks: DownloadTask[];
   onRetry: (taskId: string) => void;
 }) {
@@ -34,14 +38,20 @@ export function TaskBoard({
       description="下载在后台进行，关掉这个页面也不会中断。"
       title="下载"
     >
-      {tasks.length ? (
-        <div className="space-y-3">
+      {loading && !tasks.length ? (
+        <SkeletonRecordList />
+      ) : tasks.length ? (
+        <div className="reading-column space-y-3">
           {tasks.map((task) => (
             <article
               className="record-card group flex items-start gap-3.5 transition-[border-color,box-shadow] duration-200 hover:border-stone-300 hover:shadow-[0_1px_2px_rgb(28_25_23/0.04),0_8px_24px_rgb(28_25_23/0.06)]"
               key={task.task_id}
             >
-              <TaskStatusIcon status={task.status} />
+              <MediaThumbnail
+                alt=""
+                fallback={<TaskStatusIcon status={task.status} />}
+                src={task.detail?.媒体?.[0]?.预览地址}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-3">
                   {/* 状态紧跟标题：推到行尾会让视线横跨整屏才能对应。 */}
@@ -105,8 +115,10 @@ export function TaskBoard({
 }
 
 export function RecordBoard({
+  loading = false,
   records,
 }: {
+  loading?: boolean;
   records: ClientDownloadRecord[];
 }) {
   return (
@@ -114,7 +126,9 @@ export function RecordBoard({
       description="这些是浏览器插件直接下载的，在插件面板里点同步后出现在这里。"
       title="插件下载"
     >
-      {records.length ? (
+      {loading && !records.length ? (
+        <SkeletonRecordList count={2} />
+      ) : records.length ? (
         <div className="grid gap-3 md:grid-cols-2">
           {records.map((record) => (
             <article
@@ -184,7 +198,18 @@ function ManagementSection({
   );
 }
 
-function TaskStatusIcon({ status }: { status: DownloadTaskStatus }) {
+/**
+ * 任务状态图标。
+ *
+ * @param bare 只渲染图标本身，供缩略图在没有封面时作为备用内容使用。
+ */
+function TaskStatusIcon({
+  bare = false,
+  status,
+}: {
+  bare?: boolean;
+  status: DownloadTaskStatus;
+}) {
   const styles = {
     queued: ["bg-amber-50 text-amber-600", Clock3],
     running: ["bg-blue-50 text-blue-600", RefreshCw],
@@ -192,9 +217,19 @@ function TaskStatusIcon({ status }: { status: DownloadTaskStatus }) {
     failed: ["bg-red-50 text-red-600", CircleAlert],
   } as const;
   const [className, Icon] = styles[status];
+  const icon = (
+    <Icon
+      aria-hidden
+      className={status === "running" ? "animate-spin" : ""}
+      size={17}
+    />
+  );
+  if (bare) return icon;
   return (
-    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${className}`}>
-      <Icon aria-hidden className={status === "running" ? "animate-spin" : ""} size={17} />
+    <span
+      className={`grid size-10 shrink-0 place-items-center rounded-xl ${className}`}
+    >
+      {icon}
     </span>
   );
 }

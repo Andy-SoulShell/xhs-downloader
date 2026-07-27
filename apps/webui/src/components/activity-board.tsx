@@ -5,6 +5,7 @@ import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
 import { BoardTabs } from "./board-tabs";
 import { BrowserTaskRecord } from "./browser-task-record";
 import { EmptyState } from "./empty-state";
+import { SkeletonRecordList } from "./skeleton";
 import { PageHeading } from "./page-heading";
 import { RecordBoard, TaskBoard } from "./task-center";
 
@@ -15,10 +16,12 @@ import { RecordBoard, TaskBoard } from "./task-center";
  * 做过什么时不知道该去哪里看。
  */
 export function ActivityBoard({
+  loading = false,
   onRetryDownload,
   records,
   tasks,
 }: {
+  loading?: boolean;
   onRetryDownload: (taskId: string) => void;
   records: ClientDownloadRecord[];
   tasks: DownloadTask[];
@@ -40,7 +43,13 @@ export function ActivityBoard({
             label: "下载",
             icon: Download,
             count: tasks.length,
-            content: <TaskBoard onRetry={onRetryDownload} tasks={tasks} />,
+            content: (
+              <TaskBoard
+                loading={loading}
+                onRetry={onRetryDownload}
+                tasks={tasks}
+              />
+            ),
           },
           {
             value: "actions",
@@ -54,7 +63,7 @@ export function ActivityBoard({
             label: "插件下载",
             icon: Puzzle,
             count: records.length,
-            content: <RecordBoard records={records} />,
+            content: <RecordBoard loading={loading} records={records} />,
           },
         ]}
       />
@@ -75,8 +84,10 @@ function BrowseActions({
       <p className="mb-4 text-xs leading-5 text-stone-500">
         点赞、收藏和评论的执行结果；不记录评论正文和页面内容。
       </p>
-      {monitor.tasks.length ? (
-        <div className="space-y-3">
+      {monitor.refreshing && !monitor.tasks.length ? (
+        <SkeletonRecordList />
+      ) : monitor.tasks.length ? (
+        <div className="reading-column space-y-3">
           {monitor.tasks.map((task) => (
             <BrowserTaskRecord
               key={task.task_id}

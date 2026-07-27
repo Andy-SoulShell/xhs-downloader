@@ -10,7 +10,6 @@ import type {
 } from "../lib/publication";
 import {
   normalizePublicationProducts,
-  normalizePublicationTags,
   preparePublicationSubmission,
   publicationCreatorUrl,
   publicationDriverLabel,
@@ -20,7 +19,9 @@ import {
 } from "../lib/publication-editor-rules";
 import type { BrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
+import { CharacterCount } from "./character-count";
 import { PublicationAssets } from "./publication-assets";
+import { TagInput } from "./tag-input";
 import { PublicationOptionsForm } from "./publication-options-form";
 import { PublicationSubmitControls } from "./publication-submit-controls";
 
@@ -40,6 +41,9 @@ interface PublicationEditorProps {
 }
 
 /** 编辑本地发布草稿，并以二次确认提交三种发布任务。 */
+const TITLE_LIMIT = 100;
+const BODY_LIMIT = 5000;
+
 export function PublicationEditor({
   browserDriver,
   draft,
@@ -54,7 +58,7 @@ export function PublicationEditor({
 }: PublicationEditorProps) {
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
-  const [tags, setTags] = useState(draft.tags.join(" "));
+  const [tags, setTags] = useState<string[]>(draft.tags);
   const [visibility, setVisibility] =
     useState<PublicationVisibility>(draft.visibility);
   const [isOriginal, setIsOriginal] = useState(draft.is_original);
@@ -68,7 +72,7 @@ export function PublicationEditor({
   const input = (assetOrder?: string[]): PublicationDraftInput => ({
     title: title.trim(),
     body: body.trim(),
-    tags: normalizePublicationTags(tags),
+    tags,
     visibility,
     is_original: hasVideo ? false : isOriginal,
     products: normalizePublicationProducts(products),
@@ -156,36 +160,47 @@ export function PublicationEditor({
   return (
     <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-xs font-semibold text-stone-700">
-          标题
+        <div>
+          <label
+            className="block text-xs font-semibold text-stone-700"
+            htmlFor="publication-title"
+          >
+            标题
+          </label>
           <input
-            className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none transition focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
-            maxLength={100}
+            className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none transition-all duration-200 focus:border-stone-400 focus:ring-4 focus:ring-stone-900/[0.06]"
+            id="publication-title"
+            maxLength={TITLE_LIMIT}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="填写发布标题"
             value={title}
           />
-        </label>
-        <label className="block text-xs font-semibold text-stone-700">
-          话题标签
-          <input
-            className="mt-2 h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm font-normal text-stone-900 outline-none transition focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
-            onChange={(event) => setTags(event.target.value)}
-            placeholder="用空格分隔，不必输入 #"
-            value={tags}
-          />
-        </label>
+          <CharacterCount limit={TITLE_LIMIT} value={title.length} />
+        </div>
+        <div>
+          <span className="block text-xs font-semibold text-stone-700">
+            话题标签
+          </span>
+          <TagInput onChange={setTags} tags={tags} />
+        </div>
       </div>
-      <label className="block text-xs font-semibold text-stone-700">
-        正文
+      <div>
+        <label
+          className="block text-xs font-semibold text-stone-700"
+          htmlFor="publication-body"
+        >
+          正文
+        </label>
         <textarea
-          className="mt-2 min-h-36 w-full resize-y rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6 font-normal text-stone-900 outline-none transition focus:border-stone-400 focus:ring-4 focus:ring-stone-100"
-          maxLength={5000}
+          className="mt-2 min-h-36 w-full resize-y rounded-2xl border border-stone-200 bg-white p-4 text-sm leading-6 font-normal text-stone-900 outline-none transition-all duration-200 focus:border-stone-400 focus:ring-4 focus:ring-stone-900/[0.06]"
+          id="publication-body"
+          maxLength={BODY_LIMIT}
           onChange={(event) => setBody(event.target.value)}
           placeholder="写下准备发布的内容"
           value={body}
         />
-      </label>
+        <CharacterCount limit={BODY_LIMIT} value={body.length} />
+      </div>
 
       <PublicationAssets
         busy={Boolean(busy)}

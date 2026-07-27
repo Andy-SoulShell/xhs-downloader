@@ -54,9 +54,14 @@ describe("发布草稿编辑器", () => {
     fireEvent.change(screen.getByLabelText("标题"), {
       target: { value: "  新标题  " },
     });
-    fireEvent.change(screen.getByLabelText("话题标签"), {
-      target: { value: "#标签 标签，第二个" },
-    });
+    // 标签改为逐个确认的输入：井号会被去掉，重复项不会再次加入。
+    const tagInput = screen.getByLabelText("话题标签");
+    fireEvent.change(tagInput, { target: { value: "#标签" } });
+    fireEvent.keyDown(tagInput, { key: "Enter" });
+    fireEvent.change(tagInput, { target: { value: "标签" } });
+    fireEvent.keyDown(tagInput, { key: "Enter" });
+    fireEvent.change(tagInput, { target: { value: "第二个" } });
+    fireEvent.keyDown(tagInput, { key: "Enter" });
     fireEvent.change(screen.getByLabelText("可见范围"), {
       target: { value: "mutual" },
     });
@@ -72,7 +77,8 @@ describe("发布草稿编辑器", () => {
     expect(properties.onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "新标题",
-        tags: ["标签", "第二个"],
+        // 新增标签是追加而不是整体替换，草稿原有标签得以保留。
+        tags: ["合成", "测试", "标签", "第二个"],
         visibility: "mutual",
         is_original: true,
         products: ["合成商品 A", "合成商品 B"],

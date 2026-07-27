@@ -76,6 +76,14 @@ button {
   }
 }
 
+/* 列表型内容的最大行长。
+   超宽屏下让卡片铺满整行会把内容挤在最左侧，视线要横跨上千像素，
+   这里限制在便于扫读的宽度内。 */
+.reading-column {
+  width: 100%;
+  max-width: 60rem;
+}
+
 /* 列表中的一条记录；与 control-shell 的容器层次区分开。 */
 .record-card {
   border: 1px solid rgb(28 25 23 / 9%);

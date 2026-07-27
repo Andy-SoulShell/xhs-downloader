@@ -44,6 +44,7 @@ export default function App() {
   const {
     createTask,
     error: taskError,
+    loading: tasksLoading,
     records,
     restartTask,
     tasks,
@@ -230,6 +231,7 @@ export default function App() {
             </Tabs.Content>
             <Tabs.Content value="activity">
               <ActivityBoard
+                loading={tasksLoading}
                 onRetryDownload={(taskId) => void handleRetry(taskId)}
                 records={records}
                 tasks={tasks}
