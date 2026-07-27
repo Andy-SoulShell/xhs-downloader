@@ -10,10 +10,12 @@ function Harness({
   onFilterChange = vi.fn(),
   onViewChange = vi.fn(),
   online = true,
+  publicationCount = 0,
 }: {
   onFilterChange?: (filter: Filter) => void;
   onViewChange?: (view: WorkspaceView) => void;
   online?: boolean | null;
+  publicationCount?: number;
 }) {
   const [view, setView] = useState<WorkspaceView>("content");
   const [filter, setFilter] = useState<Filter>("all");
@@ -35,6 +37,7 @@ function Harness({
         }}
         online={online}
         postCount={5}
+        publicationCount={publicationCount}
         view={view}
       />
       <Tabs.Content value="content">内容工作台</Tabs.Content>
@@ -101,5 +104,13 @@ describe("宽屏工作台侧栏", () => {
     render(<Harness online={false} />);
 
     expect(screen.getByText("本地服务")).toBeInTheDocument();
+  });
+
+  it("有发布等着处理才亮角标", () => {
+    const { rerender } = render(<Harness />);
+    expect(screen.queryByLabelText(/项等你处理/)).not.toBeInTheDocument();
+
+    rerender(<Harness publicationCount={3} />);
+    expect(screen.getByLabelText("3 项等你处理")).toHaveTextContent("3");
   });
 });

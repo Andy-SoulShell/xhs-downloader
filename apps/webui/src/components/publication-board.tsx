@@ -9,8 +9,8 @@ import {
   indexTasksByDraft,
   summarizeDrafts,
 } from "../lib/publication-index";
+import { usePublicationCenterContext } from "../lib/publication-center";
 import { isBrowserDriver } from "../lib/types";
-import { usePublicationCenter } from "../lib/use-publication-center";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BoardTabs } from "./board-tabs";
@@ -30,7 +30,7 @@ export function PublicationBoard({
   browserDriver?: unknown;
   onNotify: (message: string) => void;
 }) {
-  const center = usePublicationCenter();
+  const center = usePublicationCenterContext();
   const [selectedId, setSelectedId] = useState("");
   const [creating, setCreating] = useState(false);
   const [keyword, setKeyword] = useState("");

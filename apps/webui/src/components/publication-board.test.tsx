@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -8,8 +9,14 @@ import {
   resumePublicationVerification,
   retryPublicationTask,
 } from "../lib/publication-api";
+import { PublicationCenterProvider } from "../lib/publication-center-provider";
 import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
 import { PublicationBoard } from "./publication-board";
+
+/** 发布中心已提到应用根部共享，组件测试也得在同一个提供者里渲染。 */
+function renderBoard(ui: ReactElement) {
+  return render(<PublicationCenterProvider>{ui}</PublicationCenterProvider>);
+}
 
 vi.mock("../lib/publication-api", () => ({
   DRAFT_PAGE_LIMIT: 200,
@@ -38,7 +45,7 @@ beforeEach(() => {
 describe("发布中心界面", () => {
   it("执行驱动尚未确认时不允许编辑或提交发布", async () => {
     vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
-    render(<PublicationBoard onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard onNotify={vi.fn()} />);
 
     expect(
       screen.getByText("暂时无法确认发布方式，新建和提交已停用；已有任务仍可核对或恢复。"),
@@ -62,7 +69,7 @@ describe("发布中心界面", () => {
       }),
     ]);
 
-    render(<PublicationBoard browserDriver="future-browser-driver" onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard browserDriver="future-browser-driver" onNotify={vi.fn()} />);
 
     expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
     expect(
@@ -77,7 +84,7 @@ describe("发布中心界面", () => {
     const draft = makePublicationDraft();
     vi.mocked(createPublicationDraft).mockResolvedValue(draft);
     const onNotify = vi.fn();
-    render(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
     expect(screen.getAllByRole("status", { name: "正在加载" })[0]).toBeInTheDocument();
     const button = await screen.findByRole("button", {
@@ -106,7 +113,7 @@ describe("发布中心界面", () => {
       status: "ready",
     });
     const onNotify = vi.fn();
-    render(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
     const list = await screen.findByRole("region", { name: "草稿列表" });
     fireEvent.click(within(list).getByRole("button", { name: /第二份草稿/ }));
@@ -118,7 +125,9 @@ describe("发布中心界面", () => {
 
     fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ }));
     fireEvent.click(
-      within(screen.getByRole("region", { name: "发布任务" })).getByRole("button", { name: "重试" }),
+      within(screen.getByRole("region", { name: "发布任务" })).getByRole("button", {
+        name: "重试",
+      }),
     );
 
     await waitFor(() => expect(retryPublicationTask).toHaveBeenCalledWith(task.task_id));
@@ -133,7 +142,7 @@ describe("发布中心界面", () => {
     vi.mocked(listPublicationTasks).mockResolvedValue([
       { ...task, package: { ...task.package, draft_id: "second" } },
     ]);
-    render(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
     await screen.findByRole("region", { name: "草稿列表" });
     expect(screen.getByLabelText("标题")).toHaveValue(first.title);
@@ -146,9 +155,11 @@ describe("发布中心界面", () => {
 
   it("源草稿已经删掉的任务不留一个点不动的入口", async () => {
     const task = makePublicationTask({ status: "published" });
-    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft({ draft_id: "别的" })]);
+    vi.mocked(listPublicationDrafts).mockResolvedValue([
+      makePublicationDraft({ draft_id: "别的" }),
+    ]);
     vi.mocked(listPublicationTasks).mockResolvedValue([task]);
-    render(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
     await screen.findByRole("region", { name: "草稿列表" });
     fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ }));
@@ -160,7 +171,7 @@ describe("发布中心界面", () => {
     const first = makePublicationDraft({ title: "露营装备" });
     const second = makePublicationDraft({ draft_id: "second", title: "咖啡豆" });
     vi.mocked(listPublicationDrafts).mockResolvedValue([first, second]);
-    render(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
     const list = await screen.findByRole("region", { name: "草稿列表" });
     fireEvent.change(within(list).getByLabelText("搜索草稿"), {
@@ -173,7 +184,7 @@ describe("发布中心界面", () => {
 
   it("展示发布中心读取错误", async () => {
     vi.mocked(listPublicationDrafts).mockRejectedValue(new Error("本地发布服务不可用"));
-    render(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
     expect(await screen.findByText("本地发布服务不可用")).toBeInTheDocument();
     expect(screen.getByText("还没有发布草稿")).toBeInTheDocument();
@@ -195,7 +206,7 @@ describe("发布中心界面", () => {
       message: "已确认安全验证完成，软件自带发布将在原页面继续",
     });
     const onNotify = vi.fn();
-    render(<PublicationBoard browserDriver="managed" onNotify={onNotify} />);
+    renderBoard(<PublicationBoard browserDriver="managed" onNotify={onNotify} />);
 
     // 这次任务就出自当前草稿，编辑器底部的记录区里直接能处理。
     const timeline = await screen.findByRole("region", { name: "这份草稿的发布记录" });

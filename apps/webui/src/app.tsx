@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
 import { Tabs, Toast } from "radix-ui";
 
 import { ActivityBoard } from "./components/activity-board";
@@ -9,6 +9,7 @@ import { PublicationBoard } from "./components/publication-board";
 import { AppToast } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
 import { SettingsWorkspace } from "./components/settings-workspace";
+import { WorkspacePanel } from "./components/workspace-panel";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import { checkHealth, deleteCollectedPost, listCollectedPosts, submitDetail } from "./lib/api";
 import { useManagedBrowser } from "./lib/use-managed-browser";
@@ -19,6 +20,9 @@ import { describeError } from "./lib/error-message";
 import { useDownloadCompletion } from "./lib/use-download-completion";
 import { useNotice } from "./lib/use-notice";
 import { BrowserSessionProvider } from "./lib/browser-session-provider";
+import { attentionTaskCount } from "./lib/publication-index";
+import { usePublicationCenterContext } from "./lib/publication-center";
+import { PublicationCenterProvider } from "./lib/publication-center-provider";
 import { useBrowserSession } from "./lib/browser-session";
 import {
   mergeTaskResults,
@@ -32,24 +36,10 @@ import {
 export default function App() {
   return (
     <BrowserSessionProvider>
-      <Workspace />
+      <PublicationCenterProvider>
+        <Workspace />
+      </PublicationCenterProvider>
     </BrowserSessionProvider>
-  );
-}
-
-/**
- * 一个常驻的工作台面板。
- *
- * forceMount 让四个工作台切走也不卸载：此前切到别处会连同未保存的设置
- * 修改、正在写的发布草稿和整页浏览结果一起销毁，回来什么都没了，轮询也
- * 跟着停摆。Radix 在 forceMount 下不再自己隐藏，未激活的面板改由
- * data-state 收起，React 状态因此得以保留。
- */
-function WorkspacePanel({ children, value }: { children: ReactNode; value: WorkspaceView }) {
-  return (
-    <Tabs.Content className="data-[state=inactive]:hidden" forceMount value={value}>
-      {children}
-    </Tabs.Content>
   );
 }
 
@@ -64,6 +54,7 @@ function Workspace() {
   // 首次拉取本地帖子期间为真；缺了它老用户每次打开都先被告知“列表还是空的”。
   const [postsLoading, setPostsLoading] = useState(true);
   const { notice, notify, open: toastOpen, setOpen: setToastOpen } = useNotice();
+  const publication = usePublicationCenterContext();
   const {
     createTask,
     error: taskError,
@@ -221,6 +212,7 @@ function Workspace() {
             onFilterChange={setFilter}
             online={effectiveOnline}
             postCount={managedPosts.length}
+            publicationCount={attentionTaskCount(publication.tasks)}
             view={view}
           />
 
