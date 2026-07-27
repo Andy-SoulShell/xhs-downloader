@@ -1,6 +1,6 @@
 """应用层依赖的可替换端口。"""
 
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 from typing import Protocol
@@ -8,6 +8,7 @@ from typing import Protocol
 from .models import (
     ClientDownloadRecord,
     DownloadArtifact,
+    DownloadProgress,
     DownloadRecord,
     DownloadTask,
     DownloadTaskStatus,
@@ -125,12 +126,14 @@ class ArtifactDownloader(Protocol):
         self,
         detail: WorkDetail,
         indexes: set[int] | None = None,
+        on_progress: Callable[[DownloadProgress], None] | None = None,
     ) -> list[DownloadArtifact]:
         """下载作品媒体。
 
         Args:
             detail: 作品信息。
             indexes: 仅下载指定的一基媒体序号。
+            on_progress: 进度回调；为空表示调用方不关心进度。
 
         Returns:
             完整文件产物列表。

@@ -1,5 +1,6 @@
 import type {
   DetailResponse,
+  DownloadProgress,
   DownloadTask,
   WorkDetail,
 } from "./types";
@@ -25,6 +26,8 @@ export interface PostRecord {
   downloaded: Set<string>;
   force: boolean;
   status: PostStatus;
+  /** 后台任务的实时进度；没有对应任务时为空。 */
+  progress?: DownloadProgress;
 }
 
 export function postFromDetail(detail: WorkDetail): PostRecord {
@@ -91,6 +94,7 @@ export function mergeTaskResults(
         ...post,
         result: { ...post.result, message: task.message },
         status: taskStatus(task),
+        progress: task.progress,
       };
     }
     return postFromTask(task, post);
@@ -129,6 +133,7 @@ function postFromTask(
     ]),
     force: existing?.force ?? task.force,
     status: taskStatus(task),
+    progress: task.progress,
   };
 }
 

@@ -5,6 +5,7 @@ import { mediaLabel, type MediaGroup } from "../lib/media";
 import type { PostRecord } from "../lib/workspace";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
+import { DownloadProgressBar } from "./download-progress-bar";
 
 interface PostDownloadSelectionProps {
   activeIndex: number;
@@ -107,6 +108,9 @@ export function PostDownloadBar({
   const failure = post.status === "error" ? post.result.message : "";
   return (
     <div className="border-t border-stone-200 bg-white p-4 sm:p-5">
+      {post.status === "downloading" && post.progress && (
+        <DownloadProgressBar progress={post.progress} />
+      )}
       {/* 失败原因此前只存在记录里从不展示，用户只能看到一个红色的“失败”。 */}
       {failure && (
         <p className="notice-block mb-3 text-xs leading-5" role="alert">

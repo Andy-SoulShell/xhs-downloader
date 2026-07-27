@@ -1,6 +1,9 @@
 """接口测试使用的合成应用服务。"""
 
+from collections.abc import Callable
+
 from xhs_core.domain import DownloadArtifact, DownloadOutcome, MediaKind, XhsError
+from xhs_core.domain.models import DownloadProgress
 
 from tests.helpers import make_detail
 
@@ -54,12 +57,14 @@ class FakeService:
         indexes: set[int] | None = None,
         force: bool = False,
         cookie: str | None = None,
+        on_progress: Callable[[DownloadProgress], None] | None = None,
     ) -> DownloadOutcome:
         """返回合成下载结果。
 
         Args:
             text: 接口传入的链接。
             indexes: 指定的媒体序号。
+            on_progress: 进度回调; 替身直接上报一个完成态快照。
             force: 是否强制下载。
             cookie: 单次请求 Cookie。
 

@@ -72,6 +72,12 @@ export function makeDownloadTask(
     status: "completed",
     attempts: 1,
     message: "作品文件下载完成",
+    progress: {
+      completed_files: 0,
+      total_files: 0,
+      received_bytes: 0,
+      total_bytes: 0,
+    },
     detail,
     artifacts: [],
     created_at: "2026-01-01T00:00:00Z",

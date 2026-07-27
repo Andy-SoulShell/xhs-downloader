@@ -76,6 +76,14 @@ export type DownloadTaskStatus =
   | "completed"
   | "failed";
 
+/** 后台下载任务的实时进度；上游未给出字节总量时 total_bytes 为 0。 */
+export interface DownloadProgress {
+  completed_files: number;
+  total_files: number;
+  received_bytes: number;
+  total_bytes: number;
+}
+
 export interface DownloadTask {
   task_id: string;
   client_request_id: string | null;
@@ -85,6 +93,7 @@ export interface DownloadTask {
   status: DownloadTaskStatus;
   attempts: number;
   message: string;
+  progress: DownloadProgress;
   detail: WorkDetail | null;
   artifacts: DownloadArtifact[];
   created_at: string;

@@ -1,9 +1,11 @@
 """应用层测试使用的内存替身。"""
 
+from collections.abc import Callable
 from hashlib import sha256
 
 from xhs_adapters.config import AppSettings
 from xhs_core.domain import DownloadArtifact, DownloadRecord, MediaKind, WorkDetail
+from xhs_core.domain.models import DownloadProgress
 
 from tests.helpers import make_detail
 
@@ -53,9 +55,12 @@ class _Downloader:
         self,
         detail: WorkDetail,
         indexes: set[int] | None = None,
+        on_progress: Callable[[DownloadProgress], None] | None = None,
     ) -> list[DownloadArtifact]:
         self.calls += 1
         self.indexes = indexes
+        if on_progress:
+            on_progress(DownloadProgress(total_files=1))
         if not self._produce_artifacts:
             return []
         file = self._settings.download_dir.joinpath("synthetic.mp4")

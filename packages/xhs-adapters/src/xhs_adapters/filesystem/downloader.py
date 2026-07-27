@@ -20,6 +20,8 @@ from xhs_core.domain.ports import PageGateway
 
 from xhs_adapters.config import AppSettings
 
+from .progress import ProgressCallback, ProgressTracker
+
 
 class FileDownloader:
     """把领域媒体资源安全写入文件系统。
@@ -50,12 +52,14 @@ class FileDownloader:
         self,
         detail: WorkDetail,
         indexes: set[int] | None = None,
+        on_progress: ProgressCallback | None = None,
     ) -> list[DownloadArtifact]:
         """并发下载符合开关和序号条件的媒体。
 
         Args:
             detail: 已解析的作品信息。
             indexes: 仅下载指定的一基媒体序号。
+            on_progress: 进度回调；为空时不做任何进度统计。
 
         Returns:
             完整且包含 SHA-256 的文件产物。
@@ -72,8 +76,11 @@ class FileDownloader:
             return []
         folder = self._target_folder(detail)
         name = build_work_name(detail, self._settings.name_format)
+        tracker = ProgressTracker(len(resources), on_progress)
+        if on_progress:
+            on_progress(tracker.snapshot())
         tasks = [
-            self._download_with_retry(detail, resource, folder, name)
+            self._download_with_retry(detail, resource, folder, name, tracker)
             for resource in resources
         ]
         return list(await gather(*tasks))
@@ -105,15 +112,24 @@ class FileDownloader:
         resource: MediaResource,
         folder: Path,
         work_name: str,
+        tracker: ProgressTracker,
     ) -> DownloadArtifact:
         last_error: DownloadError | None = None
         for attempt in range(self._settings.max_retry + 1):
+            counted = 0
             try:
-                return await self._download_one(detail, resource, folder, work_name)
+                artifact = await self._download_one(
+                    detail, resource, folder, work_name, tracker
+                )
             except DownloadError as error:
                 last_error = error
+                # 重试会从头累计字节, 先退回上一次已计入的部分, 避免进度虚高
+                await tracker.restart_file(counted)
                 if attempt < self._settings.max_retry:
                     await sleep(min(2**attempt, 4))
+            else:
+                await tracker.finish_file()
+                return artifact
         raise DownloadError(f"文件下载重试耗尽：{last_error}") from last_error
 
     async def _download_one(
@@ -122,6 +138,7 @@ class FileDownloader:
         resource: MediaResource,
         folder: Path,
         work_name: str,
+        tracker: ProgressTracker,
     ) -> DownloadArtifact:
         async with self._semaphore:
             part, marker = self._partial_paths(detail, resource)
@@ -135,10 +152,14 @@ class FileDownloader:
                         response.headers.get("Content-Type", ""),
                         resource.suffix,
                     )
+                    await tracker.declare_total(
+                        _content_length(response.headers.get("Content-Length"))
+                    )
                     mode = "ab" if resume_at and response.status_code == 206 else "wb"
                     async with async_open(part, mode) as output:
                         async for chunk in response.aiter_bytes(self._settings.chunk):
                             await output.write(chunk)
+                            await tracker.advance(len(chunk))
             except InvalidPartialContentError:
                 part.unlink(missing_ok=True)
                 marker.unlink(missing_ok=True)
@@ -207,6 +228,23 @@ class FileDownloader:
             return configured
         normalized = content_type.partition(";")[0].strip().lower()
         return cls.CONTENT_TYPE_SUFFIX.get(normalized, "jpeg")
+
+
+def _content_length(value: str | None) -> int:
+    """解析响应头里的字节总量。
+
+    Args:
+        value: `Content-Length` 原始值；缺失或非法时按未知处理。
+
+    Returns:
+        字节数；无法确定时为 0。
+    """
+    if not value:
+        return 0
+    try:
+        return max(0, int(value))
+    except ValueError:
+        return 0
 
 
 def _hash_file(path: Path) -> str:

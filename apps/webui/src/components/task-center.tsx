@@ -20,6 +20,7 @@ import type {
 } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
+import { DownloadProgressBar } from "./download-progress-bar";
 import { EmptyState } from "./empty-state";
 import { MediaThumbnail } from "./media-thumbnail";
 import { SkeletonRecordList } from "./skeleton";
@@ -80,6 +81,9 @@ export function TaskBoard({
                 <p className="mt-0.5 text-xs leading-5 text-stone-500">
                   {humanizeError(task.message)}
                 </p>
+                {task.status === "running" && (
+                  <DownloadProgressBar progress={task.progress} />
+                )}
                 {downloadStatusCopy[task.status].hint && (
                   <p className="mt-1.5 text-xs leading-5 text-amber-700">
                     {downloadStatusCopy[task.status].hint}

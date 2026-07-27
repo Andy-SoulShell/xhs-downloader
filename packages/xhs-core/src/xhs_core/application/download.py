@@ -2,6 +2,7 @@
 
 import os
 from asyncio import to_thread
+from collections.abc import Callable
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
@@ -9,7 +10,12 @@ from pathlib import Path
 from loguru import logger
 
 from xhs_core.domain.links import extract_supported_links, is_short_link
-from xhs_core.domain.models import DownloadOutcome, DownloadRecord, WorkDetail
+from xhs_core.domain.models import (
+    DownloadOutcome,
+    DownloadProgress,
+    DownloadRecord,
+    WorkDetail,
+)
 from xhs_core.domain.ports import (
     ArtifactDownloader,
     DetailParser,
@@ -88,6 +94,7 @@ class DownloadService:
         indexes: set[int] | None = None,
         force: bool = False,
         cookie: str | None = None,
+        on_progress: Callable[[DownloadProgress], None] | None = None,
     ) -> DownloadOutcome:
         """解析并下载一个作品。
 
@@ -96,6 +103,7 @@ class DownloadService:
             indexes: 仅下载指定的一基图片序号。
             force: 是否忽略有效下载记录并重新下载。
             cookie: 覆盖配置的单次请求 Cookie。
+            on_progress: 进度回调；为空表示调用方不关心进度。
 
         Returns:
             包含作品详情、文件哈希和跳过状态的结果。
@@ -112,7 +120,7 @@ class DownloadService:
                     artifacts=record.artifacts,
                     skipped=True,
                 )
-        artifacts = await self._downloader.download(detail, indexes)
+        artifacts = await self._downloader.download(detail, indexes, on_progress)
         if self.settings.record_data:
             await self._save_metadata(detail)
         if self.settings.download_record and artifacts:

@@ -15,6 +15,7 @@ import { groupMedia } from "../lib/media";
 import type { PostRecord } from "../lib/workspace";
 import { AuthorAvatar } from "./author-avatar";
 import { Badge } from "./badge";
+import { DownloadProgressBar } from "./download-progress-bar";
 import { MediaPreview } from "./media-preview";
 import { Metric } from "./metric";
 import { PostDetailDialog } from "./post-detail-dialog";
@@ -85,6 +86,9 @@ export function PostCard({
           >
             {title}
           </button>
+          {post.status === "downloading" && post.progress && (
+            <DownloadProgressBar progress={post.progress} />
+          )}
           <div className="mt-2 flex items-center justify-between gap-3 text-xs text-stone-500">
             <div className="flex min-w-0 items-center gap-2">
               <AuthorAvatar

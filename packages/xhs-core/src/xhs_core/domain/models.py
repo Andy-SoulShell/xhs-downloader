@@ -147,6 +147,25 @@ class DownloadArtifact(BaseModel):
     kind: MediaKind
 
 
+class DownloadProgress(BaseModel):
+    """后台下载任务的实时进度。
+
+    上游不一定给出 `Content-Length`，因此字节总量可能为 0；此时只有文件计数
+    可用，界面应退化为“第几个 / 共几个”而不是编造一个百分比。
+
+    Attributes:
+        completed_files: 已完整落盘的文件数。
+        total_files: 本次任务需要下载的文件总数。
+        received_bytes: 已接收字节数。
+        total_bytes: 已知的字节总量；上游未提供时为 0。
+    """
+
+    completed_files: int = Field(default=0, ge=0)
+    total_files: int = Field(default=0, ge=0)
+    received_bytes: int = Field(default=0, ge=0)
+    total_bytes: int = Field(default=0, ge=0)
+
+
 class DownloadTask(BaseModel):
     """可持久化、可恢复的后台下载任务。
 
@@ -159,6 +178,7 @@ class DownloadTask(BaseModel):
         status: 当前任务状态。
         attempts: 已开始执行的次数。
         message: 当前状态或失败原因。
+        progress: 执行中的实时进度；未开始时为初始值。
         detail: 完成后保存的作品详情。
         artifacts: 完成后生成的文件产物。
         created_at: 任务创建时间。
@@ -173,6 +193,7 @@ class DownloadTask(BaseModel):
     status: DownloadTaskStatus = DownloadTaskStatus.QUEUED
     attempts: int = Field(default=0, ge=0)
     message: str = Field(default="等待后台执行", max_length=1000)
+    progress: DownloadProgress = Field(default_factory=DownloadProgress)
     detail: WorkDetail | None = None
     artifacts: list[DownloadArtifact] = Field(default_factory=list)
     created_at: datetime
