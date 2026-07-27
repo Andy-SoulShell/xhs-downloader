@@ -38,7 +38,7 @@ describe("草稿自动保存", () => {
     );
 
     rerender({ title: "改过的标题" });
-    expect(result.current).toBe("pending");
+    expect(result.current.state).toBe("pending");
     expect(save).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -47,7 +47,7 @@ describe("草稿自动保存", () => {
 
     expect(save).toHaveBeenCalledOnce();
     expect(save.mock.calls[0][0].title).toBe("改过的标题");
-    expect(result.current).toBe("saved");
+    expect(result.current.state).toBe("saved");
   });
 
   it("连续输入只在停下来之后写一次", async () => {
@@ -84,7 +84,7 @@ describe("草稿自动保存", () => {
       vi.advanceTimersByTime(1200);
     });
 
-    expect(result.current).toBe("failed");
+    expect(result.current.state).toBe("failed");
     expect(autosaveLabel("failed")).toContain("手动保存");
   });
 
@@ -102,5 +102,44 @@ describe("草稿自动保存", () => {
 
     // 手动提交期间并发写入会互相覆盖。
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it("防抖期内卸载，等待中的内容仍要落盘", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const { rerender, unmount } = renderHook(
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save),
+      { initialProps: { title: "初始" } },
+    );
+
+    rerender({ title: "写到一半就切走" });
+    // 定时器还没到点就卸载：此前这段输入随定时器一起消失。
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+      unmount();
+    });
+
+    expect(save).toHaveBeenCalledOnce();
+    expect(save.mock.calls[0][0].title).toBe("写到一半就切走");
+  });
+
+  it("补写之后不再重复写同一份内容", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const { rerender, result, unmount } = renderHook(
+      ({ title }: { title: string }) => useDraftAutosave(makeInput(title), save),
+      { initialProps: { title: "初始" } },
+    );
+
+    rerender({ title: "改过的标题" });
+    await act(async () => {
+      result.current.flush();
+    });
+    expect(save).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+      unmount();
+    });
+
+    expect(save).toHaveBeenCalledOnce();
   });
 });

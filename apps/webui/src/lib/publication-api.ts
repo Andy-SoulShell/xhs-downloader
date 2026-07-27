@@ -23,14 +23,25 @@ export async function createPublicationDraft(): Promise<PublicationDraft> {
   return parseResponse<PublicationDraft>(response);
 }
 
+/**
+ * 覆盖保存一份草稿。
+ *
+ * @param draftId 草稿标识。
+ * @param input 完整的草稿内容。
+ * @param options.keepalive 关闭页面时的补写请用 true，让请求在文档销毁后
+ *   仍能发完；草稿保存是 PUT，用不了只支持 POST 的 sendBeacon。
+ * @returns 保存后的草稿。
+ */
 export async function updatePublicationDraft(
   draftId: string,
   input: PublicationDraftInput,
+  options?: { keepalive?: boolean },
 ): Promise<PublicationDraft> {
   const response = await fetch(`${API_BASE}/publication/drafts/${draftId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
+    keepalive: options?.keepalive,
   });
   return parseResponse<PublicationDraft>(response);
 }

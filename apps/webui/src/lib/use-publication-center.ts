@@ -91,11 +91,14 @@ export function usePublicationCenter() {
     return draft;
   }, []);
 
-  const saveDraft = useCallback(async (draftId: string, input: PublicationDraftInput) => {
-    const draft = await updatePublicationDraft(draftId, input);
-    replaceDraft(setDrafts, draft);
-    return draft;
-  }, []);
+  const saveDraft = useCallback(
+    async (draftId: string, input: PublicationDraftInput, options?: { keepalive?: boolean }) => {
+      const draft = await updatePublicationDraft(draftId, input, options);
+      replaceDraft(setDrafts, draft);
+      return draft;
+    },
+    [],
+  );
 
   const uploadAsset = useCallback(async (draftId: string, file: File) => {
     const draft = await uploadPublicationAsset(draftId, file);

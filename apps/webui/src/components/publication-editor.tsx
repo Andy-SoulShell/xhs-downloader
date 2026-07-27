@@ -34,7 +34,10 @@ interface PublicationEditorProps {
   onDelete: () => Promise<void>;
   onNotify: (message: string) => void;
   onRemoveAsset: (assetId: string) => Promise<void>;
-  onSave: (input: PublicationDraftInput) => Promise<PublicationDraft>;
+  onSave: (
+    input: PublicationDraftInput,
+    options?: { keepalive?: boolean },
+  ) => Promise<PublicationDraft>;
   onSubmitManual: () => Promise<PublicationTask>;
   onSubmitPlatformScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
@@ -80,7 +83,11 @@ export function PublicationEditor({
   // 自动保存直接交给 onSave：它回传的是自己记下指纹的那份草稿，
   // 若接成 save 会被当作 assetOrder，整份草稿被塞进 asset_order 发出去。
   // 手动提交期间暂停：两条写入并发会互相覆盖。
-  const autosave = useDraftAutosave(input(), onSave, busy === "");
+  const { flush: flushAutosave, state: autosaveState } = useDraftAutosave(
+    input(),
+    onSave,
+    busy === "",
+  );
   const submissionInput = () => preparePublicationSubmission(input(), browserDriver);
   const saveSubmission = async () => {
     const saved = await onSave(submissionInput());
@@ -146,7 +153,12 @@ export function PublicationEditor({
   };
 
   return (
-    <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
+    // 离开任一字段就落盘：不必等满防抖时长，用户此时已经写完一段。
+    <form
+      className="space-y-5"
+      onBlur={() => flushAutosave()}
+      onSubmit={(event) => event.preventDefault()}
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-xs font-semibold text-stone-700" htmlFor="publication-title">
@@ -214,10 +226,10 @@ export function PublicationEditor({
       <p
         aria-live="polite"
         className={`min-h-5 text-xs leading-5 ${
-          autosave === "failed" ? "text-red-600" : "text-stone-600"
+          autosaveState === "failed" ? "text-red-600" : "text-stone-600"
         }`}
       >
-        {autosaveLabel(autosave)}
+        {autosaveLabel(autosaveState)}
       </p>
 
       <div className="flex flex-wrap justify-between gap-3 border-t border-stone-200 pt-4">
