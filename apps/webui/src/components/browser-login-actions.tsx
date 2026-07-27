@@ -1,10 +1,11 @@
-import { LogIn, QrCode, ShieldCheck, Trash2, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { LogIn, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import type { BrowserDriver, LoginQrCodeResult } from "../lib/types";
 import type { ManagedBrowserStatus } from "../lib/managed-browser-api";
 import { LOGOUT_ACTION } from "../lib/terminology";
 import { ActionButton } from "./action-button";
+import { ConfirmDialog } from "./confirm-dialog";
 import { Badge } from "./badge";
 
 interface BrowserLoginActionsProps {
@@ -32,15 +33,9 @@ export function BrowserLoginActions({
   onDeleteCookies,
   onGetQrCode,
 }: BrowserLoginActionsProps) {
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const driverReady =
     browserDriver === "extension" ||
     (browserDriver === "managed" && managedStatus?.state === "running");
-
-  const confirmDelete = async () => {
-    await onDeleteCookies();
-    setConfirmingDelete(false);
-  };
 
   return (
     <section aria-label="浏览器登录与会话" className="control-shell mb-4 min-w-0 p-4 sm:p-5">
@@ -72,14 +67,20 @@ export function BrowserLoginActions({
             <QrCode aria-hidden size={15} />
             获取登录二维码
           </ActionButton>
-          <ActionButton
-            disabled={busy || !driverReady}
-            onClick={() => setConfirmingDelete(true)}
-            variant="ghost"
-          >
-            <Trash2 aria-hidden size={15} />
-            {LOGOUT_ACTION}
-          </ActionButton>
+          <ConfirmDialog
+            busy={busy}
+            confirmLabel={`确认${LOGOUT_ACTION}`}
+            description="这会清掉浏览器里的登录状态，下次要重新扫码。设置里保存的 Cookie 不受影响。"
+            destructive
+            onConfirm={() => void onDeleteCookies()}
+            title="确认退出小红书登录？"
+            trigger={
+              <ActionButton disabled={busy || !driverReady} variant="destructive">
+                <Trash2 aria-hidden size={15} />
+                {LOGOUT_ACTION}
+              </ActionButton>
+            }
+          />
         </div>
       </div>
 
@@ -111,32 +112,6 @@ export function BrowserLoginActions({
         </div>
       )}
 
-      {confirmingDelete && (
-        <div
-          aria-modal="true"
-          className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4"
-          role="alertdialog"
-        >
-          <p className="text-sm font-semibold text-stone-900">确认退出小红书登录？</p>
-          <p className="mt-1 text-xs leading-5 text-stone-600">
-            这会清掉浏览器里的登录状态，下次要重新扫码。设置里保存的 Cookie 不受影响。
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton disabled={busy} onClick={() => void confirmDelete()}>
-              <Trash2 aria-hidden size={14} />
-              确认{LOGOUT_ACTION}
-            </ActionButton>
-            <ActionButton
-              disabled={busy}
-              onClick={() => setConfirmingDelete(false)}
-              variant="outline"
-            >
-              <X aria-hidden size={14} />
-              取消
-            </ActionButton>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

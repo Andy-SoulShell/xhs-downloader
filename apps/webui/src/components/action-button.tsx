@@ -1,6 +1,13 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ActionButtonVariant = "primary" | "outline" | "ghost";
+/**
+ * 按钮的语义等级。
+ *
+ * `destructive` 专供不可撤销的操作（删除草稿、移除帖子、退出登录、断开
+ * 插件）。此前它们与“刷新”“保存”长得一模一样，甚至更轻——删除草稿用的是
+ * ghost，界面上比刷新还不起眼。
+ */
+type ActionButtonVariant = "primary" | "outline" | "ghost" | "destructive";
 type ActionButtonSize = "medium" | "large" | "icon";
 
 interface ActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +22,8 @@ const variantClasses: Record<ActionButtonVariant, string> = {
     "border border-stone-200 bg-white text-stone-700 hover:border-stone-300 hover:bg-stone-50 focus-visible:ring-stone-900/15 disabled:cursor-not-allowed disabled:opacity-50",
   ghost:
     "text-stone-600 hover:bg-stone-100 hover:text-stone-950 focus-visible:ring-stone-900/15 disabled:cursor-not-allowed disabled:opacity-50",
+  destructive:
+    "border border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50 focus-visible:ring-red-500/25 disabled:cursor-not-allowed disabled:opacity-50",
 };
 
 const sizeClasses: Record<ActionButtonSize, string> = {

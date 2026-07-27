@@ -50,6 +50,8 @@ describe("采集帖子持久化", () => {
         name: "移除帖子：合成测试帖子",
       }),
     );
+    // 移除现在要过一次确认；此前点一下就直接删了。
+    fireEvent.click(await screen.findByRole("button", { name: "移除" }));
 
     await waitFor(() => expect(deleteCollectedPost).toHaveBeenCalledWith("synthetic-work"));
     expect(screen.getByText("帖子列表还是空的")).toBeInTheDocument();
@@ -81,6 +83,8 @@ describe("采集帖子持久化", () => {
         name: "移除帖子：合成测试帖子",
       }),
     );
+    // 移除现在要过一次确认；此前点一下就直接删了。
+    fireEvent.click(await screen.findByRole("button", { name: "移除" }));
 
     expect(await screen.findByText(message)).toBeInTheDocument();
     // 删除失败后帖子必须原样留在列表里，而不是先乐观移除再靠提示告知。

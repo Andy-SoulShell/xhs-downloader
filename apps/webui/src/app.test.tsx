@@ -139,6 +139,8 @@ describe("帖子下载工作台", () => {
         name: "移除帖子：合成测试帖子",
       }),
     );
+    // 移除现在要过一次确认；此前点一下就直接删了。
+    fireEvent.click(await screen.findByRole("button", { name: "移除" }));
     expect(await screen.findByText("帖子列表还是空的")).toBeInTheDocument();
   });
 

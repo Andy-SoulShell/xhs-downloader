@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
@@ -251,6 +251,10 @@ describe("发布草稿编辑器", () => {
     await waitFor(() => expect(properties.onRemoveAsset).toHaveBeenCalledWith("synthetic-asset"));
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "删除草稿" }));
+    // 确认框里的「删除草稿」才是真正执行的那一下。
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "删除草稿" }),
+    );
     await waitFor(() => expect(properties.onDelete).toHaveBeenCalled());
   });
 });

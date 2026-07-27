@@ -30,9 +30,9 @@ describe("桌面服务控制", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "关闭服务" }));
 
-    // 原本用的是原生 window.confirm：说不清后果，也和界面语言脱节。
-    const dialog = screen.getByRole("alertdialog", {
-      name: "确认关闭本地服务",
+    // 换成 Radix AlertDialog：可访问名来自标题，焦点被困在框内、Esc 可关。
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "确认关闭本地服务吗？",
     });
     expect(dialog).toHaveTextContent("正在进行的下载会中断");
     expect(shutdownDesktopService).not.toHaveBeenCalled();

@@ -20,6 +20,7 @@ import {
   validatePublicationSchedule,
 } from "../lib/publication-editor-rules";
 import type { BrowserDriver } from "../lib/types";
+import { ConfirmDialog } from "./confirm-dialog";
 import { ActionButton } from "./action-button";
 import { CharacterCount } from "./character-count";
 import { PublicationAssets } from "./publication-assets";
@@ -233,20 +234,30 @@ export function PublicationEditor({
       </p>
 
       <div className="flex flex-wrap justify-between gap-3 border-t border-stone-200 pt-4">
-        <ActionButton
-          disabled={Boolean(busy)}
-          onClick={() =>
+        <ConfirmDialog
+          busy={Boolean(busy)}
+          confirmLabel="删除草稿"
+          description={
+            <>
+              这份草稿连同 {draft.assets.length} 项素材会一起删掉，删了拿不回来。
+              已经提交出去的发布任务不受影响。
+            </>
+          }
+          destructive
+          onConfirm={() =>
             void run("delete", async () => {
-              if (!window.confirm("确定删除这份发布草稿吗？")) return;
               await onDelete();
               onNotify("发布草稿已删除");
             })
           }
-          variant="ghost"
-        >
-          <Trash2 aria-hidden size={14} />
-          删除草稿
-        </ActionButton>
+          title={`删除「${draft.title || "未命名草稿"}」？`}
+          trigger={
+            <ActionButton disabled={Boolean(busy)} variant="destructive">
+              <Trash2 aria-hidden size={14} />
+              删除草稿
+            </ActionButton>
+          }
+        />
         <ActionButton
           disabled={Boolean(busy)}
           onClick={() =>

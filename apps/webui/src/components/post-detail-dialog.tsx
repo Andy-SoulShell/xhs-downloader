@@ -4,6 +4,7 @@ import { Dialog } from "radix-ui";
 
 import { groupMedia } from "../lib/media";
 import type { PostRecord } from "../lib/workspace";
+import { ConfirmDialog } from "./confirm-dialog";
 import { AuthorAvatar } from "./author-avatar";
 import { Badge } from "./badge";
 import { MediaStage } from "./media-stage";
@@ -91,17 +92,27 @@ export function PostDetailDialog({
                     publishedAt={detail.发布时间}
                   />
                   <div className="flex items-center gap-1">
-                    <button
-                      aria-label={`移除帖子：${detail.作品标题 || "未命名帖子"}`}
-                      className="grid size-9 place-items-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-red-500"
-                      onClick={() => {
+                    {/* 删除按钮紧挨着关闭按钮，此前点下去直接就删了，
+                        既没有确认也没有撤销——手滑一次就找不回来。 */}
+                    <ConfirmDialog
+                      confirmLabel="移除"
+                      description="只从这个列表里移除，已经下载到本机的文件不会被删掉。"
+                      destructive
+                      onConfirm={() => {
                         onRemove();
                         onOpenChange(false);
                       }}
-                      type="button"
-                    >
-                      <Trash2 aria-hidden size={16} />
-                    </button>
+                      title={`移除「${detail.作品标题 || "未命名帖子"}」？`}
+                      trigger={
+                        <button
+                          aria-label={`移除帖子：${detail.作品标题 || "未命名帖子"}`}
+                          className="grid size-9 place-items-center rounded-full text-stone-400 transition hover:bg-stone-100 hover:text-red-500"
+                          type="button"
+                        >
+                          <Trash2 aria-hidden size={16} />
+                        </button>
+                      }
+                    />
                     <Dialog.Close
                       aria-label="关闭详情"
                       className="grid size-9 place-items-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-stone-950"

@@ -142,7 +142,7 @@ describe("帖子卡片", () => {
     );
   });
 
-  it("解析不出媒体的帖子仍然占位展示而不是静默消失", () => {
+  it("解析不出媒体的帖子仍然占位展示而不是静默消失", async () => {
     const result = makeDetailResponse();
     result.data!.媒体 = [];
     const onRemove = vi.fn();
@@ -166,6 +166,8 @@ describe("帖子卡片", () => {
     expect(within(dialog).getByText("无可下载媒体")).toBeInTheDocument();
     // 详情必须给出出路：不能下载，至少要能移除。
     fireEvent.click(within(dialog).getByRole("button", { name: "移除帖子：合成测试帖子" }));
+    // 移除现在要过一次确认；此前点一下就直接删了。
+    fireEvent.click(await screen.findByRole("button", { name: "移除" }));
     expect(onRemove).toHaveBeenCalledOnce();
   });
 

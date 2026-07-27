@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Activity, CircleAlert, MonitorCheck, ShieldOff, UserRound } from "lucide-react";
 import type { BrowserDriver, BrowserExtensionStatus } from "@xhs-downloader/contracts";
 
@@ -7,6 +6,7 @@ import { connectionCopy } from "../lib/terminology";
 import { useBrowserSession } from "../lib/browser-session";
 import type { ManagedBrowserControl } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
+import { ConfirmDialog } from "./confirm-dialog";
 import { Badge } from "./badge";
 import { ExtensionInstallGuide } from "./extension-install-guide";
 import { ManagedBrowserPanel } from "./managed-browser-panel";
@@ -110,7 +110,6 @@ function ExtensionRow({
   onRevoke: () => void;
   revoking: boolean;
 }) {
-  const [confirming, setConfirming] = useState(false);
   return (
     <article className="control-shell min-w-0 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -122,41 +121,21 @@ function ExtensionRow({
           <Badge tone={extension.online ? "success" : "neutral"}>
             {extension.online ? "在线" : "离线"}
           </Badge>
-          <ActionButton
-            disabled={revoking || confirming}
-            onClick={() => setConfirming(true)}
-            variant="outline"
-          >
-            断开
-          </ActionButton>
+          <ConfirmDialog
+            busy={revoking}
+            confirmLabel="确认断开"
+            description="断开后它需要重新连接才能继续工作。还在运行的插件会自动重新连上。"
+            destructive
+            onConfirm={onRevoke}
+            title="确认断开这个插件吗？"
+            trigger={
+              <ActionButton disabled={revoking} variant="destructive">
+                断开
+              </ActionButton>
+            }
+          />
         </div>
       </div>
-      {confirming && (
-        <div
-          aria-label="确认断开插件"
-          className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4"
-          role="alertdialog"
-        >
-          <p className="text-sm font-semibold text-amber-900">确认断开这个插件吗？</p>
-          <p className="mt-1 text-xs leading-5 text-amber-700">
-            断开后它需要重新连接才能继续工作。还在运行的插件会自动重新连上。
-          </p>
-          <div className="mt-3 flex gap-2">
-            <ActionButton onClick={() => setConfirming(false)} variant="ghost">
-              取消
-            </ActionButton>
-            <ActionButton
-              disabled={revoking}
-              onClick={() => {
-                setConfirming(false);
-                onRevoke();
-              }}
-            >
-              确认断开
-            </ActionButton>
-          </div>
-        </div>
-      )}
     </article>
   );
 }
