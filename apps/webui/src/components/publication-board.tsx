@@ -248,11 +248,7 @@ export function PublicationBoard({
                 onSubmitScheduled={(scheduledAt) =>
                   center.submitTask(selected.draft_id, "scheduled", scheduledAt)
                 }
-                onUpload={async (files) => {
-                  for (const file of files) {
-                    await center.uploadAsset(selected.draft_id, file);
-                  }
-                }}
+                onUpload={(file) => center.uploadAsset(selected.draft_id, file).then(() => {})}
                 scheduledAt={schedules[selected.draft_id] ?? ""}
                 timeline={
                   <PublicationTimeline

@@ -246,7 +246,7 @@ describe("发布草稿编辑器", () => {
     fireEvent.change(screen.getByLabelText("添加素材"), {
       target: { files: [file] },
     });
-    await waitFor(() => expect(properties.onUpload).toHaveBeenCalledWith([file]));
+    await waitFor(() => expect(properties.onUpload).toHaveBeenCalledWith(file));
 
     fireEvent.click(screen.getByRole("button", { name: /删除 synthetic/ }));
     await waitFor(() => expect(properties.onRemoveAsset).toHaveBeenCalledWith("synthetic-asset"));

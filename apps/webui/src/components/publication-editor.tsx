@@ -43,7 +43,8 @@ interface PublicationEditorProps {
   onSubmitManual: () => Promise<PublicationTask>;
   onSubmitPlatformScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
-  onUpload: (files: File[]) => Promise<void>;
+  /** 上传单个素材；由素材区的队列逐个调用。 */
+  onUpload: (file: File) => Promise<void>;
   /**
    * 已选好的计划时间。
    *
@@ -208,12 +209,14 @@ export function PublicationEditor({
         <CharacterCount limit={BODY_LIMIT} value={body.length} />
       </div>
 
+      {/* 上传不再走 run：整块表单变灰会连正文一起锁上，而队列本来就是
+          为了让人边传边改。排序和删除仍要挡住并发写入。 */}
       <PublicationAssets
         busy={Boolean(busy)}
         draft={draft}
         onMove={(order) => run("assets", async () => void (await save(order)))}
         onRemove={(assetId) => run("assets", async () => void (await onRemoveAsset(assetId)))}
-        onUpload={(files) => run("assets", async () => void (await onUpload(files)))}
+        onUpload={onUpload}
       />
 
       <PublicationOptionsForm

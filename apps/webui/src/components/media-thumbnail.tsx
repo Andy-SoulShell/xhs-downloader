@@ -43,6 +43,11 @@ export function MediaThumbnail({ src, alt, fallback }: MediaThumbnailProps) {
         loading="lazy"
         onError={() => setState("failed")}
         onLoad={() => setState("ready")}
+        // 本机素材这类小图常常在 React 挂上 onLoad 之前就从缓存里读完了，
+        // 那一次 load 事件永远不会来，图片会一直停在透明的加载态。
+        ref={(node) => {
+          if (node?.complete) setState(node.naturalWidth ? "ready" : "failed");
+        }}
         referrerPolicy="no-referrer"
         src={src}
       />

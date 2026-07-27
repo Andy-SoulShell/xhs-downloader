@@ -1,25 +1,20 @@
-import {
-  ChevronDown,
-  ChevronUp,
-  FileImage,
-  ImagePlus,
-  FileVideo2,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import type { ChangeEvent } from "react";
+import { ImagePlus, Upload } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
 
-import type { PublicationAsset, PublicationDraft } from "../lib/publication";
-import { ActionButton } from "./action-button";
+import type { PublicationDraft } from "../lib/publication";
+import { IMAGE_LIMIT, planAssetIntake, type RejectedFile } from "../lib/publication-intake";
+import { useUploadQueue } from "../lib/use-upload-queue";
 import { EmptyState } from "./empty-state";
-import { Badge } from "./badge";
+import { PublicationAssetCard } from "./publication-asset-card";
+import { PublicationUploadQueue } from "./publication-upload-queue";
 
 interface PublicationAssetsProps {
+  /** 编辑器正在忙别的事，此时不接受改动。 */
   busy: boolean;
   draft: PublicationDraft;
   onMove: (assetOrder: string[]) => Promise<void>;
   onRemove: (assetId: string) => Promise<void>;
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (file: File) => Promise<void>;
 }
 
 export function PublicationAssets({
@@ -29,10 +24,25 @@ export function PublicationAssets({
   onRemove,
   onUpload,
 }: PublicationAssetsProps) {
-  const selectFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+  const queue = useUploadQueue(onUpload);
+  const [rejected, setRejected] = useState<RejectedFile[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const selectFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const files = [...(event.target.files ?? [])];
     event.target.value = "";
-    if (files.length) await onUpload(files);
+    // 先按服务端同一套规则裁一遍：第 19 张图注定失败，不必发出去再挨一句报错。
+    const plan = planAssetIntake(draft.assets, files);
+    setRejected(plan.rejected);
+    queue.enqueue(plan.accepted);
+  };
+  const reorder = async (assetId: string, targetIndex: number) => {
+    const order = draft.assets.map((asset) => asset.asset_id);
+    const from = order.indexOf(assetId);
+    if (from < 0 || from === targetIndex) return;
+    order.splice(from, 1);
+    order.splice(from < targetIndex ? targetIndex - 1 : targetIndex, 0, assetId);
+    await onMove(order);
   };
   const move = async (index: number, step: number) => {
     const target = index + step;
@@ -48,7 +58,7 @@ export function PublicationAssets({
         <div>
           <legend className="text-sm font-semibold text-stone-800">发布素材</legend>
           <p className="mt-1 text-xs text-stone-600">
-            图文支持 1–18 张图片；视频笔记仅支持一个视频。
+            图文支持 1–{IMAGE_LIMIT} 张图片；视频笔记仅支持一个视频。第一项是封面。
           </p>
         </div>
         <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-700 transition hover:border-stone-400">
@@ -58,20 +68,44 @@ export function PublicationAssets({
             accept="image/*,video/*"
             className="sr-only"
             multiple
-            onChange={(event) => void selectFiles(event)}
+            onChange={selectFiles}
             type="file"
           />
         </label>
       </div>
 
+      {rejected.length > 0 && (
+        <ul
+          aria-label="没有添加的素材"
+          className="space-y-1 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-5 text-amber-900"
+        >
+          {rejected.map((item) => (
+            <li key={item.filename}>
+              {item.filename}：{item.reason}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <PublicationUploadQueue queue={queue} />
+
       {draft.assets.length ? (
         <div className="grid gap-2 sm:grid-cols-2">
           {draft.assets.map((asset, index) => (
-            <AssetRow
+            <PublicationAssetCard
               asset={asset}
               canMoveDown={index < draft.assets.length - 1}
               canMoveUp={index > 0}
+              draftId={draft.draft_id}
+              draggingId={draggingId}
+              index={index}
               key={asset.asset_id}
+              onDragEnd={() => setDraggingId(null)}
+              onDragStart={() => setDraggingId(asset.asset_id)}
+              onDropBefore={() => {
+                if (draggingId) void reorder(draggingId, index);
+                setDraggingId(null);
+              }}
               onMoveDown={() => void move(index, 1)}
               onMoveUp={() => void move(index, -1)}
               onRemove={() => void onRemove(asset.asset_id)}
@@ -81,78 +115,11 @@ export function PublicationAssets({
       ) : (
         <EmptyState
           compact
-          description="从本机选图片或视频，添加后可以调整顺序。"
+          description="从本机选图片或视频，添加后可以拖动或用上下按钮调整顺序。"
           icon={ImagePlus}
           title="还没有添加素材"
         />
       )}
     </fieldset>
   );
-}
-
-function AssetRow({
-  asset,
-  canMoveDown,
-  canMoveUp,
-  onMoveDown,
-  onMoveUp,
-  onRemove,
-}: {
-  asset: PublicationAsset;
-  canMoveDown: boolean;
-  canMoveUp: boolean;
-  onMoveDown: () => void;
-  onMoveUp: () => void;
-  onRemove: () => void;
-}) {
-  const video = asset.media_type.startsWith("video/");
-  const Icon = video ? FileVideo2 : FileImage;
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600">
-        <Icon aria-hidden size={17} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-stone-800">{asset.filename}</p>
-        <div className="mt-1 flex items-center gap-2">
-          <Badge>{video ? "视频" : "图片"}</Badge>
-          <span className="meta-text">{formatBytes(asset.size)}</span>
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center">
-        <ActionButton
-          aria-label={`上移 ${asset.filename}`}
-          disabled={!canMoveUp}
-          onClick={onMoveUp}
-          size="icon"
-          variant="ghost"
-        >
-          <ChevronUp aria-hidden size={14} />
-        </ActionButton>
-        <ActionButton
-          aria-label={`下移 ${asset.filename}`}
-          disabled={!canMoveDown}
-          onClick={onMoveDown}
-          size="icon"
-          variant="ghost"
-        >
-          <ChevronDown aria-hidden size={14} />
-        </ActionButton>
-        <ActionButton
-          aria-label={`删除 ${asset.filename}`}
-          onClick={onRemove}
-          size="icon"
-          variant="ghost"
-        >
-          <Trash2 aria-hidden size={14} />
-        </ActionButton>
-      </div>
-    </div>
-  );
-}
-
-function formatBytes(value: number): string {
-  if (value >= 1024 * 1024) return `${(value / 1024 / 1024).toFixed(1)} MiB`;
-  if (value >= 1024) return `${(value / 1024).toFixed(1)} KiB`;
-  return `${value} B`;
 }

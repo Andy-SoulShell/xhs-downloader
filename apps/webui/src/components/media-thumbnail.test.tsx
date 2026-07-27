@@ -41,6 +41,27 @@ describe("列表封面缩略图", () => {
     expect(screen.getByTitle("封面加载失败")).toBeInTheDocument();
   });
 
+  it("缓存里直接读完的图也要显示出来", () => {
+    // 本机素材这类小图常常在 React 挂上 onLoad 之前就读完了，
+    // 只等 load 事件的话它会一直停在透明的加载态。
+    Object.defineProperty(HTMLImageElement.prototype, "complete", {
+      configurable: true,
+      get: () => true,
+    });
+    Object.defineProperty(HTMLImageElement.prototype, "naturalWidth", {
+      configurable: true,
+      get: () => 800,
+    });
+    try {
+      render(<MediaThumbnail alt="合成封面" fallback={FALLBACK} src="/publication/asset" />);
+
+      expect(screen.getByRole("img", { name: "合成封面" }).className).toContain("opacity-100");
+    } finally {
+      Reflect.deleteProperty(HTMLImageElement.prototype, "complete");
+      Reflect.deleteProperty(HTMLImageElement.prototype, "naturalWidth");
+    }
+  });
+
   it("不向第三方发送来源信息", () => {
     render(
       <MediaThumbnail alt="合成封面" fallback={FALLBACK} src="https://example.invalid/cover.jpg" />,
