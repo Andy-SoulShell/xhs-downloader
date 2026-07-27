@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithSession } from "../test/render-with-session";
 import { executeBrowserOperation, executeReadCapability } from "../lib/browser-api";
 import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
@@ -52,7 +53,7 @@ describe("浏览器探索工作台", () => {
   });
 
   it("检查登录、读取推荐、搜索并打开详情", async () => {
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("已登录 · 合成账号")).toBeInTheDocument();
@@ -141,7 +142,7 @@ describe("浏览器探索工作台", () => {
 
   it("显示任务错误并阻止空关键词搜索", async () => {
     vi.mocked(executeReadCapability).mockRejectedValueOnce(new Error("浏览器扩展未连接"));
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     expect(screen.getByRole("button", { name: "搜索" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
@@ -158,7 +159,7 @@ describe("浏览器探索工作台", () => {
         account_consistency: "matched",
       },
     });
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
@@ -194,7 +195,7 @@ describe("浏览器探索工作台", () => {
         keyword: null,
       },
     });
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "检查登录" }));
     expect(await screen.findByText("尚未登录")).toBeInTheDocument();
@@ -206,7 +207,7 @@ describe("浏览器探索工作台", () => {
   });
 
   it("执行器未确认时只允许读取并禁用会话与写操作", async () => {
-    render(<BrowserBoard />);
+    renderWithSession(<BrowserBoard />);
 
     expect(screen.getByText("还没有选好连接方式，请先到设置里完成")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "检查登录" })).toBeDisabled();

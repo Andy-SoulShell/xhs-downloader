@@ -21,6 +21,8 @@ import { useTaskCenter } from "./lib/use-task-center";
 import { describeError } from "./lib/error-message";
 import { useDownloadCompletion } from "./lib/use-download-completion";
 import { useNotice } from "./lib/use-notice";
+import { BrowserSessionProvider } from "./lib/browser-session-provider";
+import { useBrowserSession } from "./lib/browser-session";
 import {
   mergeTaskResults,
   postFromDetail,
@@ -31,6 +33,14 @@ import {
 } from "./lib/workspace";
 
 export default function App() {
+  return (
+    <BrowserSessionProvider>
+      <Workspace />
+    </BrowserSessionProvider>
+  );
+}
+
+function Workspace() {
   const [online, setOnline] = useState<boolean | null>(null);
   const [posts, setPosts] = useState<PostRecord[]>([]);
   const [link, setLink] = useState("");
@@ -48,6 +58,7 @@ export default function App() {
     tasks,
   } = useTaskCenter();
   const managedBrowser = useManagedBrowser();
+  const { monitor } = useBrowserSession();
   const {
     error: settingsError,
     loading: settingsLoading,
@@ -185,7 +196,7 @@ export default function App() {
       >
         <div className="min-h-screen">
           <WorkspaceSidebar
-            activityCount={tasks.length + records.length}
+            activityCount={tasks.length + records.length + monitor.tasks.length}
             completedCount={completedCount}
             filter={filter}
             onFilterChange={setFilter}
@@ -247,7 +258,6 @@ export default function App() {
                     title="设置"
                   />
                   <ConnectionPanel
-                    account={null}
                     browserDriver={
                       isBrowserDriver(settings?.values.browser_driver)
                         ? settings.values.browser_driver

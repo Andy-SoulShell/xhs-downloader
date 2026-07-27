@@ -145,3 +145,38 @@ describe("浏览器状态与操作", () => {
     expect(result.current.revokingExtensionId).toBeNull();
   });
 });
+
+describe("标签页不可见时的轮询", () => {
+  /** 改写 visibilityState 并广播事件；jsdom 默认恒为 visible。 */
+  const setVisibility = (state: "hidden" | "visible") => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => state,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  };
+
+  afterEach(() => setVisibility("visible"));
+
+  it("切到后台就停表，回到前台立刻补一次", async () => {
+    vi.useFakeTimers();
+    renderHook(() => useBrowserMonitor());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const afterFirstPoll = vi.mocked(listBrowserExtensions).mock.calls.length;
+    expect(afterFirstPoll).toBeGreaterThan(0);
+
+    act(() => setVisibility("hidden"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(vi.mocked(listBrowserExtensions).mock.calls.length).toBe(afterFirstPoll);
+
+    act(() => setVisibility("visible"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(vi.mocked(listBrowserExtensions).mock.calls.length).toBeGreaterThan(afterFirstPoll);
+  });
+});

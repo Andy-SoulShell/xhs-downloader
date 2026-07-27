@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { Activity, CircleAlert, MonitorCheck, ShieldOff, UserRound } from "lucide-react";
-import type {
-  BrowserDriver,
-  BrowserExtensionStatus,
-  BrowserLoginState,
-} from "@xhs-downloader/contracts";
+import type { BrowserDriver, BrowserExtensionStatus } from "@xhs-downloader/contracts";
 
 import { formatRelativeTime } from "../lib/format-time";
 import { connectionCopy } from "../lib/terminology";
-import { useBrowserMonitor } from "../lib/use-browser-monitor";
+import { useBrowserSession } from "../lib/browser-session";
 import type { ManagedBrowserControl } from "../lib/use-managed-browser";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
@@ -16,7 +12,6 @@ import { ExtensionInstallGuide } from "./extension-install-guide";
 import { ManagedBrowserPanel } from "./managed-browser-panel";
 
 interface ConnectionPanelProps {
-  account: BrowserLoginState | null;
   browserDriver: BrowserDriver | null;
   managedBrowser: ManagedBrowserControl;
 }
@@ -27,8 +22,8 @@ interface ConnectionPanelProps {
  * 属于设置范畴：此前它夹在搜索框和搜索结果之间，用户点了搜索要滚过
  * 好几屏运维内容才看得到帖子。
  */
-export function ConnectionPanel({ account, browserDriver, managedBrowser }: ConnectionPanelProps) {
-  const monitor = useBrowserMonitor();
+export function ConnectionPanel({ browserDriver, managedBrowser }: ConnectionPanelProps) {
+  const { account, monitor } = useBrowserSession();
   const latestExtension = monitor.extensions[0] ?? null;
 
   return (

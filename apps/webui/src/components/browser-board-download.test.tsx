@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { JsonValue } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithSession } from "../test/render-with-session";
 import { executeBrowserOperation, executeReadCapability } from "../lib/browser-api";
 import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
 import { useManagedBrowser } from "../lib/use-managed-browser";
@@ -57,7 +58,7 @@ describe("浏览结果就地下载", () => {
       data: makeBrowserFeedList(),
       route: browserReadRouteFixture,
     });
-    render(<BrowserBoard browserDriver="extension" onDownload={onDownload} />);
+    renderWithSession(<BrowserBoard browserDriver="extension" onDownload={onDownload} />);
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     fireEvent.click(await screen.findByRole("button", { name: "下载" }));
@@ -82,7 +83,7 @@ describe("浏览结果就地下载", () => {
       },
       route: browserReadRouteFixture,
     });
-    render(<BrowserBoard browserDriver="extension" onDownload={vi.fn()} />);
+    renderWithSession(<BrowserBoard browserDriver="extension" onDownload={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
 
@@ -108,7 +109,7 @@ describe("浏览结果就地下载", () => {
         },
         route: browserReadRouteFixture,
       });
-    render(<BrowserBoard browserDriver="extension" onDownload={vi.fn()} />);
+    renderWithSession(<BrowserBoard browserDriver="extension" onDownload={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "看看推荐" }));
     fireEvent.click(await screen.findByRole("button", { name: "加载更多" }));

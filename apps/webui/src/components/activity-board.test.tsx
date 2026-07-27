@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { BrowserTask } from "@xhs-downloader/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +9,7 @@ import {
   reviewBrowserTask,
   revokeBrowserExtension,
 } from "../lib/browser-management-api";
+import { renderWithSession } from "../test/render-with-session";
 import { makeDownloadTask } from "../test/fixtures";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
 import { ActivityBoard } from "./activity-board";
@@ -77,7 +78,7 @@ describe("动态工作台", () => {
   it("三类历史各自成组并给出条目数", async () => {
     vi.mocked(listBrowserTasks).mockResolvedValue([browseTask("succeeded")]);
 
-    render(
+    renderWithSession(
       <ActivityBoard
         onRetryDownload={vi.fn()}
         records={[clientRecord()]}
@@ -96,7 +97,7 @@ describe("动态工作台", () => {
   it("图文帖在下载记录里也用第一张图当封面", async () => {
     // 曾经只读 `预览地址`，那是视频专属字段，图文帖一律退化成状态图标，
     // 同为“已下载”的两条记录长得完全不一样。
-    const { container } = render(
+    const { container } = renderWithSession(
       <ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[makeDownloadTask()]} />,
     );
 
@@ -110,7 +111,7 @@ describe("动态工作台", () => {
   it("切换到插件下载与浏览操作分组", async () => {
     vi.mocked(listBrowserTasks).mockResolvedValue([browseTask("succeeded")]);
 
-    render(
+    renderWithSession(
       <ActivityBoard
         onRetryDownload={vi.fn()}
         records={[clientRecord()]}
@@ -126,7 +127,7 @@ describe("动态工作台", () => {
   });
 
   it("各分组为空时给出各自的空状态", async () => {
-    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
+    renderWithSession(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
     expect(await screen.findByText("还没有下载记录")).toBeInTheDocument();
 
@@ -146,7 +147,7 @@ describe("动态工作台", () => {
       message: "已由用户确认操作未生效",
     });
 
-    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
+    renderWithSession(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
     fireEvent.mouseDown(await screen.findByRole("tab", { name: /浏览操作/ }));
     (await screen.findByRole("button", { name: "没有生效" })).click();
@@ -163,7 +164,7 @@ describe("动态工作台", () => {
       status: "queued",
     });
 
-    render(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
+    renderWithSession(<ActivityBoard onRetryDownload={vi.fn()} records={[]} tasks={[]} />);
 
     fireEvent.mouseDown(await screen.findByRole("tab", { name: /浏览操作/ }));
     (await screen.findByRole("button", { name: "重试" })).click();

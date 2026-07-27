@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithSession } from "../test/render-with-session";
 import type { BrowserTask, LoginQrCodeResult } from "../lib/types";
 import { deleteCookies, executeBrowserOperation } from "../lib/browser-api";
 import { listBrowserExtensions, listBrowserTasks } from "../lib/browser-management-api";
@@ -66,7 +67,7 @@ describe("浏览器登录与会话操作", () => {
   });
 
   it("展示一次性二维码并二次确认 Cookie 清理", async () => {
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
     expect(await screen.findByRole("img", { name: "小红书登录二维码" })).toHaveAttribute(
@@ -104,7 +105,7 @@ describe("浏览器登录与会话操作", () => {
       task: { ...qrTask, result: { ...loggedIn } },
       data: loggedIn,
     });
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
 
@@ -118,7 +119,7 @@ describe("浏览器登录与会话操作", () => {
       task: { ...qrTask, result: { ...withoutExpiry } },
       data: withoutExpiry,
     });
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "获取登录二维码" }));
 
@@ -130,7 +131,7 @@ describe("浏览器登录与会话操作", () => {
 
   it("展示 Cookie 清理错误并保留确认入口", async () => {
     vi.mocked(deleteCookies).mockRejectedValueOnce(new Error("站点数据清理失败"));
-    render(<BrowserBoard browserDriver="extension" />);
+    renderWithSession(<BrowserBoard browserDriver="extension" />);
 
     fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
     fireEvent.click(screen.getByRole("button", { name: "确认退出登录" }));
@@ -150,7 +151,7 @@ describe("浏览器登录与会话操作", () => {
     ["managed", makeManagedBrowserStatus({ state: "stopped" }), "软件自带的浏览器还没启动", true],
   ] as const)("根据 %s 执行器展示首次登录引导", (browserDriver, status, guidance, disabled) => {
     vi.mocked(useManagedBrowser).mockReturnValue(makeManagedBrowserControl({ status }));
-    render(<BrowserBoard browserDriver={browserDriver} />);
+    renderWithSession(<BrowserBoard browserDriver={browserDriver} />);
 
     expect(screen.getByText(new RegExp(guidance))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "获取登录二维码" })).toHaveProperty(

@@ -7,6 +7,7 @@ import {
   listBrowserTasks,
   revokeBrowserExtension,
 } from "../lib/browser-management-api";
+import { BrowserSessionProvider } from "../lib/browser-session-provider";
 import { makeManagedBrowserControl } from "../test/managed-browser";
 import { ConnectionPanel } from "./connection-panel";
 
@@ -33,15 +34,15 @@ describe("连接状态面板", () => {
 
   it("用日常说法描述连接方式与登录账号", async () => {
     render(
-      <ConnectionPanel
-        account={{
+      <BrowserSessionProvider
+        initialAccount={{
           logged_in: true,
           nickname: "合成账号",
           user_id: "synthetic-user",
         }}
-        browserDriver="extension"
-        managedBrowser={makeManagedBrowserControl()}
-      />,
+      >
+        <ConnectionPanel browserDriver="extension" managedBrowser={makeManagedBrowserControl()} />
+      </BrowserSessionProvider>,
     );
 
     expect(await screen.findByText("已连接")).toBeInTheDocument();
@@ -55,11 +56,9 @@ describe("连接状态面板", () => {
     vi.mocked(listBrowserExtensions).mockResolvedValue([]);
 
     render(
-      <ConnectionPanel
-        account={null}
-        browserDriver={null}
-        managedBrowser={makeManagedBrowserControl()}
-      />,
+      <BrowserSessionProvider>
+        <ConnectionPanel browserDriver={null} managedBrowser={makeManagedBrowserControl()} />
+      </BrowserSessionProvider>,
     );
 
     expect(await screen.findByText("未连接")).toBeInTheDocument();
@@ -71,11 +70,9 @@ describe("连接状态面板", () => {
     vi.mocked(revokeBrowserExtension).mockResolvedValue(undefined);
 
     render(
-      <ConnectionPanel
-        account={null}
-        browserDriver="extension"
-        managedBrowser={makeManagedBrowserControl()}
-      />,
+      <BrowserSessionProvider>
+        <ConnectionPanel browserDriver="extension" managedBrowser={makeManagedBrowserControl()} />
+      </BrowserSessionProvider>,
     );
 
     fireEvent.click(await screen.findByRole("button", { name: "断开" }));
@@ -97,11 +94,9 @@ describe("连接状态面板", () => {
     vi.mocked(listBrowserTasks).mockRejectedValueOnce(new Error("连接状态读取失败"));
 
     render(
-      <ConnectionPanel
-        account={null}
-        browserDriver="managed"
-        managedBrowser={makeManagedBrowserControl()}
-      />,
+      <BrowserSessionProvider>
+        <ConnectionPanel browserDriver="managed" managedBrowser={makeManagedBrowserControl()} />
+      </BrowserSessionProvider>,
     );
 
     expect(await screen.findByText("连接状态读取失败")).toBeInTheDocument();

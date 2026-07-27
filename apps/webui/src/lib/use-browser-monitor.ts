@@ -9,6 +9,9 @@ import {
   revokeBrowserExtension,
 } from "./browser-management-api";
 
+/** 心跳快照的轮询间隔，单位毫秒。 */
+const POLL_INTERVAL_MS = 10_000;
+
 /** 浏览器扩展在线状态与最近任务审计数据。 */
 export interface BrowserMonitorState {
   error: string;
@@ -62,16 +65,41 @@ export function useBrowserMonitor(): BrowserMonitorState {
     }
   }, []);
 
-  // 浏览器扩展每 30 秒发送一次领取请求；页面轮询只同步服务端心跳快照。
+  /*
+   * 浏览器扩展每 30 秒发送一次领取请求；页面轮询只同步服务端心跳快照。
+   *
+   * 标签页不可见时停表：这个 hook 由全应用共享，一直转下去会让切到别处的
+   * 用户仍以固定频率打本地服务，而没有任何人在看这份快照。重新可见时立刻
+   * 补一次，避免回来先看到一段过期数据。
+   */
   useEffect(() => {
     mounted.current = true;
-    const initial = window.setTimeout(() => void refresh(), 0);
-    const timer = window.setInterval(() => void refresh(), 10_000);
+    let initial = 0;
+    let timer = 0;
+
+    const stop = () => {
+      window.clearTimeout(initial);
+      window.clearInterval(timer);
+      initial = 0;
+      timer = 0;
+    };
+    const start = () => {
+      stop();
+      initial = window.setTimeout(() => void refresh(), 0);
+      timer = window.setInterval(() => void refresh(), POLL_INTERVAL_MS);
+    };
+    const syncWithVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+
+    syncWithVisibility();
+    document.addEventListener("visibilitychange", syncWithVisibility);
     return () => {
       mounted.current = false;
       refreshVersion.current += 1;
-      window.clearTimeout(initial);
-      window.clearInterval(timer);
+      stop();
+      document.removeEventListener("visibilitychange", syncWithVisibility);
     };
   }, [refresh]);
 

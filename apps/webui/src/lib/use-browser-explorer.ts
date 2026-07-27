@@ -27,6 +27,7 @@ import {
   loadNextFeedPage,
   type FeedContext,
 } from "./feed-pagination";
+import { useBrowserSession } from "./browser-session";
 
 /** 浏览器探索页面的读取状态和互动操作。 */
 export interface BrowserExplorer {
@@ -56,7 +57,8 @@ export interface BrowserExplorer {
 
 /** 管理浏览器任务、竞态取消和类型化结果。 */
 export function useBrowserExplorer(): BrowserExplorer {
-  const [account, setAccount] = useState<BrowserLoginState | null>(null);
+  // 登录结果要显示在设置页的连接状态卡上，所以放在全应用共享的会话里。
+  const { account, setAccount } = useBrowserSession();
   const [busy, setBusy] = useState(false);
   const [detail, setDetail] = useState<FeedDetailResult | null>(null);
   const [error, setError] = useState("");
@@ -126,7 +128,7 @@ export function useBrowserExplorer(): BrowserExplorer {
         setAccount(data);
         if (data.logged_in) setQrCode(null);
       }),
-    [runBrowser],
+    [runBrowser, setAccount],
   );
   const getLoginQrCode = useCallback(
     () =>
@@ -138,7 +140,7 @@ export function useBrowserExplorer(): BrowserExplorer {
           nickname: null,
         });
       }),
-    [runBrowser],
+    [runBrowser, setAccount],
   );
   const deleteBrowserCookies = useCallback(
     () =>
@@ -150,7 +152,7 @@ export function useBrowserExplorer(): BrowserExplorer {
           setSessionMessage(result.message);
         },
       ),
-    [runRequest],
+    [runRequest, setAccount],
   );
   const loadFeeds = useCallback(
     () =>

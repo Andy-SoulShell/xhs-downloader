@@ -1,7 +1,8 @@
 import { Download, History, Puzzle } from "lucide-react";
 
 import { groupBrowserTasks } from "../lib/browse-task-groups";
-import { useBrowserMonitor } from "../lib/use-browser-monitor";
+import { useBrowserSession } from "../lib/browser-session";
+import type { BrowserMonitorState } from "../lib/use-browser-monitor";
 import type { ClientDownloadRecord, DownloadTask } from "../lib/types";
 import { BoardTabs } from "./board-tabs";
 import { BrowserTaskRecord } from "./browser-task-record";
@@ -27,13 +28,13 @@ export function ActivityBoard({
   records: ClientDownloadRecord[];
   tasks: DownloadTask[];
 }) {
-  const monitor = useBrowserMonitor();
+  const { monitor } = useBrowserSession();
 
   return (
     <>
       <PageHeading
         description="这里是软件替你做过的事：下载、点赞收藏和评论。"
-        meta={`${tasks.length + records.length} 条`}
+        meta={`${tasks.length + records.length + monitor.tasks.length} 条`}
         title="动态"
       />
       <BoardTabs
@@ -66,7 +67,7 @@ export function ActivityBoard({
   );
 }
 
-function BrowseActions({ monitor }: { monitor: ReturnType<typeof useBrowserMonitor> }) {
+function BrowseActions({ monitor }: { monitor: BrowserMonitorState }) {
   // 全部记录来自同一连接方式时不必逐条标注。
   const drivers = new Set(monitor.tasks.map((task) => task.target_driver));
 
