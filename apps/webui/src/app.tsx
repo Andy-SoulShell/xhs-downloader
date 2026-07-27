@@ -8,7 +8,7 @@ import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
 import { PublicationBoard } from "./components/publication-board";
 import { SettingsBoard } from "./components/settings-board";
-import { AppToast, type NoticeTone } from "./components/app-toast";
+import { AppToast } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
 import { WorkspaceSidebar } from "./components/workspace-sidebar";
 import {
@@ -24,6 +24,7 @@ import { usePostDownloads } from "./lib/use-post-downloads";
 import { useTaskCenter } from "./lib/use-task-center";
 import { describeError } from "./lib/error-message";
 import { useDownloadCompletion } from "./lib/use-download-completion";
+import { useNotice } from "./lib/use-notice";
 import {
   mergeTaskResults,
   postFromDetail,
@@ -41,11 +42,7 @@ export default function App() {
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<WorkspaceView>("content");
   const [parsing, setParsing] = useState(false);
-  const [notice, setNotice] = useState<{ message: string; tone: NoticeTone }>({
-    message: "",
-    tone: "info",
-  });
-  const [toastOpen, setToastOpen] = useState(false);
+  const { notice, notify, open: toastOpen, setOpen: setToastOpen } = useNotice();
   const {
     createTask,
     error: taskError,
@@ -89,21 +86,12 @@ export default function App() {
       .catch((error: unknown) => {
         if (!active) return;
         setOnline(false);
-        setNotice({
-          message: describeError(error, "读取本地帖子失败"),
-          tone: "error",
-        });
-        setToastOpen(true);
+        notify(describeError(error, "读取本地帖子失败"), "error");
       });
     return () => {
       active = false;
     };
-  }, [reloadKey]);
-
-  const notify = (message: string, tone: NoticeTone = "info") => {
-    setNotice({ message, tone });
-    setToastOpen(true);
-  };
+  }, [notify, reloadKey]);
 
   useDownloadCompletion(tasks, notify);
 
