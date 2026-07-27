@@ -15,6 +15,7 @@ from xhs_core.domain import (
     ManagedBrowserState,
     browser_task_may_write_platform,
 )
+from xhs_core.domain.browser_interruption import interrupted_browser_task_message
 from xhs_core.domain.browser_ports import BrowserTaskExecutor, ManagedBrowserController
 
 from .browser_execution import BrowserExecutionService
@@ -182,7 +183,12 @@ class ManagedBrowserWorker:
                 type(error).__name__,
             )
             if running:
-                await self._finish_interrupted(running, claim.lease_token, False)
+                await self._finish_interrupted(
+                    running,
+                    claim.lease_token,
+                    False,
+                    error,
+                )
 
     async def _renew_lease(self, claim: BrowserTaskClaim) -> None:
         interval = min(
@@ -208,19 +214,18 @@ class ManagedBrowserWorker:
         task: BrowserTask,
         lease_token: str,
         stopped: bool,
+        error: BaseException | None = None,
     ) -> None:
         may_write = browser_task_may_write_platform(task.kind)
         status = (
             BrowserTaskStatus.NEEDS_REVIEW if may_write else BrowserTaskStatus.FAILED
         )
-        if may_write:
-            message = "受管浏览器停止，写入结果未能确认，请人工核对"
-            if not stopped:
-                message = "受管浏览器写入结果未能确认，请人工核对"
-        else:
-            message = "受管浏览器停止，读取任务已中断"
-            if not stopped:
-                message = "受管浏览器读取任务执行失败，可安全重试"
+        message = interrupted_browser_task_message(
+            may_write=may_write,
+            stopped=stopped,
+            browser_state=await self._current_browser_state(),
+            error=error,
+        )
         try:
             await self._execution.update(
                 task.task_id,
@@ -234,6 +239,17 @@ class ManagedBrowserWorker:
                 task.task_id,
                 type(error).__name__,
             )
+
+    async def _current_browser_state(self) -> ManagedBrowserState | None:
+        """读一眼受管浏览器状态，用于归因中断原因。
+
+        Returns:
+            当前运行状态；读不到时返回 ``None``，绝不让归因本身再抛错。
+        """
+        try:
+            return (await self._controller.status()).state
+        except Exception:
+            return None
 
 
 async def _cancel_task[TaskResult](
