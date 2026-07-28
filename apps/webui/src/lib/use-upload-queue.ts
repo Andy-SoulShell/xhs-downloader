@@ -3,9 +3,9 @@ import { useCallback, useRef, useState } from "react";
 import { describeError } from "./error-message";
 
 /** 队列里一个文件的当前处境。 */
-export type UploadItemState = "pending" | "uploading" | "done" | "failed";
+type UploadItemState = "pending" | "uploading" | "done" | "failed";
 
-export interface UploadItem {
+interface UploadItem {
   id: string;
   filename: string;
   size: number;

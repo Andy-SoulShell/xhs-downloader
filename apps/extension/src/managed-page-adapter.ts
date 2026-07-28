@@ -22,7 +22,7 @@ export const MANAGED_PAGE_ADAPTER_GLOBAL = "__XHS_DOWNLOADER_MANAGED_PAGE_ADAPTE
 export const MANAGED_PAGE_ADAPTER_VERSION = "3";
 
 /** 受管浏览器完成互动所需的同页可信输入。 */
-export interface ManagedInteractionAction {
+interface ManagedInteractionAction {
   task_id: string;
   feed_id: string;
   kind: InteractionKind;
@@ -31,7 +31,7 @@ export interface ManagedInteractionAction {
 }
 
 /** 互动预检响应，可直接成功或请求一次可信输入。 */
-export interface ManagedInteractionPreparationResponse extends BrowserPageTaskResponse {
+interface ManagedInteractionPreparationResponse extends BrowserPageTaskResponse {
   action?: ManagedInteractionAction;
 }
 

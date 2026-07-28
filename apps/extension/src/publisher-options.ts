@@ -90,7 +90,7 @@ export async function setPlatformSchedule(
 }
 
 /** 受管浏览器可信输入前准备好的官方定时控件。 */
-export interface PreparedPlatformSchedule {
+interface PreparedPlatformSchedule {
   input: HTMLInputElement;
   value: string;
 }

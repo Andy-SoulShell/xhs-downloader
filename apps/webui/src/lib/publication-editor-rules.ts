@@ -8,13 +8,6 @@ import type { BrowserDriver } from "./types";
 import { isBrowserDriver } from "./types";
 import { UserFacingError } from "./error-message";
 
-/** 把用户输入的话题文本规范化为去重且有界的标签列表。 */
-export function normalizePublicationTags(value: string): string[] {
-  return [...new Set(value.split(/[\s,#，]+/).map((item) => item.trim()))]
-    .filter(Boolean)
-    .slice(0, 20);
-}
-
 /** 把待绑定商品文本规范化为去重且有界的商品列表。 */
 export function normalizePublicationProducts(value: string): string[] {
   return [...new Set(value.split(/[\n,，]+/).map((item) => item.trim()))]
@@ -50,22 +43,6 @@ export function publicationBlockers(
   if (!input.title && !input.body) blockers.push("标题和正文不能同时为空");
   if (!draft.assets.length) blockers.push("请至少添加一个发布素材");
   return blockers;
-}
-
-/**
- * 校验草稿具备创建发布任务所需的最小内容和素材。
- *
- * 只是 {@link publicationBlockers} 的抛错版；两者共用同一份规则，实时校验
- * 与提交校验因此不会各说各话。
- *
- * @throws UserFacingError 存在阻塞问题时抛出第一条。
- */
-export function validatePublicationDraft(
-  input: PublicationDraftInput,
-  draft: PublicationDraft,
-): void {
-  const [blocker] = publicationBlockers(input, draft);
-  if (blocker) throw new UserFacingError(blocker);
 }
 
 /** 为扩展任务生成只包含任务标识和媒体类型的官方创作页地址。 */

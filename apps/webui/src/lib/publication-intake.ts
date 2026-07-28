@@ -17,7 +17,7 @@ export interface RejectedFile {
   reason: string;
 }
 
-export interface AssetIntakePlan {
+interface AssetIntakePlan {
   accepted: File[];
   rejected: RejectedFile[];
 }

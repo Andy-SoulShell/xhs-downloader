@@ -210,32 +210,6 @@ export function SelectSetting({
   );
 }
 
-export function TextAreaSetting({
-  help,
-  label,
-  onChange,
-  value,
-}: {
-  help: string;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  const id = useId();
-  return (
-    <FieldShell help={help} id={id} label={label} wide>
-      <textarea
-        aria-label={label}
-        className={`${fieldClass} h-28 resize-y py-3 font-mono text-xs`}
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
-        spellCheck={false}
-        value={value}
-      />
-    </FieldShell>
-  );
-}
-
 export function ToggleSetting({
   checked,
   description,

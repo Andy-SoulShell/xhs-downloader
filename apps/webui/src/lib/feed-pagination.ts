@@ -12,7 +12,7 @@ export interface FeedContext {
 }
 
 /** 一次翻页的结果。 */
-export interface FeedPage {
+interface FeedPage {
   items: FeedSummary[];
   context: FeedContext;
   route: CapabilityRoute;

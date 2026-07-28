@@ -14,7 +14,7 @@ from .browser_task_storage import browser_task_matches_storage, parse_browser_ta
 from .connection import connect
 
 
-async def load_safe_browser_tasks(
+async def _load_safe_browser_tasks(
     database: Connection,
     rows: Sequence[tuple[str, str | None, str, str, str, str | None, str, str, str]],
 ) -> list[BrowserTask]:
@@ -101,4 +101,4 @@ async def fetch_safe_browser_tasks(
     """
     async with connect(database_path) as database:
         cursor = await database.execute(query, parameters)
-        return await load_safe_browser_tasks(database, await cursor.fetchall())
+        return await _load_safe_browser_tasks(database, await cursor.fetchall())

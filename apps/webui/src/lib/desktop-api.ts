@@ -1,7 +1,7 @@
 import { API_BASE, parseResponse } from "./http";
 
 /** 桌面实例身份，仅用于区分一体化安装包与开发 API。 */
-export interface DesktopIdentity {
+interface DesktopIdentity {
   instance_id: string;
 }
 

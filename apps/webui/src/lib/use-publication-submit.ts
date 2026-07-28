@@ -29,7 +29,7 @@ interface PublicationSubmitOptions {
   scheduledAt: string;
 }
 
-export interface PublicationSubmit {
+interface PublicationSubmit {
   /** 当前挡着发布的问题；非空时不该走到确认那一步。 */
   blockers: string[];
   /** 正在提交的方式，空串表示空闲。 */

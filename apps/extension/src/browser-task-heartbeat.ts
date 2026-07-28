@@ -5,7 +5,7 @@ const MAX_HEARTBEAT_INTERVAL_MS = 15_000;
 const MIN_DECLARED_LEASE_SECONDS = 0.01;
 
 /** 执行中浏览器任务的可停止续租控制器。 */
-export interface BrowserTaskHeartbeat {
+interface BrowserTaskHeartbeat {
   /** 若续租已经失败则抛出原始错误。 */
   assertActive(): void;
   /** 停止续租并等待在途请求结束，返回此前的续租错误。 */

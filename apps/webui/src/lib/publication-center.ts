@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 import type { usePublicationCenter } from "./use-publication-center";
 
 /** 发布草稿、任务与其上操作的共享读写接口。 */
-export type PublicationCenter = ReturnType<typeof usePublicationCenter>;
+type PublicationCenter = ReturnType<typeof usePublicationCenter>;
 
 export const PublicationCenterContext = createContext<PublicationCenter | null>(null);
 

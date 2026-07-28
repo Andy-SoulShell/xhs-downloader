@@ -1,6 +1,6 @@
 import type { PublicationAsset, PublicationAssetChunk } from "./publication-types";
 
-export type AssetChunkLoader = (assetId: string, offset: number) => Promise<PublicationAssetChunk>;
+type AssetChunkLoader = (assetId: string, offset: number) => Promise<PublicationAssetChunk>;
 
 export async function assemblePublicationFile(
   asset: PublicationAsset,

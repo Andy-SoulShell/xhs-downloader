@@ -1,7 +1,7 @@
 import type { BrowserTask } from "@xhs-downloader/contracts";
 
 /** 相邻且完全同义的浏览操作合成的一组。 */
-export interface BrowserTaskGroup {
+interface BrowserTaskGroup {
   /** 代表项，取组内最新的那条；重试与确认都作用在它身上。 */
   task: BrowserTask;
   /** 组内条数；为 1 时与合并前完全一致。 */

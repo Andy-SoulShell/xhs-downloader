@@ -15,7 +15,7 @@ interface PostDownloadsOptions {
 }
 
 /** 帖子下载相关操作。 */
-export interface PostDownloads {
+interface PostDownloads {
   /** 下载帖子库中一条已解析的帖子。 */
   downloadPost: (post: PostRecord) => Promise<void>;
   /** 下载一条浏览结果：先解析入库，再排入下载。 */

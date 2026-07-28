@@ -13,7 +13,7 @@ export interface ExtensionAccountChallengeClaim {
 }
 
 /** 扩展回传给本机服务的脱敏账号证明。 */
-export type ExtensionAccountChallengeAnswer =
+type ExtensionAccountChallengeAnswer =
   { status: "proved"; proof: string } | { status: "logged_out" } | { status: "unverified" };
 
 /** 检查本机服务是否支持不落盘的账号挑战协议。 */

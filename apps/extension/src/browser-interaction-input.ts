@@ -1,4 +1,4 @@
-export type BrowserInteractionKind = "like" | "favorite";
+type BrowserInteractionKind = "like" | "favorite";
 
 /** 内容脚本请求后台执行一次受控的可信互动点击。 */
 export interface BrowserInteractionRequest {

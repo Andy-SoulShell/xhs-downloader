@@ -1,7 +1,7 @@
 import type { DetailResponse, DownloadProgress, DownloadTask, WorkDetail } from "./types";
 import { UserFacingError } from "./error-message";
 
-export type PostStatus = "ready" | "downloading" | "done" | "error";
+type PostStatus = "ready" | "downloading" | "done" | "error";
 export type Filter = "all" | "ready" | "done";
 /**
  * 四个工作台。

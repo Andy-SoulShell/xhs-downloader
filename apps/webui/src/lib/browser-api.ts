@@ -5,13 +5,13 @@ import { API_BASE, parseResponse } from "./http";
 import { UserFacingError } from "./error-message";
 
 /** 统一只读能力实际使用的提供方。 */
-export type CapabilityProvider = "http" | "browser";
+type CapabilityProvider = "http" | "browser";
 
 /** 跨提供方回退前的脱敏账号比较结论。 */
-export type AccountConsistencyStatus = "matched" | "different" | "logged_out" | "unverified";
+type AccountConsistencyStatus = "matched" | "different" | "logged_out" | "unverified";
 
 /** 首选提供方安全回退前的结构化失败。 */
-export interface RouteFallbackReason {
+interface RouteFallbackReason {
   provider: CapabilityProvider;
   code:
     | "unavailable"
@@ -37,19 +37,19 @@ export interface CapabilityRoute {
 }
 
 /** 统一只读能力返回的数据和路由轨迹。 */
-export interface ReadCapabilityResult<T> {
+interface ReadCapabilityResult<T> {
   data: T;
   route: CapabilityRoute;
 }
 
 /** 登录和写操作完成后的浏览器任务与类型化结果。 */
-export interface BrowserOperationResult<T> {
+interface BrowserOperationResult<T> {
   task: BrowserTask;
   data: T;
 }
 
 /** Cookie 清理后的目标会话状态。 */
-export interface CookieDeletionResult {
+interface CookieDeletionResult {
   target: "browser" | "http";
   status: BrowserTaskStatus;
   deleted: boolean;

@@ -8,7 +8,7 @@ import { dataRecord, dataText } from "./page-data";
 export type InteractionKind = "like" | "favorite";
 
 /** 互动预检结果：已满足目标，或等待浏览器级可信输入。 */
-export type DesiredInteractionPreparation =
+type DesiredInteractionPreparation =
   { result: DesiredStateResult; selector: null } | { result: null; selector: string };
 
 const SELECTORS: Record<InteractionKind, string> = {

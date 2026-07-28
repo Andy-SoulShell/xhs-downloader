@@ -21,10 +21,10 @@ export const POST_NOUN = "帖子";
 export const LOGOUT_ACTION = "退出登录";
 
 /** 下载任务在界面上的状态。 */
-export type DownloadStatusKey = "queued" | "running" | "completed" | "failed";
+type DownloadStatusKey = "queued" | "running" | "completed" | "failed";
 
 /** 发布任务在界面上的状态。 */
-export type PublishStatusKey =
+type PublishStatusKey =
   | "scheduled"
   | "ready"
   | "claimed"
@@ -46,7 +46,7 @@ export type BrowseStatusKey =
  * `hint` 说明用户现在该做什么；只有需要用户采取行动时才提供，
  * 进行中和已成功的状态不写多余提示。
  */
-export interface StatusCopy {
+interface StatusCopy {
   label: string;
   hint?: string;
 }

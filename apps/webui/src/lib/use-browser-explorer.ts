@@ -35,7 +35,7 @@ import { useBrowserSession } from "./browser-session";
  * 所有请求型方法都回报本次是否真的成功应用了结果；调用方据此决定要不要
  * 清空用户已经输入的内容。
  */
-export interface BrowserExplorer {
+interface BrowserExplorer {
   account: BrowserLoginState | null;
   busy: boolean;
   context: FeedContext | null;

@@ -1,7 +1,7 @@
 import type { DownloadTask } from "./types";
 
 /** 一条刚刚落定的任务。 */
-export interface SettledTask {
+interface SettledTask {
   taskId: string;
   title: string;
   settledAs: "completed" | "failed";

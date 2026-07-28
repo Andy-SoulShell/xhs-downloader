@@ -34,7 +34,7 @@ const BODY_TITLE_LENGTH = 20;
  * `closed` 指最近一次提交已经取消：它既不是"还没发过"，也不是"已发布"，
  * 归进任何一档都是在替用户下结论。
  */
-export type DraftStage = "unsubmitted" | "running" | "attention" | "published" | "closed";
+type DraftStage = "unsubmitted" | "running" | "attention" | "published" | "closed";
 
 /** 左栏筛选条的取值，`all` 表示不筛。 */
 export type DraftStageFilter = DraftStage | "all";

@@ -16,7 +16,7 @@ const SEMANTIC_ANCHORS = new Set([
 ]);
 
 /** 可在普通用户界面公开和复制的页面兼容性诊断。 */
-export interface SafeBrowserTaskDiagnostics {
+interface SafeBrowserTaskDiagnostics {
   adapter_version?: string;
   selector_profile?: string;
   page_kind?: string;

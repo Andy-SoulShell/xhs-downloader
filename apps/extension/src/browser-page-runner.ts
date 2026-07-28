@@ -21,7 +21,7 @@ const SEARCH_READY_ATTEMPTS = 20;
 const SEARCH_READY_INTERVAL_MS = 250;
 
 /** 内容脚本执行写任务时可调用的浏览器级受控动作。 */
-export interface BrowserPageTaskActions {
+interface BrowserPageTaskActions {
   activateInteraction?: (taskId: string, kind: "like" | "favorite") => Promise<void>;
 }
 

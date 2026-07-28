@@ -3,7 +3,7 @@ import type { JsonValue } from "@xhs-downloader/contracts";
 import type { FeedDetailResult } from "./types";
 
 /** 一次互动请求的目标接口与冻结输入。 */
-export interface FeedInteractionRequest {
+interface FeedInteractionRequest {
   path: string;
   payload: Record<string, JsonValue>;
 }

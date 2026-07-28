@@ -10,7 +10,7 @@ import type { BrowserMonitorState } from "./use-browser-monitor";
  * 扩展心跳与浏览操作历史同时被设置页和动态页使用。各自持有一份会让
  * 两处显示不一致，监视器还会因此按两倍频率轮询本地服务。
  */
-export interface BrowserSession {
+interface BrowserSession {
   /** 最近一次登录检查或扫码的结果；null 表示本次会话还没查过。 */
   account: BrowserLoginState | null;
   setAccount: (account: BrowserLoginState | null) => void;

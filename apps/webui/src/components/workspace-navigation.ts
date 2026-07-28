@@ -10,14 +10,14 @@ import type { LucideIcon } from "lucide-react";
 
 import type { Filter, WorkspaceView } from "../lib/workspace";
 
-export interface PostFilterItem {
+interface PostFilterItem {
   filter: Filter;
   icon: LucideIcon;
   label: string;
   sidebarLabel: string;
 }
 
-export interface WorkspaceViewItem {
+interface WorkspaceViewItem {
   icon: LucideIcon;
   label: string;
   sidebarLabel: string;

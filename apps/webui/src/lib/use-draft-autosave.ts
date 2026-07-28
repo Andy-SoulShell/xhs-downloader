@@ -3,16 +3,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PublicationDraftInput } from "./publication";
 
 /** 自动保存的当前状态，用于在界面上说明"存没存上"。 */
-export type AutosaveState = "idle" | "pending" | "saved" | "failed";
+type AutosaveState = "idle" | "pending" | "saved" | "failed";
 
 /** 保存草稿的回调；关页面时会带 keepalive 再发一次。 */
-export type DraftSave = (
+type DraftSave = (
   input: PublicationDraftInput,
   options?: { keepalive?: boolean },
 ) => Promise<unknown>;
 
 /** 自动保存的状态与立即落盘入口。 */
-export interface DraftAutosave {
+interface DraftAutosave {
   state: AutosaveState;
   /** 立刻把等待中的内容写出去；没有待写内容时什么都不做。 */
   flush: () => void;

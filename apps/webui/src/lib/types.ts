@@ -48,7 +48,7 @@ export interface WorkDetail {
   媒体: MediaResource[];
 }
 
-export interface DownloadArtifact {
+interface DownloadArtifact {
   path: string;
   sha256: string;
   size: number;
