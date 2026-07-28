@@ -50,7 +50,7 @@ describe("发布中心界面", () => {
     expect(
       screen.getByText("暂时无法确认发布方式，新建和提交已停用；已有任务仍可核对或恢复。"),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "编辑" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "立即发布" })).not.toBeInTheDocument();
   });
 
@@ -71,115 +71,100 @@ describe("发布中心界面", () => {
 
     renderBoard(<PublicationBoard browserDriver="future-browser-driver" onNotify={vi.fn()} />);
 
-    expect(screen.queryByLabelText("标题")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "编辑" })).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("button", {
-        name: "我已完成验证，继续原任务",
-      }),
+      await screen.findByRole("button", { name: "我已完成验证，继续原任务" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "没发出去" })).toBeInTheDocument();
   });
 
-  it("从复用空状态创建第一份草稿", async () => {
+  it("从空状态新建草稿后直接进编辑框", async () => {
     const draft = makePublicationDraft();
     vi.mocked(createPublicationDraft).mockResolvedValue(draft);
     const onNotify = vi.fn();
     renderBoard(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
-    expect(screen.getAllByRole("status", { name: "正在加载" })[0]).toBeInTheDocument();
-    const button = await screen.findByRole("button", {
-      name: "新建第一份草稿",
-    });
-    fireEvent.click(button);
+    fireEvent.click(await screen.findByRole("button", { name: "新建第一份草稿" }));
 
-    expect(await screen.findByLabelText("标题")).toHaveValue(draft.title);
+    // 刚建出来的草稿是空的，先要的是填内容，不是看详情。
+    const editor = await screen.findByRole("dialog");
+    expect(within(editor).getByLabelText("标题")).toHaveValue(draft.title);
     expect(onNotify).toHaveBeenCalledWith("已新建发布草稿");
   });
 
-  it("在常驻列表里一次点击换草稿，并处理失败任务", async () => {
-    const first = makePublicationDraft();
-    const second = makePublicationDraft({
-      draft_id: "second",
-      title: "第二份草稿",
-    });
-    const task = makePublicationTask({
-      status: "failed",
-      message: "合成发布失败",
-    });
-    vi.mocked(listPublicationDrafts).mockResolvedValue([first, second]);
+  it("点卡片看详情，编辑和记录各自是独立的框", async () => {
+    const draft = makePublicationDraft();
+    vi.mocked(listPublicationDrafts).mockResolvedValue([draft]);
+    vi.mocked(listPublicationTasks).mockResolvedValue([makePublicationTask()]);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+
+    // 没打开任何框之前，编辑表单不该已经摊在页面上。
+    expect(screen.queryByLabelText("正文")).not.toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole("button", { name: "合成发布标题" }));
+    const detail = await screen.findByRole("dialog");
+    expect(within(detail).getByRole("button", { name: "立即发布" })).toBeInTheDocument();
+    expect(within(detail).queryByLabelText("正文")).not.toBeInTheDocument();
+    fireEvent.click(within(detail).getByRole("button", { name: "关闭" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "编辑" }));
+    const editor = await screen.findByRole("dialog");
+    expect(within(editor).getByLabelText("正文")).toBeInTheDocument();
+    // 发布记录不再寄生在表单底部。
+    expect(within(editor).queryByText("发布记录")).not.toBeInTheDocument();
+    fireEvent.click(within(editor).getByRole("button", { name: "关闭" }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /记录/ }));
+    const records = await screen.findByRole("dialog");
+    expect(within(records).getByText(/发布记录/)).toBeInTheDocument();
+  });
+
+  it("关掉框后焦点回到打开它的那颗按钮", async () => {
+    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
+    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
+
+    const edit = await screen.findByRole("button", { name: "编辑" });
+    edit.focus();
+    fireEvent.click(edit);
+    const editor = await screen.findByRole("dialog");
+    fireEvent.click(within(editor).getByRole("button", { name: "关闭" }));
+
+    // 这些框由外部状态控制，Radix 不知道该把焦点还给谁；不自己还回去，
+    // 键盘用户按一次 Esc 就被丢回文档开头。
+    await waitFor(() => expect(edit).toHaveFocus());
+  });
+
+  it("在发布任务里重试，并能回到它的源草稿", async () => {
+    const draft = makePublicationDraft();
+    const task = makePublicationTask({ status: "failed", message: "合成发布失败" });
+    vi.mocked(listPublicationDrafts).mockResolvedValue([draft]);
     vi.mocked(listPublicationTasks).mockResolvedValue([task]);
-    vi.mocked(retryPublicationTask).mockResolvedValue({
-      ...task,
-      status: "ready",
-    });
+    vi.mocked(retryPublicationTask).mockResolvedValue({ ...task, status: "ready" });
     const onNotify = vi.fn();
     renderBoard(<PublicationBoard browserDriver="extension" onNotify={onNotify} />);
 
-    const list = await screen.findByRole("region", { name: "草稿列表" });
-    fireEvent.click(within(list).getByRole("button", { name: /第二份草稿/ }));
-    expect(screen.getByLabelText("标题")).toHaveValue("第二份草稿");
-
-    // 失败的那次属于第一份草稿，第二份的记录区不该替它背锅。
-    const timeline = screen.getByRole("region", { name: "这份草稿的发布记录" });
-    expect(within(timeline).getByText(/还没有提交过/)).toBeInTheDocument();
-
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ }));
-    fireEvent.click(
-      within(screen.getByRole("region", { name: "发布任务" })).getByRole("button", {
-        name: "重试",
-      }),
-    );
-
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /发布任务/ }));
+    const list = screen.getByRole("region", { name: "发布任务" });
+    fireEvent.click(within(list).getByRole("button", { name: "重试" }));
     await waitFor(() => expect(retryPublicationTask).toHaveBeenCalledWith(task.task_id));
     expect(onNotify).toHaveBeenCalledWith("发布任务已重新就绪");
-  });
 
-  it("从任务卡回到它的源草稿", async () => {
-    const first = makePublicationDraft();
-    const second = makePublicationDraft({ draft_id: "second", title: "第二份草稿" });
-    const task = makePublicationTask();
-    vi.mocked(listPublicationDrafts).mockResolvedValue([first, second]);
-    vi.mocked(listPublicationTasks).mockResolvedValue([
-      { ...task, package: { ...task.package, draft_id: "second" } },
-    ]);
-    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
-
-    await screen.findByRole("region", { name: "草稿列表" });
-    expect(screen.getByLabelText("标题")).toHaveValue(first.title);
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ }));
-    fireEvent.click(screen.getByRole("button", { name: "查看源草稿" }));
-
-    expect(screen.getByLabelText("标题")).toHaveValue("第二份草稿");
-    expect(screen.getByRole("tab", { name: /草稿/, selected: true })).toBeInTheDocument();
+    fireEvent.click(within(list).getByRole("button", { name: "查看源草稿" }));
+    expect(await screen.findByRole("dialog")).toHaveTextContent("合成发布标题");
   });
 
   it("源草稿已经删掉的任务不留一个点不动的入口", async () => {
-    const task = makePublicationTask({ status: "published" });
     vi.mocked(listPublicationDrafts).mockResolvedValue([
       makePublicationDraft({ draft_id: "别的" }),
     ]);
-    vi.mocked(listPublicationTasks).mockResolvedValue([task]);
+    vi.mocked(listPublicationTasks).mockResolvedValue([
+      makePublicationTask({ status: "published" }),
+    ]);
     renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
 
-    await screen.findByRole("region", { name: "草稿列表" });
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /发布任务/ }));
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /发布任务/ }));
 
     expect(screen.queryByRole("button", { name: "查看源草稿" })).not.toBeInTheDocument();
-  });
-
-  it("按关键词筛掉草稿时不把正在编辑的那份抽走", async () => {
-    const first = makePublicationDraft({ title: "露营装备" });
-    const second = makePublicationDraft({ draft_id: "second", title: "咖啡豆" });
-    vi.mocked(listPublicationDrafts).mockResolvedValue([first, second]);
-    renderBoard(<PublicationBoard browserDriver="extension" onNotify={vi.fn()} />);
-
-    const list = await screen.findByRole("region", { name: "草稿列表" });
-    fireEvent.change(within(list).getByLabelText("搜索草稿"), {
-      target: { value: "咖啡" },
-    });
-
-    expect(within(list).queryByRole("button", { name: /露营装备/ })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("标题")).toHaveValue("露营装备");
   });
 
   it("展示发布中心读取错误", async () => {
@@ -190,14 +175,13 @@ describe("发布中心界面", () => {
     expect(screen.getByText("还没有发布草稿")).toBeInTheDocument();
   });
 
-  it("二次确认后恢复等待验证的原任务", async () => {
-    const draft = makePublicationDraft();
+  it("在记录框里二次确认后恢复等待验证的原任务", async () => {
     const task = makePublicationTask({
       status: "awaiting_verification",
       target_driver: "managed",
       message: "请在软件自带浏览器完成验证",
     });
-    vi.mocked(listPublicationDrafts).mockResolvedValue([draft]);
+    vi.mocked(listPublicationDrafts).mockResolvedValue([makePublicationDraft()]);
     vi.mocked(listPublicationTasks).mockResolvedValue([task]);
     vi.mocked(resumePublicationVerification).mockResolvedValue({
       task_id: task.task_id,
@@ -208,15 +192,11 @@ describe("发布中心界面", () => {
     const onNotify = vi.fn();
     renderBoard(<PublicationBoard browserDriver="managed" onNotify={onNotify} />);
 
-    // 这次任务就出自当前草稿，编辑器底部的记录区里直接能处理。
-    const timeline = await screen.findByRole("region", { name: "这份草稿的发布记录" });
-    fireEvent.click(
-      within(timeline).getByRole("button", {
-        name: "我已完成验证，继续原任务",
-      }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: /记录/ }));
+    const records = await screen.findByRole("dialog");
+    fireEvent.click(within(records).getByRole("button", { name: "我已完成验证，继续原任务" }));
     expect(resumePublicationVerification).not.toHaveBeenCalled();
-    fireEvent.click(within(timeline).getByRole("button", { name: "确认验证完成并继续" }));
+    fireEvent.click(within(records).getByRole("button", { name: "确认验证完成并继续" }));
 
     await waitFor(() => expect(resumePublicationVerification).toHaveBeenCalledWith(task.task_id));
     expect(onNotify).toHaveBeenCalledWith("已确认验证完成，原发布任务正在继续");

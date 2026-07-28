@@ -34,7 +34,9 @@ export function MediaThumbnail({ src, alt, fallback }: MediaThumbnailProps) {
   }
 
   return (
-    <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-stone-100">
+    // inline-block 不能省：span 默认是 inline，宽高会被忽略，里面 size-full 的
+    // 图片就按原始尺寸铺开。在 flex 容器里恰好看不出来，换个地方就撑爆版面。
+    <span className="relative inline-block size-14 shrink-0 overflow-hidden rounded-xl bg-stone-100 align-middle">
       <img
         alt={alt}
         className={`size-full object-cover transition-opacity duration-300 ${

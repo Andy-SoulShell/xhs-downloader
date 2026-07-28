@@ -56,7 +56,9 @@ export function ManagedBrowserPanel({
           </div>
           <p className="mt-2 break-words text-xs leading-5 text-stone-600">
             {status?.message ||
-              (control.loading ? "正在检测本机 Chrome 或 Chromium。" : "尚未取得软件自带浏览器状态。")}
+              (control.loading
+                ? "正在检测本机 Chrome 或 Chromium。"
+                : "尚未取得软件自带浏览器状态。")}
           </p>
           <p className="mt-1 break-words text-[11px] leading-5 text-stone-400">
             {installationSummary(status)}

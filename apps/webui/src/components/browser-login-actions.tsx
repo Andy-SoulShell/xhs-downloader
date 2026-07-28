@@ -111,7 +111,6 @@ export function BrowserLoginActions({
           <Badge tone="success">{message}</Badge>
         </div>
       )}
-
     </section>
   );
 }

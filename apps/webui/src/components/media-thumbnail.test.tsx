@@ -62,6 +62,15 @@ describe("列表封面缩略图", () => {
     }
   });
 
+  it("不在 flex 容器里也保持固定尺寸", () => {
+    // span 默认是 inline，宽高会被忽略，里面 size-full 的图片按原始尺寸铺开。
+    render(<MediaThumbnail alt="合成封面" fallback={FALLBACK} src="/publication/asset" />);
+
+    const wrapper = screen.getByRole("img", { name: "合成封面" }).parentElement;
+    expect(wrapper?.className).toContain("inline-block");
+    expect(wrapper?.className).toContain("size-14");
+  });
+
   it("不向第三方发送来源信息", () => {
     render(
       <MediaThumbnail alt="合成封面" fallback={FALLBACK} src="https://example.invalid/cover.jpg" />,

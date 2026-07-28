@@ -1,34 +1,21 @@
 import { Save, Trash2 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
-import { autosaveLabel, useDraftAutosave } from "../lib/use-draft-autosave";
-
+import { describeError } from "../lib/error-message";
 import type {
   PublicationDraft,
   PublicationDraftInput,
-  PublicationMode,
-  PublicationTask,
   PublicationVisibility,
 } from "../lib/publication";
-import {
-  normalizePublicationProducts,
-  preparePublicationSubmission,
-  publicationCreatorUrl,
-  publicationDriverLabel,
-  requirePublicationDriver,
-  publicationBlockers,
-  validatePublicationDraft,
-  validatePublicationSchedule,
-} from "../lib/publication-editor-rules";
+import { normalizePublicationProducts } from "../lib/publication-editor-rules";
+import { autosaveLabel, useDraftAutosave } from "../lib/use-draft-autosave";
 import type { BrowserDriver } from "../lib/types";
-import { ConfirmDialog } from "./confirm-dialog";
 import { ActionButton } from "./action-button";
 import { CharacterCount } from "./character-count";
+import { ConfirmDialog } from "./confirm-dialog";
 import { PublicationAssets } from "./publication-assets";
-import { TagInput } from "./tag-input";
 import { PublicationOptionsForm } from "./publication-options-form";
-import { PublicationSubmitControls } from "./publication-submit-controls";
-import { describeError } from "../lib/error-message";
+import { TagInput } from "./tag-input";
 
 interface PublicationEditorProps {
   browserDriver: BrowserDriver;
@@ -40,28 +27,18 @@ interface PublicationEditorProps {
     input: PublicationDraftInput,
     options?: { keepalive?: boolean },
   ) => Promise<PublicationDraft>;
-  onSubmitManual: () => Promise<PublicationTask>;
-  onSubmitPlatformScheduled: (scheduledAt: string) => Promise<PublicationTask>;
-  onSubmitScheduled: (scheduledAt: string) => Promise<PublicationTask>;
   /** 上传单个素材；由素材区的队列逐个调用。 */
   onUpload: (file: File) => Promise<void>;
-  /**
-   * 已选好的计划时间。
-   *
-   * 由发布中心按草稿保管，而不是留在本组件里：换一份草稿会重建编辑器，
-   * 刚挑好的时间不该跟着一起没。它不进草稿模型——后端没有这个字段，
-   * 加一个长得像排期却什么都不做的字段比没有更危险。
-   */
-  scheduledAt: string;
-  onScheduledAtChange: (scheduledAt: string) => void;
-  /** 这份草稿自己的发布记录，挂在编辑器底部。 */
-  timeline?: ReactNode;
 }
 
-/** 编辑本地发布草稿，并以二次确认提交三种发布任务。 */
 const TITLE_LIMIT = 100;
 const BODY_LIMIT = 5000;
 
+/**
+ * 编辑一份发布草稿的内容。
+ *
+ * 只管内容：发布落在详情里，发布记录是独立的一列，都不该寄生在表单上。
+ */
 export function PublicationEditor({
   browserDriver,
   draft,
@@ -69,13 +46,7 @@ export function PublicationEditor({
   onNotify,
   onRemoveAsset,
   onSave,
-  onSubmitManual,
-  onSubmitPlatformScheduled,
-  onSubmitScheduled,
   onUpload,
-  scheduledAt,
-  onScheduledAtChange,
-  timeline,
 }: PublicationEditorProps) {
   const [title, setTitle] = useState(draft.title);
   const [body, setBody] = useState(draft.body);
@@ -98,73 +69,21 @@ export function PublicationEditor({
   const save = async (assetOrder?: string[]) => onSave(input(assetOrder));
   // 自动保存直接交给 onSave：它回传的是自己记下指纹的那份草稿，
   // 若接成 save 会被当作 assetOrder，整份草稿被塞进 asset_order 发出去。
-  // 手动提交期间暂停：两条写入并发会互相覆盖。
+  // 素材增删改期间暂停：两条写入并发会互相覆盖。
   const { flush: flushAutosave, state: autosaveState } = useDraftAutosave(
     input(),
     onSave,
     busy === "",
   );
-  const submissionInput = () => preparePublicationSubmission(input(), browserDriver);
-  const blockers = publicationBlockers(submissionInput(), draft);
-  // 提交端点从存储读草稿，所以这次 PUT 必须落库；但落库的是收紧后的内容，
-  // 不能同步改回本地表单——改了之后自动保存会一直把空值写回去，
-  // 换回浏览器扩展模式时已填的商品全没了。
-  const saveSubmission = () => onSave(submissionInput());
   const run = async (label: string, operation: () => Promise<void>) => {
     setBusy(label);
     try {
       await operation();
     } catch (error) {
-      onNotify(describeError(error, "发布操作失败"));
+      onNotify(describeError(error, "草稿操作失败"));
     } finally {
       setBusy("");
     }
-  };
-  const submitBrowserTask = (mode: "manual" | "platform_scheduled") =>
-    run(mode, async () => {
-      validatePublicationDraft(submissionInput(), draft);
-      const platformSchedule =
-        mode === "platform_scheduled" ? validatePublicationSchedule(scheduledAt, mode) : undefined;
-      const popup = browserDriver === "extension" ? window.open("about:blank", "_blank") : null;
-      if (popup) popup.opener = null;
-      try {
-        await saveSubmission();
-        const task =
-          mode === "manual"
-            ? await onSubmitManual()
-            : await onSubmitPlatformScheduled(platformSchedule!);
-        const targetDriver = requirePublicationDriver(task.target_driver);
-        if (targetDriver === "managed") {
-          popup?.close();
-          onNotify(
-            mode === "manual"
-              ? "发布任务已交给软件自带浏览器"
-              : "官方定时任务已交给软件自带浏览器设置",
-          );
-        } else {
-          if (popup) {
-            popup.location.href = publicationCreatorUrl(task);
-            onNotify(mode === "manual" ? "发布任务已交给浏览器扩展" : "官方定时任务已交给扩展设置");
-          } else {
-            onNotify("扩展任务已就绪，请从任务列表打开创作页");
-          }
-        }
-      } catch (error) {
-        popup?.close();
-        throw error;
-      }
-    });
-  const submitLocalSchedule = () =>
-    run("scheduled", async () => {
-      validatePublicationDraft(submissionInput(), draft);
-      const schedule = validatePublicationSchedule(scheduledAt, "scheduled");
-      await saveSubmission();
-      const task = await onSubmitScheduled(schedule);
-      onNotify(`本地定时任务已保存，届时由${publicationDriverLabel(task.target_driver)}执行`);
-    });
-  const submit = (mode: PublicationMode) => {
-    if (mode === "scheduled") return submitLocalSchedule();
-    return submitBrowserTask(mode);
   };
 
   return (
@@ -209,8 +128,8 @@ export function PublicationEditor({
         <CharacterCount limit={BODY_LIMIT} value={body.length} />
       </div>
 
-      {/* 上传不再走 run：整块表单变灰会连正文一起锁上，而队列本来就是
-          为了让人边传边改。排序和删除仍要挡住并发写入。 */}
+      {/* 上传不走 run：整块表单变灰会连正文一起锁上，而队列本来就是为了
+          让人边传边改。排序和删除仍要挡住并发写入。 */}
       <PublicationAssets
         busy={Boolean(busy)}
         draft={draft}
@@ -228,16 +147,6 @@ export function PublicationEditor({
         onVisibilityChange={setVisibility}
         products={products}
         visibility={visibility}
-      />
-
-      <PublicationSubmitControls
-        blockers={blockers}
-        browserDriver={browserDriver}
-        busy={busy}
-        onScheduledAtChange={onScheduledAtChange}
-        onSubmit={submit}
-        products={browserDriver === "managed" ? [] : normalizePublicationProducts(products)}
-        scheduledAt={scheduledAt}
       />
 
       {/* 写到一半切走就丢内容是创作界面最不可接受的损失；存没存上要说清楚。 */}
@@ -289,8 +198,6 @@ export function PublicationEditor({
           {busy === "save" ? "正在保存…" : "保存草稿"}
         </ActionButton>
       </div>
-
-      {timeline}
     </form>
   );
 }

@@ -64,7 +64,9 @@ export function PublicationOptionsForm({
           disabled={managed}
           onChange={(event) => onProductsChange(event.target.value)}
           placeholder={
-            managed ? "软件自带浏览器暂时不能绑定商品" : "每行一个商品名称或商品 ID；发布前会再次确认"
+            managed
+              ? "软件自带浏览器暂时不能绑定商品"
+              : "每行一个商品名称或商品 ID；发布前会再次确认"
           }
           value={managed ? "" : products}
         />

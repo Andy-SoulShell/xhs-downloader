@@ -34,11 +34,8 @@ export function WorkspaceSidebar({
     ready: pendingCount,
     done: completedCount,
   };
-  // 发布只在有事等着人做时才亮角标：把任务总数常年挂在那里，
-  // 用户很快就学会不看它，真正需要处理的那次也一起被忽略。
-  const viewCounts: Partial<Record<WorkspaceView, { count: number; urgent?: boolean }>> = {
-    activity: { count: activityCount },
-    ...(publicationCount ? { publication: { count: publicationCount, urgent: true } } : {}),
+  const viewCounts: Partial<Record<WorkspaceView, number>> = {
+    activity: activityCount,
   };
 
   return (
@@ -51,31 +48,29 @@ export function WorkspaceSidebar({
           没有对应的 Trigger，导致漫游 tabindex 无处落脚、内容面板的
           aria-labelledby 指向不存在的元素，键盘也永远走不进主内容区。 */}
       <Tabs.List aria-label="工作台" className="mt-9 space-y-1">
-        {workspaceViewItems.map((item) => {
-          const badge = viewCounts[item.view];
-          return (
-            <Tabs.Trigger
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-stone-400 outline-none transition hover:bg-stone-900 hover:text-white data-[state=active]:bg-white data-[state=active]:text-stone-950 focus-visible:ring-2 focus-visible:ring-stone-600"
-              key={item.view}
-              value={item.view}
-            >
-              <item.icon aria-hidden size={17} />
-              <span className="flex-1 text-left font-medium">{item.sidebarLabel}</span>
-              {badge && (
-                <span
-                  aria-label={badge.urgent ? `${badge.count} 项等你处理` : undefined}
-                  className={
-                    badge.urgent
-                      ? "min-w-5 rounded-full bg-amber-400 px-1.5 text-center text-[11px] leading-5 font-semibold text-stone-950"
-                      : "text-stone-400"
-                  }
-                >
-                  {badge.count}
-                </span>
-              )}
-            </Tabs.Trigger>
-          );
-        })}
+        {workspaceViewItems.map((item) => (
+          <Tabs.Trigger
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-stone-400 outline-none transition hover:bg-stone-900 hover:text-white data-[state=active]:bg-white data-[state=active]:text-stone-950 focus-visible:ring-2 focus-visible:ring-stone-600"
+            key={item.view}
+            value={item.view}
+          >
+            <item.icon aria-hidden size={17} />
+            <span className="flex-1 text-left font-medium">{item.sidebarLabel}</span>
+            {/* 提醒用圆点不用数字：这一栏的数字是"共有多少"，再塞一个"有几项
+                等你处理"进来，同一个位置就有了两种含义，谁也说不清是哪种。
+                圆点只说"这里有事"，具体几件进去就看见了。 */}
+            {item.view === "publication" && publicationCount > 0 && (
+              <span
+                aria-label={`${publicationCount} 项发布等你处理`}
+                className="size-2 rounded-full bg-amber-400"
+                title={`${publicationCount} 项发布等你处理`}
+              />
+            )}
+            {viewCounts[item.view] !== undefined && (
+              <span className="text-stone-400">{viewCounts[item.view]}</span>
+            )}
+          </Tabs.Trigger>
+        ))}
       </Tabs.List>
 
       {/* 筛选是内容工作台内部的事，切到其它工作台就不该继续占位。 */}

@@ -62,8 +62,9 @@ describe("发布中心主导航集成", () => {
       ),
     );
 
-    const list = await screen.findByRole("region", { name: "草稿列表" });
-    expect(within(list).getByRole("button", { name: /合成发布标题/ })).toBeInTheDocument();
-    expect(screen.getByLabelText("标题")).toHaveValue("合成发布标题");
+    const box = await screen.findByRole("region", { name: "草稿箱" });
+    // 进来先看到草稿箱，而不是一屏摊开的输入框。
+    expect(within(box).getByRole("button", { name: "合成发布标题" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("正文")).not.toBeInTheDocument();
   });
 });

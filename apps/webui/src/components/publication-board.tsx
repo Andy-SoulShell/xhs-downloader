@@ -1,28 +1,31 @@
 import { FilePlus2, Send } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { describeError } from "../lib/error-message";
 import { DRAFT_PAGE_LIMIT } from "../lib/publication-api";
+import { usePublicationCenterContext } from "../lib/publication-center";
 import {
   type DraftStageFilter,
   filterDrafts,
   indexTasksByDraft,
   summarizeDrafts,
 } from "../lib/publication-index";
-import { usePublicationCenterContext } from "../lib/publication-center";
 import { isBrowserDriver } from "../lib/types";
 import { ActionButton } from "./action-button";
 import { Badge } from "./badge";
 import { BoardTabs } from "./board-tabs";
 import { EmptyState } from "./empty-state";
 import { PageHeading } from "./page-heading";
+import { PublicationDraftDialog } from "./publication-draft-dialog";
 import { PublicationDraftList } from "./publication-draft-list";
-import { PublicationEditor } from "./publication-editor";
+import { PublicationEditorDialog } from "./publication-editor-dialog";
+import { PublicationRecordsDialog } from "./publication-records-dialog";
 import { PublicationTaskList } from "./publication-task-list";
-import { PublicationTimeline } from "./publication-timeline";
-import { SkeletonForm } from "./skeleton";
 
-/** 组合草稿列表、草稿编辑与发布任务，并保管尚未提交的计划时间。 */
+/** 同一时刻只开一个框：详情、编辑、记录是同层的三个去处，不叠在一起。 */
+type OpenDialog = { draftId: string; view: "detail" | "edit" | "records" } | null;
+
+/** 组合草稿箱、发布任务与三个对话框，并保管尚未提交的计划时间。 */
 export function PublicationBoard({
   browserDriver,
   onNotify,
@@ -31,14 +34,15 @@ export function PublicationBoard({
   onNotify: (message: string) => void;
 }) {
   const center = usePublicationCenterContext();
-  const [selectedId, setSelectedId] = useState("");
+  const [dialog, setDialog] = useState<OpenDialog>(null);
   const [creating, setCreating] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [stage, setStage] = useState<DraftStageFilter>("all");
-  const [listTab, setListTab] = useState("drafts");
   // 计划时间只存在于本次会话：后端草稿没有这个字段，攒在这里至少能做到
   // 切草稿、切工作台都不丢，卡片上也标得清清楚楚"未提交"。
   const [schedules, setSchedules] = useState<Record<string, string>>({});
+  // 记下是谁打开的框，关掉之后焦点要回到那颗按钮。
+  const opener = useRef<HTMLElement | null>(null);
   const confirmedDriver = isBrowserDriver(browserDriver) ? browserDriver : null;
 
   const summaries = useMemo(
@@ -54,33 +58,31 @@ export function PublicationBoard({
     () => filterDrafts(center.drafts, summaries, { keyword, stage }),
     [center.drafts, keyword, stage, summaries],
   );
-  // 只认整份草稿列表，不认筛选结果：左栏是导航，打开哪一份由点击决定。
-  // 跟着筛选结果走的话，搜索框里敲一个字就会把正在编辑的内容换掉。
-  const resolvedId = center.drafts.some((draft) => draft.draft_id === selectedId)
-    ? selectedId
-    : (center.drafts[0]?.draft_id ?? "");
-  const selected = center.drafts.find((draft) => draft.draft_id === resolvedId);
+  // 草稿被删掉时连同它的框一起收起，否则会停在一份不存在的草稿上。
+  const active = dialog && center.drafts.find((draft) => draft.draft_id === dialog.draftId);
+
+  const openDialog = (draftId: string, view: NonNullable<OpenDialog>["view"]) => {
+    opener.current = document.activeElement as HTMLElement | null;
+    setDialog({ draftId, view });
+  };
+  const restoreFocus = () => opener.current?.focus();
+  const closeDialog = (open: boolean) => {
+    if (!open) setDialog(null);
+  };
 
   const createDraft = async () => {
     setCreating(true);
     try {
       const draft = await center.createDraft();
-      setSelectedId(draft.draft_id);
       setKeyword("");
       setStage("all");
-      setListTab("drafts");
+      openDialog(draft.draft_id, "edit");
       onNotify("已新建发布草稿");
     } catch (error) {
       onNotify(describeError(error, "草稿创建失败"));
     } finally {
       setCreating(false);
     }
-  };
-  const openDraft = (draftId: string) => {
-    setSelectedId(draftId);
-    setKeyword("");
-    setStage("all");
-    setListTab("drafts");
   };
   const taskAction = async (operation: () => Promise<unknown>, message: string) => {
     try {
@@ -117,7 +119,7 @@ export function PublicationBoard({
           meta="等待配置"
           title="发布"
         />
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.7fr)]">
+        <div className="space-y-5">
           <EmptyState
             description="暂时无法确认发布方式，新建和提交已停用；已有任务仍可核对或恢复。"
             icon={Send}
@@ -154,117 +156,116 @@ export function PublicationBoard({
         </div>
       )}
 
-      {!center.loading && !center.drafts.length ? (
-        // 一份草稿都没有时不摆双栏：搜索、状态筛选和编辑器都无处落脚，
-        // 两列各放一句"还没有发布草稿"只是把同一句话说两遍。
-        <div className="space-y-5">
-          <EmptyState
-            action={
-              <ActionButton disabled={creating} onClick={() => void createDraft()}>
-                <FilePlus2 aria-hidden size={15} />
-                新建第一份草稿
-              </ActionButton>
-            }
-            description="准备标题、正文和本机素材后，可以一键发布或设置计划时间。"
-            icon={Send}
-            title="还没有发布草稿"
-          />
-          {center.tasks.length > 0 && (
-            <PublicationTaskList {...taskHandlers} tasks={center.tasks} />
-          )}
-        </div>
-      ) : (
-        /* 左栏常驻、右侧编辑器并存：换一份草稿是一次点击，不再是展开下拉、
-           在几十行截断文本里找、选中、等编辑器重挂载这四步。 */
-        <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]">
-          <BoardTabs
-            ariaLabel="发布分类"
-            onValueChange={setListTab}
-            tabs={[
-              {
-                value: "drafts",
-                label: "草稿",
-                icon: FilePlus2,
-                count: center.drafts.length,
-                content: (
-                  <PublicationDraftList
-                    drafts={center.drafts}
-                    keyword={keyword}
-                    loading={center.loading}
-                    onCreate={() => void createDraft()}
-                    onKeywordChange={setKeyword}
-                    onSelect={setSelectedId}
-                    onStageChange={setStage}
-                    schedules={schedules}
-                    selectedId={resolvedId}
-                    stage={stage}
-                    summaries={summaries}
-                    truncatedAt={
-                      center.drafts.length >= DRAFT_PAGE_LIMIT ? DRAFT_PAGE_LIMIT : undefined
-                    }
-                    visibleDrafts={visibleDrafts}
-                  />
-                ),
-              },
-              {
-                value: "tasks",
-                label: "发布任务",
-                icon: Send,
-                count: center.tasks.length,
-                content: (
-                  <PublicationTaskList
-                    {...taskHandlers}
-                    draftIds={draftIds}
-                    onOpenDraft={openDraft}
-                    tasks={center.tasks}
-                  />
-                ),
-              },
-            ]}
-            value={listTab}
-          />
-
-          {selected ? (
-            <section aria-label="草稿编辑" className="control-shell min-w-0 p-5 xl:mt-[3.25rem]">
-              <PublicationEditor
-                browserDriver={confirmedDriver}
-                draft={selected}
-                // 这个 key 是草稿之间自动保存基线的隔离手段，删掉会让上一份
-                // 草稿的基线漏进下一份。
-                key={`${selected.draft_id}:${confirmedDriver}`}
-                onDelete={() => center.deleteDraft(selected.draft_id)}
-                onNotify={onNotify}
-                onRemoveAsset={async (assetId) => {
-                  await center.removeAsset(selected.draft_id, assetId);
-                }}
-                onSave={(input) => center.saveDraft(selected.draft_id, input)}
-                onScheduledAtChange={(value) =>
-                  setSchedules((current) => ({ ...current, [selected.draft_id]: value }))
+      <BoardTabs
+        ariaLabel="发布分类"
+        tabs={[
+          {
+            value: "drafts",
+            label: "草稿箱",
+            icon: FilePlus2,
+            count: center.drafts.length,
+            content: (
+              <PublicationDraftList
+                drafts={center.drafts}
+                keyword={keyword}
+                loading={center.loading}
+                onCreate={() => void createDraft()}
+                onEdit={(draftId) => openDialog(draftId, "edit")}
+                onKeywordChange={setKeyword}
+                onOpen={(draftId) => openDialog(draftId, "detail")}
+                onRecords={(draftId) => openDialog(draftId, "records")}
+                onStageChange={setStage}
+                schedules={schedules}
+                stage={stage}
+                summaries={summaries}
+                truncatedAt={
+                  center.drafts.length >= DRAFT_PAGE_LIMIT ? DRAFT_PAGE_LIMIT : undefined
                 }
-                onSubmitManual={() => center.submitTask(selected.draft_id, "manual")}
-                onSubmitPlatformScheduled={(scheduledAt) =>
-                  center.submitTask(selected.draft_id, "platform_scheduled", scheduledAt)
-                }
-                onSubmitScheduled={(scheduledAt) =>
-                  center.submitTask(selected.draft_id, "scheduled", scheduledAt)
-                }
-                onUpload={(file) => center.uploadAsset(selected.draft_id, file).then(() => {})}
-                scheduledAt={schedules[selected.draft_id] ?? ""}
-                timeline={
-                  <PublicationTimeline
-                    {...taskHandlers}
-                    tasks={tasksByDraft.get(selected.draft_id) ?? []}
-                  />
-                }
+                visibleDrafts={visibleDrafts}
               />
-            </section>
-          ) : (
-            <div className="control-shell min-w-0 p-5 xl:mt-[3.25rem]">
-              <SkeletonForm fields={4} />
-            </div>
-          )}
-        </div>
+            ),
+          },
+          {
+            value: "tasks",
+            label: "发布任务",
+            icon: Send,
+            count: center.tasks.length,
+            content: (
+              <PublicationTaskList
+                {...taskHandlers}
+                draftIds={draftIds}
+                onOpenDraft={(draftId) => openDialog(draftId, "detail")}
+                tasks={center.tasks}
+              />
+            ),
+          },
+        ]}
+      />
+
+      {/* 同一时刻只渲染当前那一个框：三个都挂着的话，Radix 的焦点作用域会互相
+          打架，切换视图也会多留两份不该存在的隐藏内容。 */}
+      {active && dialog?.view === "detail" && (
+        <PublicationDraftDialog
+          browserDriver={confirmedDriver}
+          draft={active}
+          onNotify={onNotify}
+          onOpenChange={closeDialog}
+          onRestoreFocus={restoreFocus}
+          onSave={(input) => center.saveDraft(active.draft_id, input)}
+          onScheduledAtChange={(value) =>
+            setSchedules((current) => ({ ...current, [active.draft_id]: value }))
+          }
+          onSubmitManual={() => center.submitTask(active.draft_id, "manual")}
+          onSubmitPlatformScheduled={(scheduledAt) =>
+            center.submitTask(active.draft_id, "platform_scheduled", scheduledAt)
+          }
+          onSubmitScheduled={(scheduledAt) =>
+            center.submitTask(active.draft_id, "scheduled", scheduledAt)
+          }
+          open
+          scheduledAt={schedules[active.draft_id] ?? ""}
+          summary={summaries.get(active.draft_id) ?? EMPTY_SUMMARY}
+        />
+      )}
+      {active && dialog?.view === "edit" && (
+        <PublicationEditorDialog
+          browserDriver={confirmedDriver}
+          draft={active}
+          // 这个 key 是草稿之间自动保存基线的隔离手段，删掉会让上一份
+          // 草稿的基线漏进下一份。
+          key={`${active.draft_id}:${confirmedDriver}`}
+          onDelete={async () => {
+            await center.deleteDraft(active.draft_id);
+            setDialog(null);
+          }}
+          onNotify={onNotify}
+          onOpenChange={closeDialog}
+          onRemoveAsset={async (assetId) => {
+            await center.removeAsset(active.draft_id, assetId);
+          }}
+          onRestoreFocus={restoreFocus}
+          onSave={(input, options) => center.saveDraft(active.draft_id, input, options)}
+          onUpload={(file) => center.uploadAsset(active.draft_id, file).then(() => {})}
+          open
+        />
+      )}
+      {active && dialog?.view === "records" && (
+        <PublicationRecordsDialog
+          {...taskHandlers}
+          draft={active}
+          onOpenChange={closeDialog}
+          onRestoreFocus={restoreFocus}
+          open
+          tasks={tasksByDraft.get(active.draft_id) ?? []}
+        />
       )}
     </section>
   );
 }
+
+const EMPTY_SUMMARY = {
+  stage: "unsubmitted",
+  attention: 0,
+  total: 0,
+  drifted: false,
+} as const;

@@ -106,11 +106,14 @@ describe("宽屏工作台侧栏", () => {
     expect(screen.getByText("本地服务")).toBeInTheDocument();
   });
 
-  it("有发布等着处理才亮角标", () => {
+  it("有发布等着处理才亮提醒，且不再多出一个说不清的数字", () => {
     const { rerender } = render(<Harness />);
-    expect(screen.queryByLabelText(/项等你处理/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/项发布等你处理/)).not.toBeInTheDocument();
 
     rerender(<Harness publicationCount={3} />);
-    expect(screen.getByLabelText("3 项等你处理")).toHaveTextContent("3");
+    const dot = screen.getByLabelText("3 项发布等你处理");
+    // 同一栏的数字表示"共有多少"；再塞一个"有几项等你处理"进去，
+    // 同一个位置就有了两种含义。提醒只用圆点。
+    expect(dot).toBeEmptyDOMElement();
   });
 });

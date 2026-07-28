@@ -7,8 +7,8 @@ export function CookieSetupGuide() {
       </summary>
       <div className="mt-3 space-y-3 text-xs leading-5 text-stone-600">
         <p>
-          Cookie + HTTP 是高级可选模式。普通用户优先选择浏览器扩展或软件自带浏览器；只有明确需要 HTTP
-          路由时才填写。
+          Cookie + HTTP 是高级可选模式。普通用户优先选择浏览器扩展或软件自带浏览器；只有明确需要
+          HTTP 路由时才填写。
         </p>
         <ol className="list-decimal space-y-1 pl-5">
           <li>在准备与本工具配合的浏览器账号中登录小红书网页版。</li>

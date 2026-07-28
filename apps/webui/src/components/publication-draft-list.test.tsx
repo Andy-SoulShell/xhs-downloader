@@ -14,11 +14,12 @@ function renderList(overrides: Partial<Parameters<typeof PublicationDraftList>[0
     keyword: "",
     loading: false,
     onCreate: vi.fn(),
+    onEdit: vi.fn(),
     onKeywordChange: vi.fn(),
-    onSelect: vi.fn(),
+    onOpen: vi.fn(),
+    onRecords: vi.fn(),
     onStageChange: vi.fn(),
     schedules: {},
-    selectedId: drafts[0]?.draft_id ?? "",
     stage: "all" as const,
     ...overrides,
   };
@@ -64,17 +65,29 @@ describe("草稿列表", () => {
     const task = makePublicationTask({ status: "published" });
     renderList({ summaries: summarizeDrafts([draft], [task]) });
 
-    const card = screen.getByRole("button", { name: /合成发布标题/ });
+    const card = screen.getByRole("listitem");
     expect(within(card).getByText("最近一次发布：已发布")).toBeInTheDocument();
   });
 
-  it("点一下卡片就换草稿", () => {
-    const first = makePublicationDraft();
-    const second = makePublicationDraft({ draft_id: "second", title: "第二份" });
-    const properties = renderList({ drafts: [first, second], visibleDrafts: [first, second] });
+  it("点标题看详情，编辑和记录各走各的入口", () => {
+    const draft = makePublicationDraft();
+    const properties = renderList({
+      summaries: summarizeDrafts([draft], [makePublicationTask()]),
+    });
 
-    fireEvent.click(screen.getByRole("button", { name: /第二份/ }));
+    fireEvent.click(screen.getByRole("button", { name: "合成发布标题" }));
+    expect(properties.onOpen).toHaveBeenCalledWith(draft.draft_id);
 
-    expect(properties.onSelect).toHaveBeenCalledWith("second");
+    fireEvent.click(screen.getByRole("button", { name: "编辑" }));
+    expect(properties.onEdit).toHaveBeenCalledWith(draft.draft_id);
+
+    fireEvent.click(screen.getByRole("button", { name: /记录/ }));
+    expect(properties.onRecords).toHaveBeenCalledWith(draft.draft_id);
+  });
+
+  it("从未提交过的草稿不给一个点不动的记录入口", () => {
+    renderList();
+
+    expect(screen.getByRole("button", { name: /记录/ })).toBeDisabled();
   });
 });
