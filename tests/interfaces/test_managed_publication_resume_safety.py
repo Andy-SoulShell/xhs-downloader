@@ -6,7 +6,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from xhs_adapters.managed_publication_executor import (
+from xhs_adapters.managed_publication import (
     PlaywrightManagedPublicationExecutor,
 )
 from xhs_api.managed_publication import create_managed_publication_router

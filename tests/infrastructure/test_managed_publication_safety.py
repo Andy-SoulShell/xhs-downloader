@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from xhs_adapters.managed_publication_contract import PUBLISH_SELECTOR
-from xhs_adapters.managed_publication_executor import (
+from xhs_adapters.managed_publication import (
+    PUBLISH_SELECTOR,
     PlaywrightManagedPublicationExecutor,
 )
 from xhs_core.domain import (

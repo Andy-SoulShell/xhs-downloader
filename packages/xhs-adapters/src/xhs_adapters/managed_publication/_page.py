@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from typing import Any, Protocol
 
-from .managed_page_session import ManagedPage
+from ..managed_page_session import ManagedPage
 
 
 class ManagedPublicationKeyboard(Protocol):

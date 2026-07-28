@@ -2,8 +2,8 @@
 
 from xhs_core.domain import ManagedBrowserError
 
-from .managed_page_session import ManagedPageSession
-from .managed_publication_contract import (
+from ..managed_page_session import ManagedPageSession
+from ._contract import (
     PREPARE_PUBLISH_EXPRESSION,
     CapturedPublishClick,
     PublicationClick,
@@ -11,7 +11,7 @@ from .managed_publication_contract import (
     validate_creator_page,
     validate_publish_response,
 )
-from .managed_publication_page import ManagedPublicationPage
+from ._page import ManagedPublicationPage
 
 _CLICK_TIMEOUT_MILLISECONDS = 5_000
 

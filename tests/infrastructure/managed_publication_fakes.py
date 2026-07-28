@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from typing import Any
 
-from xhs_adapters.managed_publication_contract import (
+from xhs_adapters.managed_publication import (
     PUBLISH_SELECTOR,
     SCHEDULE_SELECTOR,
 )

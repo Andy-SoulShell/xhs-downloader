@@ -23,7 +23,7 @@ from .filesystem import FileDownloader, FilePublicationAssetStore
 from .http import HttpxGateway
 from .managed_account_proof import ManagedAccountProofProvider
 from .managed_browser import ChromiumController
-from .managed_publication_executor import PlaywrightManagedPublicationExecutor
+from .managed_publication import PlaywrightManagedPublicationExecutor
 from .managed_task_executor import PlaywrightManagedTaskExecutor
 from .parsing import InitialStateParser
 from .sqlite import (

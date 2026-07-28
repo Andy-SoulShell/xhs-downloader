@@ -5,7 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 
-from xhs_adapters.managed_publication_contract import (
+from xhs_adapters.managed_publication import (
     PUBLISH_SELECTOR,
     UPLOAD_SELECTOR,
 )

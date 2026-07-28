@@ -3,12 +3,10 @@
 from pathlib import Path
 
 import pytest
-from xhs_adapters.managed_publication_contract import (
+from xhs_adapters.managed_publication import (
     PUBLISH_SELECTOR,
     SCHEDULE_SELECTOR,
     UPLOAD_SELECTOR,
-)
-from xhs_adapters.managed_publication_executor import (
     PlaywrightManagedPublicationExecutor,
 )
 from xhs_core.domain import (

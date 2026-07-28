@@ -19,10 +19,11 @@ from xhs_core.domain import (
 )
 from xhs_core.domain.browser_ports import ManagedBrowserController
 
-from .managed_page_session import ManagedPageSession, ManagedPageSessionFactory
-from .managed_publication_assets import verify_publication_asset_contents
-from .managed_publication_click import click_prepared_publish
-from .managed_publication_contract import (
+from ..managed_page_session import ManagedPageSession, ManagedPageSessionFactory
+from ..managed_publisher_assets import load_managed_publisher_adapter
+from ._assets import verify_publication_asset_contents
+from ._click import click_prepared_publish
+from ._contract import (
     ADAPTER_VERSION_EXPRESSION,
     FILL_EXPRESSION,
     OBSERVE_EXPRESSION,
@@ -38,9 +39,8 @@ from .managed_publication_contract import (
     validate_schedule_response,
     validate_upload_response,
 )
-from .managed_publication_observation import ObservationState, parse_observation
-from .managed_publication_page import ManagedPublicationPage
-from .managed_publisher_assets import load_managed_publisher_adapter
+from ._observation import ObservationState, parse_observation
+from ._page import ManagedPublicationPage
 
 _NAVIGATION_TIMEOUT_MILLISECONDS = 30_000
 _INPUT_TIMEOUT_MILLISECONDS = 30_000

@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from xhs_adapters.managed_publication_executor import (
+from xhs_adapters.managed_publication import (
     PlaywrightManagedPublicationExecutor,
 )
 from xhs_core.domain import (

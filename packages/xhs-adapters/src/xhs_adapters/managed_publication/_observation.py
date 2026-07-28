@@ -11,7 +11,7 @@ from xhs_core.domain import (
     PublicationTaskStatus,
 )
 
-from .managed_publication_contract import VERIFICATION_MESSAGE
+from ._contract import VERIFICATION_MESSAGE
 
 _RESULT_PATH = re.compile(r"^/(?:explore|discovery/item)/[A-Za-z0-9]+/?$")
 
