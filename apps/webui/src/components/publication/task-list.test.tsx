@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { makePublicationTask } from "../test/fixtures";
-import { PublicationTaskList } from "./publication-task-list";
+import { makePublicationTask } from "../../test/fixtures";
+import { PublicationTaskList } from "./task-list";
 
 describe("发布任务列表", () => {
   it("展示全部状态并提供取消、重试和结果入口", () => {

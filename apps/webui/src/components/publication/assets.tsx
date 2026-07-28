@@ -1,12 +1,12 @@
 import { ImagePlus, Upload } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 
-import type { PublicationDraft } from "../lib/publication";
-import { IMAGE_LIMIT, planAssetIntake, type RejectedFile } from "../lib/publication-intake";
-import { useUploadQueue } from "../lib/use-upload-queue";
-import { EmptyState } from "./empty-state";
-import { PublicationAssetCard } from "./publication-asset-card";
-import { PublicationUploadQueue } from "./publication-upload-queue";
+import type { PublicationDraft } from "../../lib/publication";
+import { IMAGE_LIMIT, planAssetIntake, type RejectedFile } from "../../lib/publication-intake";
+import { useUploadQueue } from "../../lib/use-upload-queue";
+import { EmptyState } from "../empty-state";
+import { PublicationAssetCard } from "./asset-card";
+import { PublicationUploadQueue } from "./upload-queue";
 
 interface PublicationAssetsProps {
   /** 编辑器正在忙别的事，此时不接受改动。 */

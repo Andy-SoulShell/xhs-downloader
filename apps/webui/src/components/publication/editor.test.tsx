@@ -1,8 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { makePublicationDraft } from "../test/fixtures";
-import { PublicationEditor } from "./publication-editor";
+import { makePublicationDraft } from "../../test/fixtures";
+import { PublicationEditor } from "./editor";
 
 afterEach(() => {
   cleanup();

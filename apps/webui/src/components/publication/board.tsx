@@ -1,26 +1,26 @@
 import { FilePlus2, Send } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
-import { describeError } from "../lib/error-message";
-import { DRAFT_PAGE_LIMIT } from "../lib/publication-api";
-import { usePublicationCenterContext } from "../lib/publication-center";
+import { describeError } from "../../lib/error-message";
+import { DRAFT_PAGE_LIMIT } from "../../lib/publication-api";
+import { usePublicationCenterContext } from "../../lib/publication-center";
 import {
   type DraftStageFilter,
   filterDrafts,
   indexTasksByDraft,
   summarizeDrafts,
-} from "../lib/publication-index";
-import { isBrowserDriver } from "../lib/types";
-import { ActionButton } from "./action-button";
-import { Badge } from "./badge";
-import { BoardTabs } from "./board-tabs";
-import { EmptyState } from "./empty-state";
-import { PageHeading } from "./page-heading";
-import { PublicationDraftDialog } from "./publication-draft-dialog";
-import { PublicationDraftList } from "./publication-draft-list";
-import { PublicationEditorDialog } from "./publication-editor-dialog";
-import { PublicationRecordsDialog } from "./publication-records-dialog";
-import { PublicationTaskList } from "./publication-task-list";
+} from "../../lib/publication-index";
+import { isBrowserDriver } from "../../lib/types";
+import { ActionButton } from "../action-button";
+import { Badge } from "../badge";
+import { BoardTabs } from "../board-tabs";
+import { EmptyState } from "../empty-state";
+import { PageHeading } from "../page-heading";
+import { PublicationDraftDialog } from "./draft-dialog";
+import { PublicationDraftList } from "./draft-list";
+import { PublicationEditorDialog } from "./editor-dialog";
+import { PublicationRecordsDialog } from "./records-dialog";
+import { PublicationTaskList } from "./task-list";
 
 /** 同一时刻只开一个框：详情、编辑、记录是同层的三个去处，不叠在一起。 */
 type OpenDialog = { draftId: string; view: "detail" | "edit" | "records" } | null;

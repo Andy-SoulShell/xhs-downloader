@@ -1,7 +1,7 @@
 import { CheckCircle2, ScanLine, ShieldCheck, X } from "lucide-react";
 import { useRef, useState } from "react";
 
-import { ActionButton } from "./action-button";
+import { ActionButton } from "../action-button";
 
 interface PublicationVerificationResumeProps {
   onResume: () => Promise<void>;

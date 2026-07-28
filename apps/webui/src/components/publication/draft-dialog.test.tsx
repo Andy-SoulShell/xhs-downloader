@@ -2,9 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { draftSummary } from "../lib/publication-index";
-import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
-import { PublicationDraftDialog } from "./publication-draft-dialog";
+import { draftSummary } from "../../lib/publication-index";
+import { makePublicationDraft, makePublicationTask } from "../../test/fixtures";
+import { PublicationDraftDialog } from "./draft-dialog";
 
 type DialogProps = Parameters<typeof PublicationDraftDialog>[0];
 

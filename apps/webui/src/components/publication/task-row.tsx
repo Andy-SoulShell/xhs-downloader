@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import { formatFullTime, formatRelativeTime } from "../lib/format-time";
-import type { PublicationTask } from "../lib/publication";
-import { publicationCreatorUrl } from "../lib/publication-editor-rules";
-import { connectionCopy, publishStatusCopy } from "../lib/terminology";
-import { ActionButton } from "./action-button";
-import { Badge } from "./badge";
-import { PublicationVerificationResume } from "./publication-verification-resume";
+import { formatFullTime, formatRelativeTime } from "../../lib/format-time";
+import type { PublicationTask } from "../../lib/publication";
+import { publicationCreatorUrl } from "../../lib/publication-editor-rules";
+import { connectionCopy, publishStatusCopy } from "../../lib/terminology";
+import { ActionButton } from "../action-button";
+import { Badge } from "../badge";
+import { PublicationVerificationResume } from "./verification-resume";
 
 interface PublicationTaskRowProps {
   task: PublicationTask;

@@ -8,17 +8,17 @@ import {
   listPublicationTasks,
   resumePublicationVerification,
   retryPublicationTask,
-} from "../lib/publication-api";
-import { PublicationCenterProvider } from "../lib/publication-center-provider";
-import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
-import { PublicationBoard } from "./publication-board";
+} from "../../lib/publication-api";
+import { PublicationCenterProvider } from "../../lib/publication-center-provider";
+import { makePublicationDraft, makePublicationTask } from "../../test/fixtures";
+import { PublicationBoard } from "./board";
 
 /** 发布中心已提到应用根部共享，组件测试也得在同一个提供者里渲染。 */
 function renderBoard(ui: ReactElement) {
   return render(<PublicationCenterProvider>{ui}</PublicationCenterProvider>);
 }
 
-vi.mock("../lib/publication-api", () => ({
+vi.mock("../../lib/publication-api", () => ({
   DRAFT_PAGE_LIMIT: 200,
   publicationAssetUrl: (draftId: string, assetId: string) =>
     `/api/publication/drafts/${draftId}/assets/${assetId}`,

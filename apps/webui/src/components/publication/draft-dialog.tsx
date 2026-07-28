@@ -1,15 +1,19 @@
 import { FileVideo2 } from "lucide-react";
 
-import { formatFullTime } from "../lib/format-time";
-import type { PublicationDraft, PublicationDraftInput, PublicationTask } from "../lib/publication";
-import { publicationAssetUrl } from "../lib/publication-api";
-import { type DraftSummary, draftStageLabel, draftTitle } from "../lib/publication-index";
-import { usePublicationSubmit } from "../lib/use-publication-submit";
-import type { BrowserDriver } from "../lib/types";
-import { Badge } from "./badge";
-import { DialogShell } from "./dialog-shell";
-import { MediaThumbnail } from "./media-thumbnail";
-import { PublicationSubmitControls } from "./publication-submit-controls";
+import { formatFullTime } from "../../lib/format-time";
+import type {
+  PublicationDraft,
+  PublicationDraftInput,
+  PublicationTask,
+} from "../../lib/publication";
+import { publicationAssetUrl } from "../../lib/publication-api";
+import { type DraftSummary, draftStageLabel, draftTitle } from "../../lib/publication-index";
+import { usePublicationSubmit } from "../../lib/use-publication-submit";
+import type { BrowserDriver } from "../../lib/types";
+import { Badge } from "../badge";
+import { DialogShell } from "../dialog-shell";
+import { MediaThumbnail } from "../media-thumbnail";
+import { PublicationSubmitControls } from "./submit-controls";
 
 const VISIBILITY_LABELS = {
   public: "公开可见",

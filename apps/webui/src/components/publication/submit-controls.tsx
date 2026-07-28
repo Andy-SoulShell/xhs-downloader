@@ -1,10 +1,10 @@
 import { CalendarClock, ExternalLink, Send, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import type { PublicationMode } from "../lib/publication";
-import { connectionCopy } from "../lib/terminology";
-import type { BrowserDriver } from "../lib/types";
-import { ActionButton } from "./action-button";
+import type { PublicationMode } from "../../lib/publication";
+import { connectionCopy } from "../../lib/terminology";
+import type { BrowserDriver } from "../../lib/types";
+import { ActionButton } from "../action-button";
 
 interface PublicationSubmitControlsProps {
   /** 当前挡着发布的问题；非空时三个提交按钮都停用并说明缺什么。 */

@@ -1,5 +1,5 @@
-import type { PublicationVisibility } from "../lib/publication";
-import type { BrowserDriver } from "../lib/types";
+import type { PublicationVisibility } from "../../lib/publication";
+import type { BrowserDriver } from "../../lib/types";
 
 interface PublicationOptionsFormProps {
   browserDriver: BrowserDriver;

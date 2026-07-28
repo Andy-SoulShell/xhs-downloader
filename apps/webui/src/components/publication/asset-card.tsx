@@ -1,11 +1,11 @@
 import { ChevronDown, ChevronUp, FileVideo2, GripVertical, Trash2 } from "lucide-react";
 import type { DragEvent } from "react";
 
-import type { PublicationAsset } from "../lib/publication";
-import { publicationAssetUrl } from "../lib/publication-api";
-import { ActionButton } from "./action-button";
-import { Badge } from "./badge";
-import { MediaThumbnail } from "./media-thumbnail";
+import type { PublicationAsset } from "../../lib/publication";
+import { publicationAssetUrl } from "../../lib/publication-api";
+import { ActionButton } from "../action-button";
+import { Badge } from "../badge";
+import { MediaThumbnail } from "../media-thumbnail";
 
 interface PublicationAssetCardProps {
   asset: PublicationAsset;

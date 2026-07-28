@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { UserFacingError } from "../lib/error-message";
-import { makePublicationDraft } from "../test/fixtures";
-import { PublicationAssets } from "./publication-assets";
+import { UserFacingError } from "../../lib/error-message";
+import { makePublicationDraft } from "../../test/fixtures";
+import { PublicationAssets } from "./assets";
 
 describe("发布素材列表", () => {
   it("区分媒体、格式化大小并调整完整顺序", async () => {

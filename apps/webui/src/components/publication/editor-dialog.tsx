@@ -1,7 +1,7 @@
-import type { PublicationDraft } from "../lib/publication";
-import { draftTitle } from "../lib/publication-index";
-import { DialogShell } from "./dialog-shell";
-import { PublicationEditor } from "./publication-editor";
+import type { PublicationDraft } from "../../lib/publication";
+import { draftTitle } from "../../lib/publication-index";
+import { DialogShell } from "../dialog-shell";
+import { PublicationEditor } from "./editor";
 
 type EditorProps = Parameters<typeof PublicationEditor>[0];
 

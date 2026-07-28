@@ -1,11 +1,11 @@
 import { CalendarClock } from "lucide-react";
 import { useMemo } from "react";
 
-import type { PublicationTask } from "../lib/publication";
-import { orderTasksByAttention } from "../lib/publication-index";
-import { Badge } from "./badge";
-import { EmptyState } from "./empty-state";
-import { PublicationTaskRow } from "./publication-task-row";
+import type { PublicationTask } from "../../lib/publication";
+import { orderTasksByAttention } from "../../lib/publication-index";
+import { Badge } from "../badge";
+import { EmptyState } from "../empty-state";
+import { PublicationTaskRow } from "./task-row";
 
 interface PublicationTaskListProps {
   tasks: PublicationTask[];

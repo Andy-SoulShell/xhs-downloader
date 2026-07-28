@@ -1,13 +1,13 @@
 import { FilePlus2, Search } from "lucide-react";
 
-import type { PublicationDraft } from "../lib/publication";
-import type { DraftStageFilter, DraftSummary } from "../lib/publication-index";
-import { ActionButton } from "./action-button";
-import { EmptyState } from "./empty-state";
-import { PostSearch } from "./post-search";
-import { PublicationDraftCard } from "./publication-draft-card";
-import { SegmentedControl, SegmentedControlItem } from "./segmented-control";
-import { SkeletonForm } from "./skeleton";
+import type { PublicationDraft } from "../../lib/publication";
+import type { DraftStageFilter, DraftSummary } from "../../lib/publication-index";
+import { ActionButton } from "../action-button";
+import { EmptyState } from "../empty-state";
+import { PostSearch } from "../post-search";
+import { PublicationDraftCard } from "./draft-card";
+import { SegmentedControl, SegmentedControlItem } from "../segmented-control";
+import { SkeletonForm } from "../skeleton";
 
 /**
  * 出现筛选条的草稿数下限。

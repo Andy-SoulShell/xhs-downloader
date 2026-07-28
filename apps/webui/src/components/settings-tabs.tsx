@@ -4,7 +4,7 @@ import type { AuthorMappingRow } from "../lib/author-mapping";
 import type { SettingsResponse, SettingsValues } from "../lib/types";
 import { AccessModeSettings } from "./access-mode-settings";
 import type { BoardTab } from "./board-tabs";
-import { PublicationSettings } from "./publication-settings";
+import { PublicationSettings } from "./publication/settings";
 import { ServiceSettings } from "./service-settings";
 import {
   DownloadSettings,
@@ -14,7 +14,7 @@ import {
 } from "./settings-sections";
 
 /** 构造配置分组所需的全部回调与当前值。 */
-export interface SettingsTabsInput {
+interface SettingsTabsInput {
   clearCookie: boolean;
   clearProxy: boolean;
   cookie: string;

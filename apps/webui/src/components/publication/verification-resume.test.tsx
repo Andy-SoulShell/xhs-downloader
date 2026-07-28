@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { PublicationVerificationResume } from "./publication-verification-resume";
+import { PublicationVerificationResume } from "./verification-resume";
 
 describe("软件自带发布验证恢复", () => {
   it("要求二次确认，提交中与成功后都不会重复调用", async () => {

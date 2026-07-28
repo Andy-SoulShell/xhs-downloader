@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { makeSettingsResponse } from "../test/fixtures";
-import { PublicationSettings } from "./publication-settings";
+import { makeSettingsResponse } from "../../test/fixtures";
+import { PublicationSettings } from "./settings";
 
 describe("内容发布配置", () => {
   it("复用数值配置组件更新素材上限与租约", () => {

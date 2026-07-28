@@ -1,21 +1,21 @@
 import { Save, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { describeError } from "../lib/error-message";
+import { describeError } from "../../lib/error-message";
 import type {
   PublicationDraft,
   PublicationDraftInput,
   PublicationVisibility,
-} from "../lib/publication";
-import { normalizePublicationProducts } from "../lib/publication-editor-rules";
-import { autosaveLabel, useDraftAutosave } from "../lib/use-draft-autosave";
-import type { BrowserDriver } from "../lib/types";
-import { ActionButton } from "./action-button";
-import { CharacterCount } from "./character-count";
-import { ConfirmDialog } from "./confirm-dialog";
-import { PublicationAssets } from "./publication-assets";
-import { PublicationOptionsForm } from "./publication-options-form";
-import { TagInput } from "./tag-input";
+} from "../../lib/publication";
+import { normalizePublicationProducts } from "../../lib/publication-editor-rules";
+import { autosaveLabel, useDraftAutosave } from "../../lib/use-draft-autosave";
+import type { BrowserDriver } from "../../lib/types";
+import { ActionButton } from "../action-button";
+import { CharacterCount } from "../character-count";
+import { ConfirmDialog } from "../confirm-dialog";
+import { PublicationAssets } from "./assets";
+import { PublicationOptionsForm } from "./options-form";
+import { TagInput } from "../tag-input";
 
 interface PublicationEditorProps {
   browserDriver: BrowserDriver;

@@ -1,6 +1,6 @@
-import type { SettingsValues } from "../lib/types";
-import { NumberSetting, SettingsSection } from "./setting-controls";
-import type { SettingsChange } from "./settings-sections";
+import type { SettingsValues } from "../../lib/types";
+import { NumberSetting, SettingsSection } from "../setting-controls";
+import type { SettingsChange } from "../settings-sections";
 
 export function PublicationSettings({
   onChange,

@@ -1,8 +1,8 @@
-import type { PublicationDraft, PublicationTask } from "../lib/publication";
-import { draftTitle } from "../lib/publication-index";
-import { Badge } from "./badge";
-import { DialogShell } from "./dialog-shell";
-import { PublicationTaskRow } from "./publication-task-row";
+import type { PublicationDraft, PublicationTask } from "../../lib/publication";
+import { draftTitle } from "../../lib/publication-index";
+import { Badge } from "../badge";
+import { DialogShell } from "../dialog-shell";
+import { PublicationTaskRow } from "./task-row";
 
 interface PublicationRecordsDialogProps {
   draft: PublicationDraft;

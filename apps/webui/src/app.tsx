@@ -5,7 +5,7 @@ import { Tabs, Toast } from "radix-ui";
 import { ActivityBoard } from "./components/activity-board";
 import { ContentBoard } from "./components/content-board";
 import { MobileWorkspaceNav } from "./components/mobile-workspace-nav";
-import { PublicationBoard } from "./components/publication-board";
+import { PublicationBoard } from "./components/publication/board";
 import { AppToast } from "./components/app-toast";
 import { MobileHeader } from "./components/mobile-header";
 import { SettingsWorkspace } from "./components/settings-workspace";

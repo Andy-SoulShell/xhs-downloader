@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { summarizeDrafts } from "../lib/publication-index";
-import { makePublicationDraft, makePublicationTask } from "../test/fixtures";
-import { PublicationDraftList } from "./publication-draft-list";
+import { summarizeDrafts } from "../../lib/publication-index";
+import { makePublicationDraft, makePublicationTask } from "../../test/fixtures";
+import { PublicationDraftList } from "./draft-list";
 
 function renderList(overrides: Partial<Parameters<typeof PublicationDraftList>[0]> = {}) {
   const drafts = overrides.drafts ?? [makePublicationDraft()];

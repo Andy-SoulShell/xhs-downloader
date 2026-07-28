@@ -1,12 +1,12 @@
 import { CalendarClock, FileVideo2, History, ImagePlus, Pencil } from "lucide-react";
 
-import { formatFullTime, formatRelativeTime } from "../lib/format-time";
-import type { PublicationDraft } from "../lib/publication";
-import { publicationAssetUrl } from "../lib/publication-api";
-import { type DraftSummary, draftStageLabel, draftTitle } from "../lib/publication-index";
-import { ActionButton } from "./action-button";
-import { Badge } from "./badge";
-import { MediaThumbnail } from "./media-thumbnail";
+import { formatFullTime, formatRelativeTime } from "../../lib/format-time";
+import type { PublicationDraft } from "../../lib/publication";
+import { publicationAssetUrl } from "../../lib/publication-api";
+import { type DraftSummary, draftStageLabel, draftTitle } from "../../lib/publication-index";
+import { ActionButton } from "../action-button";
+import { Badge } from "../badge";
+import { MediaThumbnail } from "../media-thumbnail";
 
 /** 派生状态对应的徽标色，与发布任务用同一套语义。 */
 const STAGE_TONES = {

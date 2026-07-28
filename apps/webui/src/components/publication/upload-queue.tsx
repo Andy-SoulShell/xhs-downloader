@@ -1,8 +1,8 @@
 import { CheckCircle2, CircleAlert, RotateCcw, X } from "lucide-react";
 
-import type { UploadQueue } from "../lib/use-upload-queue";
-import { ActionButton } from "./action-button";
-import { Badge } from "./badge";
+import type { UploadQueue } from "../../lib/use-upload-queue";
+import { ActionButton } from "../action-button";
+import { Badge } from "../badge";
 
 /**
  * 上传中的文件队列。
